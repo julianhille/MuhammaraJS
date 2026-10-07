@@ -35,6 +35,53 @@ supply bytes the application retrieved itself, use the `locateFile` or
 `wasmBinary` options described in [Load the WebAssembly Binary From a CDN or
 Your Own Bytes](how-to/load-the-wasm-binary.md).
 
+## Load bidi-js Without a Bundler
+
+Reordering right-to-left text, with the `direction` option, uses the
+[bidi-js](https://github.com/lojjic/bidi-js) package, which installs with
+`@muhammara/wasm`. The package loads it with `import("bidi-js")` when it
+starts, so bundlers such as Vite and webpack keep it as a chunk. A page that
+loads the package's modules without a bundler maps the bare specifier itself:
+
+```html
+<script type="importmap">
+  {
+    "imports": {
+      "@muhammara/wasm": "/node_modules/@muhammara/wasm/index.js",
+      "bidi-js": "/node_modules/bidi-js/dist/bidi.mjs"
+    }
+  }
+</script>
+```
+
+bidi-js is loaded once for the page, Worker or process, and every instance
+shares it. Pass `bidi: false` to `createMuhammaraWasm()` or `createRecipe()`
+to skip loading it when the page never sets `direction`; once another call
+or `loadBidi()` has loaded it, instances made with `bidi: false` reorder text
+too. Without bidi-js, whether skipped or unresolved, everything else works,
+and every call that has to order text by direction throws an error that
+names bidi-js instead of drawing the text in the wrong order: text with
+right-to-left characters and an `"auto"`, `"ltr"` or `"rtl"` direction,
+`"rtl"` text, and a line whose flowed runs ask for different directions. Text drawn as given, with the default `"none"`,
+needs no bidi-js, right-to-left characters included.
+
+Module Workers do not read the page's import map in every browser; bundle
+the Worker, or load bidi-js there yourself.
+
+Call `loadBidi()` to load bidi-js later, for example once a document first
+needs right-to-left text after a factory ran with `bidi: false`. Instances
+already created reorder text as soon as it resolves. Without an argument it
+imports `"bidi-js"`; where that specifier does not resolve, pass the module
+you imported yourself:
+
+```js
+import { createRecipe, loadBidi } from "@muhammara/wasm";
+
+var Recipe = await createRecipe({ bidi: false });
+// Later, when right-to-left text is needed:
+await loadBidi(await import("/node_modules/bidi-js/dist/bidi.mjs"));
+```
+
 ## Work With Bytes
 
 Keep source PDFs, fonts, and images as bytes in application code. Inputs are

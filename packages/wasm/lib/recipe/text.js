@@ -8,6 +8,23 @@ import {
 import { htmlToTextObjects } from "./htmlToTextObjects.js";
 import { charSpacing, Column, resolveFontSize } from "./text.helper.js";
 import { miterLimitOption, rotationOption } from "./vector.helper.js";
+import {
+  TextDirection,
+  drawnText,
+  readDirection,
+  requireBidiFor,
+  resolveDirection,
+  spaceAdvance,
+  splitParagraphs,
+  trimBreakableEnd,
+  BREAKABLE_SPACE,
+  LINE_BREAKS,
+  NO_BREAK_SPACES,
+  WORD,
+  toVisual,
+  visualRuns,
+  visualWords,
+} from "../text-direction.js";
 
 /**
  * Deep-merges plain option objects; arrays and dates are replaced, not merged.
@@ -44,6 +61,12 @@ function padding(value = 0) {
   ];
 }
 
+// Text a line shows: anything but the spaces it may break at.
+var HAS_VISIBLE_TEXT = new RegExp(`\\S|[${NO_BREAK_SPACES}]`);
+var STARTS_WITH_BREAKABLE_SPACE = new RegExp(`^${BREAKABLE_SPACE}`);
+var ENDS_WITH_BREAKABLE_SPACE = new RegExp(`${BREAKABLE_SPACE}$`);
+var LEADING_BREAKABLE_SPACES = new RegExp(`^${BREAKABLE_SPACE}+`);
+
 /**
  * Splits text into wrapping units while keeping non-breaking spaces inside words.
  * @param {string} value - Text.
@@ -51,19 +74,8 @@ function padding(value = 0) {
  */
 function splitWords(value) {
   return (
-    String(value).match(
-      /(?:\S|\u00a0)+(?:(?!\u00a0)\s)*|(?:(?!\u00a0)\s)+/g,
-    ) || [""]
+    String(value).match(new RegExp(`${WORD}|${BREAKABLE_SPACE}+`, "g")) || [""]
   );
-}
-
-/**
- * Removes trailing breakable whitespace while preserving U+00A0.
- * @param {string} value - Text.
- * @returns {string} The trimmed text.
- */
-function trimBreakableEnd(value) {
-  return value.replace(/(?:(?!\u00a0)\s)+$/, "");
 }
 
 /**
@@ -72,7 +84,7 @@ function trimBreakableEnd(value) {
  * @returns {boolean} Whether it has visible content.
  */
 function hasText(value) {
-  return /(?:\S|\u00a0)/.test(value);
+  return HAS_VISIBLE_TEXT.test(value);
 }
 
 /**
@@ -81,7 +93,7 @@ function hasText(value) {
  * @returns {boolean} Whether it starts with breakable whitespace.
  */
 function startsWithBreakableSpace(value) {
-  return value[0] !== "\u00a0" && /^\s/.test(value);
+  return STARTS_WITH_BREAKABLE_SPACE.test(value);
 }
 
 /**
@@ -90,52 +102,55 @@ function startsWithBreakableSpace(value) {
  * @returns {boolean} Whether it ends with breakable whitespace.
  */
 function endsWithBreakableSpace(value) {
-  return value[value.length - 1] !== "\u00a0" && /\s$/.test(value);
+  return ENDS_WITH_BREAKABLE_SPACE.test(value);
 }
 
 /**
  * Lays out plain text into lines for a width and wrap mode.
- * @param {string} value - Text; `\n` starts a paragraph.
+ * @param {string} value - Text; a line break such as `\n` or U+2028 starts a
+ *   paragraph.
  * @param {number} width - Available width; 0 disables wrapping.
  * @param {function(string, object): TextDimensions} measure - Measures a run with options, including character spacing.
  * @param {object} options - Text options.
  * @param {Recipe.TextWrap|boolean} wrap - Wrap mode; `true` means auto.
- * @returns {Array<{text: string, last: boolean}>} Lines; `last` ends a paragraph.
+ * @returns {Array<{text: string, last: boolean, direction: string}>} Lines in
+ *   logical order; `last` ends a paragraph and `direction` is the resolved
+ *   direction of the paragraph the line was wrapped from.
  */
 function lines(value, width, measure, options, wrap) {
   var result = [];
-  String(value)
-    .split("\n")
-    .forEach((paragraph) => {
-      var line = "";
-      var truncated = false;
-      var words = splitWords(paragraph);
-      words.forEach((word) => {
-        if (truncated) return;
-        var next = line + word;
-        // measure() already includes the character spacing.
-        var fits = !width || measure(next, options).width <= width;
-        if (fits || !line) {
-          line = next;
-        } else if (wrap === TextWrap.AUTO || wrap === true) {
-          result.push({ text: trimBreakableEnd(line), last: false });
-          line = word;
-        } else if (wrap === TextWrap.CLIP) {
-          line = next;
-        } else if (wrap === TextWrap.ELLIPSIS) {
-          line = ellipsize(line || word, width, measure, options);
-          truncated = true;
-        } else {
-          truncated = true;
-        }
-      });
-      if (line || !result.length) {
-        result.push({
-          text: wrap === TextWrap.CLIP ? line : trimBreakableEnd(line),
-          last: true,
-        });
+  splitParagraphs(String(value)).forEach((paragraph) => {
+    var direction = resolveDirection(paragraph, options.direction);
+    var line = "";
+    var truncated = false;
+    var words = splitWords(paragraph);
+    words.forEach((word) => {
+      if (truncated) return;
+      var next = line + word;
+      // measure() already includes the character spacing.
+      var fits = !width || measure(next, options).width <= width;
+      if (fits || !line) {
+        line = next;
+      } else if (wrap === TextWrap.AUTO || wrap === true) {
+        result.push({ text: trimBreakableEnd(line), last: false, direction });
+        line = word;
+      } else if (wrap === TextWrap.CLIP) {
+        line = next;
+      } else if (wrap === TextWrap.ELLIPSIS) {
+        line = ellipsize(line || word, width, measure, options);
+        truncated = true;
+      } else {
+        truncated = true;
       }
     });
+    if (line || !result.length) {
+      result.push({
+        text: wrap === TextWrap.CLIP ? line : trimBreakableEnd(line),
+        last: true,
+        direction,
+      });
+    }
+  });
   return result;
 }
 
@@ -235,6 +250,28 @@ function htmlPartsWidth(parts, measure, options) {
   }, 0);
 }
 
+// Every paragraph separator ends a line, as a line feed does.
+var LINE_BREAK_SPLIT = new RegExp(`(\\r\\n|[${LINE_BREAKS}])`);
+var ENDS_WITH_LINE_BREAK = new RegExp(`[${LINE_BREAKS}]$`);
+// A line break followed only by spaces a line drops, at the end of a text;
+// a non-breaking space holds its line.
+var ENDS_WITH_DROPPED_LINE = new RegExp(
+  `[${LINE_BREAKS}](?:(?![${LINE_BREAKS}])${BREAKABLE_SPACE})*$`,
+);
+// Text a line keeps: anything but breakable spaces.
+var HAS_KEPT_TEXT = new RegExp(`\\S|[${LINE_BREAKS}${NO_BREAK_SPACES}]`);
+
+/**
+ * Splits a run's text at its line breaks.
+ * @param {string} value - The run's text.
+ * @returns {string[]} The text between breaks, with each break as "\n".
+ */
+function breakFragments(value) {
+  return String(value)
+    .split(LINE_BREAK_SPLIT)
+    .map((fragment, index) => (index % 2 ? "\n" : fragment));
+}
+
 /**
  * Lays out styled HTML into lines while preserving list and break structure.
  * @param {object[]} source - Text objects from htmlToTextObjects(), or
@@ -244,7 +281,9 @@ function htmlPartsWidth(parts, measure, options) {
  * @param {function(string, object): TextDimensions} measure - Measures a run with options.
  * @param {object} options - Base text options.
  * @param {Recipe.TextWrap|boolean} wrap - Wrap mode.
- * @returns {Array<{parts: object[], last: boolean}>} Lines of styled fragments.
+ * @returns {Array<{text: string, parts: object[], last: boolean, direction: (Recipe.TextDirection|undefined)}>}
+ *   Lines of styled fragments, each with the resolved direction of the
+ *   paragraph it was wrapped from.
  */
 function htmlLines(source, width, measure, options, wrap) {
   var result = [];
@@ -276,13 +315,58 @@ function htmlLines(source, width, measure, options, wrap) {
       text: parts.map((part) => part.text).join(""),
       parts,
       last,
+      // The direction of the paragraph the line was wrapped from, as its
+      // first run with text sees it.
+      direction: (parts.find((part) => hasText(part.text)) || parts[0])
+        ?.direction,
     });
     parts = [];
     if (!last) linePrefix = continuationPrefix;
   };
 
-  source.forEach((sourcePart) => {
+  // Every paragraph resolves its direction over all of its runs, as native
+  // does, so a wrapped line keeps its paragraph's direction. A flowed run
+  // resolves it with the direction its own call asked for.
+  // A flowed HTML run that starts a new line after a block element starts a
+  // new paragraph too.
+  var paragraphTexts = [""];
+  var firstParagraphs = source.map((sourcePart) => {
+    if (sourcePart.breakBefore && paragraphTexts[paragraphTexts.length - 1]) {
+      paragraphTexts.push("");
+    }
+    var first = paragraphTexts.length - 1;
+    breakFragments(sourcePart.value).forEach((fragment) => {
+      if (fragment === "\n") paragraphTexts.push("");
+      else paragraphTexts[paragraphTexts.length - 1] += fragment;
+    });
+    return first;
+  });
+  var resolved = new Map();
+  /**
+   * The direction a run of a paragraph is laid out in.
+   * @param {number} index - The paragraph.
+   * @param {string|undefined} requested - The direction the run asked for.
+   * @returns {string} A `Recipe.TextDirection` value.
+   */
+  var directionOf = (index, requested) => {
+    var key = index + ":" + requested;
+    if (!resolved.has(key)) {
+      resolved.set(key, resolveDirection(paragraphTexts[index], requested));
+    }
+    return resolved.get(key);
+  };
+  var paragraph = 0;
+  source.forEach((sourcePart, sourceIndex) => {
+    paragraph = firstParagraphs[sourceIndex];
     var listMarker = false;
+    // A flowed run keeps the direction its call asked for; the runs of one
+    // text() call share it.
+    var runDirection =
+      sourcePart.styles?._flowRun !== undefined
+        ? readDirection(sourcePart.styles.direction)
+        : undefined;
+    var requested =
+      runDirection === undefined ? options.direction : runDirection;
     if (sourcePart.breakBefore && parts.length) flush(true);
     var collapseLeadingSpace = sourcePart.collapseLeadingSpace;
     if (sourcePart.indent !== undefined) {
@@ -296,78 +380,82 @@ function htmlLines(source, width, measure, options, wrap) {
         ? " ".repeat(indent + String(sourcePart.value).length + 1)
         : " ".repeat(indent);
     }
-    String(sourcePart.value)
-      .split(/(\n)/)
-      .forEach((fragment) => {
-        if (!fragment) return;
-        if (fragment === "\n") {
-          flush(true, true);
-          // Native re-applies the indent on every line of a list item, so a
-          // <br> or block break inside one stays indented.
-          linePrefix = " ".repeat(indent);
-          truncated = false;
-          return;
+    breakFragments(sourcePart.value).forEach((fragment) => {
+      var direction = directionOf(paragraph, requested);
+      if (!fragment) return;
+      if (fragment === "\n") {
+        paragraph++;
+        flush(true, true);
+        // Native re-applies the indent on every line of a list item, so a
+        // <br> or block break inside one stays indented.
+        linePrefix = " ".repeat(indent);
+        truncated = false;
+        return;
+      }
+      // Same word split as lines(); a leading \s* would carry a fragment
+      // boundary space onto the start of the next wrapped line.
+      var words = splitWords(fragment);
+      words.forEach((word) => {
+        if (truncated) return;
+        if (collapseLeadingSpace) {
+          collapseLeadingSpace = false;
+          var lastPart = parts[parts.length - 1];
+          if (lastPart && endsWithBreakableSpace(lastPart.text)) {
+            word = word.replace(LEADING_BREAKABLE_SPACES, "");
+            if (!word) return;
+          }
         }
-        // Same word split as lines(); a leading \s* would carry a fragment
-        // boundary space onto the start of the next wrapped line.
-        var words = splitWords(fragment);
-        words.forEach((word) => {
-          if (truncated) return;
-          if (collapseLeadingSpace) {
-            collapseLeadingSpace = false;
-            var lastPart = parts[parts.length - 1];
-            if (lastPart && endsWithBreakableSpace(lastPart.text)) {
-              word = word.replace(/^(?:(?!\u00a0)\s)+/, "");
-              if (!word) return;
-            }
-          }
-          word = linePrefix + word;
-          linePrefix = "";
-          var candidate = [
-            ...parts,
-            {
-              text: word,
-              styles: sourcePart.styles,
-              marker: listMarker,
-            },
-          ];
-          var previousPart = parts[parts.length - 1];
-          // As in native, a line may also break where one flowed run ends
-          // and the next begins.
-          var breakBefore =
-            parts.length &&
-            (endsWithBreakableSpace(previousPart.text) ||
-              startsWithBreakableSpace(word) ||
-              (sourcePart.styles?._flowRun !== undefined &&
-                previousPart.styles?._flowRun !== sourcePart.styles._flowRun));
-          if (
-            width &&
-            breakBefore &&
-            htmlPartsWidth(candidate, measure, options) > width
-          ) {
-            if (wrap === TextWrap.AUTO || wrap === true) {
-              flush(false);
-              if (!hasText(word)) return;
-              word = linePrefix + word;
-              linePrefix = "";
-            } else if (wrap === TextWrap.ELLIPSIS) {
-              ellipsizeHtmlParts(parts, width, measure, options);
-              truncated = true;
-              return;
-            } else if (wrap !== TextWrap.CLIP) {
-              truncated = true;
-              return;
-            }
-          }
-          if (!parts.length && !hasText(word) && !sourcePart.keepLeadingSpace)
-            return;
-          parts.push({
+        word = linePrefix + word;
+        linePrefix = "";
+        var candidate = [
+          ...parts,
+          {
             text: word,
             styles: sourcePart.styles,
             marker: listMarker,
-          });
+            direction,
+            runDirection,
+          },
+        ];
+        var previousPart = parts[parts.length - 1];
+        // As in native, a line may also break where one flowed run ends
+        // and the next begins.
+        var breakBefore =
+          parts.length &&
+          (endsWithBreakableSpace(previousPart.text) ||
+            startsWithBreakableSpace(word) ||
+            (sourcePart.styles?._flowRun !== undefined &&
+              previousPart.styles?._flowRun !== sourcePart.styles._flowRun));
+        if (
+          width &&
+          breakBefore &&
+          htmlPartsWidth(candidate, measure, options) > width
+        ) {
+          if (wrap === TextWrap.AUTO || wrap === true) {
+            flush(false);
+            if (!hasText(word)) return;
+            word = linePrefix + word;
+            linePrefix = "";
+          } else if (wrap === TextWrap.ELLIPSIS) {
+            ellipsizeHtmlParts(parts, width, measure, options);
+            truncated = true;
+            return;
+          } else if (wrap !== TextWrap.CLIP) {
+            truncated = true;
+            return;
+          }
+        }
+        if (!parts.length && !hasText(word) && !sourcePart.keepLeadingSpace)
+          return;
+        parts.push({
+          text: word,
+          styles: sourcePart.styles,
+          marker: listMarker,
+          direction,
+          runDirection,
         });
       });
+    });
   });
   if (parts.length || !result.length) flush(true, !result.length);
   return result;
@@ -526,12 +614,40 @@ function flowRunSource(value, options, fontSize, index) {
   return parts;
 }
 
+// The measurements a Recipe keeps before it starts over.
+var MEASURED_LIMIT = 4096;
+
 /**
  * Creates Recipe text measurement, layout, and drawing methods.
- * @param {{drawText: Function, measure: Function, module: object}} dependencies - Run drawing and measuring callbacks.
+ * @param {{drawText: Function, measure: Function, module: object, fontKey: Function}} dependencies - Run drawing and measuring callbacks, and the key of the font and size text options measure in.
  * @returns {object} Methods mixed into Recipe.prototype.
  */
-export function createTextMethods({ drawText, measure, module }) {
+export function createTextMethods({ drawText, measure, module, fontKey }) {
+  // Each Recipe's measurements, by the font and size and the text: a flow
+  // measures its line height and its words again and again, and each
+  // measurement reads the glyphs from the font file.
+  var measured = new WeakMap();
+
+  /**
+   * Measures text once for each font and size.
+   * @param {Recipe} recipe - Recipe instance.
+   * @param {string} text - Text, as drawn.
+   * @param {object} options - Text options.
+   * @returns {TextDimensions} A copy of the measurement.
+   */
+  function measureOnce(recipe, text, options) {
+    var cache = measured.get(recipe);
+    if (!cache) measured.set(recipe, (cache = new Map()));
+    var key = fontKey(options) + "\u0000" + text;
+    var result = cache.get(key);
+    if (!result) {
+      if (cache.size >= MEASURED_LIMIT) cache.clear();
+      result = measure.call(recipe, text, options);
+      cache.set(key, result);
+    }
+    return { ...result };
+  }
+
   /**
    * Measures text including character spacing.
    * @param {Recipe} recipe - Recipe instance.
@@ -540,9 +656,21 @@ export function createTextMethods({ drawText, measure, module }) {
    * @returns {TextDimensions} Bounds and width in points.
    */
   function dimensions(recipe, value, options = {}) {
-    var result = measure.call(recipe, String(value), options);
-    result.width += charSpacing(value, options.charSpace);
-    result.xMax += charSpacing(value, options.charSpace);
+    // Formatting characters that reordering drops are not measured. A piece
+    // of a reordered line, marked _drawn, is already as it is drawn; other
+    // text is in the order it is typed.
+    var drawn = options._drawn
+      ? String(value)
+      : drawnText(String(value), options.direction);
+    var result = measureOnce(recipe, drawn, options);
+    var spacing = charSpacing(
+      value,
+      options.charSpace,
+      options.direction,
+      options._drawn,
+    );
+    result.width += spacing;
+    result.xMax += spacing;
     return result;
   }
 
@@ -797,6 +925,7 @@ export function createTextMethods({ drawText, measure, module }) {
    */
   function validateRun(recipe, options) {
     rotationOption(options.rotation);
+    readDirection(options.direction);
     // Text does not use the miter limit, but native rejects it like shapes do.
     miterLimitOption(options.miterLimit);
     // Drawing checks this only when the flow ends; native rejects the call.
@@ -842,6 +971,7 @@ export function createTextMethods({ drawText, measure, module }) {
      * @returns {TextDimensions} Text bounds and dimensions in PDF points.
      * @throws {RangeError} If `fontSize`, or its `size` alias, is given and is
      *   not greater than zero.
+     * @throws {TypeError} If `direction` is not a `Recipe.TextDirection` value.
      * @throws {Error} If the requested font is not registered or cannot be loaded.
      */
     textDimensions(value, options = {}) {
@@ -984,7 +1114,7 @@ export function createTextMethods({ drawText, measure, module }) {
         // not laid out yet, so the coordinates are its origin, as in native.
         var lastValue = flow.source[flow.source.length - 1]?.value ?? "";
         flow.endsBlock = false;
-        if (count > 0 || !/\n$/.test(lastValue))
+        if (count > 0 || !ENDS_WITH_LINE_BREAK.test(lastValue))
           flow.source.push(
             ...flowRunSource(
               "\n".repeat(Math.max(count, 1)),
@@ -1024,7 +1154,8 @@ export function createTextMethods({ drawText, measure, module }) {
      * @returns {Recipe} The Recipe instance.
      * @throws {RangeError} If `fontSize`, or its `size` alias, is given and is
      *   not greater than zero, or `miterLimit` is not a number of at least 1.
-     * @throws {TypeError} If `rotation` or `charSpace` is not a finite number.
+     * @throws {TypeError} If `rotation` or `charSpace` is not a finite number,
+     *   or `direction` is not a `Recipe.TextDirection` value.
      * @throws {Error} If a requested overflow layout is undefined, text clipping cannot be applied, or a requested font cannot be loaded.
      * @throws {Error} If a flow is started without an active page.
      */
@@ -1102,6 +1233,13 @@ export function createTextMethods({ drawText, measure, module }) {
       // Validate before anything is drawn, as native does.
       rotationOption(options.rotation);
       miterLimitOption(options.miterLimit);
+      readDirection(options.direction);
+      // Text that has to be reordered needs bidi-js; without it the call
+      // throws before it draws anything.
+      requireBidiFor(value, options.direction);
+      (flowSource || []).forEach((part) =>
+        requireBidiFor(part.value, part.styles?.direction ?? options.direction),
+      );
       var box = options.textBox || options.cell || {};
       var [top, right, bottom, left] = padding(box.padding);
       var layout = options.layout && this._layouts?.[options.layout];
@@ -1285,6 +1423,18 @@ export function createTextMethods({ drawText, measure, module }) {
           y = layout[columnIndex].y;
           currentY = y + top;
         }
+        // A plain line that reorders is drawn like a line of one styled
+        // run, piece by piece in visual order, as native does. It keeps its
+        // segments, so it is reordered once.
+        var plainSegments =
+          !entry.parts && visualRuns([entry.text], entry.direction);
+        if (plainSegments) {
+          entry = {
+            ...entry,
+            parts: [{ text: entry.text, styles: {} }],
+            segments: plainSegments,
+          };
+        }
         var textOptions = fragmentOptions(options, entry.styles, fontSize);
         var entryDimensions = entry.parts
           ? null
@@ -1296,20 +1446,56 @@ export function createTextMethods({ drawText, measure, module }) {
               { ...options, fontSize },
             )
           : entryDimensions.width;
+        // Lines are aligned by where their glyphs end, as native does: the
+        // width of the glyphs before the last run plus the last run's xMax,
+        // so right-aligned text ends at the edge instead of a bearing past it.
+        // htmlPartsWidth() measures a line of one run from its first glyph
+        // to its last, and a line of several from its start already.
+        var runs = entry.parts ? groupedHtmlParts(entry.parts) : undefined;
+        var lastRun = runs?.length === 1 ? runs[0] : undefined;
+        var alignWidth = entry.parts
+          ? textWidth +
+            (lastRun
+              ? dimensions(
+                  this,
+                  lastRun.text,
+                  fragmentOptions(options, lastRun.styles, fontSize),
+                ).xMin
+              : 0)
+          : entryDimensions.xMax;
         var horizontal = box.textAlign?.split(" ")[0];
         var isJustifiedLine =
           horizontal === TextAlign.JUSTIFY && !entry.last && width;
+        // The last line of a justified paragraph starts at the paragraph's
+        // start, which is the right edge for a right-to-left paragraph.
+        if (
+          horizontal === TextAlign.JUSTIFY &&
+          entry.last &&
+          entry.direction === TextDirection.RTL
+        ) {
+          horizontal = TextAlign.RIGHT;
+        }
         var drawX =
           x +
           left +
           (horizontal === TextAlign.CENTER
-            ? (width - left - right - textWidth) / 2
+            ? (width - left - right - alignWidth) / 2
             : horizontal === TextAlign.RIGHT
-              ? width - right - textWidth
+              ? width - left - right - alignWidth
               : 0);
         var baseline = currentY + lineHeight;
         if (textOptions.rotation && !textOptions.rotationOrigin) {
           textOptions.rotationOrigin = textOrigin;
+        }
+        // A clipped right-to-left line that overflows keeps its start, at
+        // the right edge, and loses its end.
+        if (
+          wrap === TextWrap.CLIP &&
+          width &&
+          entry.direction === TextDirection.RTL &&
+          alignWidth > width - left - right
+        ) {
+          drawX = x + width - right - alignWidth;
         }
         var linkX = drawX;
         var linkWidth = textWidth;
@@ -1371,6 +1557,54 @@ export function createTextMethods({ drawText, measure, module }) {
             (part) => fragmentOptions(options, part.styles, fontSize).rotation,
           );
         if (clipping && !clipEachPart) clipLine(textOptions);
+        // Each reordered piece is measured once: where its glyphs end,
+        // without its trailing whitespace, and the advance of that
+        // whitespace as drawn. The space advance is measured once per style.
+        var spaceAdvances = new Map();
+        var pieceMetrics = new Map();
+        /**
+         * The glyph width and trailing-space advance of a reordered piece.
+         * @param {{text: string, styles: object}} part - Piece in visual order.
+         * @returns {{ink: number, space: number}} The widths in points.
+         */
+        /**
+         * Where the line's last reordered piece ends with the spaces it
+         * keeps, such as a clipped line's or a no-break space, measured as
+         * the line is when drawn as typed.
+         * @param {{text: string}} part - Piece in visual order.
+         * @param {object} partOptions - The piece's text options.
+         * @returns {number} The width in points.
+         */
+        var keptSpacesWidth = (part, partOptions) => {
+          var drawnOptions = { ...partOptions };
+          // The piece is in visual order already.
+          drawnOptions._drawn = true;
+          return dimensions(this, part.text, drawnOptions).xMax;
+        };
+        var metricsOf = (part) => {
+          if (!pieceMetrics.has(part)) {
+            var partOptions = {
+              ...fragmentOptions(options, part.styles, fontSize),
+            };
+            // The piece is in visual order already.
+            partOptions._drawn = true;
+            var trimmed = part.text.replace(/\s+$/, "");
+            var spaces = part.text.length - trimmed.length;
+            if (spaces && !spaceAdvances.has(part.styles)) {
+              spaceAdvances.set(
+                part.styles,
+                spaceAdvance(
+                  (text) => dimensions(this, text, partOptions).xMax,
+                ),
+              );
+            }
+            pieceMetrics.set(part, {
+              ink: trimmed ? dimensions(this, trimmed, partOptions).xMax : 0,
+              space: spaces ? spaces * spaceAdvances.get(part.styles) : 0,
+            });
+          }
+          return pieceMetrics.get(part);
+        };
         if (textOptions.hilite && !entry.parts) {
           var hilite =
             typeof textOptions.hilite === "object" ? textOptions.hilite : {};
@@ -1388,7 +1622,40 @@ export function createTextMethods({ drawText, measure, module }) {
         if (entry.parts) {
           var justify =
             horizontal === TextAlign.JUSTIFY && !entry.last && width;
-          var drawParts = justify ? entry.parts : groupedHtmlParts(entry.parts);
+          var logicalParts = justify
+            ? entry.parts
+            : groupedHtmlParts(entry.parts);
+          // Parts that reorder are drawn as one line in visual order, piece
+          // by piece, each piece with its own part's styles.
+          // Each flowed run keeps the direction its call asked for: a run
+          // that asked for another direction than the line's is placed as
+          // one block, and an "auto" run follows the line, or its paragraph
+          // in a "none" line, as native does.
+          var segments =
+            entry.segments ||
+            visualRuns(
+              logicalParts.map((part) => part.text),
+              entry.direction,
+              logicalParts.map((part) =>
+                part.runDirection === TextDirection.AUTO
+                  ? entry.direction === TextDirection.NONE
+                    ? part.direction
+                    : undefined
+                  : part.runDirection,
+              ),
+            );
+          var drawParts = segments
+            ? (justify ? visualWords(segments) : segments).map((piece) => ({
+                ...logicalParts[piece.run],
+                text: piece.text,
+                // The whole run the piece is cut from, which gives every
+                // piece of the run the same hilite height.
+                runText: logicalParts[piece.run].text,
+                gap: piece.gap,
+                indent: piece.indent,
+                visual: true,
+              }))
+            : logicalParts;
           /**
            * Reports whether this fragment owns an expandable justification gap.
            * @param {{text: string, marker: (boolean|undefined)}} part - Fragment.
@@ -1397,9 +1664,11 @@ export function createTextMethods({ drawText, measure, module }) {
            */
           var hasGapAfter = (part, index) =>
             justify &&
-            !part.marker &&
-            endsWithBreakableSpace(part.text) &&
-            drawParts.slice(index + 1).some((next) => hasText(next.text));
+            (part.visual
+              ? part.gap
+              : !part.marker &&
+                endsWithBreakableSpace(part.text) &&
+                drawParts.slice(index + 1).some((next) => hasText(next.text)));
           /**
            * Measures how far the pen moves past a fragment, before its
            * justification gap. As in native, a justified word ends at its
@@ -1425,35 +1694,101 @@ export function createTextMethods({ drawText, measure, module }) {
             return drawParts.length > 1 ? measured.xMax : measured.width;
           };
           var partGaps = drawParts.filter(hasGapAfter).length;
-          var drawnWidth = justify
-            ? drawParts.reduce(
-                (sum, part, index) =>
-                  sum +
-                  partAdvance(
-                    part,
-                    index,
-                    fragmentOptions(options, part.styles, fontSize),
-                  ),
-                0,
-              )
-            : textWidth;
+          /**
+           * The room a reordered piece needs on a justified line, as on
+           * native: where its glyphs end, or all of an indent.
+           * @param {{text: string, styles: object, indent: (boolean|undefined)}} part - Piece.
+           * @returns {number} The width in points.
+           */
+          var justifiedRoom = (part) =>
+            metricsOf(part).ink + (part.indent ? metricsOf(part).space : 0);
+          var drawnWidth = textWidth;
+          if (justify && segments) {
+            drawnWidth = drawParts.reduce(
+              (sum, part) => sum + justifiedRoom(part),
+              0,
+            );
+          } else if (justify) {
+            drawnWidth = drawParts.reduce(
+              (sum, part, index) =>
+                sum +
+                partAdvance(
+                  part,
+                  index,
+                  fragmentOptions(options, part.styles, fontSize),
+                ),
+              0,
+            );
+          }
           var partGap =
             partGaps > 0 ? (width - left - right - drawnWidth) / partGaps : 0;
+          // A justified right-to-left line with no gap to widen, such as one
+          // long word, starts at its start edge, the right edge, as native.
+          if (
+            segments &&
+            justify &&
+            !partGaps &&
+            entry.direction === TextDirection.RTL
+          ) {
+            drawX = x + width - right - drawnWidth;
+            linkX = drawX;
+          }
+          if (segments && !justify) {
+            // Align the reordered pieces by their own width; trailing
+            // whitespace at the end of the line takes no room.
+            var pieceWidths = drawParts.map(
+              (part) => metricsOf(part).ink + metricsOf(part).space,
+            );
+            // Trailing whitespace at the end of the line takes no room, an
+            // indent does.
+            var lastPart = drawParts[drawParts.length - 1];
+            var piecesWidth = pieceWidths.reduce(
+              (sum, value) => sum + value,
+              0,
+            );
+            if (!lastPart.indent) {
+              piecesWidth -= metricsOf(lastPart).space;
+            }
+            drawX =
+              x +
+              left +
+              (horizontal === TextAlign.CENTER
+                ? (width - left - right - piecesWidth) / 2
+                : horizontal === TextAlign.RIGHT ||
+                    (wrap === TextWrap.CLIP &&
+                      entry.direction === TextDirection.RTL &&
+                      piecesWidth > width - left - right)
+                  ? width - left - right - piecesWidth
+                  : 0);
+            // Links and text markup start where the line now starts.
+            linkX = drawX;
+          }
           var rotationOrigin = options.rotationOrigin || textOrigin;
           drawParts.forEach((part, partIndex) => {
             var partOptions = fragmentOptions(options, part.styles, fontSize);
             if (partOptions.rotation && !partOptions.rotationOrigin) {
               partOptions.rotationOrigin = rotationOrigin;
             }
-            var partDimensions = dimensions(this, part.text, partOptions);
-            var partWidth = partDimensions.width;
+            var partWidth = !part.visual
+              ? dimensions(this, part.text, partOptions).width
+              : justify
+                ? justifiedRoom(part)
+                : partIndex === drawParts.length - 1 &&
+                    !part.indent &&
+                    /\S\s+$/.test(part.text)
+                  ? keptSpacesWidth(part, partOptions)
+                  : metricsOf(part).ink + metricsOf(part).space;
             if (clipEachPart) clipLine(partOptions);
             if (partOptions.hilite) {
               var partHilite =
                 typeof partOptions.hilite === "object"
                   ? partOptions.hilite
                   : {};
-              var partBounds = dimensions(this, part.text, partOptions);
+              var partBounds = dimensions(
+                this,
+                part.visual ? part.runText : part.text,
+                partOptions,
+              );
               var partHiliteBounds = partBounds.height
                 ? partBounds
                 : dimensions(
@@ -1461,9 +1796,11 @@ export function createTextMethods({ drawText, measure, module }) {
                     "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}",
                     partOptions,
                   );
+              // A reordered piece's width is measured from its start, as on
+              // native, not from its first glyph's edge.
               drawHilite(
                 this,
-                drawX + partHiliteBounds.xMin,
+                drawX + (part.visual ? 0 : partHiliteBounds.xMin),
                 baseline - partHiliteBounds.yMax,
                 partWidth + (hasGapAfter(part, partIndex) ? partGap : 0),
                 partHiliteBounds.yMax - partHiliteBounds.yMin,
@@ -1471,17 +1808,37 @@ export function createTextMethods({ drawText, measure, module }) {
                 partHilite,
               );
             }
-            drawText.call(this, part.text, drawX, baseline, partOptions);
+            // A reordered piece's underline and strike-out end at its
+            // glyphs, without the spaces that end the piece.
+            var drawOptions = partOptions;
+            if (part.visual) {
+              drawOptions = { ...partOptions };
+              drawOptions._decorationWidth = metricsOf(part).ink;
+            }
+            drawText.call(
+              this,
+              part.visual ? part.text : toVisual(part.text, entry.direction),
+              drawX,
+              baseline,
+              drawOptions,
+            );
             if (clipEachPart) this._restore();
-            if (partOptions.link) {
+            // An indent is only whitespace; it links nowhere, as on native.
+            if (partOptions.link && !part.indent) {
               var linkBounds = dimensions(this, part.text, partOptions);
+              var nextPart = drawParts
+                .slice(partIndex + 1)
+                .find((next) => hasText(next.text));
+              // A gap is linked when the text after it opens the same link.
+              // A plain reordered line is one part whose link is the text
+              // option's; HTML parts keep their own links.
               var coversGap =
                 hasGapAfter(part, partIndex) &&
-                drawParts
-                  .slice(partIndex + 1)
-                  .find((next) => hasText(next.text))?.styles.link ===
-                  partOptions.link;
-              var partLinkX = drawX + linkBounds.xMin;
+                nextPart !== undefined &&
+                (part.visual
+                  ? fragmentOptions(options, nextPart.styles, fontSize).link
+                  : nextPart.styles.link) === partOptions.link;
+              var partLinkX = drawX + (part.visual ? 0 : linkBounds.xMin);
               var partLinkWidth = partWidth + (coversGap ? partGap : 0);
               if (partLinkWidth)
                 transformedLink(
@@ -1506,12 +1863,18 @@ export function createTextMethods({ drawText, measure, module }) {
                 clip,
               );
             }
-            drawX += partAdvance(part, partIndex, partOptions);
+            // A reordered piece moves the pen by the room it was given.
+            drawX += part.visual
+              ? partWidth
+              : partAdvance(part, partIndex, partOptions);
             if (hasGapAfter(part, partIndex)) drawX += partGap;
           });
-          linkWidth = drawX - linkX;
+          // Text markup of a line that keeps its order ends where its
+          // glyphs end, as the line is aligned.
+          linkWidth = segments || justify ? drawX - linkX : alignWidth;
         } else if (isJustifiedLine) {
-          var words = entry.text.match(/\S+\s*/g) || [entry.text];
+          // Non-breaking spaces stay inside their word, as on native.
+          var words = entry.text.match(new RegExp(WORD, "g")) || [entry.text];
           var wordsWidth = words.reduce(
             (sum, word) => sum + dimensions(this, word, textOptions).width,
             0,
@@ -1526,7 +1889,15 @@ export function createTextMethods({ drawText, measure, module }) {
           });
           linkWidth = width - left - right;
         } else {
-          drawText.call(this, entry.text, drawX, baseline, textOptions);
+          // A line of only direction marks and spaces draws without the
+          // marks, as native does.
+          drawText.call(
+            this,
+            toVisual(entry.text, entry.direction),
+            drawX,
+            baseline,
+            textOptions,
+          );
         }
         if (clipping && !clipEachPart) this._restore();
         // Text-markup annotations span to the run's right glyph edge, like
@@ -1587,11 +1958,15 @@ export function createTextMethods({ drawText, measure, module }) {
               top +
               (entryHeights[lastLineIndex] - this._lastLineHeight),
       };
-      // As in native, styled text that ends its last line, with a line
+      // As in native, styled text that ends its last line, with any line
       // break or with movedown() in a flow, leaves the cursor on the line
       // after it.
-      var lastPart = source?.findLast((part) => String(part.value) !== "");
-      if (/\n$/.test(lastPart?.value ?? "")) {
+      // Spaces after the break, such as a run of only a space, stay on the
+      // line the break started.
+      var lastPart = source?.findLast((part) =>
+        HAS_KEPT_TEXT.test(String(part.value)),
+      );
+      if (ENDS_WITH_DROPPED_LINE.test(String(lastPart?.value ?? ""))) {
         this._textCursor.y += this._lastLineHeight;
       }
       this._textBoxOrigin = { x, y };

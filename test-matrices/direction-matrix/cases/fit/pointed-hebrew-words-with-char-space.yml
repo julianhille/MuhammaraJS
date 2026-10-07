@@ -1,0 +1,24 @@
+description: Two pointed Hebrew words with char space, in a box 0.5 wider than them
+kind: fit
+text: "ש\u05c1\u05b8לו\u05b9ם עו\u05b9ל\u05b8ם"
+charSpace: 3
+width: 73
+expected:
+  auto:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 50.24]]
+      annotations: []
+    wasm: same
+  rtl:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 50.24]]
+      annotations: []
+    wasm: same
+  ltr:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 50.24]]
+      annotations: []
+    wasm: same

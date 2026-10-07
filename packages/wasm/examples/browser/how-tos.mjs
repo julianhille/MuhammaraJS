@@ -1,4 +1,8 @@
-import { createMuhammaraWasm, createRecipe } from "./module-options.mjs";
+import {
+  createMuhammaraWasm,
+  createRecipe,
+  loadBidi,
+} from "./module-options.mjs";
 import { throwIfCancelled } from "./lifecycle.mjs";
 import { benchmarkExample } from "./benchmark.mjs";
 
@@ -101,6 +105,16 @@ export var HOW_TO_EXAMPLES = [
       "Create a source page, replace non-ASCII text through its font, and verify the original placement survives.",
     assets: ["font"],
     requirement: "Requires a TTF or OTF font upload.",
+  },
+  {
+    id: "rtl-text",
+    label: "Right to left",
+    title: "Write right-to-left Hebrew text",
+    description:
+      "Reorder Hebrew with the direction option: numbers and Latin words inside it, points, an HTML paragraph, and a justified box. Its Recipe is created with bidi: false and loads bidi-js with loadBidi(), which does nothing when another tab already loaded it.",
+    assets: ["font"],
+    requirement:
+      "Requires a TTF or OTF font with Hebrew glyphs, such as Noto Sans Hebrew or Arial.",
   },
   {
     id: "watermark",
@@ -770,6 +784,98 @@ async function replaceTextExample(assets) {
     recipe?.dispose();
     muhammara.unregisterFont("replace-text-font");
     muhammara.disposeAssets();
+    Recipe.disposeAssets();
+  }
+}
+
+/**
+ * Builds the browser example for right-to-left text.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional byte assets.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its summary.
+ * @throws {Error} If no font is uploaded.
+ */
+async function rightToLeftExample(assets) {
+  assertAsset(
+    assets.font,
+    "Choose a TTF or OTF font with Hebrew glyphs before running the right-to-left example",
+  );
+  // Pages that rarely draw right-to-left text skip bidi-js when they start
+  // and load it once a document needs it.
+  var Recipe = await createRecipe({ bidi: false });
+  await loadBidi();
+  var recipe = new Recipe({ compress: false });
+  try {
+    Recipe.registerFont("hebrew", assets.font);
+    var hebrew = { font: "hebrew", size: 16 };
+    var label = { fontSize: 10, color: "#475569" };
+    var box = { width: 300, textAlign: "right" };
+    var rows = [
+      ["As typed, direction: none", "שלום עולם", "none"],
+      ["direction: auto", "שלום עולם", "auto"],
+      ["Numbers and brackets", "מחיר 120 ש״ח (כולל מע״מ)", "auto"],
+      ["Latin words inside", "הפגישה עם Anna בשעה 10:30", "auto"],
+      ["Points (niqqud)", "בְּרֵאשִׁית בָּרָא", "auto"],
+      ["A Latin start, direction: rtl", "PDF בעברית", "rtl"],
+    ];
+    recipe
+      .createPage(595, 842)
+      .text("Right-to-left text", 62, 60, { fontSize: 22, color: "#0f172a" })
+      .text(
+        "The same Hebrew, typed in reading order, drawn in visual order.",
+        62,
+        92,
+        label,
+      );
+    rows.forEach(([caption, text, direction], index) => {
+      var y = 140 + index * 48;
+      recipe
+        .text(caption, 62, y, label)
+        .text(text, 233, y - 4, { ...hebrew, direction, textBox: box });
+    });
+    recipe
+      .text("HTML paragraph", 62, 440, label)
+      .text(
+        "<p>שלום <b>עולם</b>, זהו <i>טקסט</i> מעוצב עם <u>קו תחתון</u>.</p>",
+        233,
+        436,
+        { ...hebrew, html: true, direction: "auto", textBox: box },
+      )
+      .text("Justified box", 62, 500, label)
+      .text(
+        "השועל החום המהיר קפץ מעל הכלב העצלן, ואז רץ אל היער וקפץ שוב מעל הגדר הגבוה של החצר.",
+        233,
+        496,
+        {
+          ...hebrew,
+          size: 14,
+          direction: "auto",
+          textBox: { width: 300, textAlign: "justify" },
+        },
+      )
+      .endPage();
+    var bytes = recipe.endPDF();
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(bytes);
+    try {
+      var lines = reader
+        .extractPageText(0)
+        .map((item) => item.text)
+        .filter((text) => /[\u0590-\u05ff]/.test(text));
+    } finally {
+      reader.end();
+      muhammara.disposeAssets();
+    }
+    return {
+      bytes,
+      filename: "muhammara-right-to-left.pdf",
+      summary: await summarize(bytes, {
+        howTo: "Write right-to-left text",
+        bidi: "loaded with loadBidi()",
+        drawnHebrew: lines.slice(0, 6),
+      }),
+    };
+  } finally {
+    recipe.dispose();
     Recipe.disposeAssets();
   }
 }
@@ -1548,6 +1654,7 @@ var runners = {
   passwords: passwordsExample,
   benchmark: benchmarkExample,
   "replace-text": replaceTextExample,
+  "rtl-text": rightToLeftExample,
   watermark: watermarkExample,
   "find-text": findTextExample,
   "inspect-pdf": inspectPdfExample,

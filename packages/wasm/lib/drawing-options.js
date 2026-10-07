@@ -1,4 +1,5 @@
 import { DeviceColorSpace, DrawingPathType } from "./value-sets.js";
+import { readDirection } from "./text-direction.js";
 
 /**
  * Rejects overflowing derived geometry before any operator is emitted.
@@ -107,10 +108,10 @@ export function finishDrawingPath(context, options) {
 
 /**
  * Snapshots text options, including underline accessors, before `BT`.
- * @param {WriteTextOptions} options - Font, size, color, and underline.
+ * @param {WriteTextOptions} options - Font, size, color, underline, and direction.
  * @param {function(*): number} colorValue - Converts a color option to a number.
- * @returns {object} `font`, `size`, `underline`, and the color, or `options` itself when it is not an object.
- * @throws {TypeError} If the color or color space is invalid.
+ * @returns {object} `font`, `size`, `underline`, `direction`, and the color, or `options` itself when it is not an object.
+ * @throws {TypeError} If the color, color space, or direction is invalid.
  */
 export function readTextOptions(options, colorValue) {
   if (!options || typeof options !== "object") return options;
@@ -118,7 +119,8 @@ export function readTextOptions(options, colorValue) {
   var size = options.size;
   var color = readColor(options, colorValue);
   var underline = Boolean(options.underline);
-  return { ...color, font, size, underline };
+  var direction = readDirection(options.direction);
+  return { ...color, font, size, underline, direction };
 }
 
 /**

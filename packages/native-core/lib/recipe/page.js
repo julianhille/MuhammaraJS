@@ -1,4 +1,4 @@
-const { PAGE_CONTEXT_STATE } = require("./utils");
+const { PAGE_CONTEXT_STATE, clearTextFlow } = require("./utils");
 const { PageLayout, Colorspace } = require("../recipe-constants");
 const {
   planDeletedPageReferences,
@@ -629,7 +629,7 @@ function resetTextBox(recipe, x, y) {
   recipe.y = y;
   recipe.box = undefined;
   recipe._textOptions = undefined;
-  recipe._previousTextObjects = [];
+  clearTextFlow(recipe);
   recipe._firstLineHeight = 0;
 }
 

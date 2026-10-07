@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import {
   HOW_TO_EXAMPLES,
   runHowToExample,
 } from "../../examples/browser/how-tos.mjs";
+import { bidiUrl } from "../../examples/browser/module-options.mjs";
 import { writeOutput } from "../testOutput.mjs";
 import { imagePlacements } from "../recipe/image-placement.mjs";
 
@@ -48,11 +52,53 @@ describe("Browser how-to examples", function () {
         "passwords",
         "benchmark",
         "replace-text",
+        "rtl-text",
         "watermark",
         "find-text",
         "inspect-pdf",
       ],
     );
+  });
+
+  it("loads the installed bidi-js in the right-to-left example", async function () {
+    // The example and its import map point into node_modules; they must find
+    // the copy npm installed for the package.
+    var installed = pathToFileURL(
+      path.join(
+        path.dirname(
+          createRequire(import.meta.url).resolve("bidi-js/package.json"),
+        ),
+        "dist/bidi.mjs",
+      ),
+    ).href;
+    assert.equal(bidiUrl.href, installed);
+    var page = await readFile(
+      new URL("../../examples/browser/index.html", import.meta.url),
+      "utf8",
+    );
+    var map = JSON.parse(
+      /<script type="importmap">([\s\S]*?)<\/script>/.exec(page)[1],
+    );
+    assert.equal(
+      new URL(
+        map.imports["bidi-js"],
+        new URL("../../examples/browser/", import.meta.url),
+      ).href,
+      installed,
+    );
+  });
+
+  it("draws Hebrew in visual order in the right-to-left example", async function () {
+    var result = await runHowToExample("rtl-text", { assets });
+    // The first line is drawn as given; the others are reordered.
+    assert.deepEqual(result.summary.drawnHebrew.slice(0, 3), [
+      "\u05e9\u05dc\u05d5\u05dd \u05e2\u05d5\u05dc\u05dd",
+      "\u05dd\u05dc\u05d5\u05e2 \u05dd\u05d5\u05dc\u05e9",
+      "(\u05de\u05f4\u05e2\u05de \u05dc\u05dc\u05d5\u05db) \u05d7\u05f4\u05e9 120 \u05e8\u05d9\u05d7\u05de",
+    ]);
+    await assert.rejects(runHowToExample("rtl-text", { assets: {} }), {
+      message: /font with Hebrew glyphs/,
+    });
   });
 
   it("renders a tab for every focused example", async function () {

@@ -1,0 +1,58 @@
+description: An empty run, then a Hebrew run starting with a space
+kind: flow
+runs:
+  - text: ""
+  - text: " עולם"
+expected:
+  end none left:
+    native:
+      lines:
+        - [[" עולם", 50], ["after", 50]]
+      annotations: []
+    wasm: same
+  end none right:
+    native:
+      lines:
+        - [["after", 50], [" עולם", 225.51]]
+      annotations: []
+    wasm: same
+  end auto left:
+    native:
+      lines:
+        - [["םלוע", 50], ["after", 50], [" ", 71.23]]
+      annotations: []
+    wasm: same
+  end auto right:
+    native:
+      lines:
+        - [["after", 50], ["םלוע", 225.45], [" ", 246.68]]
+      annotations: []
+    wasm: same
+  movedown none left:
+    native:
+      lines:
+        - [[" עולם", 50]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown none right:
+    native:
+      lines:
+        - [[" עולם", 225.51]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto left:
+    native:
+      lines:
+        - [["םלוע", 50], [" ", 71.23]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto right:
+    native:
+      lines:
+        - [["םלוע", 225.45], [" ", 246.68]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same

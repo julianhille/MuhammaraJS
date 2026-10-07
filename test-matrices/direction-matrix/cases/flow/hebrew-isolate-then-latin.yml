@@ -1,0 +1,59 @@
+description: Hebrew in a right-to-left isolate, then Latin with direction none
+kind: flow
+runs:
+  - text: "\u2067שלום\u2069 "
+  - text: "abc"
+    direction: none
+expected:
+  end none left:
+    native:
+      lines:
+        - [["�שלום� ", 50], ["after", 50], ["abc", 97.83]]
+      annotations: []
+    wasm: same
+  end none right:
+    native:
+      lines:
+        - [["after", 50], ["�שלום� ", 182.94], ["abc", 230.78]]
+      annotations: []
+    wasm: same
+  end auto left:
+    native:
+      lines:
+        - [["םולש ", 50], ["after", 50], ["abc", 76.74]]
+      annotations: []
+    wasm: same
+  end auto right:
+    native:
+      lines:
+        - [["after", 50], ["םולש ", 204.04], ["abc", 230.78]]
+      annotations: []
+    wasm: same
+  movedown none left:
+    native:
+      lines:
+        - [["�שלום� ", 50], ["abc", 97.83]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown none right:
+    native:
+      lines:
+        - [["�שלום� ", 182.94], ["abc", 230.78]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto left:
+    native:
+      lines:
+        - [["םולש ", 50], ["abc", 76.74]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto right:
+    native:
+      lines:
+        - [["םולש ", 204.04], ["abc", 230.78]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same

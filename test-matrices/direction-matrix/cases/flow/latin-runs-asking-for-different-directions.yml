@@ -1,0 +1,81 @@
+description: Latin runs, one asking for ltr and one for none
+kind: flow
+runs:
+  - text: "Hello, "
+  - text: "world (1) "
+    direction: ltr
+  - text: "again."
+    direction: none
+expected:
+  end none left:
+    native:
+      lines:
+        - [
+            ["Hello, ", 50],
+            ["after", 50],
+            ["world (1) ", 86.49],
+            ["again.", 138.98],
+          ]
+      annotations: []
+    wasm: same
+  end none right:
+    native:
+      lines:
+        - [
+            ["after", 50],
+            ["Hello, ", 129.39],
+            ["world (1) ", 165.88],
+            ["again.", 218.37],
+          ]
+      annotations: []
+    wasm: same
+  end auto left:
+    native:
+      lines:
+        - [
+            ["Hello, ", 50],
+            ["after", 50],
+            ["world (1) ", 86.49],
+            ["again.", 138.98],
+          ]
+      annotations: []
+    wasm: same
+  end auto right:
+    native:
+      lines:
+        - [
+            ["after", 50],
+            ["Hello, ", 129.39],
+            ["world (1) ", 165.88],
+            ["again.", 218.37],
+          ]
+      annotations: []
+    wasm: same
+  movedown none left:
+    native:
+      lines:
+        - [["Hello, ", 50], ["world (1) ", 86.49], ["again.", 138.98]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown none right:
+    native:
+      lines:
+        - [["Hello, ", 129.39], ["world (1) ", 165.88], ["again.", 218.37]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto left:
+    native:
+      lines:
+        - [["Hello, ", 50], ["world (1) ", 86.49], ["again.", 138.98]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto right:
+    native:
+      lines:
+        - [["Hello, ", 129.39], ["world (1) ", 165.88], ["again.", 218.37]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same

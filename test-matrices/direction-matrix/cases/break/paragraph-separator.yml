@@ -1,0 +1,72 @@
+description: A paragraph separator (U+2029)
+kind: break
+break: "\u2029"
+expected:
+  text none:
+    native:
+      lines:
+        - [["שלום", 226.85]]
+      annotations: []
+    wasm: same
+  text auto:
+    native:
+      lines:
+        - [["םולש", 226.59]]
+      annotations: []
+    wasm: same
+  flow nothing none:
+    native:
+      lines:
+        - [["abc ", 50], ["שלום", 75.18]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  flow nothing auto:
+    native:
+      lines:
+        - [["abc ", 50], ["םולש", 72.55]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  flow space none:
+    native:
+      lines:
+        - [["abc ", 50], ["שלום", 75.18]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  flow space auto:
+    native:
+      lines:
+        - [["abc ", 50], ["םולש", 72.55]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  flow nbsp none:
+    native:
+      lines:
+        - [["abc ", 50], ["שלום", 75.18]]
+        - [[" ", 50], ["after", 50]]
+      annotations: []
+    wasm: same
+  flow nbsp auto:
+    native:
+      lines:
+        - [["abc ", 50], ["םולש", 72.55]]
+        - [[" ", 50], ["after", 50]]
+      annotations: []
+    wasm: same
+  flow figure-space none:
+    native:
+      lines:
+        - [["abc ", 50], ["שלום", 75.18]]
+        - [["\u2007", 50], ["after", 50]]
+      annotations: []
+    wasm: same
+  flow figure-space auto:
+    native:
+      lines:
+        - [["abc ", 50], ["םולש", 72.55]]
+        - [["\u2007", 50], ["after", 50]]
+      annotations: []
+    wasm: same

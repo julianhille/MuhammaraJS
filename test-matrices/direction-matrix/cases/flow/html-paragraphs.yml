@@ -1,0 +1,92 @@
+description: Two HTML paragraphs, Hebrew then Latin
+kind: flow
+runs:
+  - text: "<p>שלום</p>"
+    html: true
+  - text: "<p>abc def.</p>"
+    html: true
+expected:
+  end none left:
+    native:
+      lines:
+        - [["שלום", 50]]
+        - [["abc def.", 50]]
+        - [["after", 50]]
+      annotations: []
+    wasm:
+      lines:
+        - [["שלום", 50]]
+        - [["abc def.", 50], ["after", 50]]
+      annotations: []
+    knownDifference: "after a flow that ends with a closed block element, Wasm draws the next text on its last line"
+  end none right:
+    native:
+      lines:
+        - [["שלום", 226.85]]
+        - [["abc def.", 208.38]]
+        - [["after", 50]]
+      annotations: []
+    wasm:
+      lines:
+        - [["שלום", 226.85]]
+        - [["after", 50], ["abc def.", 208.38]]
+      annotations: []
+    knownDifference: "after a flow that ends with a closed block element, Wasm draws the next text on its last line"
+  end auto left:
+    native:
+      lines:
+        - [["םולש", 50]]
+        - [["abc def.", 50]]
+        - [["after", 50]]
+      annotations: []
+    wasm:
+      lines:
+        - [["םולש", 50]]
+        - [["abc def.", 50], ["after", 50]]
+      annotations: []
+    knownDifference: "after a flow that ends with a closed block element, Wasm draws the next text on its last line"
+  end auto right:
+    native:
+      lines:
+        - [["םולש", 226.59]]
+        - [["abc def.", 208.38]]
+        - [["after", 50]]
+      annotations: []
+    wasm:
+      lines:
+        - [["םולש", 226.59]]
+        - [["after", 50], ["abc def.", 208.38]]
+      annotations: []
+    knownDifference: "after a flow that ends with a closed block element, Wasm draws the next text on its last line"
+  movedown none left:
+    native:
+      lines:
+        - [["שלום", 50]]
+        - [["abc def.", 50]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown none right:
+    native:
+      lines:
+        - [["שלום", 226.85]]
+        - [["abc def.", 208.38]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto left:
+    native:
+      lines:
+        - [["םולש", 50]]
+        - [["abc def.", 50]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto right:
+    native:
+      lines:
+        - [["םולש", 226.59]]
+        - [["abc def.", 208.38]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same

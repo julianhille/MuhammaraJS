@@ -1,0 +1,59 @@
+description: Hebrew, then a run with direction none that starts with a point
+kind: flow
+runs:
+  - text: "שלום"
+  - text: "\u05b8abc"
+    direction: none
+expected:
+  end none left:
+    native:
+      lines:
+        - [["שלום", 50], ["after", 50], ["\u05b8abc", 73.15]]
+      annotations: []
+    wasm: same
+  end none right:
+    native:
+      lines:
+        - [["after", 50], ["שלום", 207.63], ["\u05b8abc", 230.78]]
+      annotations: []
+    wasm: same
+  end auto left:
+    native:
+      lines:
+        - [["\u05b8abc", 50], ["after", 50], ["םולש", 69.22]]
+      annotations: []
+    wasm: same
+  end auto right:
+    native:
+      lines:
+        - [["after", 50], ["\u05b8abc", 207.36], ["םולש", 226.59]]
+      annotations: []
+    wasm: same
+  movedown none left:
+    native:
+      lines:
+        - [["שלום", 50], ["\u05b8abc", 73.15]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown none right:
+    native:
+      lines:
+        - [["שלום", 207.63], ["\u05b8abc", 230.78]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto left:
+    native:
+      lines:
+        - [["\u05b8abc", 50], ["םולש", 69.22]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto right:
+    native:
+      lines:
+        - [["\u05b8abc", 207.36], ["םולש", 226.59]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same

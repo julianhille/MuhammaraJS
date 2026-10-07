@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Draw right-to-left text such as Hebrew in visual order when `writeText()`
+  or Recipe `text()` is given the new `direction` option (`TextDirection` /
+  `Recipe.TextDirection`). `"auto"` takes each paragraph's direction from its
+  first strong letter, and `"ltr"` and `"rtl"` set it. Text is reordered with
+  the Unicode Bidirectional Algorithm ([bidi-js](https://github.com/lojjic/bidi-js),
+  MIT): numbers and Latin words inside Hebrew keep their order, brackets
+  are mirrored, points are drawn on their letters, and invisible direction
+  marks are neither drawn nor measured. Recipe reorders each wrapped line with
+  its paragraph's direction, also across the styled runs of an HTML line,
+  places justified words from right to left, and ends the last line of a
+  justified right-to-left paragraph at the right edge; `textDimensions()`
+  takes the same option. The default, `"none"`, draws text exactly as given,
+  as before; see [Write Right-to-Left Text](packages/native/docs/how-to/write-right-to-left-text.md)
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+
+### Fixed
+
+- End a flowed Recipe line at every paragraph separator that ends a run:
+  `\r\n`, `\r`, vertical tab, form feed, U+0085, U+2028 and U+2029 no
+  longer draw as missing glyphs with the next run on the same line, as `\n`
+  already did, and a plain line ending in U+0085 no longer ends a missing
+  glyph short of the right edge
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Keep the spaces a flowed Recipe line starts with when `movedown()` or a
+  line break ends it, as Wasm does; they were dropped only on such lines
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Keep the space that the first element of a flowed HTML run starts with,
+  as in `<span> 6 7</span>`, inside that element, as Wasm does; it was
+  dropped, so the run touched the text before it
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Keep a figure space (U+2007) or a narrow no-break space (U+202F) at the end
+  of a Recipe line, as the no-break space (U+00A0) already was and as Wasm
+  does [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Lay out a long Recipe text flow in time that grows with its runs: each
+  flowed `text()` call copied and searched every run the flow had, so a
+  flow built word by word took time with the square of its words
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Measure the line height of a Recipe font once for each size instead of for
+  every `text()` call, which took about a millisecond each
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+
 ## [7.1.0] - 2026-10-05
 
 ### Added

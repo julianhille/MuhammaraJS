@@ -1,0 +1,177 @@
+description: Hebrew, a Latin word, a number and Hebrew in brackets
+kind: single
+text: "שלום abc 12 (עולם)"
+expected:
+  none cs0 left:
+    native:
+      lines:
+        - [["שלום abc 12 (עולם)", 50]]
+      annotations: []
+    wasm: same
+  none cs0 right:
+    native:
+      lines:
+        - [["שלום abc 12 (עולם)", 253.77]]
+      annotations: []
+    wasm: same
+  none cs0 justify:
+    native:
+      lines:
+        - [["שלום ", 50], ["abc", 90.78]]
+        - [["12 (עולם)", 50]]
+      annotations: []
+    wasm:
+      lines:
+        - [["שלום ", 50], ["abc", 91.21]]
+        - [["12 (עולם)", 50]]
+      annotations: []
+    knownDifference: "Wasm justifies a line drawn as given with slightly different gaps"
+  none cs3 left:
+    native:
+      lines:
+        - [["שלום abc 12 (עולם)", 50]]
+      annotations: []
+    wasm: same
+  none cs3 right:
+    native:
+      lines:
+        - [["שלום abc 12 (עולם)", 202.77]]
+      annotations: []
+    wasm: same
+  none cs3 justify:
+    native:
+      lines:
+        - [["שלום", 50]]
+        - [["abc ", 50], ["12", 94.29]]
+        - [["(עולם)", 50]]
+      annotations: []
+    wasm:
+      lines:
+        - [["שלום", 50]]
+        - [["abc ", 50], ["12", 95.59]]
+        - [["(עולם)", 50]]
+      annotations: []
+    knownDifference: "Wasm justifies a line drawn as given with slightly different gaps"
+  auto cs0 left:
+    native:
+      lines:
+        - [["(םלוע) abc 12 םולש", 50]]
+      annotations: []
+    wasm: same
+  auto cs0 right:
+    native:
+      lines:
+        - [["(םלוע) abc 12 םולש", 253.92]]
+      annotations: []
+    wasm: same
+  auto cs0 justify:
+    native:
+      lines:
+        - [["abc ", 50], ["םולש", 86.59]]
+        - [["(םלוע) 12", 63.96]]
+      annotations: []
+    wasm: same
+  auto cs3 left:
+    native:
+      lines:
+        - [["(םלוע) abc 12 םולש", 50]]
+      annotations: []
+    wasm: same
+  auto cs3 right:
+    native:
+      lines:
+        - [["(םלוע) abc 12 םולש", 202.92]]
+      annotations: []
+    wasm: same
+  auto cs3 justify:
+    native:
+      lines:
+        - [["םולש", 77.59]]
+        - [["abc ", 50], ["12", 94.29]]
+        - [["(םלוע)", 65.43]]
+      annotations: []
+    wasm: same
+  rtl cs0 left:
+    native:
+      lines:
+        - [["(םלוע) abc 12 םולש", 50]]
+      annotations: []
+    wasm: same
+  rtl cs0 right:
+    native:
+      lines:
+        - [["(םלוע) abc 12 םולש", 253.92]]
+      annotations: []
+    wasm: same
+  rtl cs0 justify:
+    native:
+      lines:
+        - [["abc ", 50], ["םולש", 86.59]]
+        - [["(םלוע) 12", 63.96]]
+      annotations: []
+    wasm: same
+  rtl cs3 left:
+    native:
+      lines:
+        - [["(םלוע) abc 12 םולש", 50]]
+      annotations: []
+    wasm: same
+  rtl cs3 right:
+    native:
+      lines:
+        - [["(םלוע) abc 12 םולש", 202.92]]
+      annotations: []
+    wasm: same
+  rtl cs3 justify:
+    native:
+      lines:
+        - [["םולש", 77.59]]
+        - [["abc ", 50], ["12", 94.29]]
+        - [["(םלוע)", 65.43]]
+      annotations: []
+    wasm: same
+  ltr cs0 left:
+    native:
+      lines:
+        - [["םולש abc 12 (םלוע)", 50]]
+      annotations: []
+    wasm: same
+  ltr cs0 right:
+    native:
+      lines:
+        - [["םולש abc 12 (םלוע)", 253.77]]
+      annotations: []
+    wasm: same
+  ltr cs0 justify:
+    native:
+      lines:
+        - [["םולש ", 50], ["abc", 90.78]]
+        - [["12 (םלוע)", 50]]
+      annotations: []
+    wasm: same
+  ltr cs3 left:
+    native:
+      lines:
+        - [["םולש abc 12 (םלוע)", 50]]
+      annotations: []
+    wasm: same
+  ltr cs3 right:
+    native:
+      lines:
+        - [["םולש abc 12 (םלוע)", 202.77]]
+      annotations: []
+    wasm: same
+  ltr cs3 justify:
+    native:
+      lines:
+        - [["םולש", 50]]
+        - [["abc ", 50], ["12", 94.29]]
+        - [["(םלוע)", 50]]
+      annotations: []
+    wasm:
+      lines:
+        - [["םולש", 50]]
+        - [["abc ", 50], ["12", 95.59]]
+        - [["(םלוע)", 50]]
+      annotations: []
+    knownDifference: "Wasm justifies a line drawn as given with slightly different gaps"

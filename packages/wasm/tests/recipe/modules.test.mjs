@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { createCompositionMethods } from "../../lib/recipe/composition.js";
 import { PAGE_CONTEXT_STATE } from "../../lib/recipe/context-state.js";
 import { createInfoMethods } from "../../lib/recipe/info.js";
+import { createTextMethods } from "../../lib/recipe/text.js";
 import { permission } from "../../lib/recipe/security.js";
 
 describe("Recipe extracted modules", function () {
@@ -23,6 +24,41 @@ describe("Recipe extracted modules", function () {
     var info = methods.info.call(recipe);
     info.keywords.push("three");
     assert.deepEqual(recipe._info.keywords, ["one", "two", "three"]);
+  });
+
+  it("measures text once for each font and size", function () {
+    var measured = [];
+    var methods = createTextMethods({
+      module: {},
+      drawText: () => {},
+      measure: (text, options) => {
+        measured.push([text, options.font, options.fontSize]);
+        return {
+          xMin: 0,
+          yMin: 0,
+          xMax: text.length,
+          yMax: 1,
+          width: text.length,
+          height: 1,
+        };
+      },
+      fontKey: (options) => options.font + "/" + options.fontSize,
+    });
+    var recipe = {};
+    var other = {};
+    var spaced = { font: "a", fontSize: 10, charSpace: 2 };
+    assert.equal(methods.textDimensions.call(recipe, "abc", spaced).width, 7);
+    // The spacing added to one result does not reach the next.
+    assert.equal(methods.textDimensions.call(recipe, "abc", spaced).width, 7);
+    methods.textDimensions.call(recipe, "abc", { font: "a", fontSize: 12 });
+    methods.textDimensions.call(recipe, "abc", { font: "b", fontSize: 10 });
+    methods.textDimensions.call(other, "abc", spaced);
+    assert.deepEqual(measured, [
+      ["abc", "a", 10],
+      ["abc", "a", 12],
+      ["abc", "b", 10],
+      ["abc", "a", 10],
+    ]);
   });
 
   it("keeps composition range clamping and overlay coordinate conversion injectable", function () {

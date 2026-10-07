@@ -1,0 +1,117 @@
+description: Digits, Latin in an isolate split across runs, then Hebrew
+kind: flow
+runs:
+  - text: "(1) "
+  - text: "\u2067abc "
+  - text: "2 - 3 "
+  - text: "\u2069 4 "
+  - text: "שלום"
+expected:
+  end none left:
+    native:
+      lines:
+        - [
+            ["(1) ", 50],
+            ["after", 50],
+            ["�abc ", 70.5],
+            ["2 - 3 ", 104.67],
+            ["� 4 ", 134.49],
+            ["שלום", 159.32],
+          ]
+      annotations: []
+    wasm: same
+  end none right:
+    native:
+      lines:
+        - [
+            ["after", 50],
+            ["(1) ", 117.53],
+            ["�abc ", 138.03],
+            ["2 - 3 ", 172.2],
+            ["� 4 ", 202.02],
+            ["שלום", 226.85],
+          ]
+      annotations: []
+    wasm: same
+  end auto left:
+    native:
+      lines:
+        - [
+            ["םולש", 50],
+            ["after", 50],
+            [" 4 ", 73.41],
+            [" ", 86.14],
+            ["abc ", 89.47],
+            ["2 - 3", 112.02],
+            [" (1)", 135.45],
+          ]
+      annotations: []
+    wasm: same
+  end auto right:
+    native:
+      lines:
+        - [
+            ["after", 50],
+            ["םולש", 147],
+            [" 4 ", 170.42],
+            [" ", 183.15],
+            ["abc ", 186.47],
+            ["2 - 3", 209.02],
+            [" (1)", 232.46],
+          ]
+      annotations: []
+    wasm: same
+  movedown none left:
+    native:
+      lines:
+        - [
+            ["(1) ", 50],
+            ["�abc ", 70.5],
+            ["2 - 3 ", 104.67],
+            ["� 4 ", 134.49],
+            ["שלום", 159.32],
+          ]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown none right:
+    native:
+      lines:
+        - [
+            ["(1) ", 117.53],
+            ["�abc ", 138.03],
+            ["2 - 3 ", 172.2],
+            ["� 4 ", 202.02],
+            ["שלום", 226.85],
+          ]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto left:
+    native:
+      lines:
+        - [
+            ["םולש", 50],
+            [" 4 ", 73.41],
+            [" ", 86.14],
+            ["abc ", 89.47],
+            ["2 - 3", 112.02],
+            [" (1)", 135.45],
+          ]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto right:
+    native:
+      lines:
+        - [
+            ["םולש", 147],
+            [" 4 ", 170.42],
+            [" ", 183.15],
+            ["abc ", 186.47],
+            ["2 - 3", 209.02],
+            [" (1)", 232.46],
+          ]
+        - [["after", 50]]
+      annotations: []
+    wasm: same

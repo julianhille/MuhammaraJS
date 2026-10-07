@@ -1,5 +1,5 @@
 var { htmlToTextObjects } = require("./htmlToTextObjects");
-var { cloneOptions: clone } = require("./utils");
+var { cloneOptions: clone, clearTextFlow } = require("./utils");
 var { LineCap, TableRowNth } = require("../recipe-constants");
 
 /**
@@ -46,6 +46,8 @@ function getCellHeight(self, text, column, options) {
     originCoord.ny,
   );
   pathOptions.html = colOptions.html;
+  // Measure what text() draws: reordering drops direction marks.
+  pathOptions.direction = colOptions.direction;
   var textObjects = colOptions.html
     ? htmlToTextObjects(text, colOptions)
     : self._makeTextObject(text, pathOptions.size, colOptions);
@@ -230,7 +232,7 @@ exports.table = function table(x, y, contents, options = {}) {
     return width;
   }, 0);
 
-  this._previousTextObjects = [];
+  clearTextFlow(this);
   var nth;
   var rowOptions = {};
 
@@ -251,6 +253,10 @@ exports.table = function table(x, y, contents, options = {}) {
         colOptions.textBox,
         clone(cellOptions.textBox),
       );
+    }
+    // A header reads in the direction of its column, the table's or its own.
+    if (colOptions.direction === undefined) {
+      colOptions.direction = column.options.direction ?? options.direction;
     }
     return colOptions;
   };
@@ -426,7 +432,7 @@ exports.table = function table(x, y, contents, options = {}) {
   this.y = currentY;
   this.box = { x, y: currentY };
   this._flow = false;
-  this._previousTextObjects = [];
+  clearTextFlow(this);
 
   return this;
 };

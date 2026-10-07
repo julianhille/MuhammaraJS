@@ -1193,6 +1193,64 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
       expect(withBlank - withoutBlank).to.be.above(20);
     });
 
+    it("lays out each flowed run after the flow's open line only", () => {
+      const kept = [];
+      const runs = drawRuns("continued-flow-open-line", (recipe) => {
+        const options = { font: "arial", size: 12 };
+        recipe.text("start ", 20, 20, {
+          ...options,
+          flow: true,
+          textBox: { width: 200, textAlign: "justify" },
+        });
+        for (let index = 0; index < 200; ++index) {
+          recipe.text(index % 3 ? "word " : "longer ", options);
+          kept.push(recipe._previousTextObjects.length);
+        }
+        recipe.text("", { flow: false });
+      });
+      // Copying and searching every earlier run for each run took time
+      // with the square of the runs; a line holds a few dozen of them.
+      expect(Math.max(...kept)).to.be.below(40);
+      expect(runs).to.have.length(201);
+      expect(runs.map((run) => run.text).join("")).to.match(/^start /);
+      const lines = new Set(runs.map((run) => run.y));
+      expect(lines.size).to.be.above(10);
+    });
+
+    it("measures a font's line height once for each size", () => {
+      const fontType = Object.getPrototypeOf(
+        muhammara
+          .createWriter(new muhammara.PDFWStreamForBuffer())
+          .getFontForFile(
+            path.join(__dirname, "../TestMaterials/fonts/arial.ttf"),
+          ),
+      );
+      const measure = fontType.calculateTextDimensions;
+      const sizes = [];
+      fontType.calculateTextDimensions = function (text, size) {
+        if (text === "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}") sizes.push(size);
+        return measure.apply(this, arguments);
+      };
+      try {
+        drawRuns("continued-flow-line-height", (recipe) => {
+          recipe.text("start ", 20, 20, {
+            font: "arial",
+            size: 12,
+            flow: true,
+            textBox: { width: 200 },
+          });
+          for (let index = 0; index < 50; ++index) {
+            recipe.text("word ", { font: "arial", size: index % 2 ? 12 : 9 });
+          }
+          recipe.text("", { flow: false });
+        });
+      } finally {
+        fontType.calculateTextDimensions = measure;
+      }
+      // Measuring it for each run took a millisecond each time.
+      expect(sizes.sort((a, b) => a - b)).to.deep.equal([9, 12]);
+    });
+
     it("flows calls without coordinates unless they pass flow: false", () => {
       const runs = drawRuns("continued-flow-implicit", (recipe) => {
         recipe

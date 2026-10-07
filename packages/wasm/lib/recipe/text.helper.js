@@ -1,12 +1,23 @@
+import { drawnGaps, spacedGaps } from "../text-direction.js";
+
 /**
- * Calculates spacing between retained Unicode characters.
- * @param {string} text - Text.
+ * Calculates spacing between retained Unicode characters, except between a
+ * right-to-left letter and the points drawn before it.
+ * @param {string} text - Text, in the order it is drawn.
  * @param {number} [charSpace=0] - Spacing per character gap.
+ * @param {string} [direction] - The `direction` text option.
+ * @param {boolean} [drawn=false] - Whether the text is already in the order
+ *   it is drawn, as a piece of a reordered line is; otherwise it is in the
+ *   order it is typed.
  * @returns {number} Total spacing.
  */
-export function charSpacing(text, charSpace = 0) {
-  var characterCount = Array.from(String(text)).length;
-  return characterCount ? (characterCount - 1) * charSpace : 0;
+export function charSpacing(
+  text,
+  charSpace = 0,
+  direction = undefined,
+  drawn = false,
+) {
+  return (drawn ? drawnGaps : spacedGaps)(String(text), direction) * charSpace;
 }
 
 /** A measurable text fragment used by Recipe layout. */
@@ -23,7 +34,7 @@ export class Word {
   get width() {
     return (
       this.measure(this.value, this.options).width +
-      charSpacing(this.value, this.options.charSpace)
+      charSpacing(this.value, this.options.charSpace, this.options.direction)
     );
   }
 }
@@ -50,7 +61,7 @@ export class Line {
   get currentWidth() {
     return (
       this.measure(this.value, this.options).width +
-      charSpacing(this.value, this.options.charSpace)
+      charSpacing(this.value, this.options.charSpace, this.options.direction)
     );
   }
   /**

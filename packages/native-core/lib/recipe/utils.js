@@ -1,3 +1,5 @@
+const { trimBreakableEnd } = require("../text-direction");
+
 const ANNOTATION_PREFIX = "Annots";
 
 /** Recipe page content-stream lifecycle states. */
@@ -133,14 +135,16 @@ function resolveFontSize(options = {}, fallback) {
 }
 
 /**
- * Remove the breakable whitespace that ends a text; a non-breaking space
- * (U+00A0) stays, as in Wasm.
- * @private
- * @param {string} value - The text.
- * @returns {string} The trimmed text.
+ * Forget the runs and the paragraph state of a text flow, as a new text box,
+ * a table or a new page starts without them.
+ * @param {Object} recipe - The Recipe.
+ * @returns {void}
  */
-function trimBreakableEnd(value) {
-  return value.replace(/(?:(?!\u00a0)\s)+$/, "");
+function clearTextFlow(recipe) {
+  recipe._previousTextObjects = [];
+  recipe._flowLines = [];
+  recipe._flowParagraph = "";
+  recipe._flowWaits = false;
 }
 
 exports.ANNOTATION_PREFIX = ANNOTATION_PREFIX;
@@ -148,6 +152,7 @@ exports.PAGE_CONTEXT_STATE = PAGE_CONTEXT_STATE;
 exports.cloneOptions = cloneOptions;
 exports.resolveFontSize = resolveFontSize;
 exports.trimBreakableEnd = trimBreakableEnd;
+exports.clearTextFlow = clearTextFlow;
 exports.appendPDFPageFromPDFWithAnnotations =
   appendPDFPageFromPDFWithAnnotations;
 exports.appendPDFPagesFromPDFWithAnnotations =

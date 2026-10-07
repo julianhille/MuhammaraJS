@@ -1,16 +1,30 @@
 var { cloneOptions, resolveFontSize, trimBreakableEnd } = require("./utils");
 var { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
+var {
+  drawnText,
+  drawnGaps,
+  spacedGaps,
+  spacedCharacters,
+} = require("../text-direction");
+
+// A word that starts with a mark or joiner, after any direction marks,
+// continues the cluster of the word before it.
+var CONTINUES_CLUSTER = /^[\u061c\u200e\u200f]*[\p{M}\u200c\u200d]/u;
 
 /**
  * The width character spacing adds between the characters of a text.
  * @private
  * @param {string} text - The text.
- * @param {number} charSpace - The spacing added after each character but the last.
+ * @param {number} charSpace - The spacing added after each character but the
+ *   last, except between a right-to-left letter and the points drawn before it.
+ * @param {string} [direction] - The `direction` text option.
+ * @param {boolean} [drawn=false] - Whether the text is already in the order
+ *   it is drawn, as a piece of a reordered line is; otherwise it is in the
+ *   order it is typed.
  * @returns {number} The added width.
  */
-const charSpacing = function charSpacing(text, charSpace) {
-  var characterCount = Array.from(String(text)).length;
-  return characterCount ? (characterCount - 1) * charSpace : 0;
+const charSpacing = function charSpacing(text, charSpace, direction, drawn) {
+  return (drawn ? drawnGaps : spacedGaps)(String(text), direction) * charSpace;
 };
 
 // Have to set up word as a constant, then export it below
@@ -29,7 +43,15 @@ const Word = class Word {
     this._value = word;
     this._pathOptions = pathOptions;
     this._last = false;
-    this._text = word === " " ? "o" : word; // allows space to get an actual dimension
+    // allows space to get an actual dimension; formatting characters that
+    // reordering drops are not measured. A piece of a reordered line, marked
+    // _drawn, is already as it is drawn.
+    this._text =
+      word === " "
+        ? "o"
+        : pathOptions._drawn
+          ? word
+          : drawnText(word, pathOptions.direction);
   }
 
   /**
@@ -37,6 +59,22 @@ const Word = class Word {
    */
   get value() {
     return this._value;
+  }
+
+  /**
+   * The word as a line draws it, and the number of its characters character
+   * spacing goes between, kept while its text stays.
+   * @returns {{text: string, spaced: number}} The drawn word.
+   */
+  get drawn() {
+    if (this._drawnValue !== this._value) {
+      this._drawnValue = this._value;
+      this._drawn = {
+        text: this._value === " " ? " " : this._text,
+        spaced: spacedCharacters(this._value, this._pathOptions.direction),
+      };
+    }
+    return this._drawn;
   }
 
   /**
@@ -66,7 +104,12 @@ const Word = class Word {
    * @returns {number} The width character spacing adds to the word.
    */
   get charSpacing() {
-    return charSpacing(this._text, this._pathOptions.charSpace);
+    return charSpacing(
+      this._value,
+      this._pathOptions.charSpace,
+      this._pathOptions.direction,
+      this._pathOptions._drawn,
+    );
   }
 
   /**
@@ -80,9 +123,13 @@ const Word = class Word {
     this._last = value;
     if (this._last) {
       const trimmed = trimBreakableEnd(this._value.trimStart());
-      if (trimmed === this._text) return;
+      // Formatting characters that reordering drops are not measured.
+      const text = this._pathOptions._drawn
+        ? trimmed
+        : drawnText(trimmed, this._pathOptions.direction);
       this._value = trimmed;
-      this._text = this._value;
+      if (text === this._text) return;
+      this._text = text;
       this._dimensions = this._pathOptions.font.calculateTextDimensions(
         this._text,
         this._pathOptions.size,
@@ -190,7 +237,53 @@ exports.Line = class Line {
    * @returns {number} The width character spacing adds to the text.
    */
   charSpacing(text) {
-    return charSpacing(text, this._pathOptions.charSpace);
+    return charSpacing(
+      text,
+      this._pathOptions.charSpace,
+      this._pathOptions.direction,
+    );
+  }
+
+  /**
+   * The characters of a text that are drawn, without the formatting
+   * characters that reordering drops, so measuring matches drawing.
+   * @param {string} text - The text in logical order.
+   * @returns {string} The text to measure.
+   */
+  measured(text) {
+    return drawnText(text, this._pathOptions.direction);
+  }
+
+  /**
+   * Where a line of words ends as drawn, with character spacing. Each word
+   * keeps its drawn text and the characters spacing goes between, so the
+   * line adds them up instead of reordering all of it again for each word;
+   * a word that continues the cluster the word before it ends is drawn
+   * with it, so then the whole line is.
+   * @param {Word[]} words - The words.
+   * @returns {number} The width in points.
+   */
+  drawnWidth(words) {
+    let text = "";
+    let spaced = 0;
+    for (const word of words) {
+      if (text && CONTINUES_CLUSTER.test(word.value)) {
+        const value = words.map((each) => each.value).join("");
+        return (
+          this._pathOptions.font.calculateTextDimensions(
+            this.measured(value),
+            this.size,
+          ).xMax + this.charSpacing(value)
+        );
+      }
+      const drawn = word.drawn;
+      text += drawn.text;
+      spaced += drawn.spaced;
+    }
+    return (
+      this._pathOptions.font.calculateTextDimensions(text, this.size).xMax +
+      Math.max(spaced - 1, 0) * this._pathOptions.charSpace
+    );
   }
 
   /**
@@ -201,11 +294,7 @@ exports.Line = class Line {
     // Measuring the whole line for every word is quadratic in its length, and
     // a line without a text box never wraps.
     if (this._width >= UNBOUNDED_LINE_WIDTH) return true;
-    const tempValue = this.value + wordObject.value;
-    const toWidth =
-      this._pathOptions.font.calculateTextDimensions(tempValue, this.size)
-        .xMax + this.charSpacing(tempValue);
-    return toWidth <= this.width;
+    return this.drawnWidth([...this.wordObjects, wordObject]) <= this.width;
   }
 
   /**
@@ -230,7 +319,9 @@ exports.Line = class Line {
   }
 
   /**
-   * @returns {number} The width of one space, measured as "o".
+   * @returns {number} The room a space ending a line is given, measured as
+   *   "o", as Wasm measures it. The advance a drawn space takes is
+   *   `spaceAdvance()` of `text-direction`.
    */
   get spaceWidth() {
     return this._pathOptions.font.calculateTextDimensions("o", this.size).width;
@@ -251,10 +342,7 @@ exports.Line = class Line {
    * @returns {number} The measured width of the line text.
    */
   get currentWidth() {
-    return (
-      this._pathOptions.font.calculateTextDimensions(this.value, this.size)
-        .xMax + this.charSpacing(this.value)
-    );
+    return this.drawnWidth(this.wordObjects);
   }
 
   /**
@@ -352,22 +440,27 @@ exports._getTextBoxOffset = function _getTextBoxOffset(textBox, options = {}) {
  * @param {number} [options.charSpace=0] - character spacing being applied to the given text.
  * @param {boolean} [options.bold] - Measure with the bold style of the font.
  * @param {boolean} [options.italic] - Measure with the italic style of the font.
+ * @param {Recipe.TextDirection} [options.direction='none'] - The direction text() would draw the text with;
+ * other than 'none', the formatting characters that reordering drops are not measured.
  * @returns {Object} measurement components of given text: width, height, xMin, xMax, yMin, yMax
  * @throws {Error} If the font file cannot be loaded.
+ * @throws {TypeError} If `options.direction` is not a `Recipe.TextDirection` value.
  */
 exports.textDimensions = function textDimensions(text, options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
+  const drawn = drawnText(text, options.direction);
   const font = this._getFont(options);
   let dimensions = {};
   let charSpaces = 0;
 
   if (font) {
+    // Spacing is counted in the order the text is typed.
     if (options.charSpace) {
-      charSpaces = charSpacing(text, options.charSpace);
+      charSpaces = charSpacing(text, options.charSpace, options.direction);
     }
     const fontSize = resolveFontSize(options, this.current.defaultFontSize);
-    dimensions = font.calculateTextDimensions(text, fontSize);
+    dimensions = font.calculateTextDimensions(drawn, fontSize);
     dimensions.xMax += charSpaces;
   }
 
