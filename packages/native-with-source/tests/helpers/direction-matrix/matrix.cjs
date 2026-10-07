@@ -29,10 +29,6 @@ var KNOWN_DIFFERENCES = [
     /^single (mixed (none|ltr)|pointed-digit none) cs\d justify$/,
     "Wasm justifies a line drawn as given with slightly different gaps",
   ],
-  [
-    /^(flow-break \w+ figure-space|single-break nel) /,
-    "native trims a figure space at a line's end and keeps a next line there",
-  ],
 ];
 
 /**

@@ -133,14 +133,14 @@ function resolveFontSize(options = {}, fallback) {
 }
 
 /**
- * Remove the breakable whitespace that ends a text; a non-breaking space
- * (U+00A0) stays, as in Wasm.
+ * Remove the breakable whitespace that ends a text, a next line (U+0085)
+ * included; non-breaking spaces (U+00A0, U+2007, U+202F) stay, as in Wasm.
  * @private
  * @param {string} value - The text.
  * @returns {string} The trimmed text.
  */
 function trimBreakableEnd(value) {
-  return value.replace(/(?:(?!\u00a0)\s)+$/, "");
+  return value.replace(/(?:(?![\u00a0\u2007\u202f])[\s\u0085])+$/, "");
 }
 
 exports.ANNOTATION_PREFIX = ANNOTATION_PREFIX;
