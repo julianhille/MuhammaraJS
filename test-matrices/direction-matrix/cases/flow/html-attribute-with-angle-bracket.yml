@@ -1,0 +1,95 @@
+description: "Hebrew, then an HTML span whose quoted attribute holds a '>'"
+kind: flow
+runs:
+  - text: "שלום"
+  - text: "<span title='a>b'> עולם</span>"
+    html: true
+expected:
+  end none left:
+    native:
+      lines:
+        - [["שלום", 50], ["after", 50], [" עולם", 73.15]]
+      annotations: []
+    wasm:
+      lines:
+        - [["שלום", 50], ["after", 50], ["b'> עולם", 73.15]]
+      annotations: []
+    knownDifference: "Wasm's HTML parser ends a tag at a '>' inside a quoted attribute"
+  end none right:
+    native:
+      lines:
+        - [["after", 50], ["שלום", 202.36], [" עולם", 225.51]]
+      annotations: []
+    wasm:
+      lines:
+        - [["after", 50], ["שלום", 186.41], ["b'> עולם", 209.56]]
+      annotations: []
+    knownDifference: "Wasm's HTML parser ends a tag at a '>' inside a quoted attribute"
+  end auto left:
+    native:
+      lines:
+        - [["םלוע ", 50], ["after", 50], ["םולש", 74.55]]
+      annotations: []
+    wasm:
+      lines:
+        - [["םלוע <'b", 50], ["after", 50], ["םולש", 90.8]]
+      annotations: []
+    knownDifference: "Wasm's HTML parser ends a tag at a '>' inside a quoted attribute"
+  end auto right:
+    native:
+      lines:
+        - [["after", 50], ["םלוע ", 202.04], ["םולש", 226.59]]
+      annotations: []
+    wasm:
+      lines:
+        - [["after", 50], ["םלוע <'b", 185.79], ["םולש", 226.59]]
+      annotations: []
+    knownDifference: "Wasm's HTML parser ends a tag at a '>' inside a quoted attribute"
+  movedown none left:
+    native:
+      lines:
+        - [["שלום", 50], [" עולם", 73.15]]
+        - [["after", 50]]
+      annotations: []
+    wasm:
+      lines:
+        - [["שלום", 50], ["b'> עולם", 73.15]]
+        - [["after", 50]]
+      annotations: []
+    knownDifference: "Wasm's HTML parser ends a tag at a '>' inside a quoted attribute"
+  movedown none right:
+    native:
+      lines:
+        - [["שלום", 202.36], [" עולם", 225.51]]
+        - [["after", 50]]
+      annotations: []
+    wasm:
+      lines:
+        - [["שלום", 186.41], ["b'> עולם", 209.56]]
+        - [["after", 50]]
+      annotations: []
+    knownDifference: "Wasm's HTML parser ends a tag at a '>' inside a quoted attribute"
+  movedown auto left:
+    native:
+      lines:
+        - [["םלוע ", 50], ["םולש", 74.55]]
+        - [["after", 50]]
+      annotations: []
+    wasm:
+      lines:
+        - [["םלוע <'b", 50], ["םולש", 90.8]]
+        - [["after", 50]]
+      annotations: []
+    knownDifference: "Wasm's HTML parser ends a tag at a '>' inside a quoted attribute"
+  movedown auto right:
+    native:
+      lines:
+        - [["םלוע ", 202.04], ["םולש", 226.59]]
+        - [["after", 50]]
+      annotations: []
+    wasm:
+      lines:
+        - [["םלוע <'b", 185.79], ["םולש", 226.59]]
+        - [["after", 50]]
+      annotations: []
+    knownDifference: "Wasm's HTML parser ends a tag at a '>' inside a quoted attribute"

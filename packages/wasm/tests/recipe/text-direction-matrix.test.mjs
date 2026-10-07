@@ -10,9 +10,8 @@ var {
   cases,
   summarize,
   brokenProperties,
-  readExpected,
+  checkExpected,
   writeExpected,
-  knownDifference,
   update,
 } = require("../../../../test-matrices/direction-matrix/matrix.cjs");
 
@@ -20,8 +19,7 @@ describe("Recipe text direction matrix", function () {
   var muhammara;
   var Recipe;
   var font;
-  var expected = readExpected();
-  var summaries = {};
+  var summaries = new Map();
 
   before(async function () {
     var arial = new Uint8Array(
@@ -85,10 +83,10 @@ describe("Recipe text direction matrix", function () {
   }
 
   for (const testCase of cases) {
-    it(testCase.name, function () {
+    it(testCase.title, function () {
       var { runs, annotations } = draw(testCase);
       var summary = summarize(runs, annotations);
-      summaries[testCase.name] = summary;
+      summaries.set(testCase, summary);
       assert.deepEqual(
         brokenProperties(testCase, summary, (text, direction, x) => {
           var { size, charSpace } = testCase.options;
@@ -100,13 +98,7 @@ describe("Recipe text direction matrix", function () {
         }),
         [],
       );
-      if (update) return;
-      var known = expected[testCase.name];
-      assert.ok(known?.wasm, "missing from expected.json");
-      assert.deepEqual(summary, known.wasm);
-      if (known.native && !knownDifference(testCase.name)) {
-        assert.deepEqual(known.native, known.wasm, "native and Wasm differ");
-      }
+      if (!update) checkExpected("wasm", testCase, summary, assert);
     });
   }
 });

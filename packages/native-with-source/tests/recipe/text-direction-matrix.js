@@ -7,9 +7,8 @@ const {
   cases,
   summarize,
   brokenProperties,
-  readExpected,
+  checkExpected,
   writeExpected,
-  knownDifference,
   update,
 } = require("../../../../test-matrices/direction-matrix/matrix.cjs");
 
@@ -54,18 +53,17 @@ async function draw(testCase) {
 }
 
 describe("Recipe text direction matrix", function () {
-  const expected = readExpected();
-  const summaries = {};
+  const summaries = new Map();
 
   after(function () {
     if (update) writeExpected("native", summaries);
   });
 
   for (const testCase of cases) {
-    it(testCase.name, async function () {
+    it(testCase.title, async function () {
       const { runs, annotations } = await draw(testCase);
       const summary = summarize(runs, annotations);
-      summaries[testCase.name] = summary;
+      summaries.set(testCase, summary);
       assert.deepEqual(
         brokenProperties(testCase, summary, (text, direction, x) => {
           const { size, charSpace } = testCase.options;
@@ -80,13 +78,7 @@ describe("Recipe text direction matrix", function () {
         }),
         [],
       );
-      if (update) return;
-      const known = expected[testCase.name];
-      assert.ok(known?.native, "missing from expected.json");
-      assert.deepEqual(summary, known.native);
-      if (known.wasm && !knownDifference(testCase.name)) {
-        assert.deepEqual(known.native, known.wasm, "native and Wasm differ");
-      }
+      if (!update) checkExpected("native", testCase, summary, assert);
     });
   }
 });

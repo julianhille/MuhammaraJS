@@ -1,0 +1,152 @@
+description: A Latin word with a combining accent, then Hebrew
+kind: single
+text: "Cafe\u0301 אב"
+expected:
+  none cs0 left:
+    native:
+      lines:
+        - [["Cafe\u0301 אב", 50]]
+      annotations: []
+    wasm: same
+  none cs0 right:
+    native:
+      lines:
+        - [["Cafe\u0301 אב", 308.36]]
+      annotations: []
+    wasm: same
+  none cs0 justify:
+    native:
+      lines:
+        - [["Cafe\u0301 אב", 50]]
+      annotations: []
+    wasm: same
+  none cs3 left:
+    native:
+      lines:
+        - [["Cafe\u0301 אב", 50]]
+      annotations: []
+    wasm: same
+  none cs3 right:
+    native:
+      lines:
+        - [["Cafe\u0301 אב", 287.36]]
+      annotations: []
+    wasm: same
+  none cs3 justify:
+    native:
+      lines:
+        - [["Cafe\u0301", 50]]
+        - [["אב", 50]]
+      annotations: []
+    wasm: same
+  auto cs0 left:
+    native:
+      lines:
+        - [["Cafe\u0301 בא", 50]]
+      annotations: []
+    wasm: same
+  auto cs0 right:
+    native:
+      lines:
+        - [["Cafe\u0301 בא", 308.42]]
+      annotations: []
+    wasm: same
+  auto cs0 justify:
+    native:
+      lines:
+        - [["Cafe\u0301 בא", 50]]
+      annotations: []
+    wasm: same
+  auto cs3 left:
+    native:
+      lines:
+        - [["Cafe\u0301 בא", 50]]
+      annotations: []
+    wasm: same
+  auto cs3 right:
+    native:
+      lines:
+        - [["Cafe\u0301 בא", 287.42]]
+      annotations: []
+    wasm: same
+  auto cs3 justify:
+    native:
+      lines:
+        - [["Cafe\u0301", 50]]
+        - [["בא", 50]]
+      annotations: []
+    wasm: same
+  rtl cs0 left:
+    native:
+      lines:
+        - [["בא Cafe\u0301", 50]]
+      annotations: []
+    wasm: same
+  rtl cs0 right:
+    native:
+      lines:
+        - [["בא Cafe\u0301", 308.12]]
+      annotations: []
+    wasm: same
+  rtl cs0 justify:
+    native:
+      lines:
+        - [["בא Cafe\u0301", 68.12]]
+      annotations: []
+    wasm: same
+  rtl cs3 left:
+    native:
+      lines:
+        - [["בא Cafe\u0301", 50]]
+      annotations: []
+    wasm: same
+  rtl cs3 right:
+    native:
+      lines:
+        - [["בא Cafe\u0301", 287.12]]
+      annotations: []
+    wasm: same
+  rtl cs3 justify:
+    native:
+      lines:
+        - [["Cafe\u0301", 72.68]]
+        - [["בא", 94.08]]
+      annotations: []
+    wasm: same
+  ltr cs0 left:
+    native:
+      lines:
+        - [["Cafe\u0301 בא", 50]]
+      annotations: []
+    wasm: same
+  ltr cs0 right:
+    native:
+      lines:
+        - [["Cafe\u0301 בא", 308.42]]
+      annotations: []
+    wasm: same
+  ltr cs0 justify:
+    native:
+      lines:
+        - [["Cafe\u0301 בא", 50]]
+      annotations: []
+    wasm: same
+  ltr cs3 left:
+    native:
+      lines:
+        - [["Cafe\u0301 בא", 50]]
+      annotations: []
+    wasm: same
+  ltr cs3 right:
+    native:
+      lines:
+        - [["Cafe\u0301 בא", 287.42]]
+      annotations: []
+    wasm: same
+  ltr cs3 justify:
+    native:
+      lines:
+        - [["Cafe\u0301", 50]]
+        - [["בא", 50]]
+      annotations: []
+    wasm: same

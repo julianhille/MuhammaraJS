@@ -1,0 +1,58 @@
+description: A Latin run, then a Hebrew run starting with a space
+kind: flow
+runs:
+  - text: "x"
+  - text: " עולם"
+expected:
+  end none left:
+    native:
+      lines:
+        - [["x", 50], ["after", 50], [" עולם", 55.9]]
+      annotations: []
+    wasm: same
+  end none right:
+    native:
+      lines:
+        - [["after", 50], ["x", 219.6], [" עולם", 225.51]]
+      annotations: []
+    wasm: same
+  end auto left:
+    native:
+      lines:
+        - [["x", 50], ["after", 50], [" םלוע", 55.9]]
+      annotations: []
+    wasm: same
+  end auto right:
+    native:
+      lines:
+        - [["after", 50], ["x", 219.54], [" םלוע", 225.45]]
+      annotations: []
+    wasm: same
+  movedown none left:
+    native:
+      lines:
+        - [["x", 50], [" עולם", 55.9]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown none right:
+    native:
+      lines:
+        - [["x", 219.6], [" עולם", 225.51]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto left:
+    native:
+      lines:
+        - [["x", 50], [" םלוע", 55.9]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto right:
+    native:
+      lines:
+        - [["x", 219.54], [" םלוע", 225.45]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same

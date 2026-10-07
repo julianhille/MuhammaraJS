@@ -1,0 +1,57 @@
+description: One Latin run starting with two spaces
+kind: flow
+runs:
+  - text: "  body"
+expected:
+  end none left:
+    native:
+      lines:
+        - [["  body", 50], ["after", 50]]
+      annotations: []
+    wasm: same
+  end none right:
+    native:
+      lines:
+        - [["after", 50], ["  body", 217.44]]
+      annotations: []
+    wasm: same
+  end auto left:
+    native:
+      lines:
+        - [["  body", 50], ["after", 50]]
+      annotations: []
+    wasm: same
+  end auto right:
+    native:
+      lines:
+        - [["after", 50], ["  body", 217.44]]
+      annotations: []
+    wasm: same
+  movedown none left:
+    native:
+      lines:
+        - [["  body", 50]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown none right:
+    native:
+      lines:
+        - [["  body", 217.44]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto left:
+    native:
+      lines:
+        - [["  body", 50]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto right:
+    native:
+      lines:
+        - [["  body", 217.44]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same

@@ -1,0 +1,160 @@
+description: Latin text with a comma and a number
+kind: single
+text: "Hello, world 12"
+expected:
+  none cs0 left:
+    native:
+      lines:
+        - [["Hello, world 12", 50]]
+      annotations: []
+    wasm: same
+  none cs0 right:
+    native:
+      lines:
+        - [["Hello, world 12", 271.32]]
+      annotations: []
+    wasm: same
+  none cs0 justify:
+    native:
+      lines:
+        - [["Hello,", 50]]
+        - [["world 12", 50]]
+      annotations: []
+    wasm: same
+  none cs3 left:
+    native:
+      lines:
+        - [["Hello, world 12", 50]]
+      annotations: []
+    wasm: same
+  none cs3 right:
+    native:
+      lines:
+        - [["Hello, world 12", 229.32]]
+      annotations: []
+    wasm: same
+  none cs3 justify:
+    native:
+      lines:
+        - [["Hello,", 50]]
+        - [["world", 50]]
+        - [["12", 50]]
+      annotations: []
+    wasm: same
+  auto cs0 left:
+    native:
+      lines:
+        - [["Hello, world 12", 50]]
+      annotations: []
+    wasm: same
+  auto cs0 right:
+    native:
+      lines:
+        - [["Hello, world 12", 271.32]]
+      annotations: []
+    wasm: same
+  auto cs0 justify:
+    native:
+      lines:
+        - [["Hello,", 50]]
+        - [["world 12", 50]]
+      annotations: []
+    wasm: same
+  auto cs3 left:
+    native:
+      lines:
+        - [["Hello, world 12", 50]]
+      annotations: []
+    wasm: same
+  auto cs3 right:
+    native:
+      lines:
+        - [["Hello, world 12", 229.32]]
+      annotations: []
+    wasm: same
+  auto cs3 justify:
+    native:
+      lines:
+        - [["Hello,", 50]]
+        - [["world", 50]]
+        - [["12", 50]]
+      annotations: []
+    wasm: same
+  rtl cs0 left:
+    native:
+      lines:
+        - [["Hello, world 12", 50]]
+      annotations: []
+    wasm: same
+  rtl cs0 right:
+    native:
+      lines:
+        - [["Hello, world 12", 271.32]]
+      annotations: []
+    wasm: same
+  rtl cs0 justify:
+    native:
+      lines:
+        - [[",Hello", 79.78]]
+        - [["world 12", 65.3]]
+      annotations: []
+    wasm: same
+  rtl cs3 left:
+    native:
+      lines:
+        - [["Hello, world 12", 50]]
+      annotations: []
+    wasm: same
+  rtl cs3 right:
+    native:
+      lines:
+        - [["Hello, world 12", 229.32]]
+      annotations: []
+    wasm: same
+  rtl cs3 justify:
+    native:
+      lines:
+        - [[",Hello", 64.78]]
+        - [["world", 70.21]]
+        - [["12", 94.29]]
+      annotations: []
+    wasm: same
+  ltr cs0 left:
+    native:
+      lines:
+        - [["Hello, world 12", 50]]
+      annotations: []
+    wasm: same
+  ltr cs0 right:
+    native:
+      lines:
+        - [["Hello, world 12", 271.32]]
+      annotations: []
+    wasm: same
+  ltr cs0 justify:
+    native:
+      lines:
+        - [["Hello,", 50]]
+        - [["world 12", 50]]
+      annotations: []
+    wasm: same
+  ltr cs3 left:
+    native:
+      lines:
+        - [["Hello, world 12", 50]]
+      annotations: []
+    wasm: same
+  ltr cs3 right:
+    native:
+      lines:
+        - [["Hello, world 12", 229.32]]
+      annotations: []
+    wasm: same
+  ltr cs3 justify:
+    native:
+      lines:
+        - [["Hello,", 50]]
+        - [["world", 50]]
+        - [["12", 50]]
+      annotations: []
+    wasm: same

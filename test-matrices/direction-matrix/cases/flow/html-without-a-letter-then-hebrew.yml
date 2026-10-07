@@ -1,0 +1,68 @@
+description: "HTML digits across a <br>, then Hebrew that gives the direction"
+kind: flow
+runs:
+  - text: "123 (5)<br>456 (7) "
+    html: true
+  - text: "שלום"
+    html: false
+expected:
+  end none left:
+    native:
+      lines:
+        - [["123 (5)", 50]]
+        - [["456 (7) ", 50], ["after", 50], ["שלום", 93.84]]
+      annotations: []
+    wasm: same
+  end none right:
+    native:
+      lines:
+        - [["123 (5)", 212.44]]
+        - [["after", 50], ["456 (7) ", 183.02], ["שלום", 226.85]]
+      annotations: []
+    wasm: same
+  end auto left:
+    native:
+      lines:
+        - [["123 (5)", 50]]
+        - [["םולש", 50], ["after", 50], [" (7) 456", 73.41]]
+      annotations: []
+    wasm: same
+  end auto right:
+    native:
+      lines:
+        - [["123 (5)", 212.44]]
+        - [["after", 50], ["םולש", 185.81], [" (7) 456", 209.22]]
+      annotations: []
+    wasm: same
+  movedown none left:
+    native:
+      lines:
+        - [["123 (5)", 50]]
+        - [["456 (7) ", 50], ["שלום", 93.84]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown none right:
+    native:
+      lines:
+        - [["123 (5)", 212.44]]
+        - [["456 (7) ", 183.02], ["שלום", 226.85]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto left:
+    native:
+      lines:
+        - [["123 (5)", 50]]
+        - [["םולש", 50], [" (7) 456", 73.41]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto right:
+    native:
+      lines:
+        - [["123 (5)", 212.44]]
+        - [["םולש", 185.81], [" (7) 456", 209.22]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
