@@ -170,7 +170,9 @@ export function createRegistrationMethods({
       );
     },
     /**
-     * Removes one registered font style.
+     * Removes one registered font style. Removing the last style of the
+     * family made the default by static `registerFont(..., true)` also
+     * removes that default.
      *
      * @name unregisterFont
      * @function
@@ -187,7 +189,11 @@ export function createRegistrationMethods({
       var path = family[style];
       if (!path) return false;
       delete family[style];
-      if (!Object.keys(family).length) fonts.delete(key);
+      if (!Object.keys(family).length) {
+        fonts.delete(key);
+        // As disposeAssets() does, text falls back to the runtime default.
+        if (state.defaultFont?.family === key) state.defaultFont = null;
+      }
       unregisterWriterFont(path);
       removeFile(path);
       return true;

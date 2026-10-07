@@ -18,7 +18,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   the style that makes the registered family the default font family: of
   that Recipe on an instance, as on native, and of every Recipe from the
   runtime on the `Recipe` constructor. The latest default set applies, and
-  `Recipe.disposeAssets()` removes the runtime-wide default
+  `Recipe.disposeAssets()`, or unregistering the family, removes the
+  runtime-wide default
   [#470](https://github.com/julianhille/MuhammaraJS/pull/470)
 
 ### Changed

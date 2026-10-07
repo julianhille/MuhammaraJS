@@ -355,6 +355,16 @@ describe("Recipe default font", function () {
       second.dispose();
     }
 
+    // Unregistering the default family's last style removes the default.
+    Recipe.registerFont("gone", arial, "regular", true);
+    assert.equal(Recipe.unregisterFont("gone"), true);
+    var plain = new Recipe().createPage("letter");
+    try {
+      assert.deepEqual(plain.textDimensions("Hello"), robotoSize);
+    } finally {
+      plain.dispose();
+    }
+
     // disposeAssets() removes the families and the runtime-wide default.
     Recipe.disposeAssets();
     var recipe = new Recipe().createPage("letter");

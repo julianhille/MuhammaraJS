@@ -144,7 +144,8 @@ sets the default of every Recipe from that `createRecipe()` runtime, including
 ones already created. The latest default set applies: a static registration
 overrides the option of earlier Recipes, a Recipe created later or a later
 instance registration overrides the static one for that Recipe, and
-`Recipe.disposeAssets()` removes the static default with the fonts.
+`Recipe.disposeAssets()`, or `Recipe.unregisterFont()` removing the family's
+last style, removes the static default with the fonts.
 
 ```js
 await Recipe.registerFontAsync("report", fontFile, "regular", true);
