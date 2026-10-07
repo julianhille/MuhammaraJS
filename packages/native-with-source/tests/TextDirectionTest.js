@@ -126,6 +126,22 @@ describe("TextDirection", function () {
         "auto",
       ],
     ].forEach(function (testCase) {
+      it("draws a no-break space ending a right-to-left line on its left", function () {
+        // The bidirectional algorithm places U+00A0 and U+202F as separators
+        // and U+2007 as whitespace at the line's end, on the left; spaces a
+        // line breaks at stay at the end of the text.
+        for (var space of ["\u00a0", "\u2007", "\u202f"]) {
+          assert.equal(
+            textDirection.toVisual("\u05e9\u05dc\u05d5\u05dd" + space, "rtl"),
+            space + "\u05dd\u05d5\u05dc\u05e9",
+          );
+        }
+        assert.equal(
+          textDirection.toVisual("\u05e9\u05dc\u05d5\u05dd ", "rtl"),
+          "\u05dd\u05d5\u05dc\u05e9 ",
+        );
+      });
+
       it("reorders " + testCase[0], function () {
         assert.equal(
           textDirection.toVisual(testCase[1], testCase[3] || "auto"),

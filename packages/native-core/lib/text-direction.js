@@ -29,6 +29,13 @@ var REORDERING_CHARACTER =
 // Invisible bidirectional formatting characters. They only steer the
 // reordering, so they are dropped instead of drawn as missing glyphs.
 var FORMATTING_CHARACTER = /^[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]$/;
+// The whitespace at a line's start and end, kept at the paragraph's start
+// and the text's end, where a line breaks: not the no-break spaces U+00A0,
+// U+2007 and U+202F, which a line keeps, or U+FEFF. They are placed as the
+// bidirectional algorithm places them, so a no-break space ending a
+// right-to-left line is drawn on its left.
+var LINE_EDGES =
+  /^((?:(?![\u00a0\u2007\u202f\ufeff])\s)*)([\s\S]*?)((?:(?![\u00a0\u2007\u202f\ufeff])\s)*)$/;
 // The formatting characters that start or end a run of their own: the
 // isolates and embeddings, not the direction marks.
 var RUN_BOUNDARY = /^[\u202a-\u202e\u2066-\u2069]$/;
@@ -485,7 +492,7 @@ function visualCharacters(core, direction, opaque) {
  * @returns {string} The paragraph in visual order.
  */
 function reorderParagraph(paragraph, direction) {
-  var edges = /^(\s*)([\s\S]*?)(\s*)$/.exec(paragraph);
+  var edges = LINE_EDGES.exec(paragraph);
   if (!edges[2]) return paragraph;
   var visual = visualCharacters(edges[2], direction);
   var core = visual.characters
@@ -824,7 +831,7 @@ function visualRuns(texts, direction, runDirections) {
     }
     line += piece;
   });
-  var edges = /^(\s*)([\s\S]*?)(\s*)$/.exec(line);
+  var edges = LINE_EDGES.exec(line);
   if (!edges[2]) return null;
   var leading = edges[1].length;
   var visual = visualCharacters(

@@ -30,40 +30,40 @@ expected:
   auto left:
     native:
       lines:
-        - [["שלום עולם ", 20], ["םלוע םולש ", 220]]
-      annotations: [[20, 69.3], [220, 269.3], [20, 69.3], [220, 269.3]]
+        - [["שלום עולם ", 20], [" םלוע םולש", 220]]
+      annotations: [[20, 69.3], [220, 272.1], [20, 69.3], [220, 272.1]]
     wasm:
       lines:
-        - [["שלום עולם ", 20], ["םלוע םולש ", 220]]
-      annotations: [[20.6, 69.3], [220, 269.3], [20, 69.3], [220, 269.3]]
+        - [["שלום עולם ", 20], [" םלוע םולש", 220]]
+      annotations: [[20.6, 69.3], [220, 272.1], [20, 69.3], [220, 272.1]]
     knownDifference: "Wasm starts the link of text drawn as typed at its first glyph, native at its start, as before right-to-left text"
   auto right:
     native:
       lines:
-        - [["שלום עולם ", 150.66], ["םלוע םולש ", 351.24]]
-      annotations: [[150.7, 200], [351.2, 400.6], [150.7, 200], [351.2, 400.6]]
+        - [["שלום עולם ", 150.66], [" םלוע םולש", 347.92]]
+      annotations: [[150.7, 200], [347.9, 400], [150.7, 200], [347.9, 400]]
     wasm:
       lines:
-        - [["שלום עולם ", 150.66], ["םלוע םולש ", 351.24]]
-      annotations: [[151.2, 200], [351.2, 400.6], [150.7, 200], [351.2, 400.6]]
+        - [["שלום עולם ", 150.66], [" םלוע םולש", 347.92]]
+      annotations: [[151.2, 200], [347.9, 400], [150.7, 200], [347.9, 400]]
     knownDifference: "Wasm starts the link of text drawn as typed at its first glyph, native at its start, as before right-to-left text"
   rtl left:
     native:
       lines:
-        - [["שלום עולם ", 20], ["םלוע םולש ", 220]]
-      annotations: [[20, 69.3], [220, 269.3], [20, 69.3], [220, 269.3]]
+        - [["שלום עולם ", 20], [" םלוע םולש", 220]]
+      annotations: [[20, 69.3], [220, 272.1], [20, 69.3], [220, 272.1]]
     wasm:
       lines:
-        - [["שלום עולם ", 20], ["םלוע םולש ", 220]]
-      annotations: [[20.6, 69.3], [220, 269.3], [20, 69.3], [220, 269.3]]
+        - [["שלום עולם ", 20], [" םלוע םולש", 220]]
+      annotations: [[20.6, 69.3], [220, 272.1], [20, 69.3], [220, 272.1]]
     knownDifference: "Wasm starts the link of text drawn as typed at its first glyph, native at its start, as before right-to-left text"
   rtl right:
     native:
       lines:
-        - [["שלום עולם ", 150.66], ["םלוע םולש ", 351.24]]
-      annotations: [[150.7, 200], [351.2, 400.6], [150.7, 200], [351.2, 400.6]]
+        - [["שלום עולם ", 150.66], [" םלוע םולש", 347.92]]
+      annotations: [[150.7, 200], [347.9, 400], [150.7, 200], [347.9, 400]]
     wasm:
       lines:
-        - [["שלום עולם ", 150.66], ["םלוע םולש ", 351.24]]
-      annotations: [[151.2, 200], [351.2, 400.6], [150.7, 200], [351.2, 400.6]]
+        - [["שלום עולם ", 150.66], [" םלוע םולש", 347.92]]
+      annotations: [[151.2, 200], [347.9, 400], [150.7, 200], [347.9, 400]]
     knownDifference: "Wasm starts the link of text drawn as typed at its first glyph, native at its start, as before right-to-left text"
