@@ -1560,6 +1560,20 @@ export function createTextMethods({ drawText, measure, module, fontKey }) {
          * @param {{text: string, styles: object}} part - Piece in visual order.
          * @returns {{ink: number, space: number}} The widths in points.
          */
+        /**
+         * Where the line's last reordered piece ends with the spaces it
+         * keeps, such as a clipped line's or a no-break space, measured as
+         * the line is when drawn as typed.
+         * @param {{text: string}} part - Piece in visual order.
+         * @param {object} partOptions - The piece's text options.
+         * @returns {number} The width in points.
+         */
+        var keptSpacesWidth = (part, partOptions) => {
+          var drawnOptions = { ...partOptions };
+          // The piece is in visual order already.
+          drawnOptions._drawn = true;
+          return dimensions(this, part.text, drawnOptions).xMax;
+        };
         var metricsOf = (part) => {
           if (!pieceMetrics.has(part)) {
             var partOptions = {
@@ -1752,7 +1766,11 @@ export function createTextMethods({ drawText, measure, module, fontKey }) {
               ? dimensions(this, part.text, partOptions).width
               : justify
                 ? justifiedRoom(part)
-                : metricsOf(part).ink + metricsOf(part).space;
+                : partIndex === drawParts.length - 1 &&
+                    !part.indent &&
+                    /\S\s+$/.test(part.text)
+                  ? keptSpacesWidth(part, partOptions)
+                  : metricsOf(part).ink + metricsOf(part).space;
             if (clipEachPart) clipLine(partOptions);
             if (partOptions.hilite) {
               var partHilite =

@@ -1047,8 +1047,13 @@ exports.text = function text(text = "", x, y, options = {}) {
         var left = x;
         var width = nextX ? nextX - x : content.lineWidth;
         if (textBox.wrap === TextWrap.CLIP) {
+          // A piece of a reordered line was measured already, in the order
+          // it is drawn.
           var right = Math.min(
-            x + new Word(content.text, content.writeOptions).dimensions.xMax,
+            x +
+              (content.piece
+                ? content.lineWidth
+                : new Word(content.text, content.writeOptions).dimensions.xMax),
             nx + textBox.width,
           );
           left = Math.max(left, nx);
@@ -1204,6 +1209,16 @@ exports.text = function text(text = "", x, y, options = {}) {
         const lineWidth =
           pieces.reduce((sum, piece) => sum + advanceOf(piece), 0) -
           (lastPiece.indent ? 0 : advanceOf(lastPiece) - roomOf(lastPiece));
+        // The line's hilite, lines and link end where its last piece ends
+        // with the spaces it keeps, such as a clipped line's or a no-break
+        // space, measured as the line is when drawn as typed.
+        const lastSpan =
+          !lastPiece.indent && /\S\s+$/.test(lastPiece.text)
+            ? new Word(lastPiece.text, {
+                ...contents[lastPiece.run].writeOptions,
+                _drawn: true,
+              }).dimensions.xMax
+            : roomOf(lastPiece);
         let x = first.startX;
         let align = lineAlign(first.writeOptions.alignHorizontal, {
           lastLine: contents[contents.length - 1].lastLine,
@@ -1249,9 +1264,9 @@ exports.text = function text(text = "", x, y, options = {}) {
           }
           const advance = advanceOf(piece);
           // A piece's hilite, lines and link reach the next piece, across
-          // its spaces or widened gap; the line's last piece ends at its
-          // glyphs, or with all of an indent.
-          const span = index === pieces.length - 1 ? roomOf(piece) : advance;
+          // its spaces or widened gap; the line's last piece ends with the
+          // spaces it keeps, or with all of an indent.
+          const span = index === pieces.length - 1 ? lastSpan : advance;
           const drawnContent = Object.assign({}, content, {
             text: piece.text,
             // The piece is already in visual order.
@@ -1273,7 +1288,7 @@ exports.text = function text(text = "", x, y, options = {}) {
                 : span
               : justified && hasGaps
                 ? textBox.width - textBox.paddingLeft - textBox.paddingRight
-                : lineWidth,
+                : lineWidth - roomOf(lastPiece) + lastSpan,
             // The pieces of a line, whose hilite a clip keeps in the box.
             piece: true,
             batch: batches.get(piece.run),

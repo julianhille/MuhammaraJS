@@ -16,6 +16,9 @@ var yaml = require("js-yaml");
 var CASES = path.join(__dirname, "cases");
 var SIZE = 12;
 var BOX = { width: 300 };
+// Where the markup kind draws its text as typed, and in a direction.
+var MARKUP_TYPED_X = 20;
+var MARKUP_DRAWN_X = 220;
 
 /**
  * Every kind of scenario: the variations a file of that kind is drawn in,
@@ -126,6 +129,39 @@ var KINDS = {
             .text("\u05e9\u05dc\u05d5\u05dd" + scenario.break, options);
           if (after !== null) recipe.text(after, options);
           recipe.text("", { ...options, flow: false }).text("after", options);
+        },
+      };
+    },
+  },
+
+  // One text() call with a link and text markup, drawn as typed on the left
+  // of the page and in the variation's direction on its right, so a
+  // scenario whose text keeps its order can ask for the same annotations
+  // both times. Its text box is at most 180 wide.
+  markup: {
+    variations: () =>
+      product({
+        direction: ["none", "auto", "rtl"],
+        align: ["left", "right"],
+      }),
+    key: (v) => `${v.direction} ${v.align}`,
+    title: (v) => `${v.direction}, ${v.align} aligned`,
+    build(scenario, v) {
+      return {
+        sameAnnotations: Boolean(scenario.sameAsTyped),
+        draw(recipe) {
+          [
+            [MARKUP_TYPED_X, "none"],
+            [MARKUP_DRAWN_X, v.direction],
+          ].forEach(([x, direction]) => {
+            recipe.text(scenario.text, x, 50, {
+              font: "arial",
+              size: SIZE,
+              ...scenario.options,
+              direction,
+              textBox: { ...scenario.options?.textBox, textAlign: v.align },
+            });
+          });
         },
       };
     },
@@ -275,6 +311,25 @@ function brokenProperties(testCase, summary, drawnRight) {
     );
     if (after <= lastShown) {
       broken.push("text after the flow is drawn on one of its lines");
+    }
+  }
+  if (testCase.sameAnnotations) {
+    // The annotations of the text drawn in the variation's direction end
+    // where those of the text drawn as typed do. Their starts are not
+    // compared: Wasm starts the link of text drawn as typed at its first
+    // glyph, as before right-to-left text.
+    var ends = (copy) =>
+      summary.annotations
+        .filter(([left]) => left >= MARKUP_DRAWN_X === copy)
+        .map(([, right]) =>
+          Math.round((right - (copy ? MARKUP_DRAWN_X : MARKUP_TYPED_X)) * 10),
+        )
+        .sort((a, b) => a - b)
+        .join();
+    if (ends(true) !== ends(false)) {
+      broken.push(
+        `annotations end at ${ends(true)}, not at ${ends(false)} as typed`,
+      );
     }
   }
   if (testCase.oneLine) {
