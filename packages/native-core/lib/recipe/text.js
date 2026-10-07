@@ -1690,7 +1690,7 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
       texts[0],
       texts.length > 1 || !this._flow,
     );
-    this._flowParagraph = this._flow ? open : "";
+    this._flowParagraph = this._flow ? keptParagraph(open) : "";
     if (textObjects.some(hasPendingParagraph)) this._flowWaits = true;
   }
   // Top-level nodes share a line, as children of a block element do, so
@@ -2093,6 +2093,22 @@ function assignParagraphDirections(textObjects, direction, openText, waits) {
 }
 
 /**
+ * What a flow keeps of its open paragraph for the runs after it: its text
+ * while it has no letter to take its direction from, and then one letter of
+ * that direction, all the runs after it read, so a long paragraph is not
+ * searched again for each run.
+ * @private
+ * @param {string} paragraph - The open paragraph's text.
+ * @returns {string} The text to keep.
+ */
+function keptParagraph(paragraph) {
+  if (paragraph.length < 2 || !hasStrongCharacter(paragraph)) return paragraph;
+  return resolveDirection(paragraph, TextDirection.AUTO) === TextDirection.RTL
+    ? "\u05d0"
+    : "a";
+}
+
+/**
  * End a flow's open paragraph: lines still waiting for its direction take
  * the one it has, and the next flowed run starts a new paragraph.
  * @private
@@ -2453,7 +2469,7 @@ function makeTextObjects(
       paragraphs[0],
       paragraphs.length > 1 || !self._flow,
     );
-    self._flowParagraph = self._flow ? openParagraph : "";
+    self._flowParagraph = self._flow ? keptParagraph(openParagraph) : "";
     if (pending) self._flowWaits = true;
   }
   let lineStart = 0;

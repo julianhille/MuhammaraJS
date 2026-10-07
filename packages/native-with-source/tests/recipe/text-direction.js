@@ -1372,6 +1372,35 @@ describe("Recipe text direction", function () {
     );
   });
 
+  it("keeps no more of a flowed paragraph than its direction once it has one", async function () {
+    const kept = [];
+    const runs = await drawPage("text-direction-flow-kept", (recipe) => {
+      const options = { font: "arial", size: 12, direction: "auto" };
+      recipe.text("1 שלום ", 20, 20, {
+        ...options,
+        flow: true,
+        textBox: { width: 360 },
+      });
+      for (let index = 0; index < 50; ++index) {
+        recipe.text("abc ", options);
+        kept.push(recipe._flowParagraph.length);
+      }
+      recipe.text("", { flow: false });
+    });
+    // Each run would otherwise search the whole paragraph again, so a flow
+    // took time with the square of its runs.
+    assert.ok(
+      kept.every((length) => length === 1),
+      "kept " + kept.join(),
+    );
+    // The paragraph still takes the direction of its first letter, so the
+    // first run stays rightmost on its line, whatever runs come after it.
+    const first = runs.find((run) => run.text.includes("1"));
+    const line = runs.filter((run) => run.y === first.y);
+    assert.equal(Math.max(...line.map((run) => run.x)), first.x);
+    assert.ok(line.length > 1);
+  });
+
   it("lets a flowed paragraph starting with an isolate take a later letter's direction", async function () {
     const text = "\u2067abc\u2069 1 2 3 4 5 6 7 8 9 ";
     const lines = {};
