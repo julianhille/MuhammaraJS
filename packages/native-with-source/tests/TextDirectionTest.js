@@ -365,6 +365,27 @@ describe("TextDirection", function () {
   });
 
   describe("visualRuns", function () {
+    it("keeps a run that starts with a mark in one piece", function () {
+      // The mark has no letter in its run; it does not join the last letter
+      // of the run before it.
+      assert.deepEqual(
+        textDirection.visualRuns(
+          ["\u05e9\u05dc\u05d5\u05dd", "\u05b8abc"],
+          "rtl",
+          [undefined, "none"],
+        ),
+        [
+          { run: 1, text: "\u05b8abc" },
+          { run: 0, text: "\u05dd\u05d5\u05dc\u05e9" },
+        ],
+      );
+      // A direction mark between a letter and its point keeps them together.
+      assert.equal(
+        textDirection.toVisual("\u05d0\u200f\u05b8\u05d1", "rtl"),
+        "\u05d1\u05b8\u05d0",
+      );
+    });
+
     it("orders the runs of a right-to-left line from right to left", function () {
       assert.deepEqual(
         textDirection.visualRuns(["שלום ", "עולם", " יפה"], "auto"),

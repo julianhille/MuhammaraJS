@@ -29,6 +29,9 @@ var REORDERING_CHARACTER =
 // Invisible bidirectional formatting characters. They only steer the
 // reordering, so they are dropped instead of drawn as missing glyphs.
 var FORMATTING_CHARACTER = /^[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]$/;
+// The formatting characters that start or end a run of their own: the
+// isolates and embeddings, not the direction marks.
+var RUN_BOUNDARY = /^[\u202a-\u202e\u2066-\u2069]$/;
 // The same characters, to remove them from a whole text.
 var FORMATTING_CHARACTERS = /[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
 
@@ -320,8 +323,9 @@ function paragraphDirections(text, direction) {
  * The first UTF-16 index of the cluster each index belongs to. A cluster is a
  * character with the combining marks that follow it, so reordering never
  * moves a mark off its letter or splits a surrogate pair. Formatting
- * characters are dropped when drawn, so a mark after one joins the character
- * before the formatting character.
+ * characters are dropped when drawn, so a mark after a direction mark joins
+ * the character before that mark; an isolate or embedding starts or ends a
+ * run of its own, so a mark after one starts a cluster of its own.
  *
  * @param {string} text The text.
  * @returns {number[]} The cluster start of every index.
@@ -335,6 +339,7 @@ function clusterStarts(text) {
     var lowSurrogate = isLowSurrogateAt(text, index);
     if (FORMATTING_CHARACTER.test(text[index])) {
       starts[index] = index;
+      if (RUN_BOUNDARY.test(text[index])) base = -1;
     } else if (
       base !== -1 &&
       (lowSurrogate ||
