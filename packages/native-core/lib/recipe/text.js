@@ -3,7 +3,7 @@ const { Word, Line, Column } = require("./text.helper");
 const { htmlToTextObjects, HtmlTag } = require("./htmlToTextObjects");
 const { Color, xObjectForm } = require("./xObjectForm");
 const { linkPdf } = require("./annotation");
-const { resolveFontSize, trimBreakableEnd } = require("./utils");
+const { clearTextFlow, resolveFontSize, trimBreakableEnd } = require("./utils");
 const { miterLimitOption, rotationOption } = require("../recipe-options");
 const {
   readDirection,
@@ -202,10 +202,7 @@ function _initOptions(self, x = {}, y, options = {}) {
     self.box = { x, y };
     self._firstLineHeight = 0; // indicates not set yet, determined later.
     self._textOptions = { textBox: {} };
-    self._previousTextObjects = [];
-    self._flowLines = [];
-    self._flowParagraph = "";
-    self._flowWaits = false;
+    clearTextFlow(self);
     self._flow = options.flow || false;
 
     if (options.layout) {
@@ -2899,8 +2896,7 @@ exports._flushTextFlow = function _flushTextFlow() {
  */
 exports.movedown = function movedown(lines = 1, returnCoords = false) {
   if (!this._flow || this._previousTextObjects.length === 0) {
-    this._previousTextObjects = [];
-    this._flowLines = [];
+    clearTextFlow(this);
     // Before any text is written there is no cursor or line height yet.
     this.y = (this.y || 0) + (this._lineHeight || 14) * lines;
     this.x = this.box ? this.box.x : this.x || 0;

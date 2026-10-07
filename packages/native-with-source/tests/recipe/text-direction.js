@@ -1401,6 +1401,27 @@ describe("Recipe text direction", function () {
     assert.ok(line.length > 1);
   });
 
+  it("forgets a flow's paragraph state at a new page and a table", async function () {
+    const stale = (recipe) => {
+      recipe._flowParagraph = "\u05d0";
+      recipe._flowWaits = true;
+      recipe._flowLines = [{}];
+    };
+    const cleared = (recipe) => [
+      recipe._flowParagraph,
+      recipe._flowWaits,
+      recipe._flowLines.length,
+    ];
+    await drawPage("text-direction-flow-reset", (recipe) => {
+      stale(recipe);
+      recipe.endPage().createPage(400, 400);
+      assert.deepEqual(cleared(recipe), ["", false, 0]);
+      stale(recipe);
+      recipe.table(20, 20, [{ value: "row" }], { font: "arial", size: 10 });
+      assert.deepEqual(cleared(recipe), ["", false, 0]);
+    });
+  });
+
   it("keeps only the open isolates of a flowed paragraph without a letter", async function () {
     const kept = [];
     const lines = {};

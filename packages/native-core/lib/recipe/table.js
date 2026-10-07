@@ -1,5 +1,5 @@
 var { htmlToTextObjects } = require("./htmlToTextObjects");
-var { cloneOptions: clone } = require("./utils");
+var { cloneOptions: clone, clearTextFlow } = require("./utils");
 var { LineCap, TableRowNth } = require("../recipe-constants");
 
 /**
@@ -232,9 +232,7 @@ exports.table = function table(x, y, contents, options = {}) {
     return width;
   }, 0);
 
-  this._previousTextObjects = [];
-
-  this._flowLines = [];
+  clearTextFlow(this);
   var nth;
   var rowOptions = {};
 
@@ -430,8 +428,7 @@ exports.table = function table(x, y, contents, options = {}) {
   this.y = currentY;
   this.box = { x, y: currentY };
   this._flow = false;
-  this._previousTextObjects = [];
-  this._flowLines = [];
+  clearTextFlow(this);
 
   return this;
 };
