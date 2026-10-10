@@ -2,6 +2,15 @@
 
 All notable changes to `@muhammara/wasm` are documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Reading an encrypted PDF whose stream has a `Crypt` filter with
+  `/DecodeParms` but no `/Name`, which then defaults to `Identity`, no longer
+  reads through a null pointer when that stream is parsed. Native crashed on
+  such a PDF; Wasm read its own low memory instead. Fixes GHSA-q3f9-hvrq-7wwh
+
 ## [1.1.0] - 2026-10-05
 
 ### Breaking Changes
