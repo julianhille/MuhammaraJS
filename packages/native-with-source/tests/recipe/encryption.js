@@ -267,6 +267,28 @@ describe("Encryption", () => {
       });
   });
 
+  // GH-975: a userProtectionFlag alone encrypts a new PDF with an empty user
+  // password, which endPDF() used to open with the encrypt() password.
+  const taskBFRE = "New Buffer file with constructor flag re-encrypted";
+  it(taskBFRE, (done) => {
+    new Recipe(Buffer.from("new"), undefined, { userProtectionFlag: 4 })
+      .createPage("letter")
+      .endPage()
+      .encrypt({ userPassword: "second" })
+      .endPDF((buffer) => {
+        assertBufferEncryption(buffer, "second", true);
+        const locked = muhammara.createReader(
+          new muhammara.PDFRStreamForBuffer(buffer),
+        );
+        try {
+          assert.equal(locked.getPagesCount(), 0);
+        } finally {
+          locked.end();
+        }
+        done();
+      });
+  });
+
   const taskBNE = "Buffer source with empty encrypt() stays unencrypted";
   it(taskBNE, (done) => {
     const src = fs.readFileSync(

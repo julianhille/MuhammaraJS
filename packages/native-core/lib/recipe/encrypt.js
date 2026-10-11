@@ -120,8 +120,9 @@ exports.encrypt = function encrypt(options = {}) {
  * collected output bytes, so the callback and an output path receive the
  * encrypted PDF. Nothing happens when encrypt() was given no password, as on
  * Wasm. The finished output is opened with the password the Recipe was
- * created with, so a PDF whose constructor options already encrypted it can
- * still be re-encrypted with new passwords.
+ * created with, or none for an empty user password, so a PDF whose
+ * constructor options already encrypted it can still be re-encrypted with new
+ * passwords.
  * @private
  * @returns {void}
  * @throws {Error} If the output cannot be renamed, re-encrypted or removed.
@@ -131,7 +132,7 @@ exports._encrypt = function _encrypt() {
     return;
   }
   const recryptOptions = Object.assign({}, this.encryption_, {
-    password: this.encryptOptions.password || this.encryption_.password,
+    password: this.encryptOptions.password,
   });
 
   if (this.isBufferSrc) {
