@@ -523,7 +523,7 @@ XCryptor* DecryptionHelper::GetCryptForStream(PDFStreamInput* inStream) {
 					return mXcryptStreams;
 
 				PDFObjectCastPtr<PDFName> cryptFilterName(mParser->QueryDictionaryObject(decodeParamsItem.GetPtr(), "Name"));
-				return GetFilterForName(mXcrypts, cryptFilterName->GetValue());
+				return GetFilterForName(mXcrypts, !cryptFilterName ? "Identity" : cryptFilterName->GetValue());
 
 			}
 			else
@@ -537,7 +537,7 @@ XCryptor* DecryptionHelper::GetCryptForStream(PDFStreamInput* inStream) {
 				return mXcryptStreams;
 
 			PDFObjectCastPtr<PDFName> cryptFilterName(mParser->QueryDictionaryObject(decodeParamsItem.GetPtr(), "Name"));
-			return GetFilterForName(mXcrypts, cryptFilterName->GetValue());
+			return GetFilterForName(mXcrypts, !cryptFilterName ? "Identity" : cryptFilterName->GetValue());
 		}
 		else
 			return mXcryptStreams; // ???
