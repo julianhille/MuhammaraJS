@@ -118,6 +118,15 @@ export var components = [
     pieces: [license("LibAesgm", "LICENSE.txt")],
   },
   {
+    name: "HACL* SHA-2",
+    version:
+      "4ef25b547b377dcef855db4289c6a00580e7221c, as copied into CPython v3.14.0",
+    license: "MIT",
+    source: "https://github.com/python/cpython/tree/v3.14.0/Modules/_hacl",
+    shippedIn: "dist/muhammara-wasm.wasm",
+    pieces: [{ file: "packages/wasm/deps/hacl/licenses/LICENSE.txt" }],
+  },
+  {
     name: "LibJpeg",
     version: "IJG JPEG 10 (25-Jan-2026)",
     license: "IJG",
@@ -274,6 +283,11 @@ export var versionChecks = [
       var match = source.match(/#define JVERSION\s+"(\S+)\s+(\S+)"/);
       return match && `${match[1]} (${match[2]})`;
     },
+  },
+  {
+    names: ["HACL* SHA-2"],
+    file: "packages/wasm/deps/hacl/README.md",
+    read: (source) => source.match(/revision\s+`([0-9a-f]{40})`/)?.[1],
   },
   {
     names: [

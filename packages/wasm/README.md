@@ -51,8 +51,8 @@ path-, stream-, and `Buffer`-oriented, so its JavaScript API is separate.
 
 The native packages load PDF-Writer as a compiled Node.js addon instead of
 WebAssembly. In Node.js and Electron that brings direct file paths and
-streams, `Buffer` input and output, and APIs the browser sandbox cannot offer,
-such as OpenSSL-backed encryption. The trade-off is a platform-specific binary:
+streams, `Buffer` input and output, and other APIs the browser sandbox cannot
+offer. The trade-off is a platform-specific binary:
 [`@muhammara/native`](https://www.npmjs.com/package/@muhammara/native) downloads
 a prebuilt one, and
 [`@muhammara/native-with-source`](https://www.npmjs.com/package/@muhammara/native-with-source)

@@ -37,7 +37,7 @@ export declare const PageBox: {
 };
 export type PDFPageBoxType = 0 | 1 | 2 | 3 | 4;
 export type PDFVersion = 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 20;
-export type RecryptPDFVersion = 0 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17;
+export type RecryptPDFVersion = 0 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 20;
 export type RecipePDFVersion =
   | 1
   | 1.1
@@ -70,7 +70,7 @@ export interface PDFReaderOptions {
 }
 /** `createWriter()` options, including native's encryption options. */
 export interface CreateWriterOptions extends WriterOptions {
-  /** Encrypts the PDF with this user password, as in native. PDF 2.0 throws. */
+  /** Encrypts the PDF with this user password, as in native. */
   userPassword?: string;
   /** Owner password of an encrypted PDF; ignored without `userPassword`. */
   ownerPassword?: string;
@@ -80,7 +80,7 @@ export interface CreateWriterOptions extends WriterOptions {
 /** Options accepted by the byte-first equivalent of native `recrypt`. */
 export interface PDFRecryptOptions {
   password?: string;
-  /** PDF 1.0 through 1.7 encryption version. PDF 2.0/AES-256 is unavailable. */
+  /** Encryption version, as in native; PDF 2.0 uses AES-256. */
   version?: RecryptPDFVersion;
   /** Enables Flate compression for streams. Defaults to true. */
   compress?: boolean;

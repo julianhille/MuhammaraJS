@@ -32,6 +32,14 @@ function readStreamIVs(pdf) {
   return ivs;
 }
 
+// The encryption dictionary entries that select the algorithm, in file order.
+function encryptionEntries(pdf) {
+  return new TextDecoder("latin1")
+    .decode(pdf)
+    .match(/\/V \d+|\/R \d+|\/AESV\d/g)
+    .filter((entry, index, all) => all.indexOf(entry) === index);
+}
+
 describe("Xcryption", function () {
   it("adds, changes, and removes passwords from byte PDFs", async function () {
     var muhammara = await createMuhammaraWasm();
@@ -132,14 +140,18 @@ describe("Xcryption", function () {
       () => muhammara.createWriter({ log: "muhammara.log" }),
       /log files are unavailable in WebAssembly/,
     );
-    assert.throws(
-      () =>
-        muhammara.createWriter({
-          userPassword: "user",
-          version: muhammara.ePDFVersion20,
-        }),
-      /PDF 2.0 encryption needs AES-256/,
-    );
+    var aes256Writer = muhammara.createWriter({
+      userPassword: "user",
+      ownerPassword: "owner",
+      version: muhammara.ePDFVersion20,
+    });
+    aes256Writer.writePage(aes256Writer.createPage(0, 0, 10, 10));
+    var aes256Pdf = aes256Writer.end();
+    writeOutput("Xcryption-writer-aes256", aes256Pdf);
+    assert.deepEqual(encryptionEntries(aes256Pdf), ["/V 5", "/R 6", "/AESV3"]);
+    var aes256Reader = muhammara.createReader(aes256Pdf, { password: "user" });
+    assert.equal(aes256Reader.getPagesCount(), 1);
+    aes256Reader.end();
     assert.throws(
       () =>
         muhammara.createWriterToModify(muhammara.createBlankPdf(10, 10), {
@@ -185,17 +197,54 @@ describe("Xcryption", function () {
     }
   });
 
-  it("rejects unsupported PDF 2.0 AES-256 encryption", async function () {
+  it("encrypts and decrypts PDF 2.0 with AES-256", async function () {
     var muhammara = await createMuhammaraWasm();
     var source = muhammara.createBlankPdf(100, 100);
     writeOutput("Xcryption-aes256-source", source);
+    var encrypted = muhammara.recrypt(source, {
+      userPassword: "view",
+      ownerPassword: "edit",
+      version: muhammara.ePDFVersion20,
+    });
+    writeOutput("Xcryption-aes256-encrypted", encrypted);
+    assert.deepEqual(encryptionEntries(encrypted), ["/V 5", "/R 6", "/AESV3"]);
+
+    for (var password of ["view", "edit"]) {
+      var reader = muhammara.createReader(encrypted, { password });
+      assert.deepEqual(reader.parsePage(0).getMediaBox(), [0, 0, 100, 100]);
+      reader.end();
+      var plain = muhammara.recrypt(encrypted, { password });
+      writeOutput("Xcryption-aes256-decrypted-" + password, plain);
+      var plainReader = muhammara.createReader(plain);
+      assert.equal(plainReader.isEncrypted(), false);
+      assert.equal(plainReader.getPagesCount(), 1);
+      plainReader.end();
+    }
     assert.throws(
-      () =>
-        muhammara.recrypt(source, {
-          userPassword: "view",
-          version: muhammara.ePDFVersion20,
-        }),
-      /PDF 2\.0\/AES-256 encryption is unavailable in WebAssembly/,
+      () => muhammara.recrypt(encrypted, { password: "wrong" }),
+      /Unable to recrypt PDF/,
+    );
+  });
+
+  // ProtectedAES256.pdf was encrypted by pypdf, so this checks the SHA-2 key
+  // derivation against an implementation other than PDFWriter's.
+  it("decrypts a PDF 2.0 AES-256 file from another implementation", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var encrypted = new Uint8Array(
+      fs.readFileSync("tests/TestMaterials/ProtectedAES256.pdf"),
+    );
+    assert.deepEqual(encryptionEntries(encrypted), ["/V 5", "/R 6", "/AESV3"]);
+    for (var password of ["user", "owner"]) {
+      var plain = muhammara.recrypt(encrypted, { password });
+      writeOutput("Xcryption-aes256-fixture-decrypted-" + password, plain);
+      var reader = muhammara.createReader(plain);
+      assert.equal(reader.isEncrypted(), false);
+      assert.deepEqual(reader.parsePage(0).getMediaBox(), [0, 0, 200, 300]);
+      reader.end();
+    }
+    assert.throws(
+      () => muhammara.recrypt(encrypted, { password: "wrong" }),
+      /Unable to recrypt PDF/,
     );
   });
 
@@ -291,9 +340,9 @@ describe("Xcryption", function () {
       await assert.rejects(
         muhammara.recryptAsync(muhammara.createBlankPdf(100, 100), {
           userPassword: "view",
-          version: muhammara.ePDFVersion20,
+          version: 18,
         }),
-        /PDF 2\.0\/AES-256 encryption is unavailable in WebAssembly/,
+        /Wrong argument for PDF version/,
       );
     });
 

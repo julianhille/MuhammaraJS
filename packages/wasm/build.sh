@@ -81,7 +81,7 @@ docker run --rm \
   -w /build \
   "$toolchain" \
   sh -c 'set -eu
-emcmake cmake -S /src/packages/wasm -B /build -DCMAKE_BUILD_TYPE="$MUHAMMARA_WASM_BUILD_TYPE" -DMUHAMMARA_WASM_SANITIZE="$MUHAMMARA_WASM_SANITIZE" -DMUHAMMARA_BUILD_CPP_TESTS="$MUHAMMARA_WASM_BUILD_TESTS" -DPDFHUMMUS_NO_OPENSSL=ON
+emcmake cmake -S /src/packages/wasm -B /build -DCMAKE_BUILD_TYPE="$MUHAMMARA_WASM_BUILD_TYPE" -DMUHAMMARA_WASM_SANITIZE="$MUHAMMARA_WASM_SANITIZE" -DMUHAMMARA_BUILD_CPP_TESTS="$MUHAMMARA_WASM_BUILD_TESTS"
 cmake --build /build --target muhammara-wasm --parallel
 cp /build/muhammara-wasm.js /build/muhammara-wasm.wasm /out/
 # The Emscripten-side license texts come from the toolchain that linked the

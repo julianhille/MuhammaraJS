@@ -26,15 +26,20 @@ endif()
 set(PDFHummus_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(PDFHummus_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 
-# Browsers have no OpenSSL runtime. PDF generation remains available, while
-# OpenSSL-backed encryption is deliberately excluded from this target.
-set(PDFHUMMUS_NO_OPENSSL ON)
-
-# Prefer the kernel CSPRNG when the Emscripten target exposes getentropy().
-if(UNIX)
-  include(CheckSymbolExists)
-  check_symbol_exists(getentropy "unistd.h" PDFHUMMUS_HAVE_GETENTROPY)
-endif()
+# PDFWriter's PDF 2.0 (AES-256) encryption needs SHA-2 and RAND_bytes from
+# OpenSSL. Instead of OpenSSL, a small shim provides them: SHA-2 from the
+# vendored HACL* and RAND_bytes from getentropy(); see src/crypto/README.md.
+set(PDFHUMMUS_NO_OPENSSL OFF)
+add_library(muhammara-crypto STATIC
+  src/crypto/sha.c
+  src/crypto/rand.c
+  deps/hacl/Hacl_Hash_SHA2.c
+)
+target_include_directories(muhammara-crypto
+  PUBLIC src/crypto/include
+  PRIVATE deps/hacl deps/hacl/include
+)
+add_library(OpenSSL::Crypto ALIAS muhammara-crypto)
 
 option(MUHAMMARA_BUILD_CPP_TESTS "Build shared PDFWriter lifecycle tests" OFF)
 

@@ -592,14 +592,12 @@ export function createWriterFactory({
    * enables encryption; `ownerPassword` and `userProtectionFlag` (4 by
    * default) apply only with it, as in native.
    * @param {WriterOptions} options - Writer options.
-   * @param {number} version - The writer's PDF version.
    * @returns {{userPassword: string, ownerPassword: string, userProtectionFlag: number}|null}
    *   The encryption settings, or `null` when the PDF is not encrypted.
    * @throws {TypeError} If a password is not a string, `userProtectionFlag`
    *   is not an integer, or `log` is set, which needs a file system.
-   * @throws {Error} If encryption is requested for PDF 2.0, which needs AES-256.
    */
-  function writerEncryption(options, version) {
+  function writerEncryption(options) {
     if (options.log !== undefined) {
       throw new TypeError(
         "createWriter log files are unavailable in WebAssembly",
@@ -616,11 +614,6 @@ export function createWriterFactory({
     )
       throw new TypeError("createWriter userProtectionFlag must be an integer");
     if (userPassword === undefined) return null;
-    if (version === constants.ePDFVersion20) {
-      throw new Error(
-        "PDF 2.0 encryption needs AES-256, which is unavailable in WebAssembly",
-      );
-    }
     return {
       userPassword,
       ownerPassword: ownerPassword ?? "",
@@ -637,7 +630,7 @@ export function createWriterFactory({
    * @throws {TypeError} If `options` is not an object, `compress` is not a
    *   boolean, an encryption option has the wrong type, or `log` is set.
    * @throws {RangeError} If `version` is not a supported `ePDFVersion*` constant.
-   * @throws {Error} If PDF 2.0 encryption is requested or the native writer cannot be created.
+   * @throws {Error} If the native writer cannot be created.
    */
   function createWriter(options = {}) {
     if (!options || typeof options !== "object") {
@@ -666,7 +659,7 @@ export function createWriterFactory({
     if (typeof compress !== "boolean") {
       throw new TypeError("createWriter compress must be a boolean");
     }
-    var encryption = writerEncryption(options, version);
+    var encryption = writerEncryption(options);
     var recipe = encryption
       ? withString(encryption.userPassword, (user) =>
           withString(encryption.ownerPassword, (owner) =>
