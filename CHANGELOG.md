@@ -21,6 +21,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   password no longer rewrites the output, as on Wasm
   [#446](https://github.com/julianhille/MuhammaraJS/issues/446)
 
+## [7.1.1] - 2026-10-10
+
+### Fixed
+
+- Reading an encrypted PDF whose stream has a `Crypt` filter with
+  `/DecodeParms` but no `/Name`, which then defaults to `Identity`, no longer
+  crashes the process with a segmentation fault when that stream is parsed,
+  for example by `parseNewObject()` or when copying its page. Fixes
+  GHSA-q3f9-hvrq-7wwh
+
 ## [7.1.0] - 2026-10-05
 
 ### Added
@@ -1776,7 +1786,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.1.0...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.1.1...HEAD
+[7.1.1]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.1.0...native-v7.1.1
 [7.1.0]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0...native-v7.1.0
 [7.0.0]: https://github.com/julianhille/MuhammaraJS/compare/6.0.6...native-v7.0.0
 [6.0.6]: https://github.com/julianhille/MuhammaraJS/compare/6.0.5...6.0.6

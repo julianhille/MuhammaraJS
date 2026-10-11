@@ -21,6 +21,14 @@ function text(value) {
   return encoder.encode(value);
 }
 
+/**
+ * Builds a one-page PDF whose content stream uses the given filter.
+ *
+ * @param {string} filter - The stream's /Filter value, e.g. "/Crypt".
+ * @param {string} decodeParms - Extra stream dictionary entries, or "".
+ * @param {Uint8Array} payload - The raw stream data.
+ * @returns {Uint8Array} The PDF bytes.
+ */
 function buildStreamPdf(filter, decodeParms, payload) {
   var header = "%PDF-1.4\n";
   var objects = [
@@ -28,7 +36,7 @@ function buildStreamPdf(filter, decodeParms, payload) {
     "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
     "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R >>\nendobj\n",
   ];
-  var streamHeader = `4 0 obj\n<< /Filter /${filter}${decodeParms} /Length ${payload.length} >>\nstream\n`;
+  var streamHeader = `4 0 obj\n<< /Filter ${filter}${decodeParms} /Length ${payload.length} >>\nstream\n`;
   var streamTail = "\nendstream\nendobj\n";
   var position = header.length;
   var offsets = objects.map((object) => {
@@ -72,19 +80,30 @@ describe("parser security regressions", function () {
     readStreamWithoutCrash(
       muhammara,
       buildStreamPdf(
-        "LZWDecode",
+        "/LZWDecode",
         "\n   /DecodeParms << >>",
         new Uint8Array([0x80, 0x0b, 0x60]),
       ),
     );
     readStreamWithoutCrash(
       muhammara,
-      buildStreamPdf("Crypt", "", new Uint8Array([0])),
+      buildStreamPdf("/Crypt", "", new Uint8Array([0])),
     );
     readStreamWithoutCrash(
       muhammara,
-      buildStreamPdf("Crypt", " /DecodeParms << >>", new Uint8Array([0])),
+      buildStreamPdf("/Crypt", " /DecodeParms << >>", new Uint8Array([0])),
     );
+    // GHSA-q3f9-hvrq-7wwh: the same streams in an encrypted document.
+    for (var [filter, decodeParms] of [
+      ["/Crypt", " /DecodeParms << >>"],
+      ["[/Crypt]", " /DecodeParms [<< >>]"],
+    ]) {
+      var encrypted = muhammara.recrypt(
+        buildStreamPdf(filter, decodeParms, new Uint8Array([0])),
+        { userPassword: "", ownerPassword: "owner", userProtectionFlag: 4 },
+      );
+      readStreamWithoutCrash(muhammara, encrypted);
+    }
 
     var safeInput = muhammara.createBlankPdf(100, 100);
     writeOutput("parser-bounded-input", safeInput);

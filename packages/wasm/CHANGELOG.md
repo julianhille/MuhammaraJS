@@ -13,6 +13,15 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   page on every Pages deployment
   [#964](https://github.com/julianhille/MuhammaraJS/issues/964)
 
+## [1.1.1] - 2026-10-10
+
+### Fixed
+
+- Reading an encrypted PDF whose stream has a `Crypt` filter with
+  `/DecodeParms` but no `/Name`, which then defaults to `Identity`, no longer
+  reads through a null pointer when that stream is parsed. Native crashed on
+  such a PDF; Wasm read its own low memory instead. Fixes GHSA-q3f9-hvrq-7wwh
+
 ## [1.1.0] - 2026-10-05
 
 ### Breaking Changes
@@ -527,6 +536,7 @@ function or function signature mismatch` and later calls read freed
   runtime use, and Emscripten output is cached per build configuration [#568](https://github.com/julianhille/MuhammaraJS/issues/568)
   [#684](https://github.com/julianhille/MuhammaraJS/issues/684) [#690](https://github.com/julianhille/MuhammaraJS/issues/690) [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.1.0...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.1.1...HEAD
+[1.1.1]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.1.0...wasm-v1.1.1
 [1.1.0]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0...wasm-v1.1.0
 [1.0.0]: https://github.com/julianhille/MuhammaraJS/releases/tag/wasm-v1.0.0
