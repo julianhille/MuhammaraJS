@@ -12,6 +12,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   example could only be reached through its direct URL. Wasm CI rewrites the
   page on every Pages deployment
   [#964](https://github.com/julianhille/MuhammaraJS/issues/964)
+- Split the differences page into Wasm bounds, Wasm gaps and native defects,
+  so permanent platform limits are told apart from fixable gaps
+  [#971](https://github.com/julianhille/MuhammaraJS/issues/971)
 
 ## [1.1.1] - 2026-10-10
 
