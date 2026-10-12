@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   password no longer rewrites the output, as on Wasm
   [#446](https://github.com/julianhille/MuhammaraJS/issues/446)
 
+### Changed
+
+- Update the documentation-build dependency `handlebars` (pulled in by
+  `jsdoc-to-markdown`) from 4.7.9 to 4.7.10 for its security fixes. Only the
+  repository's reference-doc generation uses it; installed packages are
+  unaffected.
+
 ## [7.1.1] - 2026-10-10
 
 ### Fixed
