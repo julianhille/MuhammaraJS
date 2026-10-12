@@ -28,6 +28,26 @@ describe("Recipe appendPages", function () {
     assert.match(new TextDecoder().decode(split[0].bytes), /%%EOF/);
   });
 
+  it("names the type, not the content, of bytes passed as a PDF name", async function () {
+    var Recipe = await getRecipe();
+    var bytes = new Uint8Array([37, 80, 68, 70]);
+    var error = {
+      name: "TypeError",
+      message: "Unknown PDF: expected a registered name, received Uint8Array",
+    };
+    var recipe = new Recipe().createPage(595, 842);
+    assert.throws(() => recipe.overlay(bytes), error);
+    recipe.endPage();
+    assert.throws(() => recipe.appendPage(bytes), error);
+    assert.throws(() => Recipe.splitPdf(bytes), error);
+    assert.throws(() => Recipe.inspectPdf(bytes), error);
+    assert.throws(() => Recipe.inspectPdf("missing"), {
+      name: "Error",
+      message: "Unknown PDF: missing",
+    });
+    writeOutput("appendPages-byte-name", recipe.endPDF());
+  });
+
   it("does not claim to retain annotations while appending core-copied pages", async function () {
     var Recipe = await getRecipe();
     var source = new Recipe({ compress: false })

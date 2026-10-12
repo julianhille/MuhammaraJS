@@ -1,6 +1,7 @@
 import { ImageFit, StructureFormat } from "../value-sets.js";
 import { constants } from "../constants.js";
 import { endActivePage } from "./page.js";
+import { unknownAsset } from "./registration.js";
 
 /**
  * Creates Recipe methods for composing registered PDF files.
@@ -41,7 +42,7 @@ export function createCompositionMethods({
         throw new Error("appendPage cannot be combined with deletePage");
       }
       var path = pdfs.get(name);
-      if (!path) throw new Error(`Unknown PDF: ${name}`);
+      if (!path) throw unknownAsset("Unknown PDF", name);
       var source = inspectPdf(name);
       if (!Array.isArray(pages)) pages = [pages];
       var ranges = pages.map((page) => {
@@ -140,7 +141,7 @@ export function createCompositionMethods({
         y = 0;
       }
       var path = pdfs.get(name);
-      if (!path) throw new Error(`Unknown PDF: ${name}`);
+      if (!path) throw unknownAsset("Unknown PDF", name);
       var page = options.page || 1;
       var source = inspectPdf(name);
       if (!Number.isInteger(page) || page < 1 || page > source.pages) page = 1;
@@ -345,7 +346,7 @@ export function createSplitPdf({
    */
   return function splitPdf(name, prefix = "page") {
     var path = pdfs.get(name);
-    if (!path) throw new Error(`Unknown PDF: ${name}`);
+    if (!path) throw unknownAsset("Unknown PDF", name);
     var reader = withString(path, (pathPointer) =>
       module._muhammara_wasm_reader_create(pathPointer),
     );

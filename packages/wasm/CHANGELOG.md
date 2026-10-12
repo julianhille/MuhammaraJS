@@ -14,6 +14,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   about 8 KB brotli to the `.wasm` instead of about 500 KB
   [#701](https://github.com/julianhille/MuhammaraJS/issues/701)
 
+### Fixed
+
+- Stop Recipe `appendPage()`, `overlay()`, `splitPdf()`, and `inspectPdf()`
+  from writing the whole input into the error message when bytes are passed
+  instead of a registered PDF name. They now throw a `TypeError` that names
+  only the received type
+  [#968](https://github.com/julianhille/MuhammaraJS/issues/968)
+
 ### Changed
 
 - Publish an index page at the GitHub Pages root,
