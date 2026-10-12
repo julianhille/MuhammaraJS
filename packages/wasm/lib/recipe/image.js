@@ -2,6 +2,7 @@ import { ImageFit, HorizontalAlign, VerticalAlign } from "../value-sets.js";
 import { isColorspace } from "./colors.js";
 import { DRAW_IMAGE_PATH } from "../writer.js";
 import { miterLimitOption, rotationOption } from "./vector.helper.js";
+import { unknownAsset } from "./registration.js";
 
 // The error a modifier throws for an image it cannot measure.
 var UNREADABLE_IMAGE = "Unable to read image dimensions";
@@ -306,7 +307,7 @@ export function createImageMethods(runtime) {
       // null options act like omitted options.
       if (options === null) options = {};
       var path = runtime.images.get(name) || runtime.pdfs.get(name);
-      if (!path) throw new Error(`Unknown image: ${name}`);
+      if (!path) throw unknownAsset("Unknown image", name);
       var index = imageIndex(options);
       rotationOption(options.rotation);
       miterLimitOption(options.miterLimit);

@@ -21,6 +21,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   instead of a registered PDF name. They now throw a `TypeError` that names
   only the received type
   [#968](https://github.com/julianhille/MuhammaraJS/issues/968)
+- Stop Recipe `image()` from writing the whole input into the error message
+  when bytes are passed instead of a registered image name. It now throws a
+  `TypeError` that names only the received type
+  [#978](https://github.com/julianhille/MuhammaraJS/issues/978)
 
 ### Changed
 

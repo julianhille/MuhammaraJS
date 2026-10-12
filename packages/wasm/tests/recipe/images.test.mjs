@@ -664,6 +664,11 @@ describe("Recipe image placement", function () {
         /Unknown image: doc/,
       );
       assert.throws(() => recipe.image("missing", 0, 0), /Unknown image/);
+      assert.throws(() => recipe.image(new Uint8Array([255, 216]), 0, 0), {
+        name: "TypeError",
+        message:
+          "Unknown image: expected a registered name, received Uint8Array",
+      });
       assert.throws(
         () => recipe.image("two-images", 0, 0, { page: 3 }),
         /Unknown image: two-images/,
