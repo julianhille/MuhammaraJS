@@ -2,7 +2,7 @@
 
 All notable changes to `@muhammara/wasm` are documented in this file.
 
-## [Unreleased]
+## [1.2.0] - 2026-10-12
 
 ### Added
 
@@ -25,6 +25,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   when bytes are passed instead of a registered image name. It now throws a
   `TypeError` that names only the received type
   [#978](https://github.com/julianhille/MuhammaraJS/issues/978)
+- Appending a page whose `/Contents` is a stream written inline in the page
+  dictionary, instead of through a reference, throws instead of reading
+  through a null pointer in `appendPDFPagesFromPDF()` and
+  `appendPDFPageFromPDF()`
 
 ### Changed
 
@@ -43,13 +47,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   compare link. A release tag whose version has no changelog section fails
   before anything is published
   [#962](https://github.com/julianhille/MuhammaraJS/issues/962)
-
-### Fixed
-
-- Appending a page whose `/Contents` is a stream written inline in the page
-  dictionary, instead of through a reference, throws instead of reading
-  through a null pointer in `appendPDFPagesFromPDF()` and
-  `appendPDFPageFromPDF()`
 
 ## [1.1.1] - 2026-10-10
 
@@ -574,7 +571,8 @@ function or function signature mismatch` and later calls read freed
   runtime use, and Emscripten output is cached per build configuration [#568](https://github.com/julianhille/MuhammaraJS/issues/568)
   [#684](https://github.com/julianhille/MuhammaraJS/issues/684) [#690](https://github.com/julianhille/MuhammaraJS/issues/690) [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.1.1...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.0...HEAD
+[1.2.0]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.1.1...wasm-v1.2.0
 [1.1.1]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.1.0...wasm-v1.1.1
 [1.1.0]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0...wasm-v1.1.0
 [1.0.0]: https://github.com/julianhille/MuhammaraJS/releases/tag/wasm-v1.0.0
