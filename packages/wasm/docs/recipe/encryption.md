@@ -24,8 +24,8 @@ var pdfBytes = new Recipe({
 permission mask. `Recipe.permission()` combines the supported names `print`,
 `modify`, `copy`, `edit`, `fillform`, `extract`, `assemble`, and `printbest`.
 
-Byte-first encryption supports RC4 and AES-128 through PDF 1.7. It does not
-support PDF 2.0/AES-256. Recipe also cannot directly open a password-protected
+Byte-first encryption supports RC4 and AES-128 through PDF 1.7, and AES-256
+for PDF 2.0. Recipe cannot directly open a password-protected
 source; use the low-level `recrypt()` API to decrypt bytes first, modify the
 plain bytes, then configure output encryption.
 

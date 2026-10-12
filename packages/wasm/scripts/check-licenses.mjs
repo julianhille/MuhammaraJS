@@ -30,6 +30,7 @@ export async function checkLicenses() {
       .filter((entry) => entry.isDirectory())
       .map((entry) => `${deps}/${entry.name}/licenses`),
     "packages/native-core/licenses",
+    "packages/wasm/deps/hacl/licenses",
   ];
   for (var folder of folders) {
     var names = await readdir(path.join(repositoryRoot, folder)).catch(

@@ -4,6 +4,16 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- PDF 2.0 (AES-256) encryption, as in native: `recrypt(..., { version: 20 })`,
+  `createWriter({ version: 20, userPassword })`, and Recipe `encrypt()` for a
+  PDF 2.0 document now encrypt with `/V 5 /R 6 /AESV3` instead of throwing,
+  and AES-256 encrypted PDFs open with their password. The SHA-2 hashes come
+  from the vendored, formally verified HACL\* instead of OpenSSL, which adds
+  about 8 KB brotli to the `.wasm` instead of about 500 KB
+  [#701](https://github.com/julianhille/MuhammaraJS/issues/701)
+
 ### Changed
 
 - Publish an index page at the GitHub Pages root,

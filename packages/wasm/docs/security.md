@@ -23,8 +23,11 @@ necessarily byte-for-byte identical to that tag. The other version identifiers
 come from the vendored source headers; `LibAesgm` does not declare an upstream
 release version.
 
-The WebAssembly build deliberately does not link OpenSSL: browsers have no
-OpenSSL runtime, and OpenSSL-backed encryption is excluded from this target.
+The WebAssembly build does not link OpenSSL. For PDF 2.0 (AES-256)
+encryption, SHA-256/384/512 come from the vendored, formally verified
+[HACL\*](https://github.com/hacl-star/hacl-star), and random bytes come from
+`crypto.getRandomValues()` in browsers and workers and `node:crypto` in Node.
+AES itself is the bundled LibAesgm, as in native.
 
 ## Reporting A Defect
 

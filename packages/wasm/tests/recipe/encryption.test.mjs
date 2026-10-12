@@ -75,6 +75,28 @@ describe("Recipe encryption", function () {
     Recipe.disposeAssets();
   });
 
+  it("encrypts a PDF 2.0 document with AES-256", async function () {
+    var Recipe = await createRecipe();
+    var recipe = new Recipe({
+      version: 2.0,
+      userPassword: "view",
+      ownerPassword: "edit",
+    })
+      .createPage(100, 100)
+      .endPage();
+    var encrypted = recipe.endPDF();
+    writeOutput("encryption-pdf20-aes256", encrypted);
+    assert.match(new TextDecoder("latin1").decode(encrypted), /\/AESV3/);
+
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(encrypted, { password: "view" });
+    assert.equal(reader.getPDFLevel(), 2);
+    assert.equal(reader.getPagesCount(), 1);
+    reader.end();
+    recipe.dispose();
+    Recipe.disposeAssets();
+  });
+
   it("queues native Recipe password aliases", async function () {
     var Recipe = await createRecipe();
     var recipe = new Recipe().createPage(100, 100).endPage();

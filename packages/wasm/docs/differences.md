@@ -45,9 +45,7 @@ XML-derived layout tree.
 
 ## Wasm gaps (tracked)
 
-OpenSSL is excluded, but bundled RC4 and AES-128 support byte-first `recrypt`
-and Recipe `encrypt()`. PDF 2.0/AES-256 encryption remains unavailable. Existing
-byte-backed PDFs can be read, modified, and copied, but persistent-file
+Existing byte-backed PDFs can be read, modified, and copied, but persistent-file
 continuation, password-protected Recipe source editing, and the path-based Recipe
 constructor are unavailable.
 

@@ -49,7 +49,7 @@ export function createRecrypt({
    * @returns {{password: string, userPassword: (string|undefined),
    *   ownerPassword: string, userProtectionFlag: number, version: number,
    *   compress: boolean}} The options as plain values.
-   * @throws {Error} If `log` is set or the version is 2.0 or unsupported.
+   * @throws {Error} If `log` is set or the version is unsupported.
    */
   function readRecryptOptions(options) {
     if (!options || typeof options !== "object") options = {};
@@ -57,11 +57,6 @@ export function createRecrypt({
       throw new Error("recrypt log files are unavailable in WebAssembly");
     }
     var version = typeof options.version === "number" ? options.version | 0 : 0;
-    if (version === constants.ePDFVersion20) {
-      throw new Error(
-        "PDF 2.0/AES-256 encryption is unavailable in WebAssembly",
-      );
-    }
     if (
       ![
         constants.ePDFVersionUndefined,
@@ -73,6 +68,7 @@ export function createRecrypt({
         constants.ePDFVersion15,
         constants.ePDFVersion16,
         constants.ePDFVersion17,
+        constants.ePDFVersion20,
       ].includes(version)
     ) {
       throw new Error(

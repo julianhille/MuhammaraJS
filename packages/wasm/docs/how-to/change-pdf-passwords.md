@@ -20,7 +20,7 @@ The options match native `recrypt`: `password` opens the input, while
 encryption. Supplying `userPassword`, including `""`, enables encryption;
 omitting it removes encryption. `version` defaults to `0`, preserving the source
 PDF version, and `compress` defaults to `true`. Encryption supports PDF 1.0
-through 1.7; PDF 2.0/AES-256 is unavailable in WebAssembly.
+through 2.0; PDF 2.0 uses AES-256.
 
 ## With A Promise
 
@@ -105,8 +105,7 @@ var reader = muhammara.createReader(encryptedBytes, {
 });
 ```
 
-The PDF `version` selects the algorithm as in `recrypt`; PDF 2.0 throws
-because AES-256 is unavailable in WebAssembly. `createWriterToModify` does not
+The PDF `version` selects the algorithm as in `recrypt`. `createWriterToModify` does not
 accept these options: modify the bytes first, then encrypt the result with
 `recrypt`.
 
