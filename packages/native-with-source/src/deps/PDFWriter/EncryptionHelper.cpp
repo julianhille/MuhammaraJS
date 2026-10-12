@@ -564,7 +564,10 @@ PDFHummus::EStatusCode EncryptionHelper::ReadState(PDFParser* inStateReader, Obj
 		if(!xCryptorAlgoObject)
 			return eFailure;
 
-		EXCryptorAlgo xCryptorAlgo = (EXCryptorAlgo)xCryptorAlgoObject->GetValue();
+		long long xCryptorAlgoValue = xCryptorAlgoObject->GetValue();
+		if(xCryptorAlgoValue < eRC4 || xCryptorAlgoValue > eAESV3)
+			return eFailure;
+		EXCryptorAlgo xCryptorAlgo = (EXCryptorAlgo)xCryptorAlgoValue;
 
 		PDFObjectCastPtr<PDFLiteralString> fileEncryptionKeyObject = defaultEncryptionObject->QueryDirectObject("FileEncryptionKey");
 		if(!fileEncryptionKeyObject)

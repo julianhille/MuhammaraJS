@@ -19,9 +19,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   positions wrote past a fixed array, and a page tree node listing itself
   recursed until the stack overflowed. An object offset or generation too
   large for an xref entry overflowed a stack buffer, and a one-byte font with
-  no characters or a code over 255 read past its character list. A continued
-  document also keeps its modification date, which used to be replaced by its
-  creation date
+  no characters or a code over 255 read past its character list, and an
+  out-of-range `Trapped`, date UTC relation, crypt algorithm or PDF version
+  was undefined behaviour when loaded. A continued document also keeps its
+  modification date, which used to be replaced by its creation date
 - Encrypt the output of a `Buffer`-sourced `Recipe` when `encrypt()` is
   called. `endPDF()` used to log "Encryption is not supported in Buffer Mode
   yet." and hand the callback (or write to the output path) an unencrypted
