@@ -156,6 +156,26 @@ describe("PDFCopyingContextTest", function () {
     });
   });
 
+  describe("a page whose /Contents is an inline stream", function () {
+    // Streams must be indirect (ISO 32000-1 7.3.8), but the parser reads one
+    // inside a dictionary too. Appending used to cast it to a reference and
+    // dereference null.
+    var source = malformed.pdfWith([
+      "<< /Type /Catalog /Pages 2 0 R >>",
+      "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200]" +
+        " /Contents << /Length 0 >> stream\n>>",
+    ]);
+
+    it("fails to be appended", function () {
+      var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+      assert.throws(function () {
+        writer.appendPDFPagesFromPDF(new muhammara.PDFRStreamForBuffer(source));
+      });
+      writer.end();
+    });
+  });
+
   it("aborts a copy whose stream dictionary cannot be copied", function () {
     var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
     var copying = writer.createPDFCopyingContext(

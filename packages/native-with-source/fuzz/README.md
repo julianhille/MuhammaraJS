@@ -3,14 +3,18 @@
 A mutation fuzzer for the C++ addon. It takes the files in `tests/TestMaterials`
 as seeds, mutates them, and feeds them through the public API:
 
-| Target                          | What it drives                                                                    |
-| ------------------------------- | --------------------------------------------------------------------------------- |
-| `pdf-read`                      | `createReader`, the object graph, stream decoding, page boxes and text extraction |
-| `pdf-modify`                    | `createWriterToModify`, `PDFPageModifier` and copying from the modified file      |
-| `pdf-copy`                      | `appendPDFPagesFromPDF`, form XObjects from pages and page merging                |
-| `pdf-recrypt`                   | `recrypt`                                                                         |
-| `jpeg`, `png`, `tiff`           | image info, the image XObject creators and `drawImage`                            |
-| `truetype`, `opentype`, `type1` | font loading, text measurement, writing and subsetting                            |
+| Target                                                                  | What it drives                                                                                          |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `pdf-read`                                                              | `createReader`, the object graph, stream decoding, page boxes and text extraction                       |
+| `pdf-modify`                                                            | `createWriterToModify`, `PDFPageModifier` and copying from the modified file                            |
+| `pdf-copy`                                                              | `appendPDFPagesFromPDF`, form XObjects from pages and page merging                                      |
+| `pdf-recrypt`                                                           | `recrypt`                                                                                               |
+| `pdf-objects`                                                           | the copying context's object copies, `createFormXObjectsFromPDF`, page merging and `drawImage` of a PDF |
+| `pdf-read-deep`, `pdf-modify-deep`, `pdf-copy-deep`, `pdf-objects-deep` | the same flows, with the xref rebuilt after mutation so changes reach past it                           |
+| `content`, `cmap`                                                       | text extraction from generated content streams and ToUnicode CMaps                                      |
+| `state`                                                                 | `createWriterToContinue` with a mutated `shutdown()` state file                                         |
+| `jpeg`, `png`, `tiff`                                                   | image info, the image XObject creators and `drawImage`                                                  |
+| `truetype`, `opentype`, `type1`                                         | font loading, text measurement, writing and subsetting                                                  |
 
 A JS exception is a clean rejection. These are findings:
 

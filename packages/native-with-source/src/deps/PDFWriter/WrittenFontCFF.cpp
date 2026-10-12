@@ -295,29 +295,41 @@ EStatusCode WrittenFontCFF::WriteState(ObjectsContext* inStateWriter,ObjectIDTyp
 EStatusCode WrittenFontCFF::ReadState(PDFParser* inStateReader,ObjectIDType inObjectID)
 {
 	PDFObjectCastPtr<PDFDictionary> writtenFontState(inStateReader->ParseNewObject(inObjectID));
-
+	if(!writtenFontState)
+		return PDFHummus::eFailure;
 
 	PDFObjectCastPtr<PDFInteger> availablePositionsCount(writtenFontState->QueryDirectObject("mAvailablePositionsCount"));
+	PDFObjectCastPtr<PDFArray> freeListState(writtenFontState->QueryDirectObject("mFreeList"));
+	PDFObjectCastPtr<PDFArray> assignedPositionsState(writtenFontState->QueryDirectObject("mAssignedPositions"));
+	PDFObjectCastPtr<PDFArray> assignedPositionsAvailableState(writtenFontState->QueryDirectObject("mAssignedPositionsAvailable"));
+	PDFObjectCastPtr<PDFBoolean> isCIDState(writtenFontState->QueryDirectObject("mIsCID"));
+	if(!availablePositionsCount || !freeListState || !assignedPositionsState || !assignedPositionsAvailableState || !isCIDState)
+		return PDFHummus::eFailure;
+
+	// the position arrays hold 256 entries
+	if(assignedPositionsState->GetLength() > 256 || assignedPositionsAvailableState->GetLength() > 256)
+		return PDFHummus::eFailure;
 
 	mAvailablePositionsCount = (unsigned char)availablePositionsCount->GetValue();
 
 	mFreeList.clear();
-	PDFObjectCastPtr<PDFArray> freeListState(writtenFontState->QueryDirectObject("mFreeList"));
-
 	SingleValueContainerIterator<PDFObjectVector> it =  freeListState->GetIterator();
 	PDFObjectCastPtr<PDFInteger> item;
+	PDFObjectCastPtr<PDFInteger> secondItem;
 	UCharAndUChar aPair;
 	while(it.MoveNext())
 	{
 		item.Borrow(it.GetItem());
+		if(!it.MoveNext())
+			return PDFHummus::eFailure;
+		secondItem.Borrow(it.GetItem());
+		if(!item || !secondItem)
+			return PDFHummus::eFailure;
 		aPair.first = (unsigned char)item->GetValue();
-		it.MoveNext();
-		item.Borrow(it.GetItem());
-		aPair.second = (unsigned char)item->GetValue();
+		aPair.second = (unsigned char)secondItem->GetValue();
 		mFreeList.push_back(aPair);
 	}
 
-	PDFObjectCastPtr<PDFArray> assignedPositionsState(writtenFontState->QueryDirectObject("mAssignedPositions"));
 	it =  assignedPositionsState->GetIterator();
 	int i=0;
 	
@@ -325,11 +337,12 @@ EStatusCode WrittenFontCFF::ReadState(PDFParser* inStateReader,ObjectIDType inOb
 	while(it.MoveNext())
 	{
 		assignedPositionItem.Borrow(it.GetItem());
+		if(!assignedPositionItem)
+			return PDFHummus::eFailure;
 		mAssignedPositions[i] = (unsigned int)assignedPositionItem->GetValue();
 		++i;
 	}
 
-	PDFObjectCastPtr<PDFArray> assignedPositionsAvailableState(writtenFontState->QueryDirectObject("mAssignedPositionsAvailable"));
 	it =  assignedPositionsAvailableState->GetIterator();
 	i=0;
 	
@@ -337,12 +350,11 @@ EStatusCode WrittenFontCFF::ReadState(PDFParser* inStateReader,ObjectIDType inOb
 	while(it.MoveNext())
 	{
 		assignedPositionAvailableItem.Borrow(it.GetItem());
+		if(!assignedPositionAvailableItem)
+			return PDFHummus::eFailure;
 		mAssignedPositionsAvailable[i] = assignedPositionAvailableItem->GetValue();
 		++i;
 	}
-
-
-	PDFObjectCastPtr<PDFBoolean> isCIDState(writtenFontState->QueryDirectObject("mIsCID"));
 
 	mIsCID = isCIDState->GetValue();
 

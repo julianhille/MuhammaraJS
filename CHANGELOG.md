@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Appending a page whose `/Contents` is a stream written inline in the page
+  dictionary, instead of through a reference, throws instead of crashing the
+  process with a segmentation fault in `appendPDFPagesFromPDF()` and
+  `appendPDFPageFromPDF()`
+- `createWriterToContinue()` throws on a damaged state file instead of
+  crashing the process. A missing or mistyped entry dereferenced null, an
+  odd-length list read past its end, a CFF font with more than 256 assigned
+  positions wrote past a fixed array, and a page tree node listing itself
+  recursed until the stack overflowed. An object offset or generation too
+  large for an xref entry overflowed a stack buffer, and a one-byte font with
+  no characters or a code over 255 read past its character list. A continued
+  document also keeps its modification date, which used to be replaced by its
+  creation date
 - Encrypt the output of a `Buffer`-sourced `Recipe` when `encrypt()` is
   called. `endPDF()` used to log "Encryption is not supported in Buffer Mode
   yet." and hand the callback (or write to the output path) an unencrypted

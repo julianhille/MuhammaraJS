@@ -50,6 +50,11 @@ EStatusCode StateReader::Start(const std::string& inStateFilePath)
 
 	// set the root object
 	PDFObjectCastPtr<PDFIndirectObjectReference> rootObject(mParser.GetTrailer()->QueryDirectObject("Root"));
+	if(!rootObject)
+	{
+		TRACE_LOG("StateReader::Start, the state file has no root reference");
+		return PDFHummus::eFailure;
+	}
 	mRootObject = rootObject->mObjectID;
 
 	return PDFHummus::eSuccess;

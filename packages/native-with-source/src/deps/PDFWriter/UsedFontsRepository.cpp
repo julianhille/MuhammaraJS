@@ -208,32 +208,36 @@ EStatusCode UsedFontsRepository::ReadState(PDFParser* inStateReader,ObjectIDType
 
 
 	PDFObjectCastPtr<PDFDictionary> usedFontsRepositoryState(inStateReader->ParseNewObject(inObjectID));
+	if(!usedFontsRepositoryState)
+		return PDFHummus::eFailure;
 
 	PDFObjectCastPtr<PDFBoolean> embedFontsObject(usedFontsRepositoryState->QueryDirectObject("mEmbedFonts"));
+	PDFObjectCastPtr<PDFArray> optionalMetricsState(usedFontsRepositoryState->QueryDirectObject("mOptionaMetricsFiles"));
+	PDFObjectCastPtr<PDFArray> usedFontsState(usedFontsRepositoryState->QueryDirectObject("mUsedFonts"));
+	if(!embedFontsObject || !optionalMetricsState || !usedFontsState)
+		return PDFHummus::eFailure;
+
 	mEmbedFonts = embedFontsObject->GetValue();
 
 	mOptionaMetricsFiles.clear();
-	PDFObjectCastPtr<PDFArray> optionalMetricsState(usedFontsRepositoryState->QueryDirectObject("mOptionaMetricsFiles"));
 	SingleValueContainerIterator<PDFObjectVector> it = optionalMetricsState->GetIterator();
 	PDFObjectCastPtr<PDFLiteralString> aStringValue;
+	PDFObjectCastPtr<PDFLiteralString> anotherStringValue;
 
 	while(it.MoveNext())
 	{
-		PDFTextString aKey;
-
 		aStringValue.Borrow(it.GetItem());
-		aKey = aStringValue->GetValue();
+		if(!it.MoveNext())
+			return PDFHummus::eFailure;
+		anotherStringValue.Borrow(it.GetItem());
+		if(!aStringValue || !anotherStringValue)
+			return PDFHummus::eFailure;
 
-		PDFTextString aValue;
-
-		it.MoveNext();
-		aStringValue.Borrow(it.GetItem());
-		aValue = aStringValue->GetValue();
+		PDFTextString aKey(aStringValue->GetValue());
+		PDFTextString aValue(anotherStringValue->GetValue());
 
 		mOptionaMetricsFiles.insert(StringToStringMap::value_type(aKey.ToUTF8String(),aValue.ToUTF8String()));
 	}
-
-	PDFObjectCastPtr<PDFArray> usedFontsState(usedFontsRepositoryState->QueryDirectObject("mUsedFonts"));
 
 	it = usedFontsState->GetIterator();
 	PDFObjectCastPtr<PDFLiteralString> keyStringItem;
@@ -246,10 +250,23 @@ EStatusCode UsedFontsRepository::ReadState(PDFParser* inStateReader,ObjectIDType
 	while(it.MoveNext() && PDFHummus::eSuccess == status)
 	{
 		keyStringItem.Borrow(it.GetItem());
-		it.MoveNext();
+		if(!it.MoveNext())
+		{
+			status = PDFHummus::eFailure;
+			break;
+		}
         keyIndexItem.Borrow(it.GetItem());
-        it.MoveNext();
+		if(!it.MoveNext())
+		{
+			status = PDFHummus::eFailure;
+			break;
+		}
 		valueItem.Borrow(it.GetItem());
+		if(!keyStringItem || !keyIndexItem || !valueItem)
+		{
+			status = PDFHummus::eFailure;
+			break;
+		}
 
 		PDFTextString aTextString(keyStringItem->GetValue());
 		std::string filePath = aTextString.ToUTF8String();
@@ -282,8 +299,11 @@ EStatusCode UsedFontsRepository::ReadState(PDFParser* inStateReader,ObjectIDType
 			break;
 		}
 
-		usedFont->ReadState(inStateReader,valueItem->mObjectID);
-		mUsedFonts.insert(StringAndLongToPDFUsedFontMap::value_type(StringAndLong(filePath,fontIndex),usedFont));
+		status = usedFont->ReadState(inStateReader,valueItem->mObjectID);
+		// a font listed twice keeps its first entry
+		if(status != PDFHummus::eSuccess ||
+			!mUsedFonts.insert(StringAndLongToPDFUsedFontMap::value_type(StringAndLong(filePath,fontIndex),usedFont)).second)
+			delete usedFont;
 
 	}
 	return status;

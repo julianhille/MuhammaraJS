@@ -68,6 +68,17 @@ EStatusCode ANSIFontWriter::WriteFont(	FreeTypeFaceWrapper& inFontInfo,
 
 	do
 	{
+		mFontOccurrence = inFontOccurrence;
+		CalculateCharacterEncodingArray();
+
+		// one byte codes. only a damaged continuation state holds others, or none
+		if(mCharactersVector.empty() || mCharactersVector.back().second.mEncodedCharacter > 255)
+		{
+			TRACE_LOG("ANSIFontWriter::WriteFont, character codes are missing or exceed one byte");
+			status = PDFHummus::eFailure;
+			break;
+		}
+
 		status = inObjectsContext->StartNewIndirectObject(inFontOccurrence->mWrittenObjectID);
 		if(status != PDFHummus::eSuccess)
 		{
@@ -76,7 +87,6 @@ EStatusCode ANSIFontWriter::WriteFont(	FreeTypeFaceWrapper& inFontInfo,
 		}
 		
 		mFontInfo = &inFontInfo;
-		mFontOccurrence = inFontOccurrence;
 		mObjectsContext = inObjectsContext;
 
 		DictionaryContext* fontContext = inObjectsContext->StartDictionary();
@@ -98,9 +108,8 @@ EStatusCode ANSIFontWriter::WriteFont(	FreeTypeFaceWrapper& inFontInfo,
 			as for widths.
 			i have to create a list/array of the characters ordered from lowest encoded value to highest, and fill it up with the charachters mapped
 			to glyphs. this will allow me to later write the highest and lowest char codes, as well as loop the list and 
-			write the widths.
+			write the widths. CalculateCharacterEncodingArray() built that list above.
 		*/
-		CalculateCharacterEncodingArray();
 
 		WriteWidths(fontContext);
 
