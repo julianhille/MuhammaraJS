@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   the constructor password before it is re-encrypted. `encrypt()` without a
   password no longer rewrites the output, as on Wasm
   [#446](https://github.com/julianhille/MuhammaraJS/issues/446)
+- Let `Recipe#encrypt()` set passwords on a new PDF whose constructor options
+  held only a `userProtectionFlag`. `endPDF()` failed with "Unable to recrypt
+  files" because it opened the finished PDF with the new password instead of
+  the empty user password
+  [#975](https://github.com/julianhille/MuhammaraJS/issues/975)
 
 ### Changed
 

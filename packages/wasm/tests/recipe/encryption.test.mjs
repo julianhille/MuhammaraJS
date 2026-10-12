@@ -97,6 +97,28 @@ describe("Recipe encryption", function () {
     Recipe.disposeAssets();
   });
 
+  // Mirrors native "New Buffer file with constructor flag re-encrypted".
+  it("re-encrypts a document a constructor userProtectionFlag encrypted", async function () {
+    var Recipe = await createRecipe();
+    var recipe = new Recipe({ userProtectionFlag: 4 })
+      .createPage(100, 100)
+      .endPage()
+      .encrypt({ userPassword: "second" });
+    var encrypted = recipe.endPDF();
+    writeOutput("encryption-constructor-flag-then-encrypt", encrypted);
+
+    var muhammara = await createMuhammaraWasm();
+    var locked = muhammara.createReader(encrypted);
+    assert.equal(locked.getPagesCount(), 0);
+    locked.end();
+    var reader = muhammara.createReader(encrypted, { password: "second" });
+    assert.equal(reader.isEncrypted(), true);
+    assert.equal(reader.getPagesCount(), 1);
+    reader.end();
+    recipe.dispose();
+    Recipe.disposeAssets();
+  });
+
   it("queues native Recipe password aliases", async function () {
     var Recipe = await createRecipe();
     var recipe = new Recipe().createPage(100, 100).endPage();
