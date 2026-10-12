@@ -1,3 +1,5 @@
+import { unknownAsset } from "./registration.js";
+
 /**
  * Creates a function that inspects a registered PDF's metadata and pages.
  * @param {{module: object, withString: Function, pdfs: Map<string, string>}} dependencies - Module and PDF registry.
@@ -21,7 +23,7 @@ export function createInspectPdf({ module, withString, pdfs }) {
    */
   return function inspectPdf(name) {
     var path = pdfs.get(name);
-    if (!path) throw new Error(`Unknown PDF: ${name}`);
+    if (!path) throw unknownAsset("Unknown PDF", name);
     var reader = withString(path, (pathPointer) =>
       module._muhammara_wasm_reader_create(pathPointer),
     );
