@@ -134,6 +134,21 @@ git tag wasm-v1.0.0
 git push origin wasm-v1.0.0
 ```
 
+The release body is generated at build time by `.github/scripts/release-notes.mjs`.
+It copies the `## [<version>]` section of `packages/wasm/CHANGELOG.md`, so that section must
+exist before the tag is pushed; the workflow fails before anything is published
+when it is missing. Below the changelog, the notes list the pull requests merged
+since the previous `wasm-v` tag with the issues they close, every
+contributor, the contributors whose first commit on the default branch is part
+of the release, and a compare link. Documentation tags and the tags of the
+other package are never picked as the previous tag. The same notes can be
+reproduced for a published release:
+
+```sh
+# Print the release notes of a tag. GITHUB_TOKEN raises the API rate limit.
+node .github/scripts/release-notes.mjs packages/wasm/CHANGELOG.md wasm-v wasm-v1.0.0
+```
+
 After successful publication, the workflow automatically creates a matching
 `wasm-doc-v<version>` documentation tag. A later documentation-only correction
 can be tagged without rebuilding or publishing the package:

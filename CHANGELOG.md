@@ -32,6 +32,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `jsdoc-to-markdown`) from 4.7.9 to 4.7.10 for its security fixes. Only the
   repository's reference-doc generation uses it; installed packages are
   unaffected.
+- GitHub releases carry generated notes: the changelog section of the
+  released version, the pull requests merged since the previous release with
+  the issues they close, the contributors, the first-time contributors, and a
+  compare link. A release tag whose version has no changelog section fails
+  before anything is published
+  [#962](https://github.com/julianhille/MuhammaraJS/issues/962)
 
 ## [7.1.1] - 2026-10-10
 
