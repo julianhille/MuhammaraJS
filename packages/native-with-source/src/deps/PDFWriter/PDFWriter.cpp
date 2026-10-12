@@ -506,7 +506,16 @@ EStatusCode PDFWriter::SetupState(const std::string& inStateFilePath)
 				status = eFailure;
 				break;
 			}
-            mModifiedFileVersion = (EPDFVersion)(isModifiedFileVersionObject->GetValue());
+            // only the enumerators are defined values: 0, 10..17, 20, 21
+            long long version = isModifiedFileVersionObject->GetValue();
+            if(version != ePDFVersionUndefined &&
+                !(version >= ePDFVersion10 && version <= ePDFVersion17) &&
+                version != ePDFVersion20 && version != ePDFVersionExtended)
+            {
+                status = eFailure;
+                break;
+            }
+            mModifiedFileVersion = (EPDFVersion)version;
         }
 
 		PDFObjectCastPtr<PDFIndirectObjectReference> objectsContextObject(pdfWriterDictionary->QueryDirectObject("mObjectsContext"));
