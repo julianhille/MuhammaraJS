@@ -157,6 +157,8 @@ EStatusCode PDFUsedFont::WriteState(ObjectsContext* inStateWriter,ObjectIDType i
 EStatusCode PDFUsedFont::ReadState(PDFParser* inStateReader,ObjectIDType inObjectID)
 {
 	PDFObjectCastPtr<PDFDictionary> pdfUsedFontState(inStateReader->ParseNewObject(inObjectID));
+	if(!pdfUsedFontState)
+		return PDFHummus::eFailure;
 
 	PDFObjectCastPtr<PDFIndirectObjectReference> writtenFontReference(pdfUsedFontState->QueryDirectObject("mWrittenFont"));
 

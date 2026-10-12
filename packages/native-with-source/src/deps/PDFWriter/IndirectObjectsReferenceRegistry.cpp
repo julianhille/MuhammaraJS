@@ -262,35 +262,56 @@ EStatusCode IndirectObjectsReferenceRegistry::WriteState(ObjectsContext* inState
 EStatusCode IndirectObjectsReferenceRegistry::ReadState(PDFParser* inStateReader,ObjectIDType inObjectID)
 {
 	PDFObjectCastPtr<PDFDictionary> indirectObjectsDictionary(inStateReader->ParseNewObject(inObjectID));
+	if(!indirectObjectsDictionary)
+		return PDFHummus::eFailure;
 
 	PDFObjectCastPtr<PDFArray> objectsWritesRegistry(indirectObjectsDictionary->QueryDirectObject("mObjectsWritesRegistry"));
+	if(!objectsWritesRegistry)
+		return PDFHummus::eFailure;
 
 	SingleValueContainerIterator<PDFObjectVector> it = objectsWritesRegistry->GetIterator();
+	PDFObjectCastPtr<PDFIndirectObjectReference> objectWriteInformationReference;
 
 	mObjectsWritesRegistry.clear();
 	while(it.MoveNext())
 	{
 		ObjectWriteInformation newObjectInformation;
+		objectWriteInformationReference.Borrow(it.GetItem());
+		if(!objectWriteInformationReference)
+			return PDFHummus::eFailure;
 		PDFObjectCastPtr<PDFDictionary> objectWriteInformationDictionary(inStateReader->ParseNewObject(
-																				((PDFIndirectObjectReference*)it.GetItem())->mObjectID));
+																				objectWriteInformationReference->mObjectID));
+		if(!objectWriteInformationDictionary)
+			return PDFHummus::eFailure;
 		
 		PDFObjectCastPtr<PDFBoolean> objectWritten(objectWriteInformationDictionary->QueryDirectObject("mObjectWritten"));
+		if(!objectWritten)
+			return PDFHummus::eFailure;
 
 		newObjectInformation.mObjectWritten = objectWritten->GetValue();
+		newObjectInformation.mWritePosition = 0;
 
 		if(newObjectInformation.mObjectWritten)
 		{
 			PDFObjectCastPtr<PDFInteger> writePosition(objectWriteInformationDictionary->QueryDirectObject("mWritePosition"));
+			if(!writePosition)
+				return PDFHummus::eFailure;
 			newObjectInformation.mWritePosition = writePosition->GetValue();
 		}
 
 		PDFObjectCastPtr<PDFInteger> objectReferenceType(objectWriteInformationDictionary->QueryDirectObject("mObjectReferenceType"));
-		newObjectInformation.mObjectReferenceType = (ObjectWriteInformation::EObjectReferenceType)objectReferenceType->GetValue();
-
 		PDFObjectCastPtr<PDFBoolean> objectDirty(objectWriteInformationDictionary->QueryDirectObject("mIsDirty"));
-        newObjectInformation.mIsDirty = objectDirty->GetValue();
-        
         PDFObjectCastPtr<PDFInteger> generationNumber(objectWriteInformationDictionary->QueryDirectObject("mGenerationNumber"));
+		if(!objectReferenceType || !objectDirty || !generationNumber)
+			return PDFHummus::eFailure;
+		// as the writer saves them: a known type, and values an xref entry holds
+		if((objectReferenceType->GetValue() != ObjectWriteInformation::Free && objectReferenceType->GetValue() != ObjectWriteInformation::Used) ||
+			generationNumber->GetValue() < 0 || generationNumber->GetValue() > 65535 ||
+			newObjectInformation.mWritePosition < 0 || newObjectInformation.mWritePosition > 9999999999LL)
+			return PDFHummus::eFailure;
+
+		newObjectInformation.mObjectReferenceType = (ObjectWriteInformation::EObjectReferenceType)objectReferenceType->GetValue();
+        newObjectInformation.mIsDirty = objectDirty->GetValue();
         newObjectInformation.mGenerationNumber = (unsigned long)generationNumber->GetValue();
 
 		mObjectsWritesRegistry.push_back(newObjectInformation);

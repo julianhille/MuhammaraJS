@@ -869,6 +869,12 @@ EStatusCode PDFDocumentHandler::CopyPageContentToTargetPagePassthrough(PDFPage* 
 	if (pageContent->GetType() == PDFObject::ePDFObjectStream)
 	{
 		PDFObjectCastPtr<PDFIndirectObjectReference> streamReference = inPageObject->QueryDirectObject("Contents");
+		// a stream must be indirect, but the parser also reads one inline
+		if (!streamReference)
+		{
+			TRACE_LOG("PDFDocumentHandler::CopyPageContentToTargetPagePassthrough, content stream is not a reference");
+			return PDFHummus::eFailure;
+		}
 		EStatusCodeAndObjectIDType copyObjectStatus = CopyObject(streamReference->mObjectID);
 		status = copyObjectStatus.first;
 		if (PDFHummus::eSuccess == status) {

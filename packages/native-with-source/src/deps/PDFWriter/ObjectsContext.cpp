@@ -202,7 +202,15 @@ EStatusCode ObjectsContext::WriteXrefTable(LongFilePositionType& outWritePositio
             {
                 // used object
                 
-                if(objectReference.mObjectWritten)
+                // an xref entry is 20 bytes: 10 digits of offset, 5 of generation
+                if(objectReference.mObjectWritten &&
+                    (objectReference.mWritePosition < 0 || objectReference.mWritePosition > 9999999999LL ||
+                    objectReference.mGenerationNumber > 99999))
+                {
+                    status = PDFHummus::eFailure;
+                    TRACE_LOG1("ObjectsContext::WriteXrefTable, Object of ID = %ld has an offset or generation that does not fit an xref entry",i);
+                }
+                else if(objectReference.mObjectWritten)
                 {
                     SAFE_SPRINTF_2(entryBuffer,21,"%010lld %05ld n\r\n",objectReference.mWritePosition,objectReference.mGenerationNumber);
                     mOutputStream->Write((const IOBasicTypes::Byte *)entryBuffer,20);
@@ -228,6 +236,13 @@ EStatusCode ObjectsContext::WriteXrefTable(LongFilePositionType& outWritePositio
                 // if reached end of list, then link back to head - 0
                 if(nextFreeObject == mReferencesRegistry.GetObjectsCount())
                     nextFreeObject = 0;
+
+                if(nextFreeObject > 9999999999ULL || objectReference.mGenerationNumber > 99999)
+                {
+                    status = PDFHummus::eFailure;
+                    TRACE_LOG1("ObjectsContext::WriteXrefTable, Free object of ID = %ld does not fit an xref entry",i);
+                    break;
+                }
 
                 SAFE_SPRINTF_2(entryBuffer,21,"%010ld %05ld f\r\n",nextFreeObject,objectReference.mGenerationNumber);
                 mOutputStream->Write((const IOBasicTypes::Byte *)entryBuffer,20);
@@ -630,15 +645,25 @@ EStatusCode ObjectsContext::WriteState(ObjectsContext* inStateWriter,ObjectIDTyp
 EStatusCode ObjectsContext::ReadState(PDFParser* inStateReader,ObjectIDType inObjectID)
 {
 	PDFObjectCastPtr<PDFDictionary> objectsContext(inStateReader->ParseNewObject(inObjectID));
+	if(!objectsContext)
+		return PDFHummus::eFailure;
 
 	PDFObjectCastPtr<PDFBoolean> compressStreams(objectsContext->QueryDirectObject("mCompressStreams"));
+	if(!compressStreams)
+		return PDFHummus::eFailure;
 	mCompressStreams = compressStreams->GetValue();
 
 	PDFObjectCastPtr<PDFDictionary> subsetFontsNamesSequance(inStateReader->QueryDictionaryObject(objectsContext.GetPtr(),"mSubsetFontsNamesSequance"));
+	if(!subsetFontsNamesSequance)
+		return PDFHummus::eFailure;
 	PDFObjectCastPtr<PDFLiteralString> sequanceString(subsetFontsNamesSequance->QueryDirectObject("mSequanceString"));
+	if(!sequanceString)
+		return PDFHummus::eFailure;
 	mSubsetFontsNamesSequance.SetSequanceString(sequanceString->GetValue());
 
 	PDFObjectCastPtr<PDFIndirectObjectReference> referencesObject(objectsContext->QueryDirectObject("mReferencesRegistry"));
+	if(!referencesObject)
+		return PDFHummus::eFailure;
 
 	return mReferencesRegistry.ReadState(inStateReader,referencesObject->mObjectID);
 

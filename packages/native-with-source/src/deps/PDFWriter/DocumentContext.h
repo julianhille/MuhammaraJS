@@ -444,15 +444,15 @@ namespace PDFHummus
 		PDFHummus::EStatusCode WriteTrailerInfoState(ObjectsContext* inStateWriter,ObjectIDType inObjectID);
 		void WriteDateState(ObjectsContext* inStateWriter,const PDFDate& inDate);
 		PDFHummus::EStatusCode WriteCatalogInformationState(ObjectsContext* inStateWriter,ObjectIDType inObjectID);
-		void ReadTrailerState(PDFParser* inStateReader,PDFDictionary* inTrailerState);
-        ObjectReference GetReferenceFromState(PDFDictionary* inDictionary);
-		void ReadTrailerInfoState(PDFParser* inStateReader,PDFDictionary* inTrailerInfoState);
-		void ReadDateState(PDFDictionary* inDateState,PDFDate& inDate);
-		void ReadCatalogInformationState(PDFParser* inStateReader,PDFDictionary* inCatalogInformationState);
+		PDFHummus::EStatusCode ReadTrailerState(PDFParser* inStateReader,PDFDictionary* inTrailerState);
+        PDFHummus::EStatusCode GetReferenceFromState(PDFDictionary* inDictionary,ObjectReference& outReference);
+		PDFHummus::EStatusCode ReadTrailerInfoState(PDFParser* inStateReader,PDFDictionary* inTrailerInfoState);
+		PDFHummus::EStatusCode ReadDateState(PDFDictionary* inDateState,PDFDate& inDate);
+		PDFHummus::EStatusCode ReadCatalogInformationState(PDFParser* inStateReader,PDFDictionary* inCatalogInformationState);
 
 
 		PDFHummus::EStatusCode WritePageTreeState(ObjectsContext* inStateWriter,ObjectIDType inObjectID,PageTree* inPageTree);
-		void ReadPageTreeState(PDFParser* inStateReader,PDFDictionary* inPageTreeState,PageTree* inPageTree);
+		PDFHummus::EStatusCode ReadPageTreeState(PDFParser* inStateReader,PDFDictionary* inPageTreeState,PageTree* inPageTree,int inDepth);
 
         ObjectReference GetOriginalDocumentPageTreeRoot(PDFParser* inModifiedFileParser);
         bool DocumentHasNewPages();

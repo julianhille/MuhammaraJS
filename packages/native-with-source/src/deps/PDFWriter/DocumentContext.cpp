@@ -1853,13 +1853,19 @@ EStatusCode DocumentContext::WritePageTreeState(ObjectsContext* inStateWriter,Ob
 EStatusCode DocumentContext::ReadState(PDFParser* inStateReader,ObjectIDType inObjectID)
 {
 	PDFObjectCastPtr<PDFDictionary> documentState(inStateReader->ParseNewObject(inObjectID));
+	if(!documentState)
+		return eFailure;
 
     PDFObjectCastPtr<PDFBoolean> modifiedDocumentExists(documentState->QueryDirectObject("mModifiedDocumentIDExists"));
+	if(!modifiedDocumentExists)
+		return eFailure;
     mModifiedDocumentIDExists = modifiedDocumentExists->GetValue();
 
     if(mModifiedDocumentIDExists)
     {
         PDFObjectCastPtr<PDFHexString> modifiedDocumentExists(documentState->QueryDirectObject("mModifiedDocumentID"));
+		if(!modifiedDocumentExists)
+			return eFailure;
         mModifiedDocumentID = modifiedDocumentExists->GetValue();
     }
 
@@ -1869,77 +1875,96 @@ EStatusCode DocumentContext::ReadState(PDFParser* inStateReader,ObjectIDType inO
 		mNewPDFID = newPDFID->GetValue();
 
 	PDFObjectCastPtr<PDFDictionary> trailerInformationState(inStateReader->QueryDictionaryObject(documentState.GetPtr(),"mTrailerInformation"));
-	ReadTrailerState(inStateReader,trailerInformationState.GetPtr());
+	if(!trailerInformationState || ReadTrailerState(inStateReader,trailerInformationState.GetPtr()) != eSuccess)
+		return eFailure;
 
 	PDFObjectCastPtr<PDFDictionary> catalogInformationState(inStateReader->QueryDictionaryObject(documentState.GetPtr(),"mCatalogInformation"));
-	ReadCatalogInformationState(inStateReader,catalogInformationState.GetPtr());
+	if(!catalogInformationState || ReadCatalogInformationState(inStateReader,catalogInformationState.GetPtr()) != eSuccess)
+		return eFailure;
 
 	PDFObjectCastPtr<PDFIndirectObjectReference> usedFontsInformationStateID(documentState->QueryDirectObject("mUsedFontsRepository"));
+	if(!usedFontsInformationStateID)
+		return eFailure;
 	EStatusCode status =  mUsedFontsRepository.ReadState(inStateReader, usedFontsInformationStateID->mObjectID);
 	if (status != eSuccess)
 		return status;
 
 	PDFObjectCastPtr<PDFIndirectObjectReference> encrytpionStateID(documentState->QueryDirectObject("mEncryptionHelper"));
+	if(!encrytpionStateID)
+		return eFailure;
 	return mEncryptionHelper.ReadState(inStateReader, encrytpionStateID->mObjectID);
 }
 
-void DocumentContext::ReadTrailerState(PDFParser* inStateReader,PDFDictionary* inTrailerState)
+EStatusCode DocumentContext::ReadTrailerState(PDFParser* inStateReader,PDFDictionary* inTrailerState)
 {
 	PDFObjectCastPtr<PDFInteger> prevState(inTrailerState->QueryDirectObject("mPrev"));
+	if(!prevState)
+		return eFailure;
 	mTrailerInformation.SetPrev(prevState->GetValue());
 
+	ObjectReference reference;
 	PDFObjectCastPtr<PDFDictionary> rootReferenceState(inTrailerState->QueryDirectObject("mRootReference"));
-	mTrailerInformation.SetRoot(GetReferenceFromState(rootReferenceState.GetPtr()));
+	if(GetReferenceFromState(rootReferenceState.GetPtr(),reference) != eSuccess)
+		return eFailure;
+	mTrailerInformation.SetRoot(reference);
 
 	PDFObjectCastPtr<PDFDictionary> encryptReferenceState(inTrailerState->QueryDirectObject("mEncryptReference"));
-	mTrailerInformation.SetEncrypt(GetReferenceFromState(encryptReferenceState.GetPtr()));
+	if(GetReferenceFromState(encryptReferenceState.GetPtr(),reference) != eSuccess)
+		return eFailure;
+	mTrailerInformation.SetEncrypt(reference);
 
 	PDFObjectCastPtr<PDFDictionary> infoDictionaryState(inStateReader->QueryDictionaryObject(inTrailerState,"mInfoDictionary"));
-	ReadTrailerInfoState(inStateReader,infoDictionaryState.GetPtr());
+	if(!infoDictionaryState || ReadTrailerInfoState(inStateReader,infoDictionaryState.GetPtr()) != eSuccess)
+		return eFailure;
 
 	PDFObjectCastPtr<PDFDictionary> infoDictionaryReferenceState(inTrailerState->QueryDirectObject("mInfoDictionaryReference"));
-	mTrailerInformation.SetInfoDictionaryReference(GetReferenceFromState(infoDictionaryReferenceState.GetPtr()));
+	if(GetReferenceFromState(infoDictionaryReferenceState.GetPtr(),reference) != eSuccess)
+		return eFailure;
+	mTrailerInformation.SetInfoDictionaryReference(reference);
 
+	return eSuccess;
 }
 
-ObjectReference DocumentContext::GetReferenceFromState(PDFDictionary* inDictionary)
+EStatusCode DocumentContext::GetReferenceFromState(PDFDictionary* inDictionary,ObjectReference& outReference)
 {
+	if(!inDictionary)
+		return eFailure;
+
     PDFObjectCastPtr<PDFInteger> objectID(inDictionary->QueryDirectObject("ObjectID"));
     PDFObjectCastPtr<PDFInteger> generationNumber(inDictionary->QueryDirectObject("GenerationNumber"));
+	if(!objectID || !generationNumber)
+		return eFailure;
 
-    return ObjectReference((ObjectIDType)(objectID->GetValue()),(unsigned long)generationNumber->GetValue());
+    outReference = ObjectReference((ObjectIDType)(objectID->GetValue()),(unsigned long)generationNumber->GetValue());
+	return eSuccess;
 }
 
-void DocumentContext::ReadTrailerInfoState(PDFParser* inStateReader,PDFDictionary* inTrailerInfoState)
+EStatusCode DocumentContext::ReadTrailerInfoState(PDFParser* inStateReader,PDFDictionary* inTrailerInfoState)
 {
 	PDFObjectCastPtr<PDFLiteralString> titleState(inTrailerInfoState->QueryDirectObject("Title"));
-	mTrailerInformation.GetInfo().Title = titleState->GetValue();
-
 	PDFObjectCastPtr<PDFLiteralString> authorState(inTrailerInfoState->QueryDirectObject("Author"));
-	mTrailerInformation.GetInfo().Author = authorState->GetValue();
-
 	PDFObjectCastPtr<PDFLiteralString> subjectState(inTrailerInfoState->QueryDirectObject("Subject"));
-	mTrailerInformation.GetInfo().Subject = subjectState->GetValue();
-
 	PDFObjectCastPtr<PDFLiteralString> keywordsState(inTrailerInfoState->QueryDirectObject("Keywords"));
-	mTrailerInformation.GetInfo().Keywords = keywordsState->GetValue();
-
 	PDFObjectCastPtr<PDFLiteralString> creatorState(inTrailerInfoState->QueryDirectObject("Creator"));
-	mTrailerInformation.GetInfo().Creator = creatorState->GetValue();
-
 	PDFObjectCastPtr<PDFLiteralString> producerState(inTrailerInfoState->QueryDirectObject("Producer"));
-	mTrailerInformation.GetInfo().Producer = producerState->GetValue();
-
 	PDFObjectCastPtr<PDFDictionary> creationDateState(inTrailerInfoState->QueryDirectObject("CreationDate"));
-	ReadDateState(creationDateState.GetPtr(),mTrailerInformation.GetInfo().CreationDate);
-
 	PDFObjectCastPtr<PDFDictionary> modDateState(inTrailerInfoState->QueryDirectObject("ModDate"));
-	ReadDateState(creationDateState.GetPtr(),mTrailerInformation.GetInfo().ModDate);
-
 	PDFObjectCastPtr<PDFInteger> trappedState(inTrailerInfoState->QueryDirectObject("Trapped"));
-	mTrailerInformation.GetInfo().Trapped = (EInfoTrapped)trappedState->GetValue();
-
 	PDFObjectCastPtr<PDFDictionary> additionalInfoState(inTrailerInfoState->QueryDirectObject("mAdditionalInfoEntries"));
+	if(!titleState || !authorState || !subjectState || !keywordsState || !creatorState || !producerState ||
+		!creationDateState || !modDateState || !trappedState || !additionalInfoState)
+		return eFailure;
+
+	mTrailerInformation.GetInfo().Title = titleState->GetValue();
+	mTrailerInformation.GetInfo().Author = authorState->GetValue();
+	mTrailerInformation.GetInfo().Subject = subjectState->GetValue();
+	mTrailerInformation.GetInfo().Keywords = keywordsState->GetValue();
+	mTrailerInformation.GetInfo().Creator = creatorState->GetValue();
+	mTrailerInformation.GetInfo().Producer = producerState->GetValue();
+	if(ReadDateState(creationDateState.GetPtr(),mTrailerInformation.GetInfo().CreationDate) != eSuccess ||
+		ReadDateState(modDateState.GetPtr(),mTrailerInformation.GetInfo().ModDate) != eSuccess)
+		return eFailure;
+	mTrailerInformation.GetInfo().Trapped = (EInfoTrapped)trappedState->GetValue();
 
 	MapIterator<PDFNameToPDFObjectMap> it = additionalInfoState->GetIterator();
 	PDFObjectCastPtr<PDFName> keyState;
@@ -1948,44 +1973,44 @@ void DocumentContext::ReadTrailerInfoState(PDFParser* inStateReader,PDFDictionar
 	mTrailerInformation.GetInfo().ClearAdditionalInfoEntries();
 	while(it.MoveNext())
 	{
-		keyState = it.GetKey();
+		keyState.Borrow(it.GetKey());
 		valueState.Borrow(it.GetValue());
+		if(!keyState || !valueState)
+			return eFailure;
 
 		mTrailerInformation.GetInfo().AddAdditionalInfoEntry(keyState->GetValue(),PDFTextString(valueState->GetValue()));
 	}
+	return eSuccess;
 }
 
-void DocumentContext::ReadDateState(PDFDictionary* inDateState,PDFDate& inDate)
+EStatusCode DocumentContext::ReadDateState(PDFDictionary* inDateState,PDFDate& inDate)
 {
 	PDFObjectCastPtr<PDFInteger> yearState(inDateState->QueryDirectObject("Year"));
-	inDate.Year = (int)yearState->GetValue();
-
 	PDFObjectCastPtr<PDFInteger> monthState(inDateState->QueryDirectObject("Month"));
-	inDate.Month = (int)monthState->GetValue();
-
 	PDFObjectCastPtr<PDFInteger> dayState(inDateState->QueryDirectObject("Day"));
-	inDate.Day = (int)dayState->GetValue();
-
 	PDFObjectCastPtr<PDFInteger> hourState(inDateState->QueryDirectObject("Hour"));
-	inDate.Hour = (int)hourState->GetValue();
-
 	PDFObjectCastPtr<PDFInteger> minuteState(inDateState->QueryDirectObject("Minute"));
-	inDate.Minute = (int)minuteState->GetValue();
-
 	PDFObjectCastPtr<PDFInteger> secondState(inDateState->QueryDirectObject("Second"));
-	inDate.Second = (int)secondState->GetValue();
-
 	PDFObjectCastPtr<PDFInteger> utcState(inDateState->QueryDirectObject("UTC"));
-	inDate.UTC = (PDFDate::EUTCRelation)utcState->GetValue();
-
 	PDFObjectCastPtr<PDFInteger> hourFromUTCState(inDateState->QueryDirectObject("HourFromUTC"));
-	inDate.HourFromUTC = (int)hourFromUTCState->GetValue();
-
 	PDFObjectCastPtr<PDFInteger> minuteFromUTCState(inDateState->QueryDirectObject("MinuteFromUTC"));
+	if(!yearState || !monthState || !dayState || !hourState || !minuteState || !secondState ||
+		!utcState || !hourFromUTCState || !minuteFromUTCState)
+		return eFailure;
+
+	inDate.Year = (int)yearState->GetValue();
+	inDate.Month = (int)monthState->GetValue();
+	inDate.Day = (int)dayState->GetValue();
+	inDate.Hour = (int)hourState->GetValue();
+	inDate.Minute = (int)minuteState->GetValue();
+	inDate.Second = (int)secondState->GetValue();
+	inDate.UTC = (PDFDate::EUTCRelation)utcState->GetValue();
+	inDate.HourFromUTC = (int)hourFromUTCState->GetValue();
 	inDate.MinuteFromUTC = (int)minuteFromUTCState->GetValue();
+	return eSuccess;
 }
 
-void DocumentContext::ReadCatalogInformationState(PDFParser* inStateReader,PDFDictionary* inCatalogInformationState)
+EStatusCode DocumentContext::ReadCatalogInformationState(PDFParser* inStateReader,PDFDictionary* inCatalogInformationState)
 {
 	PDFObjectCastPtr<PDFIndirectObjectReference> pageTreeRootState(inCatalogInformationState->QueryDirectObject("PageTreeRoot"));
 
@@ -1998,58 +2023,96 @@ void DocumentContext::ReadCatalogInformationState(PDFParser* inStateReader,PDFDi
 
 
 	if(!pageTreeRootState) // no page nodes yet...
-		return;
+		return eSuccess;
 
 	PDFObjectCastPtr<PDFIndirectObjectReference> currentPageTreeState(inCatalogInformationState->QueryDirectObject("mCurrentPageTreeNode"));
+	if(!currentPageTreeState)
+		return eFailure;
 	mCurrentPageTreeIDInState = currentPageTreeState->mObjectID;
 
 	PDFObjectCastPtr<PDFDictionary> pageTreeState(inStateReader->ParseNewObject(pageTreeRootState->mObjectID));
+	if(!pageTreeState)
+		return eFailure;
 
 	PDFObjectCastPtr<PDFInteger> pageTreeIDState(pageTreeState->QueryDirectObject("mPageTreeID"));
+	if(!pageTreeIDState)
+		return eFailure;
 	PageTree* rootNode = new PageTree((ObjectIDType)pageTreeIDState->GetValue());
 
 	if(pageTreeRootState->mObjectID == mCurrentPageTreeIDInState)
 		mCatalogInformation.SetCurrentPageTreeNode(rootNode);
-	ReadPageTreeState(inStateReader,pageTreeState.GetPtr(),rootNode);
-
+	if(ReadPageTreeState(inStateReader,pageTreeState.GetPtr(),rootNode,0) != eSuccess)
+	{
+		// a node that filled up may have grown parents above the root
+		while(rootNode->GetParent())
+			rootNode = rootNode->GetParent();
+		delete rootNode;
+		mCatalogInformation.SetCurrentPageTreeNode(NULL);
+		return eFailure;
+	}
+	return eSuccess;
 }
 
-void DocumentContext::ReadPageTreeState(PDFParser* inStateReader,PDFDictionary* inPageTreeState,PageTree* inPageTree)
+// The writer's page tree is a few levels deep. A deeper one is a cycle.
+static const int scMaxPageTreeStateDepth = 100;
+
+EStatusCode DocumentContext::ReadPageTreeState(PDFParser* inStateReader,PDFDictionary* inPageTreeState,PageTree* inPageTree,int inDepth)
 {
+	if(inDepth > scMaxPageTreeStateDepth)
+		return eFailure;
+
 	PDFObjectCastPtr<PDFBoolean> isLeafParentState(inPageTreeState->QueryDirectObject("mIsLeafParent"));
+	if(!isLeafParentState)
+		return eFailure;
 	bool isLeafParent = isLeafParentState->GetValue();
 
 	if(isLeafParent)
 	{
 		PDFObjectCastPtr<PDFArray> kidsIDsState(inPageTreeState->QueryDirectObject("mKidsIDs"));
+		if(!kidsIDsState)
+			return eFailure;
 		PDFObjectCastPtr<PDFInteger> kidID;
 
 		SingleValueContainerIterator<PDFObjectVector> it = kidsIDsState->GetIterator();
 		while(it.MoveNext())
 		{
 			kidID.Borrow(it.GetItem());
+			if(!kidID)
+				return eFailure;
 			inPageTree->AddNodeToTree((ObjectIDType)kidID->GetValue(),mObjectsContext->GetInDirectObjectsRegistry());
 		}
 	}
 	else
 	{
 		PDFObjectCastPtr<PDFArray> kidsNodesState(inPageTreeState->QueryDirectObject("mKidsNodes"));
+		if(!kidsNodesState)
+			return eFailure;
+		PDFObjectCastPtr<PDFIndirectObjectReference> kidReference;
 
 		SingleValueContainerIterator<PDFObjectVector> it = kidsNodesState->GetIterator();
 		while(it.MoveNext())
 		{
-			PDFObjectCastPtr<PDFDictionary> kidNodeState(inStateReader->ParseNewObject(((PDFIndirectObjectReference*)it.GetItem())->mObjectID));
+			kidReference.Borrow(it.GetItem());
+			if(!kidReference)
+				return eFailure;
+			PDFObjectCastPtr<PDFDictionary> kidNodeState(inStateReader->ParseNewObject(kidReference->mObjectID));
+			if(!kidNodeState)
+				return eFailure;
 
 			PDFObjectCastPtr<PDFInteger> pageTreeIDState(kidNodeState->QueryDirectObject("mPageTreeID"));
+			if(!pageTreeIDState)
+				return eFailure;
 			PageTree* kidNode = new PageTree((ObjectIDType)pageTreeIDState->GetValue());
 
-			if(((PDFIndirectObjectReference*)it.GetItem())->mObjectID == mCurrentPageTreeIDInState)
+			if(kidReference->mObjectID == mCurrentPageTreeIDInState)
 				mCatalogInformation.SetCurrentPageTreeNode(kidNode);
-			ReadPageTreeState(inStateReader,kidNodeState.GetPtr(),kidNode);
-
+			// in the tree first, so the root frees it on failure
 			inPageTree->AddNodeToTree(kidNode,mObjectsContext->GetInDirectObjectsRegistry());
+			if(ReadPageTreeState(inStateReader,kidNodeState.GetPtr(),kidNode,inDepth + 1) != eSuccess)
+				return eFailure;
 		}
 	}
+	return eSuccess;
 }
 
 PDFDocumentCopyingContext* DocumentContext::CreatePDFCopyingContext(const std::string& inFilePath, const PDFParsingOptions& inOptions)

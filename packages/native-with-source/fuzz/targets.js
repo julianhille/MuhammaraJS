@@ -106,6 +106,9 @@ function walk(reader, object, budget, seen) {
       readStream(reader.startReadingFromStream(object), 1 << 20);
     });
     attempt(function () {
+      readStream(reader.startReadingFromStreamForPlainCopying(object), 1 << 20);
+    });
+    attempt(function () {
       var parser = reader.startReadingObjectsFromStream(object);
       // Small streams can inflate to huge ones, so stop at the deadline too.
       for (
@@ -171,6 +174,19 @@ function pdfRead(data) {
       });
       attempt(function () {
         reader.extractPageContentItems(i, limits);
+      });
+      attempt(function () {
+        var contents = reader.queryDictionaryObject(
+          reader.parsePageDictionary(i),
+          "Contents",
+        );
+        if (contents.getType() !== muhammara.ePDFObjectArray) return;
+        var parser = reader.startReadingObjectsFromStreams(contents);
+        for (
+          var n = 0;
+          n < 2000 && Date.now() < budget.deadline && parser.parseNewObject();
+          ++n
+        );
       });
     }
   } finally {
@@ -251,6 +267,173 @@ function pdfRecrypt(data) {
       userProtectionFlag: 4,
     },
   );
+}
+
+/**
+ * Copies a PDF's objects one by one through the copying context, and its
+ * pages through the path-based and merge APIs.
+ *
+ * @param {Buffer} data - The PDF bytes.
+ */
+function pdfObjects(data) {
+  var file = inputFile(data, ".pdf");
+  var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+  try {
+    attempt(function () {
+      var copying = writer.createPDFCopyingContext(
+        new muhammara.PDFRStreamForBuffer(data),
+        { password: "user" },
+      );
+      try {
+        var reader = copying.getSourceDocumentParser();
+        var objects = Math.min(reader.getObjectsCount(), 200);
+        for (var id = 1; id < objects; ++id)
+          attempt(function () {
+            copying.copyObject(id);
+          });
+        attempt(function () {
+          var page = reader.parsePageDictionary(0);
+          copying.copyDirectObjectAsIs(page);
+          copying.copyNewObjectsForDirectObject(
+            copying.copyDirectObjectWithDeepCopy(page),
+          );
+        });
+        attempt(function () {
+          copying.replaceSourceObjects({ 1: 2, 2: 1 });
+          copying.appendPDFPageFromPDF(0);
+        });
+        attempt(function () {
+          var form = writer.createFormXObject(0, 0, 200, 200);
+          copying.mergePDFPageToFormXObject(form, 0);
+          writer.endFormXObject(form);
+        });
+      } finally {
+        copying.end();
+      }
+    });
+    attempt(function () {
+      writer.createFormXObjectsFromPDF(file, muhammara.ePDFPageBoxCropBox, {
+        type: muhammara.eRangeTypeSpecific,
+        specificRanges: [[0, 2]],
+      });
+    });
+    attempt(function () {
+      var page = writer.createPage(0, 0, 595, 842);
+      writer.mergePDFPagesToPage(
+        page,
+        new muhammara.PDFRStreamForBuffer(data),
+        { type: muhammara.eRangeTypeSpecific, specificRanges: [[0, 2]] },
+        function () {},
+      );
+      writer.writePage(page);
+    });
+    attempt(function () {
+      var page = writer.createPage(0, 0, 595, 842);
+      writer.startPageContentContext(page).drawImage(0, 0, file, { index: 0 });
+      writer.writePage(page);
+    });
+  } finally {
+    writer.end();
+  }
+}
+
+// Interrupted documents for the state target: each pairs the PDF written so
+// far with the state file shutdown() saved for it.
+var interrupted = null;
+
+/**
+ * Writes the interrupted documents the state target continues: one with
+ * TrueType and CFF text, one with a page tree deeper than a single node, and
+ * one modifying an existing PDF.
+ *
+ * @returns {{pdf: Buffer, state: Buffer, modified: boolean}[]} The documents.
+ */
+function interruptedDocuments() {
+  if (interrupted) return interrupted;
+  var fonts = path.join(materials, "fonts");
+  var source = path.join(materials, "BasicTIFFImagesTest.PDF");
+  var made = [
+    { pages: 1, modified: false },
+    { pages: 25, modified: false },
+    { pages: 1, modified: true },
+  ];
+  interrupted = made.map(function (spec, index) {
+    var pdf = path.join(scratch, "interrupted-" + index + ".pdf");
+    var state = pdf + ".state";
+    var writer = spec.modified
+      ? muhammara.createWriterToModify(source, { modifiedFilePath: pdf })
+      : muhammara.createWriter(pdf);
+    writer.getDocumentContext().getInfoDictionary().title = "state";
+    for (var i = 0; i < spec.pages; ++i) {
+      var page = writer.createPage(0, 0, 200, 200);
+      writer
+        .startPageContentContext(page)
+        .writeText("Ab", 10, 10, {
+          font: writer.getFontForFile(path.join(fonts, "arial.ttf")),
+          size: 10,
+        })
+        .writeText("Cd", 10, 40, {
+          font: writer.getFontForFile(path.join(fonts, "BrushScriptStd.otf")),
+          size: 10,
+        });
+      writer.writePage(page);
+    }
+    writer.shutdown(state);
+    return {
+      pdf: fs.readFileSync(pdf),
+      state: fs.readFileSync(state),
+      modified: spec.modified,
+    };
+  });
+  return interrupted;
+}
+
+/**
+ * Makes the state target's seeds: each state file, prefixed with the index
+ * of the document it continues.
+ *
+ * @returns {Buffer[]} The seeds.
+ */
+function stateSeeds() {
+  return interruptedDocuments().map(function (document, index) {
+    return Buffer.concat([Buffer.from(index + "\n"), document.state]);
+  });
+}
+
+/**
+ * Continues an interrupted document from a mutated state file, then writes
+ * a page of text in its fonts.
+ *
+ * @param {Buffer} data - The document index line, then the state file.
+ */
+function continueState(data) {
+  var documents = interruptedDocuments();
+  var newline = data.indexOf(10);
+  var document =
+    documents[
+      (parseInt(data.toString("latin1", 0, newline), 10) || 0) %
+        documents.length
+    ] || documents[0];
+  var pdf = inputFile(document.pdf, ".pdf");
+  // The PDF targets cover broken xrefs; this one is after the state readers.
+  var state = inputFile(repairXref(data.subarray(newline + 1)), ".state");
+  var source = path.join(materials, "BasicTIFFImagesTest.PDF");
+  var writer = muhammara.createWriterToContinue(
+    pdf,
+    state,
+    document.modified ? { modifiedFilePath: source } : {},
+  );
+  attempt(function () {
+    var page = writer.createPage(0, 0, 200, 200);
+    writer.startPageContentContext(page).writeText("Ab", 10, 10, {
+      font: writer.getFontForFile(
+        path.join(materials, "fonts", "BrushScriptStd.otf"),
+      ),
+      size: 10,
+    });
+    writer.writePage(page);
+  });
+  writer.end();
 }
 
 // Each image type's own XObject entry points, besides drawImage.
@@ -724,6 +907,7 @@ module.exports = {
   "pdf-modify": { run: pdfModify, seeds: pdfSeeds, pdf: true },
   "pdf-copy": { run: pdfCopy, seeds: pdfSeeds, pdf: true },
   "pdf-recrypt": { run: pdfRecrypt, seeds: pdfSeeds, pdf: true },
+  "pdf-objects": { run: pdfObjects, seeds: pdfSeeds, pdf: true },
   jpeg: { run: image(".jpg"), seeds: seeds("images", /\.jpe?g$/i, 1 << 20) },
   png: { run: image(".png"), seeds: seeds("images/png", /\.png$/i, 1 << 20) },
   tiff: {
@@ -740,8 +924,10 @@ module.exports = {
   "pdf-read-deep": { run: repaired(pdfRead), seeds: [], pdf: true },
   "pdf-modify-deep": { run: repaired(pdfModify), seeds: [], pdf: true },
   "pdf-copy-deep": { run: repaired(pdfCopy), seeds: [], pdf: true },
+  "pdf-objects-deep": { run: repaired(pdfObjects), seeds: [], pdf: true },
   content: { run: content, seeds: [], seedData: contentSeeds, text: true },
   cmap: { run: cmap, seeds: [], seedData: cmapSeeds, text: true },
+  state: { run: continueState, seeds: [], seedData: stateSeeds, text: true },
 };
 
 /**

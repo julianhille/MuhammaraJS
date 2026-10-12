@@ -434,28 +434,31 @@ EStatusCode AbstractWrittenFont::ReadStateFromObject(PDFParser* inStateReader,PD
 
 	delete mCIDRepresentation;
 	delete mANSIRepresentation;
+	mCIDRepresentation = NULL;
+	mANSIRepresentation = NULL;
 
 	if(cidRepresentationState.GetPtr())
 	{
 		mCIDRepresentation = new WrittenFontRepresentation();
-		ReadWrittenFontState(inStateReader,cidRepresentationState.GetPtr(),mCIDRepresentation);
+		if(ReadWrittenFontState(inStateReader,cidRepresentationState.GetPtr(),mCIDRepresentation) != PDFHummus::eSuccess)
+			return PDFHummus::eFailure;
 	}
-	else
-		mCIDRepresentation = NULL;
 
 	if(ansiRepresentationState.GetPtr())
 	{
 		mANSIRepresentation = new WrittenFontRepresentation();
-		ReadWrittenFontState(inStateReader,ansiRepresentationState.GetPtr(),mANSIRepresentation);
+		if(ReadWrittenFontState(inStateReader,ansiRepresentationState.GetPtr(),mANSIRepresentation) != PDFHummus::eSuccess)
+			return PDFHummus::eFailure;
 	}
-	else
-		mANSIRepresentation = NULL;
 	return PDFHummus::eSuccess;
 }
 
-void AbstractWrittenFont::ReadWrittenFontState(PDFParser* inStateReader,PDFDictionary* inState,WrittenFontRepresentation* inRepresentation)
+EStatusCode AbstractWrittenFont::ReadWrittenFontState(PDFParser* inStateReader,PDFDictionary* inState,WrittenFontRepresentation* inRepresentation)
 {
 	PDFObjectCastPtr<PDFArray> glyphIDToEncodedCharState(inState->QueryDirectObject("mGlyphIDToEncodedChar"));
+	PDFObjectCastPtr<PDFInteger> writtenObjectIDState(inState->QueryDirectObject("mWrittenObjectID"));
+	if(!glyphIDToEncodedCharState || !writtenObjectIDState)
+		return PDFHummus::eFailure;
 
 	SingleValueContainerIterator<PDFObjectVector> it = glyphIDToEncodedCharState->GetIterator();
 
@@ -467,26 +470,33 @@ void AbstractWrittenFont::ReadWrittenFontState(PDFParser* inStateReader,PDFDicti
 	while(it.MoveNext())
 	{
 		firstState.Borrow(it.GetItem());
-		it.MoveNext();
+		if(!it.MoveNext())
+			return PDFHummus::eFailure;
 		secondState.Borrow(it.GetItem());
+		if(!firstState || !secondState)
+			return PDFHummus::eFailure;
 
 		GlyphEncodingInfo glyphEncodingInfo;		
-		ReadGlyphEncodingInfoState(inStateReader,secondState->mObjectID,glyphEncodingInfo);
+		if(ReadGlyphEncodingInfoState(inStateReader,secondState->mObjectID,glyphEncodingInfo) != PDFHummus::eSuccess)
+			return PDFHummus::eFailure;
 		inRepresentation->mGlyphIDToEncodedChar.insert(UIntToGlyphEncodingInfoMap::value_type((unsigned int)firstState->GetValue(),glyphEncodingInfo));
 	}
 
-	PDFObjectCastPtr<PDFInteger> writtenObjectIDState(inState->QueryDirectObject("mWrittenObjectID"));
 	inRepresentation->mWrittenObjectID = (ObjectIDType)writtenObjectIDState->GetValue();
+	return PDFHummus::eSuccess;
 }
 
-void AbstractWrittenFont::ReadGlyphEncodingInfoState(PDFParser* inStateReader,ObjectIDType inObjectID,GlyphEncodingInfo& inGlyphEncodingInfo)
+EStatusCode AbstractWrittenFont::ReadGlyphEncodingInfoState(PDFParser* inStateReader,ObjectIDType inObjectID,GlyphEncodingInfo& inGlyphEncodingInfo)
 {
 	PDFObjectCastPtr<PDFDictionary> glyphEncodingInfoState(inStateReader->ParseNewObject(inObjectID));
+	if(!glyphEncodingInfoState)
+		return PDFHummus::eFailure;
 	
 	PDFObjectCastPtr<PDFInteger> encodedCharacterState(glyphEncodingInfoState->QueryDirectObject("mEncodedCharacter"));
-	inGlyphEncodingInfo.mEncodedCharacter = (unsigned short)encodedCharacterState->GetValue();
-
 	PDFObjectCastPtr<PDFArray> unicodeCharactersState(glyphEncodingInfoState->QueryDirectObject("mUnicodeCharacters"));
+	if(!encodedCharacterState || !unicodeCharactersState)
+		return PDFHummus::eFailure;
+	inGlyphEncodingInfo.mEncodedCharacter = (unsigned short)encodedCharacterState->GetValue();
 
 	inGlyphEncodingInfo.mUnicodeCharacters.clear();
 	SingleValueContainerIterator<PDFObjectVector> it = unicodeCharactersState->GetIterator();
@@ -494,6 +504,9 @@ void AbstractWrittenFont::ReadGlyphEncodingInfoState(PDFParser* inStateReader,Ob
 	while(it.MoveNext())
 	{
 		item.Borrow(it.GetItem());
+		if(!item)
+			return PDFHummus::eFailure;
 		inGlyphEncodingInfo.mUnicodeCharacters.push_back((unsigned long)item->GetValue());
 	}
+	return PDFHummus::eSuccess;
 }

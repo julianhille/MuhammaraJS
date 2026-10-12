@@ -523,46 +523,38 @@ EStatusCode EncryptionHelper::WriteState(ObjectsContext* inStateWriter, ObjectID
 PDFHummus::EStatusCode EncryptionHelper::ReadState(PDFParser* inStateReader, ObjectIDType inObjectID)
 {
 	PDFObjectCastPtr<PDFDictionary> encryptionObjectState(inStateReader->ParseNewObject(inObjectID));
+	if(!encryptionObjectState)
+		return eFailure;
 
 	PDFObjectCastPtr<PDFBoolean> isDocumentEncrypted = encryptionObjectState->QueryDirectObject("mIsDocumentEncrypted");
-	mIsDocumentEncrypted = isDocumentEncrypted->GetValue();
-
 	PDFObjectCastPtr<PDFBoolean> supportsEncryption = encryptionObjectState->QueryDirectObject("mSupportsEncryption");
-	mSupportsEncryption = supportsEncryption->GetValue();
-
-
 	PDFObjectCastPtr<PDFInteger> length = encryptionObjectState->QueryDirectObject("mLength");
-	mLength = (unsigned int)length->GetValue();
-
 	PDFObjectCastPtr<PDFInteger> v = encryptionObjectState->QueryDirectObject("mV");
-	mV = (unsigned int)v->GetValue();
-
 	PDFObjectCastPtr<PDFInteger> revision = encryptionObjectState->QueryDirectObject("mRevision");
-	mRevision = (unsigned int)revision->GetValue();
-
 	PDFObjectCastPtr<PDFInteger> p = encryptionObjectState->QueryDirectObject("mP");
-	mP = p->GetValue();
-
 	PDFObjectCastPtr<PDFBoolean> encryptMetaData = encryptionObjectState->QueryDirectObject("mEncryptMetaData");
-	mEncryptMetaData = encryptMetaData->GetValue();
-
 	PDFObjectCastPtr<PDFLiteralString> fileIDPart1 = encryptionObjectState->QueryDirectObject("mFileIDPart1");
-	mFileIDPart1 = stringToByteList(fileIDPart1->GetValue());
-
 	PDFObjectCastPtr<PDFLiteralString> o = encryptionObjectState->QueryDirectObject("mO");
-	mO = stringToByteList(o->GetValue());
-
 	PDFObjectCastPtr<PDFLiteralString> u = encryptionObjectState->QueryDirectObject("mU");
-	mU = stringToByteList(u->GetValue());
-
-
 	PDFObjectCastPtr<PDFLiteralString> oE = encryptionObjectState->QueryDirectObject("mOE");
-	mOE = stringToByteList(oE->GetValue());
-
 	PDFObjectCastPtr<PDFLiteralString> uE = encryptionObjectState->QueryDirectObject("mUE");
-	mUE = stringToByteList(uE->GetValue());	
-
 	PDFObjectCastPtr<PDFLiteralString> perms = encryptionObjectState->QueryDirectObject("mPerms");
+	if(!isDocumentEncrypted || !supportsEncryption || !length || !v || !revision || !p || !encryptMetaData ||
+		!fileIDPart1 || !o || !u || !oE || !uE || !perms)
+		return eFailure;
+
+	mIsDocumentEncrypted = isDocumentEncrypted->GetValue();
+	mSupportsEncryption = supportsEncryption->GetValue();
+	mLength = (unsigned int)length->GetValue();
+	mV = (unsigned int)v->GetValue();
+	mRevision = (unsigned int)revision->GetValue();
+	mP = p->GetValue();
+	mEncryptMetaData = encryptMetaData->GetValue();
+	mFileIDPart1 = stringToByteList(fileIDPart1->GetValue());
+	mO = stringToByteList(o->GetValue());
+	mU = stringToByteList(u->GetValue());
+	mOE = stringToByteList(oE->GetValue());
+	mUE = stringToByteList(uE->GetValue());	
 	mPerms = stringToByteList(perms->GetValue());
 
 	// setup default encryption

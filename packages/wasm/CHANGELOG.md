@@ -44,6 +44,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   before anything is published
   [#962](https://github.com/julianhille/MuhammaraJS/issues/962)
 
+### Fixed
+
+- Appending a page whose `/Contents` is a stream written inline in the page
+  dictionary, instead of through a reference, throws instead of reading
+  through a null pointer in `appendPDFPagesFromPDF()` and
+  `appendPDFPageFromPDF()`
+
 ## [1.1.1] - 2026-10-10
 
 ### Fixed

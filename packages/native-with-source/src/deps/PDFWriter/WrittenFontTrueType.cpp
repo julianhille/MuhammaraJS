@@ -250,6 +250,8 @@ EStatusCode WrittenFontTrueType::WriteState(ObjectsContext* inStateWriter,Object
 EStatusCode WrittenFontTrueType::ReadState(PDFParser* inStateReader,ObjectIDType inObjectID)
 {
 	PDFObjectCastPtr<PDFDictionary> writtenFontState(inStateReader->ParseNewObject(inObjectID));
+	if(!writtenFontState)
+		return PDFHummus::eFailure;
 
 	return AbstractWrittenFont::ReadStateFromObject(inStateReader,writtenFontState.GetPtr());
 }

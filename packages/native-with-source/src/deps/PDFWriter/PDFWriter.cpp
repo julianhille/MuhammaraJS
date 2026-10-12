@@ -483,22 +483,48 @@ EStatusCode PDFWriter::SetupState(const std::string& inStateFilePath)
 		}
 
 		PDFObjectCastPtr<PDFDictionary> pdfWriterDictionary(reader.GetObjectsReader()->ParseNewObject(reader.GetRootObjectID()));
+		if(!pdfWriterDictionary)
+		{
+			TRACE_LOG("PDFWriter::SetupState, cant read the writer state");
+			status = eFailure;
+			break;
+		}
 
         PDFObjectCastPtr<PDFBoolean> isModifiedObject(pdfWriterDictionary->QueryDirectObject("mIsModified"));
+		if(!isModifiedObject)
+		{
+			status = eFailure;
+			break;
+		}
         mIsModified = isModifiedObject->GetValue();
 
         if(mIsModified)
         {
             PDFObjectCastPtr<PDFInteger> isModifiedFileVersionObject(pdfWriterDictionary->QueryDirectObject("mModifiedFileVersion"));
+			if(!isModifiedFileVersionObject)
+			{
+				status = eFailure;
+				break;
+			}
             mModifiedFileVersion = (EPDFVersion)(isModifiedFileVersionObject->GetValue());
         }
 
 		PDFObjectCastPtr<PDFIndirectObjectReference> objectsContextObject(pdfWriterDictionary->QueryDirectObject("mObjectsContext"));
+		if(!objectsContextObject)
+		{
+			status = eFailure;
+			break;
+		}
 		status = mObjectsContext.ReadState(reader.GetObjectsReader(),objectsContextObject->mObjectID);
 		if(status!= eSuccess)
 			break;
 
 		PDFObjectCastPtr<PDFIndirectObjectReference> documentContextObject(pdfWriterDictionary->QueryDirectObject("mDocumentContext"));
+		if(!documentContextObject)
+		{
+			status = eFailure;
+			break;
+		}
 		status = mDocumentContext.ReadState(reader.GetObjectsReader(),documentContextObject->mObjectID);
 		if(status!= eSuccess)
 			break;
