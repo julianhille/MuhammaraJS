@@ -1212,6 +1212,14 @@ describe("Text - Continued", function () {
   });
 
   describe("layout parity with native", function () {
+    it("puts the first baseline one ascent below y", async function () {
+      var runs = await drawRuns("layout-first-baseline", (recipe) =>
+        recipe.text("Hello", 20, 20, { font: "arial" }),
+      );
+      // Native draws the same call at 369.81 on a 400 pt page.
+      assert.ok(Math.abs(runs[0].y - 369.81) < 0.05, `y was ${runs[0].y}`);
+    });
+
     it("right-aligns inside the padded box", async function () {
       var place = async (name, padding) =>
         (
