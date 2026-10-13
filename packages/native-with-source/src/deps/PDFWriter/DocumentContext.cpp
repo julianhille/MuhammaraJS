@@ -1964,7 +1964,11 @@ EStatusCode DocumentContext::ReadTrailerInfoState(PDFParser* inStateReader,PDFDi
 	if(ReadDateState(creationDateState.GetPtr(),mTrailerInformation.GetInfo().CreationDate) != eSuccess ||
 		ReadDateState(modDateState.GetPtr(),mTrailerInformation.GetInfo().ModDate) != eSuccess)
 		return eFailure;
-	mTrailerInformation.GetInfo().Trapped = (EInfoTrapped)trappedState->GetValue();
+	// the writer saves EInfoTrappedTrue, False or Unknown; reject anything else
+	long long trapped = trappedState->GetValue();
+	if(trapped < EInfoTrappedTrue || trapped > EInfoTrappedUnknown)
+		return eFailure;
+	mTrailerInformation.GetInfo().Trapped = (EInfoTrapped)trapped;
 
 	MapIterator<PDFNameToPDFObjectMap> it = additionalInfoState->GetIterator();
 	PDFObjectCastPtr<PDFName> keyState;
@@ -2004,7 +2008,10 @@ EStatusCode DocumentContext::ReadDateState(PDFDictionary* inDateState,PDFDate& i
 	inDate.Hour = (int)hourState->GetValue();
 	inDate.Minute = (int)minuteState->GetValue();
 	inDate.Second = (int)secondState->GetValue();
-	inDate.UTC = (PDFDate::EUTCRelation)utcState->GetValue();
+	long long utc = utcState->GetValue();
+	if(utc < PDFDate::eEarlier || utc > PDFDate::eUndefined)
+		return eFailure;
+	inDate.UTC = (PDFDate::EUTCRelation)utc;
 	inDate.HourFromUTC = (int)hourFromUTCState->GetValue();
 	inDate.MinuteFromUTC = (int)minuteFromUTCState->GetValue();
 	return eSuccess;

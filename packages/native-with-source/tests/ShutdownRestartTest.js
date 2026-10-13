@@ -247,6 +247,16 @@ describe("ShutDownRestartState", function () {
       });
     });
 
+    // Enum fields read from the state file are cast and later loaded. An
+    // out-of-range value was undefined behaviour when the PDF was finalized.
+    it("is rejected with an out-of-range Trapped value", function () {
+      rejects(state.replace(/\/Trapped \d+/, "/Trapped 4294867297"));
+    });
+
+    it("is rejected with an out-of-range date UTC relation", function () {
+      rejects(state.replace(/\/UTC \d+/, "/UTC 99"));
+    });
+
     // One-byte fonts used to read an empty character list, or loop past the
     // end of it at code 65535, when writing their widths.
     it("fails to end with a font that has no characters", function () {
