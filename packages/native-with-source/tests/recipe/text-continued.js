@@ -1358,4 +1358,73 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
     expect(pdf.match(/\/Subtype \/Highlight/g)).to.have.length(1);
     expect(pdf.match(/\/Subtype \/Squiggly/g)).to.have.length(1);
   });
+
+  it("wraps the HTML text that follows an inline element at the box edge", () => {
+    const runs = drawRuns("text-html-inline-wrap", (recipe) =>
+      recipe.text(
+        "<p>the quick <u>brown</u> fox jumps over the lazy dog and again over the dog</p>",
+        20,
+        20,
+        { html: true, size: 12, textBox: { width: 200 } },
+      ),
+    );
+    const firstLine = runs.filter((run) => run.y === runs[0].y);
+    expect(firstLine.map((run) => run.text).join("")).to.not.include("dog");
+    // Justified HTML stays inside the box, too.
+    const justified = drawRuns("text-html-justify-inline", (recipe) =>
+      recipe.text("aa bb cc <b>dd</b> ee ff gg hh ii jj kk", 20, 20, {
+        html: true,
+        font: "arial",
+        textBox: { width: 100, textAlign: "justify" },
+      }),
+    );
+    justified
+      .filter((run) => run.y === justified[0].y)
+      .forEach((run) => expect(run.x).to.be.below(120));
+    // The text after an inline element that wrapped continues its line.
+    const lineOf = (name, html, textBox) =>
+      drawRuns(name, (recipe) =>
+        recipe.text(html, 20, 20, { html: true, font: "arial", textBox }),
+      ).map((run) => [run.text, run.y]);
+    const wrapped = lineOf(
+      "text-html-wrapped-inline",
+      "<p>aaaa bbbb cccc <b>dddd eeee</b> ffff gg</p>",
+      { width: 100 },
+    );
+    expect(wrapped[2][1]).to.equal(wrapped[1][1]);
+    // A list item starts its own line, with its marker.
+    expect(
+      lineOf(
+        "text-html-list-items",
+        "<ul><li>aa bb cc dd ee ff</li><li>xxxx yyyy zzzz</li></ul>",
+        { width: 100 },
+      )[2][0].trim(),
+    ).to.equal("* xxxx yyyy");
+    // Clipped HTML keeps the spaces between its runs.
+    expect(
+      lineOf("text-html-clip-spaces", "aa <b>bb</b> cc dd ee ff", {
+        width: 60,
+        wrap: "clip",
+      })
+        .map(([text]) => text)
+        .join(""),
+    ).to.equal("aa bb cc dd ");
+    // A list item's later runs are not indented again.
+    const item = lineOf(
+      "text-html-list-inline",
+      "<ol><li>aa <b>bb</b> cc dd ee ff gg hh ii jj</li></ol>",
+      { width: 100 },
+    );
+    expect(
+      item.filter(([, y]) => y === item[0][1]).map(([text]) => text),
+    ).to.eql(["      1. aa ", "bb", " cc"]);
+    // Ellipsized HTML is cut as plain text is, inside the box.
+    const ellipsized = (name, html) =>
+      lineOf(name, html, { width: 60, wrap: "ellipsis" })
+        .map(([text]) => text)
+        .join("");
+    expect(
+      ellipsized("text-html-ellipsis", "aa bb <b>cc</b> dd ee ff"),
+    ).to.equal(ellipsized("text-plain-ellipsis", "aa bb cc dd ee ff"));
+  });
 });

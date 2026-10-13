@@ -1203,8 +1203,12 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
 
   // Every object is laid out after the runs of an open flow, which each
   // result repeats; the first result keeps them and later ones drop them.
-  const previousRuns = new Set(this._previousTextObjects);
-  /** Adds laid-out objects, recording the first line height. */
+  const openRuns = this._previousTextObjects;
+  const previousRuns = new Set(openRuns);
+  /**
+   * Adds laid-out objects, recording the first line height, and makes them
+   * the open line the next object continues.
+   */
   const addLaidOutObjects = (newToWriteObjects, paragraphHeight) => {
     toWriteTextObjects = [
       ...toWriteTextObjects,
@@ -1220,6 +1224,10 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
       }
     }
     totalHeight += paragraphHeight;
+    // The next run continues the line these runs leave open, so it wraps at
+    // the box edge instead of at the width of a line of its own.
+    toWriteTextObjects.forEach((textObj) => previousRuns.add(textObj));
+    this._previousTextObjects = [...toWriteTextObjects];
   };
 
   /**
@@ -1228,8 +1236,8 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
    *   sizes and styles are passed on to its children in place.
    * @returns {void}
    */
-  // A run whose first word wraps ends the open line of a flow; the call's
-  // later runs continue the line it wrapped onto instead.
+  // A run that wraps ends the line it continued; its later siblings continue
+  // the line it ended on instead.
   const wrappedLineIDs = new Map();
   const writeValue = (textObject) => {
     textObject.lineID = textObject.lineID || Date.now() * Math.random();
@@ -1268,11 +1276,10 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
       const { toWriteTextObjects: newToWriteObjects, paragraphHeight } =
         makeTextObjects(this, textObject, pathOptions, textBox, atEnd);
       addLaidOutObjects(newToWriteObjects, paragraphHeight);
-      if (openLine?.lineComplete && textObject.lineID === openLine.lineID) {
-        wrappedLineIDs.set(
-          openLine.lineID,
-          newToWriteObjects[newToWriteObjects.length - 1].lineID,
-        );
+      // Later siblings continue the line this run ended on.
+      const lastRun = newToWriteObjects[newToWriteObjects.length - 1];
+      if (!lastRun.lineComplete && lastRun.lineID !== textObject.lineID) {
+        wrappedLineIDs.set(textObject.lineID, lastRun.lineID);
       }
     }
     if (textObject.tag && textObject.childs.length) {
@@ -1358,11 +1365,17 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
     !(pathOptions.html && (this._flowEndsBlock || pathOptions.startsBlock))
       ? openLine.lineID
       : Date.now() * Math.random();
-  textObjects.forEach((textObject) => {
-    textObject.lineID = textObject.lineID || topLevelLineID;
-    writeValue(textObject);
-  });
+  try {
+    textObjects.forEach((textObject) => {
+      textObject.lineID = textObject.lineID || topLevelLineID;
+      writeValue(textObject);
+    });
+  } catch (error) {
+    this._previousTextObjects = openRuns;
+    throw error;
+  }
 
+  this._previousTextObjects = openRuns;
   const normalizedTextObjects = [];
   let pendingBreaks = [];
   const replacementLineIDs = new Map();
@@ -1961,8 +1974,9 @@ function makeTextObjects(
     for (let i = end; i >= 0; i--) {
       let textObj = toWriteTextObjects[i];
 
-      // only collect data while lineID's match.
-      if (textObj.lineID !== previousLine.lineID) {
+      // Only the runs of the line this object continues count. A line break
+      // starts a new line before its runs are given their own line IDs.
+      if (textObj.lineID !== lineID || textObj.lineBreak) {
         break;
       }
       textLine = textObj.text + textLine;
@@ -1985,12 +1999,13 @@ function makeTextObjects(
       totalTextWidth = 0;
     } else if (textLine) {
       wordCount = textLine.trim().split(/\s+/).length;
-      remainderWidth = lineMaxWidth - lineWidth;
+      if (lineMaxWidth !== null) remainderWidth = lineMaxWidth - lineWidth;
     }
   }
 
   newLine = new Line(remainderWidth, lineHeight, size, pathOptions);
-  newLine.indent(indent);
+  // A run that continues a line is not indented again.
+  if (remainderWidth === lineMaxWidth) newLine.indent(indent);
 
   while (bk) {
     let word = nextWord(text, bk, last, pathOptions, keepLineEnd);
@@ -2024,11 +2039,13 @@ function makeTextObjects(
           );
         }
 
+        // Clipped and ellipsized lines go on with the word that does not fit.
         [wordCount, totalTextWidth] = bindTextToLine(
           newLine,
           toWriteTextObjects,
           wordCount,
           totalTextWidth,
+          [TextWrap.AUTO, TextWrap.TRIM].includes(textBox.wrap),
         );
 
         toWriteTextObjects.push(
