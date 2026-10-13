@@ -940,8 +940,11 @@ exports.text = function text(text = "", x, y, options = {}) {
         return next_x;
       };
 
-      /** Queues a text link limited to the run's visible clipping region. */
-      var queueTextLink = function (content, x, y, nextX) {
+      /**
+       * Queues a text link limited to the run's visible clipping region; the
+       * link of rotated text covers the box around the turned run.
+       */
+      var queueTextLink = (content, x, y, nextX) => {
         // The empty run that ends a flow inherits the link but covers nothing.
         if (!content.writeOptions.link || !content.text) return;
         var left = x;
@@ -955,13 +958,33 @@ exports.text = function text(text = "", x, y, options = {}) {
           width = right - left;
           if (width <= 0) return;
         }
-        linkAnnotations.push({
+        const link = {
           url: content.writeOptions.link,
           left,
           bottom: y,
           width,
           height: content.lineHeight,
-        });
+        };
+        if (content.writeOptions.rotation) {
+          // The link turns with its text: it covers the box around the
+          // turned rectangle.
+          const corners = this._rotatePoints(
+            [
+              [left, y],
+              [left + width, y],
+              [left + width, y + link.height],
+              [left, y + link.height],
+            ],
+            content.writeOptions,
+          );
+          const xs = corners.map((corner) => corner[0]);
+          const ys = corners.map((corner) => corner[1]);
+          link.left = Math.min(...xs);
+          link.bottom = Math.min(...ys);
+          link.width = Math.max(...xs) - link.left;
+          link.height = Math.max(...ys) - link.bottom;
+        }
+        linkAnnotations.push(link);
       };
 
       if (!isContinued) {

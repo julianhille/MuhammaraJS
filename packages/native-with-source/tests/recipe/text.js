@@ -906,4 +906,28 @@ describe("Text", () => {
       0.01,
     );
   });
+
+  it("turns a text link with the rotated text", () => {
+    const rect = (rotation) => {
+      const output = path.join(
+        __dirname,
+        `../output/text-link-${rotation}.pdf`,
+      );
+      new Recipe("new", output, { compress: false })
+        .createPage(400, 400)
+        .text("alpha", 100, 300, { rotation, link: "https://example.com" })
+        .endPage()
+        .endPDF();
+      return fs
+        .readFileSync(output, "latin1")
+        .match(/\/Rect \[([^\]]*)\]/)[1]
+        .trim()
+        .split(/\s+/)
+        .map(Number);
+    };
+    // The box around the turned text, as Wasm draws it within its glyph edge.
+    rect(30).forEach((value, index) =>
+      expect(value).to.be.closeTo([93, 70.87, 129.46, 100][index], 0.01),
+    );
+  });
 });
