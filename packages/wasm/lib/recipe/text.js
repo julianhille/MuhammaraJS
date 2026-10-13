@@ -121,7 +121,10 @@ function lines(value, width, measure, options, wrap) {
           result.push({ text: trimBreakableEnd(line), last: false });
           line = word;
         } else if (wrap === TextWrap.CLIP) {
+          // As in native, clipped text keeps the first word that does not
+          // fit, cut at the box edge, and drops the rest of the paragraph.
           line = next;
+          truncated = true;
         } else if (wrap === TextWrap.ELLIPSIS) {
           line = ellipsize(line || word, width, measure, options);
           truncated = true;
@@ -354,7 +357,10 @@ function htmlLines(source, width, measure, options, wrap) {
               ellipsizeHtmlParts(parts, width, measure, options);
               truncated = true;
               return;
-            } else if (wrap !== TextWrap.CLIP) {
+            } else if (wrap === TextWrap.CLIP) {
+              // The word is clipped at the box edge; later words are dropped.
+              truncated = true;
+            } else {
               truncated = true;
               return;
             }

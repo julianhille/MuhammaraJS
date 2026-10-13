@@ -1157,4 +1157,97 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
     const [a, c] = html("<i><b>a\n</b></i>c");
     expect(c.y).to.be.lessThan(a.y);
   });
+
+  it("shortens a flow that overflows its box and drops the rest", () => {
+    // As one call does, trim drops the word that does not fit and clip keeps
+    // it, cut at the box edge.
+    [
+      ["trim", "alpha bravo"],
+      ["clip", "alpha bravo charlie "],
+    ].forEach(([wrap, line]) => {
+      const runs = drawRuns(`text-flow-${wrap}`, (recipe) =>
+        recipe
+          .text("alpha bravo ", 20, 20, {
+            font: "arial",
+            flow: true,
+            textBox: { width: 80, wrap },
+          })
+          .text("charlie delta echo ", {})
+          .text("fox golf", { flow: false }),
+      );
+      expect(runs.map((run) => run.text)).to.eql([line]);
+    });
+    // A run that continues a line ends it with the ellipsis, without throwing.
+    const runs = drawRuns("text-flow-ellipsis", (recipe) =>
+      recipe
+        .text("delta ", 20, 20, {
+          flow: true,
+          font: "arial",
+          size: 25,
+          textBox: { width: 78, wrap: "ellipsis" },
+        })
+        .text("hotel", { flow: false }),
+    );
+    expect(runs).to.have.length(1);
+    expect(runs[0].text).to.match(/^delta./);
+    // A line the flow moves down to is drawn again.
+    const below = drawRuns("text-flow-trim-movedown", (recipe) =>
+      recipe
+        .text("alpha bravo ", 20, 20, {
+          font: "arial",
+          flow: true,
+          textBox: { width: 80, wrap: "trim" },
+        })
+        .text("charlie ", {})
+        .movedown()
+        .text("next line", { flow: false }),
+    );
+    expect(below.map((run) => run.text)).to.eql(["alpha bravo", "next line"]);
+    // So does the line after a trailing line feed.
+    const afterBreak = drawRuns("text-flow-trim-line-feed", (recipe) =>
+      recipe
+        .text("alpha bravo ", 20, 20, {
+          font: "arial",
+          flow: true,
+          textBox: { width: 80, wrap: "trim" },
+        })
+        .text("charlie\n", {})
+        .text("next line", { flow: false }),
+    );
+    expect(afterBreak.map((run) => run.text)).to.eql([
+      "alpha bravo",
+      "next line",
+    ]);
+    // An ellipsized flow is cut where the same text in one call is.
+    const cut = (name, draw) => drawRuns(name, draw).map((run) => run.text);
+    const E = { font: "arial", textBox: { width: 80, wrap: "ellipsis" } };
+    expect(
+      cut("text-flow-ellipsis-runs", (recipe) =>
+        recipe
+          .text("alpha bravo ", 20, 20, { ...E, flow: true })
+          .text("charlie delta echo ", {})
+          .text("fox golf", { flow: false }),
+      ),
+    ).to.eql(
+      cut("text-flow-ellipsis-one", (recipe) =>
+        recipe.text("alpha bravo charlie delta echo fox golf", 20, 20, E),
+      ),
+    );
+    const D = {
+      font: "arial",
+      size: 25,
+      textBox: { width: 78, wrap: "ellipsis" },
+    };
+    expect(
+      cut("text-flow-ellipsis-word", (recipe) =>
+        recipe
+          .text("delta ", 20, 20, { ...D, flow: true })
+          .text("hotel", { flow: false }),
+      ),
+    ).to.eql(
+      cut("text-flow-ellipsis-word-one", (recipe) =>
+        recipe.text("delta hotel", 20, 20, D),
+      ),
+    );
+  });
 });

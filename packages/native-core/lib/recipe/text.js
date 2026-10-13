@@ -1886,7 +1886,10 @@ function makeTextObjects(
   let last = 0;
   let bk = breaker.nextBreak();
   let previousWord;
-  let flushLine = false;
+  // Trimmed, clipped and ellipsized text drops what follows the line that
+  // overflowed, also in the later calls of a flow.
+  let flushLine =
+    Boolean(self._flowFlush) && self._previousTextObjects.length > 0;
   let wordCount = 0; // for justification
   let totalTextWidth = 0; // for justification
   let textLine = "";
@@ -1963,9 +1966,9 @@ function makeTextObjects(
   while (bk) {
     let word = nextWord(text, bk, last, pathOptions, keepLineEnd);
 
-    if (newLine.canFit(word)) {
+    if (!flushLine && newLine.canFit(word)) {
       newLine.addWord(word);
-    } else {
+    } else if (!flushLine) {
       // Protect against line width being too small to accept any
       // word, which may also happen during text justification.
       if (newLine.words.length === 0) {
@@ -1975,8 +1978,11 @@ function makeTextObjects(
           // and mark last word of previous line in case justifying.
           wordCount = 0;
           totalTextWidth = 0;
-          trimLineEnd(toWriteTextObjects, toWriteTextObjects.length - 1);
-          markLineComplete(toWriteTextObjects);
+          // Clipped text keeps the spaces that end its lines.
+          if (!keepLineEnd) {
+            trimLineEnd(toWriteTextObjects, toWriteTextObjects.length - 1);
+          }
+          markLineComplete(toWriteTextObjects, null, keepLineEnd);
           // The word wraps, so an HTML run's first line is a new line, not
           // the open one it would have continued.
           lineID = newLine.lineID;
@@ -2022,12 +2028,40 @@ function makeTextObjects(
       // now deal with text line wrap (what happens to text that doesn't fit in line)
       if (textBox.wrap !== TextWrap.AUTO) {
         flushLine = true;
-        elideNonFittingText(textBox, newLine, word, pathOptions);
-
-        if (toWriteTextObjects.length > 0) {
+        // A line of only spaces has no word of this call to shorten either.
+        const ownWords = newLine.words.some((lineWord) =>
+          lineWord.value.trim(),
+        );
+        if (!ownWords && toWriteTextObjects.length > 0) {
+          // The word continues a line that earlier runs of the flow began, so
+          // the last run is cut as one call would cut it: clipped text keeps
+          // the word, trimmed text drops it, and ellipsized text shortens the
+          // run until it and the ellipsis fit.
+          // The last run with text, not an empty one an element left.
+          const last =
+            toWriteTextObjects.findLast((run) => run.text.trim()) ||
+            toWriteTextObjects[toWriteTextObjects.length - 1];
+          if (textBox.wrap === TextWrap.CLIP) {
+            last.text += word.value;
+          } else if (textBox.wrap === TextWrap.ELLIPSIS) {
+            // The room was measured with the space the run ended with.
+            const room = last.lineWidth + last.spaceWidth + newLine.width;
+            let value = trimBreakableEnd(last.text);
+            const fits = () =>
+              new Word(value + "…", last.writeOptions).dimensions.xMax <= room;
+            while (value && !fits()) value = value.slice(0, -1);
+            last.text = value + "…";
+            last.lineWidth = new Word(
+              last.text,
+              last.writeOptions,
+            ).dimensions.xMax;
+          }
+        } else if (toWriteTextObjects.length > 0) {
+          elideNonFittingText(textBox, newLine, word, pathOptions);
           toWriteTextObjects[toWriteTextObjects.length - 1].text =
             newLine.value;
         } else {
+          elideNonFittingText(textBox, newLine, word, pathOptions);
           // this is the first line in the box (no other line yet emitted) ...
           toWriteTextObjects.push(
             makeTextObject(
@@ -2128,6 +2162,8 @@ function makeTextObjects(
   } else {
     toWriteTextObjects[toWriteTextObjects.length - 1].lastLine = isLastLine;
   }
+
+  self._flowFlush = Boolean(self._flow) && flushLine;
 
   let paragraphHeight =
     lineHeight * lines.length + textBox.paddingTop + textBox.paddingBottom;
@@ -2231,6 +2267,8 @@ exports.movedown = function movedown(lines = 1, returnCoords = false) {
   } else {
     // This handles continuous text positioning
     markLineComplete(this._previousTextObjects, lines);
+    // The next line is drawn even when the one before overflowed.
+    this._flowFlush = false;
     this._previousTextObjects[this._previousTextObjects.length - 1].lastLine =
       true;
   }

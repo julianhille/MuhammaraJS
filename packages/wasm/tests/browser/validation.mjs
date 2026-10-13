@@ -415,7 +415,8 @@ export async function runValidation() {
   var overflowText = (await createMuhammaraWasm())
     .createReader(overflowBytes)
     .extractPageText(0);
-  equal(overflowText[0].content, "alpha bravo charlie", "clip source");
+  // As in native, clip keeps "bravo", cut at the box edge, and drops "charlie".
+  equal(overflowText[0].content.trim(), "alpha bravo", "clip source");
   equal(overflowText[1].content, "alpha", "trim source");
   assert(/…$/.test(overflowText[2].text), "ellipsis source");
   var continuationHeaders = overflowText.filter(

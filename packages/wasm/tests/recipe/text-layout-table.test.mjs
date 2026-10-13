@@ -225,7 +225,8 @@ describe("Recipe text layout and tables", function () {
     writeOutput("text-layout-wrap-modes", bytes);
     var reader = (await createMuhammaraWasm()).createReader(bytes);
     var output = reader.extractPageText(0);
-    assert.equal(output[0].content, "alpha bravo charlie");
+    // Native keeps "bravo", which overflows and is clipped, and drops "charlie".
+    assert.equal(output[0].content.trim(), "alpha bravo");
     assert.equal(output[1].content, "alpha");
     assert.match(output[2].text, /…$/);
     assert.ok(output[2].content.length < output[0].content.length);
