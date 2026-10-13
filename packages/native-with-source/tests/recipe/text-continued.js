@@ -1029,9 +1029,10 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
       const lineHeight = runs[0].y - runs[1].y;
       expect(lineHeight).to.be.above(5);
       expect(runs[1].x).to.equal(runs[0].x);
-      // movedown() after a closed block adds no blank line.
-      expect(runs[1].y - runs[2].y).to.be.closeTo(lineHeight, 0.01);
-      expect(runs[2].y - runs[3].y).to.be.closeTo(lineHeight, 0.01);
+      // movedown() after a closed block adds no blank line. Each line is as
+      // tall as its face, so bold and italic lines differ a little.
+      expect(runs[1].y - runs[2].y).to.be.closeTo(lineHeight, 1);
+      expect(runs[2].y - runs[3].y).to.be.closeTo(lineHeight, 1);
 
       // A run without text in between does not change that.
       const between = drawRuns(
@@ -1461,5 +1462,39 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
     ];
     // Words keep the width of the space they end with, as in Wasm.
     expect(gaps[1]).to.be.closeTo(gaps[0], 1);
+  });
+
+  it("lays out bold and italic HTML runs with the face they are drawn in", () => {
+    const html = drawRuns("text-html-bold-measure", (recipe) =>
+      recipe.text("<b>bold</b> next", 20, 20, { font: "arial", html: true }),
+    );
+    const flow = drawRuns("text-flow-bold-measure", (recipe) =>
+      recipe
+        .text("bold", 20, 20, {
+          font: "arial",
+          bold: true,
+          flow: true,
+          textBox: { width: 300 },
+        })
+        .text(" next", { bold: false, flow: false }),
+    );
+    expect(html[1].x).to.be.closeTo(flow[1].x, 0.01);
+    // Its baseline and line spacing come from the bold face too.
+    const wrap = (name, text, options) =>
+      drawRuns(name, (recipe) =>
+        recipe.text(text, 20, 20, { ...options, textBox: { width: 80 } }),
+      ).map((run) => [run.x, run.y]);
+    expect(
+      wrap("text-html-bold-lines", "<b>wwww wwww wwww</b>", { html: true }),
+    ).to.eql(wrap("text-bold-lines", "wwww wwww wwww", { bold: true }));
+    // Bold and italic faces differ in width, so " next" starts apart.
+    const bold = drawRuns("text-html-bold-w", (recipe) =>
+      recipe.text("<b>wwww</b> next", 20, 20, { html: true }),
+    );
+    const italic = drawRuns("text-html-italic-w", (recipe) =>
+      recipe.text("<i>wwww</i> next", 20, 20, { html: true }),
+    );
+    expect(bold[1].x).to.be.closeTo(63.36, 0.01);
+    expect(italic[1].x).to.be.closeTo(62.55, 0.01);
   });
 });

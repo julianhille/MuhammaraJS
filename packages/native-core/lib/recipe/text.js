@@ -1865,10 +1865,12 @@ function makeTextObjects(
     (textObject.appendValue ? textObject.appendValue : "");
 
   const size = textObject.size || pathOptions.size;
+  // The run is measured with the font it is drawn in, such as an HTML bold face.
+  const font = self._getFont(textObject);
   // Use the same string to get the same height for each string with the same font.
   // Need lowercase 'gjpqy' so descenders are included in text height.
   // Need special characters '|}' because they have ascenders that go beyond upper case letters.
-  const textDimensions = pathOptions.font.calculateTextDimensions(
+  const textDimensions = font.calculateTextDimensions(
     "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}",
     size,
   );
@@ -1891,7 +1893,7 @@ function makeTextObjects(
     size: size,
     alignHorizontal: alignHorizontal,
     alignVertical: alignVertical,
-    font: self._getFont(textObject),
+    font,
   });
 
   const lineOpts = {
@@ -1985,12 +1987,12 @@ function makeTextObjects(
     }
   }
 
-  newLine = new Line(remainderWidth, lineHeight, size, pathOptions);
+  newLine = new Line(remainderWidth, lineHeight, size, writeOptions);
   // A run that continues a line is not indented again.
   if (remainderWidth === lineMaxWidth) newLine.indent(indent);
 
   while (bk) {
-    let word = nextWord(text, bk, last, pathOptions, keepLineEnd);
+    let word = nextWord(text, bk, last, writeOptions, keepLineEnd);
 
     if (!flushLine && newLine.canFit(word)) {
       newLine.addWord(word);
@@ -2081,11 +2083,11 @@ function makeTextObjects(
             ).dimensions.xMax;
           }
         } else if (toWriteTextObjects.length > 0) {
-          elideNonFittingText(textBox, newLine, word, pathOptions);
+          elideNonFittingText(textBox, newLine, word, writeOptions);
           toWriteTextObjects[toWriteTextObjects.length - 1].text =
             newLine.value;
         } else {
-          elideNonFittingText(textBox, newLine, word, pathOptions);
+          elideNonFittingText(textBox, newLine, word, writeOptions);
           // this is the first line in the box (no other line yet emitted) ...
           toWriteTextObjects.push(
             makeTextObject(
@@ -2101,21 +2103,21 @@ function makeTextObjects(
         }
       } else {
         // this is the auto wrap section
-        newLine = new Line(lineMaxWidth, lineHeight, size, pathOptions);
+        newLine = new Line(lineMaxWidth, lineHeight, size, writeOptions);
         newLine.indent(indent);
 
         if (textObject.prependValue) {
           const space = Array(textObject.prependValue.length + 1)
             .fill(" ")
             .join("");
-          newLine.addWord(new Word(space, pathOptions));
+          newLine.addWord(new Word(space, writeOptions));
         }
         // A wrapped line starts with its first word, without the spaces
         // that started the run before it wrapped.
         const wrapped = word.value.replace(/^[^\S\u00a0]+/, "");
         if (wrapped) {
           newLine.addWord(
-            wrapped === word.value ? word : new Word(wrapped, pathOptions),
+            wrapped === word.value ? word : new Word(wrapped, writeOptions),
           );
         }
       }
@@ -2125,7 +2127,7 @@ function makeTextObjects(
       while (bk) {
         if (bk.required) {
           flushLine = false;
-          newLine = new Line(lineMaxWidth, lineHeight, size, pathOptions);
+          newLine = new Line(lineMaxWidth, lineHeight, size, writeOptions);
           word = null;
           break;
         }
@@ -2152,7 +2154,7 @@ function makeTextObjects(
         );
         markLineComplete(toWriteTextObjects, null, keepLineEnd);
         wordCount = 0;
-        newLine = new Line(lineMaxWidth, lineHeight, size, pathOptions);
+        newLine = new Line(lineMaxWidth, lineHeight, size, writeOptions);
       }
     }
 
