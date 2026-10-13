@@ -11,6 +11,51 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Support Electron 39 through 44 on macOS x64, which used to stop at 38.1
   [#984](https://github.com/julianhille/MuhammaraJS/issues/984)
+- Strike out `<s>` and `<strike>` text in Recipe HTML, as `<del>` already does
+  [#936](https://github.com/julianhille/MuhammaraJS/issues/936)
+
+### Fixed
+
+- Turn a rotated Recipe `rectangle()` without `rotationOrigin` around its
+  top-left corner, as documented and as in `@muhammara/wasm`, instead of its
+  bottom-left corner. Pass `rotationOrigin: [x, y + height]` to keep the old
+  pivot [#923](https://github.com/julianhille/MuhammaraJS/issues/923)
+- Apply `rotation` in Recipe `line()`, clockwise around its first point or
+  `rotationOrigin`, as in `@muhammara/wasm`. The option was validated but the
+  line was drawn unrotated [#925](https://github.com/julianhille/MuhammaraJS/issues/925)
+- Draw a stroked Recipe `circle()` with `rotation`. Its placing matrix had
+  `nan` offsets, which PDF viewers reject [#922](https://github.com/julianhille/MuhammaraJS/issues/922)
+- Turn Recipe text links with rotated text, so the link covers the turned text
+  instead of the unrotated line box [#926](https://github.com/julianhille/MuhammaraJS/issues/926)
+- Keep the box padding in Recipe `text()` with a box `height` or `minHeight`
+  and a bottom or center `textAlign`. Bottom-aligned text ended flush with the
+  box, and centered text ignored unequal padding [#935](https://github.com/julianhille/MuhammaraJS/issues/935)
+- Wrap Recipe HTML text that follows an inline element at the text box width,
+  and keep justified HTML inside its box [#891](https://github.com/julianhille/MuhammaraJS/issues/891), [#905](https://github.com/julianhille/MuhammaraJS/issues/905)
+- Keep the spaces that start a line of Recipe text: in a flow before
+  `movedown()`, and on any line that ends with a line break, also when the
+  text is right or center aligned [#906](https://github.com/julianhille/MuhammaraJS/issues/906)
+- Add the markup annotations of flowed Recipe text (`highlight`, `underline`,
+  `strikeOut`, `squiggly`) over the run that sets them, instead of from the
+  call that ends the flow over the whole line [#909](https://github.com/julianhille/MuhammaraJS/issues/909)
+- Keep the first line of flowed Recipe text whose box has `textBox.wrap` of
+  `trim`, `clip`, or `ellipsis`, instead of dropping runs, and stop throwing a
+  `TypeError` when a run continues a line with `ellipsis` [#913](https://github.com/julianhille/MuhammaraJS/issues/913), [#928](https://github.com/julianhille/MuhammaraJS/issues/928)
+- Align flowed Recipe text as the call that ends the flow sets it, as in
+  `@muhammara/wasm`, so the runs of a line no longer overlap or leave a gap
+  [#918](https://github.com/julianhille/MuhammaraJS/issues/918)
+- Continue the open line of flowed Recipe text up to a line break in a later
+  run, instead of gluing the words on either side of the break together
+  [#927](https://github.com/julianhille/MuhammaraJS/issues/927)
+- Justify flowed Recipe text line by line, with one gap width per line and a
+  left-aligned last line, so runs no longer overlap or run past the box
+  [#929](https://github.com/julianhille/MuhammaraJS/issues/929)
+- Stop drawing a line feed that ends a Recipe HTML text node or an inline
+  element; it ends the line instead [#931](https://github.com/julianhille/MuhammaraJS/issues/931)
+- Lay out Recipe HTML runs with the font and size they are drawn in, so the
+  run after bold or italic text no longer overlaps it, bold and italic lines
+  get their face's baseline and line height, and `h1`–`h3` and `small` text
+  wraps at its own size [#937](https://github.com/julianhille/MuhammaraJS/issues/937)
 
 ### Changed
 

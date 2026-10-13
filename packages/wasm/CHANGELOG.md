@@ -2,6 +2,28 @@
 
 All notable changes to `@muhammara/wasm` are documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Place Recipe `text()` lines as native does. The first line sits one ascent
+  below `y` instead of one full line height, so text no longer sits about
+  3 pt too low, and justified words advance by their glyph edge with the last
+  word ending at the right edge [#904](https://github.com/julianhille/MuhammaraJS/issues/904)
+- Stop right-aligned Recipe text from landing the left padding too far right
+  [#910](https://github.com/julianhille/MuhammaraJS/issues/910)
+- Clip Recipe text with `textBox.wrap: "clip"` as native does: keep the first
+  word that does not fit, cut at the box edge, and drop the rest of its
+  paragraph, instead of drawing the whole text under the clipping path
+  [#913](https://github.com/julianhille/MuhammaraJS/issues/913)
+- Draw the Recipe `text()` hilite over the run's whole line box, as native
+  does, instead of over its glyphs only [#933](https://github.com/julianhille/MuhammaraJS/issues/933)
+- Align center and bottom Recipe text within a box grown to
+  `textBox.minHeight`, as within a box of that `height` [#934](https://github.com/julianhille/MuhammaraJS/issues/934)
+- Turn a rotated Recipe `polygon()` without `rotationOrigin` around the center
+  of its bounding box, as native does, instead of its first point. Pass
+  `rotationOrigin: coordinates[0]` to keep the old pivot [#924](https://github.com/julianhille/MuhammaraJS/issues/924)
+
 ## [1.2.0] - 2026-10-12
 
 ### Added
