@@ -1139,4 +1139,22 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
       expect(runs[2].y - runs[3].y).to.be.closeTo(lineHeight, 0.01);
     });
   });
+
+  it("ends the line at a trailing line feed instead of drawing it", () => {
+    const html = (text) =>
+      drawRuns("text-trailing-line-feed", (recipe) =>
+        recipe.text(text, 20, 20, { font: "arial", html: true }),
+      );
+    const [bravo, x] = html("bravo\n<b>x</b>");
+    expect(bravo.text).to.equal("bravo");
+    expect(x.text).to.equal("x");
+    expect(x.y).to.be.lessThan(bravo.y);
+    expect(html("<p>bravo\n</p><p>x</p>").map((run) => run.text)).to.eql([
+      "bravo",
+      "x",
+    ]);
+    // Also when the line feed ends a nested inline element.
+    const [a, c] = html("<i><b>a\n</b></i>c");
+    expect(c.y).to.be.lessThan(a.y);
+  });
 });
