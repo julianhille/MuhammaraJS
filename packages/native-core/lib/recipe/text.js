@@ -569,10 +569,18 @@ exports.text = function text(text = "", x, y, options = {}) {
     ) {
       case VerticalAlign.CENTER:
         textYpos -=
-          (textBox.height - textBox.textHeight) / 2 - textBox.paddingTop;
+          (textBox.height -
+            textBox.textHeight -
+            textBox.paddingTop -
+            textBox.paddingBottom) /
+          2;
         break;
       case VerticalAlign.BOTTOM:
-        textYpos -= textBox.height - textBox.textHeight - textBox.paddingBottom;
+        textYpos -=
+          textBox.height -
+          textBox.textHeight -
+          textBox.paddingTop -
+          textBox.paddingBottom;
         break;
     }
 

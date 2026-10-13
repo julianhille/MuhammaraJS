@@ -1220,6 +1220,30 @@ describe("Text - Continued", function () {
       assert.ok(Math.abs(runs[0].y - 369.81) < 0.05, `y was ${runs[0].y}`);
     });
 
+    it("keeps the padding when aligning text to the bottom or center", async function () {
+      var baseline = async (name, textAlign, padding) =>
+        (
+          await drawRuns(name, (recipe) =>
+            recipe.text("alpha", 20, 20, {
+              font: "arial",
+              textBox: { width: 200, height: 100, padding, textAlign },
+            }),
+          )
+        )[0].y;
+      // Native asserts the same offsets in text.js.
+      var bottom =
+        (await baseline("layout-bottom-padding", "left bottom", 10)) -
+        (await baseline("layout-bottom-plain", "left bottom", 0));
+      assert.ok(Math.abs(bottom - 10) < 0.01, `bottom moved ${bottom}`);
+      var center =
+        (await baseline(
+          "layout-center-padding",
+          "left center",
+          [30, 0, 0, 0],
+        )) - (await baseline("layout-center-plain", "left center", 0));
+      assert.ok(Math.abs(center + 15) < 0.01, `center moved ${center}`);
+    });
+
     it("right-aligns inside the padded box", async function () {
       var place = async (name, padding) =>
         (
