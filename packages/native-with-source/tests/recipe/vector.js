@@ -561,6 +561,75 @@ describe("Vector", () => {
     });
   });
 
+  it("turns shapes around the same default pivot as Wasm", () => {
+    const draw = (shape) => {
+      const recipe = new Recipe(Buffer.from("new"), null, { compress: false });
+      shape(recipe.createPage(400, 400));
+      let operators;
+      recipe.endPage().endPDF((bytes) => {
+        operators = contentOperators(bytes);
+      });
+      return operators;
+    };
+    // A stroked circle turns around its center, not around a nan origin.
+    const circle = draw((recipe) =>
+      recipe.circle(100, 100, 40, { stroke: "#0000ff", rotation: 20 }),
+    );
+    assert.ok(!/nan/.test(circle));
+    assert.match(circle, /0\.939693 -0\.34202 0\.34202 0\.939693 \S+ \S+ cm/);
+    // A rectangle turns around its top-left corner.
+    assert.match(
+      draw((recipe) =>
+        recipe.rectangle(100, 100, 50, 20, { fill: "#000000", rotation: 30 }),
+      ),
+      /0\.866025 -0\.5 0\.5 0\.866025 90 282\.679492 cm/,
+    );
+    // A line turns clockwise around its first point.
+    assert.match(
+      draw((recipe) =>
+        recipe.line(
+          [
+            [100, 200],
+            [200, 200],
+          ],
+          { stroke: "#000000", rotation: 30 },
+        ),
+      ),
+      /100 200 m\s+186\.60\d* 150 l/,
+    );
+    // lineTo() does not turn, as in the releases before line() did.
+    assert.match(
+      draw((recipe) =>
+        recipe
+          .moveTo(100, 200)
+          .lineTo(200, 200, { stroke: "#000000", rotation: 90 }),
+      ),
+      /100 200 m\s+200 200 l/,
+    );
+    // So does a Separation line, which a form's box must still contain.
+    let pdf;
+    const recipe = new Recipe(Buffer.from("new"), null, { compress: false });
+    recipe.createPage(400, 400).line(
+      [
+        [100, 200],
+        [200, 200],
+      ],
+      {
+        stroke: "#ff0000",
+        colorspace: "separation",
+        colorName: "Spot",
+        rotation: 30,
+      },
+    );
+    recipe.endPage().endPDF((bytes) => {
+      pdf = bytes.toString("latin1");
+    });
+    const [, boxWidth, boxHeight] = pdf
+      .match(/\/BBox \[ 0 0 (\S+) (\S+) \]/)
+      .map(Number);
+    assert.ok(boxWidth >= 86.6 && boxHeight >= 50, "the form holds the line");
+  });
+
   it("draws nothing for a line with fewer than two points", () => {
     const output = path.join(__dirname, "../output/line-short.pdf");
     new Recipe("new", output)

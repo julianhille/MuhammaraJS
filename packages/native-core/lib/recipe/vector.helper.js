@@ -232,6 +232,32 @@ exports._setRotationContext = function _setRotationTransform(
 };
 
 /**
+ * Turn PDF points clockwise by the rotation options, as the placing matrix
+ * of `_setRotationContext()` does.
+ * @private
+ * @param {number[][]} points - [x, y] points in PDF coordinates.
+ * @param {Object} options - The path options: rotation, rotationOrigin (in
+ *   Recipe coordinates) and the PDF originX and originY used as the default.
+ * @returns {number[][]} The turned points.
+ */
+exports._rotatePoints = function _rotatePoints(points, options) {
+  const origin = hasRotation(options)
+    ? this._calibrateCoordinate(...options.rotationOrigin)
+    : { nx: options.originX, ny: options.originY };
+  const radians = (options.rotation * Math.PI) / 180;
+  const cosine = Math.cos(radians);
+  const sine = Math.sin(radians);
+  return points.map(([x, y]) => {
+    const dx = x - origin.nx;
+    const dy = y - origin.ny;
+    return [
+      origin.nx + dx * cosine + dy * sine,
+      origin.ny - dx * sine + dy * cosine,
+    ];
+  });
+};
+
+/**
  * Whether the options carry an explicit [x, y] rotation origin.
  * @private
  * @param {Object} options - The path options.

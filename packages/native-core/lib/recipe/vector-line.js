@@ -1,4 +1,5 @@
 const { Colorspace } = require("../recipe-constants");
+const { rotationOption } = require("../recipe-options");
 
 /**
  * move the current position to target position
@@ -123,7 +124,9 @@ exports._strokePolyline = function _strokePolyline(points, options) {
  * @param {Recipe.LineCap} [options.lineCap] -  open line end style, a `Recipe.LineCap` value (default: 'round')
  * @param {Recipe.LineJoin} [options.lineJoin] - joined line end style, a `Recipe.LineJoin` value (default: 'round')
  * @param {number} [options.miterLimit] - limit at which 'miter' joins are forced to 'bevel' (default: 1.414)
- * @throws {TypeError} If no page is active.
+ * @param {number} [options.rotation] - Clockwise rotation in degrees. Default: 0
+ * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: the first point
+ * @throws {TypeError} If no page is active or `rotation` is not a finite number.
  */
 exports.line = function line(coordinates = [], options = {}) {
   // null arguments act like omitted ones.
@@ -143,13 +146,22 @@ exports.line = function line(coordinates = [], options = {}) {
     return this;
   }
   // Stroke every segment as one path, as Wasm does.
-  this._strokePolyline(
-    coordinates.map(([x, y]) => {
-      const { nx, ny } = this._calibrateCoordinate(x, y);
-      return [nx, ny];
-    }),
-    options,
-  );
+  let points = coordinates.map(([x, y]) => {
+    const { nx, ny } = this._calibrateCoordinate(x, y);
+    return [nx, ny];
+  });
+  const rotation = rotationOption(options.rotation);
+  if (rotation) {
+    // The line turns around its first point unless rotationOrigin is given.
+    const [originX, originY] = points[0];
+    points = this._rotatePoints(points, {
+      ...options,
+      rotation,
+      originX,
+      originY,
+    });
+  }
+  this._strokePolyline(points, options);
   const [lastX, lastY] = coordinates[coordinates.length - 1];
   return this.moveTo(lastX, lastY);
 };

@@ -451,6 +451,33 @@ describe("Recipe vector", function () {
     });
   });
 
+  it("turns a stroked circle around its center", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe({ compress: false }).createPage(400, 400);
+    recipe.circle(100, 100, 40, { stroke: "#0000ff", rotation: 20 });
+    var content = new TextDecoder("latin1").decode(recipe.endPage().endPDF());
+    // Native asserts the same in vector.js: no nan offsets.
+    assert.doesNotMatch(content, /nan/);
+    assert.match(content, /0\.939693 -0\.34202 0\.34202 0\.939693/);
+  });
+
+  it("turns a polygon around the center of its bounding box", async function () {
+    var Recipe = await getRecipe();
+    var recipe = new Recipe({ compress: false }).createPage(400, 400);
+    recipe.polygon(
+      [
+        [100, 100],
+        [150, 100],
+        [150, 120],
+      ],
+      { fill: "#000000", rotation: 30 },
+    );
+    var content = new TextDecoder("latin1").decode(recipe.endPage().endPDF());
+    // Native turns the same polygon around (125, 110): PDF y 290 on a 400 pt page.
+    assert.match(content, /1 0 0 1 125 290 cm/);
+    assert.match(content, /1 0 0 1 -125 -290 cm/);
+  });
+
   it("draws nothing for a line with fewer than two points", async function () {
     var Recipe = await getRecipe();
     var muhammara = await createMuhammaraWasm();

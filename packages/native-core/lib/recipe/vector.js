@@ -30,6 +30,8 @@ const { miterLimitOption } = require("../recipe-options");
  * @param {number} [options.lineWidth] - The line width
  * @param {number} [options.opacity] - The opacity
  * @param {number[]} [options.dash] - The dash style [number, number]
+ * @param {number} [options.rotation] - Clockwise rotation in degrees. Default: 0
+ * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: the center
  * @param {string} [options.link] - Make the circle's bounding square open this URL.
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
@@ -70,7 +72,7 @@ exports.circle = function circle(x, y, radius, options = {}) {
     );
   }
   if (options.stroke || options.color || !options.fill) {
-    const pathOptions = this._getPathOptions(options);
+    const pathOptions = this._getPathOptions(options, nx, ny);
     pathOptions.type = this.muhammara.DrawingPathType.STROKE;
 
     if (pathOptions.stroke !== undefined) {
@@ -146,7 +148,12 @@ exports.rectangle = function rectangle(x, y, width, height, options = {}) {
     ? { nx: x, ny: y }
     : this._calibrateCoordinate(x, y, 0, -height);
 
-  const pathOptions = this._getPathOptions(options, nx, ny);
+  // The default rotation origin is the top-left corner, as documented.
+  const pathOptions = this._getPathOptions(
+    options,
+    nx,
+    options.useGivenCoords ? ny : ny + height,
+  );
   let colorModel = pathOptions.colorModel;
   pathOptions.useGivenCoords = options.useGivenCoords;
 

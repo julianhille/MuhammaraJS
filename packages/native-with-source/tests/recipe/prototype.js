@@ -56,6 +56,7 @@ describe("Recipe prototype", function () {
       "_releaseReader",
       "_resumePageRotation",
       "_reverseCoordinate",
+      "_rotatePoints",
       "_setLineStyle",
       "_setParameters",
       "_setRotationContext",

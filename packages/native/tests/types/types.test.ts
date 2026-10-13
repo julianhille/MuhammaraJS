@@ -630,6 +630,7 @@ recipe.lineTo(10, 10, { fill: "red" });
 var widenedLineCap: string = "round";
 // @ts-expect-error Line caps use finite runtime values.
 recipe.line([[0, 0]], { lineCap: widenedLineCap });
+recipe.line([[0, 0]], { rotation: 30, rotationOrigin: [0, 0] });
 var widenedRotationOrigin: number[] = [10, 10];
 recipe.rectangle(10, 10, 100, 40, {
   // @ts-expect-error Rotation origins require exactly two coordinates.
