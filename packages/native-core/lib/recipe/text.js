@@ -561,12 +561,12 @@ exports.text = function text(text = "", x, y, options = {}) {
       drawTextBox(this, nx, ny, textBox, pathOptions);
     }
 
+    // The call that ends the text aligns all of it, as in Wasm; its options
+    // merge those of a flow's earlier runs.
+    const { alignHorizontal, alignVertical } =
+      toWriteTextObjects[toWriteTextObjects.length - 1]?.writeOptions || {};
     // Determine vertical starting position of text within textBox
-    switch (
-      toWriteTextObjects.length
-        ? toWriteTextObjects[0].writeOptions.alignVertical
-        : undefined
-    ) {
+    switch (alignVertical) {
       case VerticalAlign.CENTER:
         textYpos -=
           (textBox.height -
@@ -597,6 +597,22 @@ exports.text = function text(text = "", x, y, options = {}) {
 
       currentLineID = currentLineID || lineID;
       const isContinued = currentLineID == lineID ? true : false;
+
+      /**
+       * Gives every run of the line the alignment of the call that ends the
+       * text.
+       * @returns {void}
+       */
+      const alignLine = () => {
+        toWriteContents = toWriteContents.map((run) =>
+          run.writeOptions.alignHorizontal === alignHorizontal
+            ? run
+            : {
+                ...run,
+                writeOptions: { ...run.writeOptions, alignHorizontal },
+              },
+        );
+      };
 
       /**
        * Where a line's first run starts, from the box edge and the line's
@@ -949,6 +965,7 @@ exports.text = function text(text = "", x, y, options = {}) {
       if (!isContinued) {
         // flush out current line before processing next one
         let next_x = 0;
+        alignLine();
         toWriteContents.forEach((content) => {
           const x = next_x || getStartX(content.startX, content);
           const y = currentY;
@@ -1045,6 +1062,7 @@ exports.text = function text(text = "", x, y, options = {}) {
         }
 
         let next_x = 0;
+        alignLine();
         for (let ii = 0; ii < toWriteContents.length; ii++) {
           const content = toWriteContents[ii];
           const x = next_x || getStartX(content.startX, content);

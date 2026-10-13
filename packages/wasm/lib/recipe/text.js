@@ -451,8 +451,7 @@ function clipEntries(entries, availableHeight, lineHeights) {
 
 /**
  * Text options that describe the whole flowed text box rather than one run.
- * The call that ends a flow decides them, as in native, except that native
- * aligns each run by its own `textBox.textAlign`.
+ * The call that ends a flow decides them, as in native.
  */
 var FLOW_BOX_OPTIONS = [
   "align",

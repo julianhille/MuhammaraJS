@@ -1286,4 +1286,60 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
     );
     expect(right.text).to.equal("   right");
   });
+
+  it("aligns the runs of one flowed line as one line", () => {
+    const flow = { flow: true, font: "arial", textBox: { width: 300 } };
+    const place = (name, draw) =>
+      drawRuns(name, (recipe) => draw(recipe.text("alpha ", 20, 20, flow)));
+    // Only the second run centers: both runs move together.
+    const centered = place("text-flow-align-a", (recipe) =>
+      recipe
+        .text("bravo", { textBox: { textAlign: "center" } })
+        .text("", { flow: false }),
+    );
+    expect(centered.map((run) => Math.round(run.x * 100) / 100)).to.eql([
+      132.23, 173.28,
+    ]);
+    // The call that ends the flow sets the alignment of the last line.
+    const ending = place("text-flow-align-c", (recipe) =>
+      recipe
+        .text("bravo", {})
+        .text("", { flow: false, textBox: { textAlign: "center" } }),
+    );
+    expect(ending.map((run) => Math.round(run.x * 100) / 100)).to.eql([
+      132.23, 173.28,
+    ]);
+    // A later run that switches back to left leaves no overlap.
+    const left = drawRuns("text-flow-align-b", (recipe) =>
+      recipe
+        .text("alpha ", 20, 20, {
+          ...flow,
+          textBox: { width: 300, textAlign: "center" },
+        })
+        .text("bravo", { textBox: { textAlign: "left" } })
+        .text("", { flow: false }),
+    );
+    expect(left.map((run) => Math.round(run.x * 100) / 100)).to.eql([
+      20, 61.05,
+    ]);
+    // The call that ends the flow aligns every line of it, as in Wasm.
+    const lines = drawRuns("text-flow-align-lines", (recipe) =>
+      recipe
+        .text("alpha ", 20, 20, flow)
+        .movedown()
+        .text("bravo", { textBox: { textAlign: "center" } })
+        .text("", { flow: false }),
+    );
+    lines.forEach((run) => expect(run.x).to.be.above(100));
+    // It sets the vertical alignment as well.
+    const bottom = drawRuns("text-flow-align-vertical", (recipe) =>
+      recipe
+        .text("alpha ", 20, 20, {
+          ...flow,
+          textBox: { width: 300, height: 200 },
+        })
+        .text("bravo", { flow: false, textBox: { textAlign: "left bottom" } }),
+    );
+    expect(bottom[0].y).to.be.below(200);
+  });
 });

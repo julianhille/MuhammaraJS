@@ -64,8 +64,8 @@ cursor.
 
 Flowed text is laid out when the flow ends, so `textBox` justification and
 styling apply to the whole box. Set `textBox.textAlign` on the call that
-starts the flow, and later runs inherit it; a run that sets a different
-alignment is placed by its own, so the runs of one line can overlap. End it with
+starts the flow, and later runs inherit it; the whole flow is aligned as the
+call that ends it sets it, merged over the earlier runs' options. End it with
 `flow: false`, which adds that call's text first; `text("", { flow: false })`
 ends it without adding any. Inside a flow, `movedown()` ends the current line.
 Because the flow is drawn when it ends, shapes or images drawn between its
