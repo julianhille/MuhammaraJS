@@ -1250,4 +1250,40 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
       ),
     );
   });
+
+  it("continues the open line up to a line break in a flowed run", () => {
+    const [foxtrot, golf, mike] = drawRuns("text-flow-line-break", (recipe) =>
+      recipe
+        .text("foxtrot", 20, 20, {
+          flow: true,
+          font: "arial",
+          textBox: { width: 200 },
+        })
+        .text("golf\nmike", { flow: false }),
+    );
+    expect(golf.y).to.equal(foxtrot.y);
+    expect(golf.x).to.be.greaterThan(foxtrot.x);
+    expect(mike.x).to.equal(foxtrot.x);
+    expect(mike.y).to.be.lessThan(foxtrot.y);
+  });
+
+  it("keeps the spaces that start a flowed line before movedown()", () => {
+    const [indented, x] = drawRuns("text-flow-indent-movedown", (recipe) =>
+      recipe
+        .text("   Indented", 50, 50, { flow: true, font: "arial" })
+        .movedown()
+        .text("x", {})
+        .text("", { flow: false }),
+    );
+    expect(indented.text).to.equal("   Indented");
+    expect(x.x).to.equal(50);
+    // Right-aligned lines that end with a line break keep them too.
+    const [right] = drawRuns("text-right-leading-spaces", (recipe) =>
+      recipe.text("   right\n   two", 20, 20, {
+        font: "arial",
+        textBox: { width: 200, textAlign: "right" },
+      }),
+    );
+    expect(right.text).to.equal("   right");
+  });
 });

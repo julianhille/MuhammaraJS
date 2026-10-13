@@ -2114,6 +2114,9 @@ function makeTextObjects(
        * https://github.com/chunyenHuang/hummusRecipe/issues/29
        */
       if (bk.required) {
+        // The words before the break continue the line an earlier run left
+        // open.
+        bindTextToLine(newLine, toWriteTextObjects, wordCount, totalTextWidth);
         toWriteTextObjects.push(
           makeTextObject(
             lines,
@@ -2124,6 +2127,8 @@ function makeTextObjects(
           ),
         );
         markLineComplete(toWriteTextObjects, null, keepLineEnd);
+        wordCount = 0;
+        totalTextWidth = 0;
         newLine = new Line(lineMaxWidth, lineHeight, size, pathOptions);
       }
     }
@@ -2202,8 +2207,8 @@ function trimLineEnd(textObjs, end) {
 }
 
 /**
- * Mark the last run as ending its line: trim it, mark its last word and
- * optionally move the next line down.
+ * Mark the last run as ending its line: drop the spaces that end it, mark its
+ * last word and optionally move the next line down.
  * @private
  * @param {Object[]} toWriteTextObjects - The runs; the last one is updated.
  * @param {number|null} [lines=null] - The line offset for the next line.
@@ -2219,7 +2224,6 @@ function markLineComplete(toWriteTextObjects, lines = null, keepEnd = false) {
 
   // An empty flowed run has no words.
   textObj.wordsInLine[lastWordIdx]?.lastWord();
-  textObj.text = textObj.text.trimStart();
   if (!keepEnd) textObj.text = trimBreakableEnd(textObj.text);
   textObj.lineComplete = true;
 
