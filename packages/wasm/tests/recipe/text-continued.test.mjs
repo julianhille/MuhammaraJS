@@ -1210,4 +1210,41 @@ describe("Text - Continued", function () {
       assert.ok(Math.abs(runs[2].y - runs[3].y - lineHeight) < 0.01);
     });
   });
+
+  describe("layout parity with native", function () {
+    it("right-aligns inside the padded box", async function () {
+      var place = async (name, padding) =>
+        (
+          await drawRuns(name, (recipe) =>
+            recipe.text("charlie delta", 20, 20, {
+              font: "arial",
+              textBox: { width: 150, padding, textAlign: "right" },
+            }),
+          )
+        )[0].x;
+      var shift =
+        (await place("layout-right-plain", 0)) -
+        (await place("layout-right-padded", 4));
+      // Native moves right-aligned text left by the right padding alone.
+      assert.ok(Math.abs(shift - 4) < 0.01, `shift was ${shift}`);
+    });
+
+    it("aligns text in a box grown to minHeight as in one with that height", async function () {
+      for (var textAlign of ["left bottom", "left center"]) {
+        var grown = await drawRuns("layout-min-height", (recipe) =>
+          recipe.text("alpha", 20, 20, {
+            font: "arial",
+            textBox: { width: 200, minHeight: 100, textAlign },
+          }),
+        );
+        var fixed = await drawRuns("layout-height", (recipe) =>
+          recipe.text("alpha", 20, 20, {
+            font: "arial",
+            textBox: { width: 200, height: 100, textAlign },
+          }),
+        );
+        assert.ok(Math.abs(grown[0].y - fixed[0].y) < 0.01, textAlign);
+      }
+    });
+  });
 });

@@ -1205,13 +1205,11 @@ export function createTextMethods({ drawText, measure, module }) {
           };
         }
       }
-      var contentHeight = Math.max(
-        box.minHeight || 0,
+      var contentHeight =
         entries.reduce((sum, entry, index) => sum + entryHeights[index], 0) +
-          top +
-          bottom,
-      );
-      var height = box.height || contentHeight;
+        top +
+        bottom;
+      var height = box.height || Math.max(box.minHeight || 0, contentHeight);
       var topAlign = options.align?.split(" ") || [];
       /**
        * Measures a line with per-fragment HTML styles when present.
@@ -1305,7 +1303,7 @@ export function createTextMethods({ drawText, measure, module }) {
           (horizontal === TextAlign.CENTER
             ? (width - left - right - textWidth) / 2
             : horizontal === TextAlign.RIGHT
-              ? width - right - textWidth
+              ? width - left - right - textWidth
               : 0);
         var baseline = currentY + lineHeight;
         if (textOptions.rotation && !textOptions.rotationOrigin) {
