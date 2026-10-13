@@ -401,7 +401,6 @@ exports.text = function text(text = "", x, y, options = {}) {
   const linkX = this.x;
   const linkY = this.y;
 
-  const targetAnnotations = options;
   const originCoord = this._calibrateCoordinate(
     this.x,
     this.y,
@@ -415,6 +414,8 @@ exports.text = function text(text = "", x, y, options = {}) {
     originCoord.ny,
   );
   pathOptions.html = options.html;
+  // Each run adds the markup annotations of the call that drew it.
+  pathOptions.markupOptions = options;
   pathOptions.link = options.link;
   pathOptions.hilite = options.hilite;
 
@@ -744,6 +745,14 @@ exports.text = function text(text = "", x, y, options = {}) {
         }
       };
 
+      /**
+       * Draw one run: its hilite, its text, justified when its line is, and
+       * the text-markup annotations of the call that drew it, over the run.
+       * @param {number} x - The x where the run starts.
+       * @param {number} y - The bottom of the run's line.
+       * @param {Object} wto - The run.
+       * @returns {number} The x where a justified run ends, or 0.
+       */
       const writeText = (x, y, wto) => {
         const options = wto.writeOptions;
         const { lineWidth, lineHeight, text, baseline } = wto;
@@ -885,7 +894,9 @@ exports.text = function text(text = "", x, y, options = {}) {
 
         var markupLeft = lineX;
         var markupBottom = y - textHeight * 0.2;
-        var markupWidth = _justify ? next_x - lineX : currentLineWidth;
+        var markupWidth = _justify
+          ? next_x - lineX
+          : lineWidth + (text.endsWith(" ") ? wto.spaceWidth : 0);
         var markupHeight = textHeight * 1.4;
         if (textBox.wrap === TextWrap.CLIP) {
           // Clipped runs retain the first overflowing word, so measure the
@@ -902,16 +913,16 @@ exports.text = function text(text = "", x, y, options = {}) {
           if (markupWidth <= 0 || markupHeight <= 0) return next_x;
         }
 
-        for (let key in targetAnnotations) {
+        for (let key in options.markupOptions) {
           const subtype = this._getTextMarkupAnnotationSubtype(key);
-          if (subtype && targetAnnotations[key]) {
+          if (subtype && options.markupOptions[key]) {
             // Copy so the caller's markup options are not modified.
             const markupOption =
-              typeof targetAnnotations[key] != "object"
+              typeof options.markupOptions[key] != "object"
                 ? {}
-                : { ...targetAnnotations[key] };
+                : { ...options.markupOptions[key] };
             const { title, open, richText, flag, icon, date, subject } =
-              targetAnnotations;
+              options.markupOptions;
             Object.assign(markupOption, {
               height: markupHeight,
               width: markupWidth,

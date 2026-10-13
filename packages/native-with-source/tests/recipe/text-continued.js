@@ -1342,4 +1342,20 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
     );
     expect(bottom[0].y).to.be.below(200);
   });
+
+  it("keeps per-run markup annotations in a flow", () => {
+    const output = path.join(__dirname, "../output/continued-flow-markup.pdf");
+    new Recipe("new", output, { compress: false })
+      .createPage(400, 400)
+      .text("Plain ", 20, 20, { flow: true, font: "arial" })
+      .text("marked", { highlight: true })
+      .text(" plain", { highlight: false })
+      .text("wavy", { squiggly: true })
+      .text("", { flow: false })
+      .endPage()
+      .endPDF();
+    const pdf = fs.readFileSync(output, "latin1");
+    expect(pdf.match(/\/Subtype \/Highlight/g)).to.have.length(1);
+    expect(pdf.match(/\/Subtype \/Squiggly/g)).to.have.length(1);
+  });
 });
