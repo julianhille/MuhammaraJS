@@ -601,18 +601,25 @@ exports.text = function text(text = "", x, y, options = {}) {
 
       /**
        * Gives every run of the line the alignment of the call that ends the
-       * text.
+       * text, and positions the words of a justified line that is not the
+       * last.
        * @returns {void}
        */
       const alignLine = () => {
+        const lastLine = toWriteContents.some((run) => run.lastLine);
         toWriteContents = toWriteContents.map((run) =>
-          run.writeOptions.alignHorizontal === alignHorizontal
+          run.writeOptions.alignHorizontal === alignHorizontal &&
+          run.lastLine === lastLine
             ? run
             : {
                 ...run,
+                lastLine,
                 writeOptions: { ...run.writeOptions, alignHorizontal },
               },
         );
+        if (alignHorizontal === TextAlign.JUSTIFY && !lastLine) {
+          justifyLine(toWriteContents, nx, textBox);
+        }
       };
 
       /**
@@ -727,10 +734,10 @@ exports.text = function text(text = "", x, y, options = {}) {
         addStrikeOut(x, y, ctx, options);
       };
 
-      const justifyText = (left, x, wto, textBox, ctx, options, callback) => {
+      const justifyText = (x, wto, ctx, options, callback) => {
         ctx.BT();
         addTextTraits(ctx, options);
-        let next_x = justify(left, x, wto, textBox, callback);
+        let next_x = justify(x, wto, callback);
         ctx.ET();
         return next_x;
       };
@@ -779,8 +786,8 @@ exports.text = function text(text = "", x, y, options = {}) {
           // The hiliting rectangle cannot use the text box line
           // width when justification is activated because the
           // spaces between words is calculated dynamically.
-          if (options.alignHorizontal === TextAlign.JUSTIFY) {
-            bxWidth = justify(nx, x, wto, textBox) - x;
+          if (wto.justifiedWords?.length) {
+            bxWidth = justify(x, wto) - x;
 
             // Except for 'right' alignment cases, have to consider
             // text on line ending with spaces to tweak box width.
@@ -815,17 +822,9 @@ exports.text = function text(text = "", x, y, options = {}) {
           context.q();
 
           if (_justify) {
-            next_x = justifyText(
-              nx,
-              x,
-              wto,
-              textBox,
-              context,
-              options,
-              (word, xx) => {
-                emitText(word.value, xx, y + baseline, context);
-              },
-            );
+            next_x = justifyText(x, wto, context, options, (word, xx) => {
+              emitText(word.value, xx, y + baseline, context);
+            });
           } else {
             if (textBox.wrap !== TextWrap.AUTO) {
               // This applies a clipping region around the text
@@ -861,17 +860,9 @@ exports.text = function text(text = "", x, y, options = {}) {
           xObjectCtx.gs(xObject.getGsName(options.fillGsId)); // set graphic state (here opacity)
 
           if (_justify) {
-            next_x = justifyText(
-              nx,
-              x,
-              wto,
-              textBox,
-              xObjectCtx,
-              options,
-              (word, xx) => {
-                emitText(word.value, xx - nx, baseline, xObjectCtx, options);
-              },
-            );
+            next_x = justifyText(x, wto, xObjectCtx, options, (word, xx) => {
+              emitText(word.value, xx - nx, baseline, xObjectCtx, options);
+            });
           } else {
             emitTextObject(text, x - nx, baseline, xObjectCtx, options);
           }
@@ -1400,7 +1391,6 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
           index === blankBreaks.length - 1
         ),
         lineWidth: 0,
-        textWidth: 0,
       });
     });
     if (nextTextObject && previous) {
@@ -1613,68 +1603,75 @@ function drawTextBox(self, nx, ny, textBox, pathOptions) {
 }
 
 /**
- * Justify text in a line.
+ * Draw the words of a run of a justified line where `justifyLine()` placed
+ * them. A run of only spaces draws nothing.
  * @private
- * @param {number} left is position of left hand side of text box
- * @param {number} x is starting position for text placement
- * @param {Object[]} wto is a write object
- * @param {Object} textBox holds text box properties
- * @param {Function} [position] used to place given word at a postion on the line
- * @returns {number} The x where the next run on the line starts.
+ * @param {number} x - The x where the run starts.
+ * @param {Object} wto - The run.
+ * @param {Function} [position] - Called as position(word, x) for each word.
+ * @returns {number} The x where the run's last word ends.
  */
-function justify(left, x, wto, textBox, position) {
-  // For some reason, textWidth is smaller than lineWidth. My suspicions lie in the fact
-  // that spacing computations appear different depending on where the space is located.
-  // What is noted though that if lineWidth is used in the calculations for text
-  // justitification, the text goes passed the right boundary. Due to the vagary in space
-  // computation, the final wrinkle to make sure the last word in the line smacks up against
-  // the right side boundary is to perform a special computation on the last word positioning
-  // relative to that right side bounds.
-  const wordsInLine = wto.wordsInLine;
-  const textWidth = wto.totalTextWidth ? wto.totalTextWidth : wto.textWidth;
-  const spaceCount = wto.wordCount ? wto.wordCount - 1 : wordsInLine.length - 1;
-  const spaceBetweenWords =
-    spaceCount > 0
-      ? (textBox.width -
-          textBox.paddingLeft -
-          textBox.paddingRight -
-          textWidth) /
-        spaceCount
-      : 0;
-  const boxEdge = left;
-  const lineStart = left + textBox.paddingLeft;
-  let word;
+function justify(x, wto, position) {
+  const words = wto.justifiedWords || [];
+  words.forEach((word) => position?.(word, word.x));
+  const last = words[words.length - 1];
+  return last ? last.x + last.lead + last.width : x;
+}
 
-  const lastWordPosition = (word) => {
-    return (
-      boxEdge + textBox.width - textBox.paddingRight - word.dimensions.xMax
-    );
-  };
-
-  // There is the possibility that only one word left on segmented line.
-  if (wordsInLine.length === 1 && wordsInLine[0].last && x !== lineStart) {
-    x = lastWordPosition(wordsInLine[0]);
+/**
+ * Position the words of a justified line that is not the last, across all its
+ * runs: every gap gets one width and the last word ends at the right edge.
+ * Each run gets the words it draws in `justifiedWords`.
+ * @private
+ * @param {Object[]} runs - The runs of the line; updated in place.
+ * @param {number} left - The x of the left edge of the text box.
+ * @param {Object} textBox - The text box.
+ * @returns {void}
+ */
+function justifyLine(runs, left, textBox) {
+  const words = [];
+  let gapBefore = false;
+  runs.forEach((run) => {
+    run.justifiedWords = [];
+    run.wordsInLine.forEach((word) => {
+      const lead = /^[^\S\u00a0]*/.exec(word.value)[0];
+      const visible = word.value.slice(lead.length);
+      // A gap follows whitespace between two words, not a split word.
+      gapBefore = gapBefore || lead !== "";
+      if (!/[\S\u00a0]/.test(visible)) return;
+      // A word's leading spaces are drawn left of it, inside its gap.
+      const measure = (text) =>
+        text === word.value
+          ? word.dimensions.xMax
+          : new Word(text, run.writeOptions).dimensions.xMax;
+      const entry = {
+        value: word.value,
+        lead: lead ? measure(word.value) - measure(visible) : 0,
+        width: measure(visible),
+        gap: words.length > 0 && gapBefore,
+      };
+      words.push(entry);
+      run.justifiedWords.push(entry);
+      gapBefore = /[^\S\u00a0]$/.test(word.value);
+    });
+  });
+  const gaps = words.filter((word) => word.gap).length;
+  const lineWidth = textBox.width - textBox.paddingLeft - textBox.paddingRight;
+  const gap = gaps
+    ? (lineWidth - words.reduce((sum, word) => sum + word.width, 0)) / gaps
+    : 0;
+  let x = left + textBox.paddingLeft;
+  words.forEach((word) => {
+    if (word.gap) x += gap;
+    word.x = x - word.lead;
+    x += word.width;
+  });
+  // The last word ends at the right edge whatever the measuring error.
+  const last = words[words.length - 1];
+  if (last && gaps) {
+    last.x =
+      left + textBox.width - textBox.paddingRight - last.width - last.lead;
   }
-
-  for (let index = 0; index < wordsInLine.length; index++) {
-    const nextWord = wordsInLine[index + 1];
-
-    word = wordsInLine[index];
-    position && position(word, x);
-
-    // Ready to compute last word spacing?
-    if (nextWord && nextWord.last) {
-      x = lastWordPosition(nextWord);
-    } else {
-      x += word.dimensions.xMax + spaceBetweenWords;
-    }
-  }
-
-  // Supply caller with next available line position.
-  // Checking to see if last word ended with a space or not
-  // to compensate for text fragments that have not been
-  // split on whitespace boundaries.
-  return word.value.endsWith(" ") ? x : x - spaceBetweenWords;
 }
 
 /**
@@ -1753,8 +1750,8 @@ function elideNonFittingText(textBox, line, word, pathOptions) {
  * @param {Line} line - The line.
  * @param {number} lineID - The ID tying the first HTML line to its group.
  * @param {Object} textBox - The laid-out text box.
- * @param {Object} [options] - html, lastLine, lineComplete, wordCount,
- *   totalTextWidth and writeOptions.
+ * @param {Object} [options] - html, lastLine, lineComplete, wordCount and
+ *   writeOptions.
  * @returns {Object} The run: text, line metrics and justification data.
  */
 function makeTextObject(lines, line, lineID, textBox, options = {}) {
@@ -1786,11 +1783,9 @@ function makeTextObject(lines, line, lineID, textBox, options = {}) {
     lineOffset: 1,
     baseline: lineHeight - textBox.baselineHeight,
     lineWidth: line.currentWidth + spaceSz,
-    textWidth: line.textWidth, // for justification
     spaceWidth: line.spaceWidth,
     wordsInLine: line.words,
     wordCount: options.wordCount || 0, // for justification
-    totalTextWidth: options.totalTextWidth || 0,
     lastLine: options.lastLine === true,
     writeOptions: options.writeOptions,
     lineComplete: options.lineComplete === true,
@@ -1803,23 +1798,15 @@ function makeTextObject(lines, line, lineID, textBox, options = {}) {
  * @param {Line} line - The line being finished.
  * @param {Object[]} textObjects - The runs laid out so far; updated in place.
  * @param {number} wordCount - The words counted so far on the line.
- * @param {number} totalTextWidth - The text width counted so far on the line.
  * @param {boolean} [ends=true] - Whether the line ends here. A line that a
  *   later flowed run continues keeps the space after its last word.
- * @returns {number[]} The updated [wordCount, totalTextWidth].
+ * @returns {number} The updated word count.
  */
-function bindTextToLine(
-  line,
-  textObjects,
-  wordCount,
-  totalTextWidth,
-  ends = true,
-) {
+function bindTextToLine(line, textObjects, wordCount, ends = true) {
   // Apply justification information to previous text objects.
   if (wordCount > 0) {
     if (ends) line.markLastWord();
     wordCount += line.words.length;
-    totalTextWidth += line.textWidth;
 
     // If the previous text does not end with a space and
     // the text on the line does not start with a space then
@@ -1845,10 +1832,9 @@ function bindTextToLine(
         break;
       }
       textObj.wordCount = wordCount;
-      textObj.totalTextWidth = totalTextWidth;
     }
   }
-  return [wordCount, totalTextWidth];
+  return wordCount;
 }
 
 /**
@@ -1933,7 +1919,6 @@ function makeTextObjects(
   let flushLine =
     Boolean(self._flowFlush) && self._previousTextObjects.length > 0;
   let wordCount = 0; // for justification
-  let totalTextWidth = 0; // for justification
   let textLine = "";
   let lineID = textObject.lineID;
   let lineHeight =
@@ -1980,7 +1965,6 @@ function makeTextObjects(
         break;
       }
       textLine = textObj.text + textLine;
-      totalTextWidth += textObj.textWidth;
       // Each run is drawn after the one before it, plus a space after a run
       // that ends with one.
       lineWidth +=
@@ -1995,9 +1979,7 @@ function makeTextObjects(
       textObj.wordsInLine[textObj.wordsInLine.length - 1]?.lastWord(fini);
     }
 
-    if (lineComplete) {
-      totalTextWidth = 0;
-    } else if (textLine) {
+    if (!lineComplete && textLine) {
       wordCount = textLine.trim().split(/\s+/).length;
       if (lineMaxWidth !== null) remainderWidth = lineMaxWidth - lineWidth;
     }
@@ -2021,7 +2003,6 @@ function makeTextObjects(
           // no words applied to previous segment, so drop word count
           // and mark last word of previous line in case justifying.
           wordCount = 0;
-          totalTextWidth = 0;
           // Clipped text keeps the spaces that end its lines.
           if (!keepLineEnd) {
             trimLineEnd(toWriteTextObjects, toWriteTextObjects.length - 1);
@@ -2040,11 +2021,10 @@ function makeTextObjects(
         }
 
         // Clipped and ellipsized lines go on with the word that does not fit.
-        [wordCount, totalTextWidth] = bindTextToLine(
+        wordCount = bindTextToLine(
           newLine,
           toWriteTextObjects,
           wordCount,
-          totalTextWidth,
           [TextWrap.AUTO, TextWrap.TRIM].includes(textBox.wrap),
         );
 
@@ -2056,7 +2036,6 @@ function makeTextObjects(
             textBox,
             Object.assign({}, lineOpts, {
               wordCount: wordCount,
-              totalTextWidth: totalTextWidth,
               lineComplete: true,
             }),
           ),
@@ -2068,7 +2047,6 @@ function makeTextObjects(
           trimLineEnd(toWriteTextObjects, toWriteTextObjects.length - 1);
         }
         wordCount = 0;
-        totalTextWidth = 0;
       }
 
       // now deal with text line wrap (what happens to text that doesn't fit in line)
@@ -2162,7 +2140,7 @@ function makeTextObjects(
       if (bk.required) {
         // The words before the break continue the line an earlier run left
         // open.
-        bindTextToLine(newLine, toWriteTextObjects, wordCount, totalTextWidth);
+        bindTextToLine(newLine, toWriteTextObjects, wordCount);
         toWriteTextObjects.push(
           makeTextObject(
             lines,
@@ -2174,7 +2152,6 @@ function makeTextObjects(
         );
         markLineComplete(toWriteTextObjects, null, keepLineEnd);
         wordCount = 0;
-        totalTextWidth = 0;
         newLine = new Line(lineMaxWidth, lineHeight, size, pathOptions);
       }
     }
@@ -2189,11 +2166,10 @@ function makeTextObjects(
   let isLastLine = alignHorizontal === TextAlign.JUSTIFY && !self._flow;
 
   if (!flushLine) {
-    [wordCount, totalTextWidth] = bindTextToLine(
+    wordCount = bindTextToLine(
       newLine,
       toWriteTextObjects,
       wordCount,
-      totalTextWidth,
       !self._flow && atEnd,
     );
 
@@ -2205,7 +2181,6 @@ function makeTextObjects(
         textBox,
         Object.assign({}, lineOpts, {
           wordCount: wordCount,
-          totalTextWidth: totalTextWidth,
           lastLine: isLastLine,
         }),
       ),

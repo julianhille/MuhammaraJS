@@ -1427,4 +1427,39 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
       ellipsized("text-html-ellipsis", "aa bb <b>cc</b> dd ee ff"),
     ).to.equal(ellipsized("text-plain-ellipsis", "aa bb cc dd ee ff"));
   });
+
+  it("justifies a flow line by line and leaves its last line left-aligned", () => {
+    const J = {
+      flow: true,
+      font: "arial",
+      textBox: { width: 269, textAlign: "justify" },
+    };
+    // The last line stays at the left, also when its first run starts with a space.
+    const last = drawRuns("text-flow-justify-last", (recipe) =>
+      recipe.text(" india ", 20, 20, J).text("golf", { flow: false }),
+    );
+    expect(last.map((run) => run.x.toFixed(2))).to.eql(["20.00", "60.25"]);
+    // Runs that start with a space get gaps as wide as the others, so no
+    // word comes close to the next one.
+    const end = {};
+    const wide = drawRuns("text-flow-justify-space", (recipe) => {
+      ["alpha", "bravo"].forEach((word) => {
+        end[word] = recipe.textDimensions(word, { font: "arial" }).xMax;
+      });
+      recipe
+        .text(" alpha", 20, 20, {
+          ...J,
+          textBox: { width: 150, textAlign: "justify" },
+        })
+        .text(" bravo charlie", {})
+        .text("lima delta echo foxtrot golf", { flow: false });
+    });
+    const [alpha, bravo, charlie] = wide;
+    const gaps = [
+      bravo.x - alpha.x - end.alpha,
+      charlie.x - bravo.x - end.bravo,
+    ];
+    // Words keep the width of the space they end with, as in Wasm.
+    expect(gaps[1]).to.be.closeTo(gaps[0], 1);
+  });
 });
