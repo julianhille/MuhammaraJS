@@ -105,6 +105,13 @@ describe("HTML to TextObjects", function () {
       objects.find((object) => object.value === "linked").styles.link,
       "https://example.test",
     );
+    // s, strike and del strike out their text, as in native.
+    assert.deepEqual(
+      recipe
+        .htmlToTextObjects("<s>a</s><strike>b</strike><del>c</del>d")
+        .map((object) => Boolean(object.styles.strikeOut)),
+      [true, true, true, false],
+    );
     assert.equal(
       recipe
         .htmlToTextObjects("a<br><br>b")

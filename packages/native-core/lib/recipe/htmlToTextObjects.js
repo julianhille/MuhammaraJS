@@ -33,6 +33,8 @@ const HtmlTag = Object.freeze({
   EM: "em",
   U: "u",
   DEL: "del",
+  S: "s",
+  STRIKE: "strike",
   A: "a",
 });
 
@@ -216,7 +218,7 @@ function parseNode(node, options) {
     isBold: isBoldTag(node.tagName),
     isItalic: isItalicTag(node.tagName),
     underline: tag === HtmlTag.U,
-    strikeOut: tag === HtmlTag.DEL,
+    strikeOut: [HtmlTag.S, HtmlTag.STRIKE, HtmlTag.DEL].includes(tag),
     attributes,
     styles,
     needsLineBreaker: needsLineBreaker(node.tagName),

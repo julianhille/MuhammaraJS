@@ -69,6 +69,9 @@ The Recipe HTML parser is more forgiving than the XML-strict native parser: an
 omitted `</li>` ends that item at its next sibling or at the end of its list
 rather than throwing.
 
+Native Recipe HTML sizes `h1`–`h3` and `small` text, which Wasm does not
+recognize, and Wasm breaks lines around `div`, which native treats as inline.
+
 ## Native defects (tracked)
 
 In a flowed `text()`, `highlight`, `underline`, `strikeOut`, and `squiggly`

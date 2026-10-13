@@ -69,8 +69,8 @@ Annotations are queued until `endPage()`. Supported markup subtypes include
 `highlight`, `underline`, `strikeOut`, and `squiggly` also create markup
 annotations. Their nested object sets `text`, `color`, `opacity`, and
 `replies`; put shared metadata such as `title`, `date`, and `subject` on the
-outer text options. In `html: true` text, `<u>` and `<del>` (and Wasm's `<s>`
-and `<strike>`) draw lines in the text color instead of annotations.
+outer text options. In `html: true` text, `<u>`, `<del>`, `<s>`, and `<strike>`
+draw lines in the text color instead of annotations.
 Recipe's rich-text form is a Worker-safe XML subset, not arbitrary browser
 HTML.
 
