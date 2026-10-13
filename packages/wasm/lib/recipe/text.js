@@ -1372,13 +1372,13 @@ export function createTextMethods({ drawText, measure, module }) {
         if (textOptions.hilite && !entry.parts) {
           var hilite =
             typeof textOptions.hilite === "object" ? textOptions.hilite : {};
-          var bounds = dimensions(this, entry.text, textOptions);
           drawHilite(
             this,
-            drawX + bounds.xMin,
-            baseline - bounds.yMax,
-            bounds.xMax - bounds.xMin,
-            bounds.yMax - bounds.yMin,
+            drawX,
+            currentY,
+            // A justified line spreads its words over the box, as in native.
+            isJustifiedLine ? width - left - right : textWidth,
+            lineHeight,
             textOptions,
             hilite,
           );
@@ -1451,20 +1451,12 @@ export function createTextMethods({ drawText, measure, module }) {
                 typeof partOptions.hilite === "object"
                   ? partOptions.hilite
                   : {};
-              var partBounds = dimensions(this, part.text, partOptions);
-              var partHiliteBounds = partBounds.height
-                ? partBounds
-                : dimensions(
-                    this,
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}",
-                    partOptions,
-                  );
               drawHilite(
                 this,
-                drawX + partHiliteBounds.xMin,
-                baseline - partHiliteBounds.yMax,
+                drawX,
+                currentY,
                 partWidth + (hasGapAfter(part, partIndex) ? partGap : 0),
-                partHiliteBounds.yMax - partHiliteBounds.yMin,
+                lineHeight,
                 partOptions,
                 partHilite,
               );

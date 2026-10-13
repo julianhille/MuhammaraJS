@@ -1246,5 +1246,28 @@ describe("Text - Continued", function () {
         assert.ok(Math.abs(grown[0].y - fixed[0].y) < 0.01, textAlign);
       }
     });
+
+    it("hilites the line box of every run", async function () {
+      var recipe = new (await getRecipe())({ compress: false }).createPage(
+        400,
+        400,
+      );
+      recipe
+        .text("alpha ", 20, 20, {
+          flow: true,
+          font: "arial",
+          hilite: true,
+          textBox: { width: 300 },
+        })
+        .text("bravo", { flow: false });
+      var content = Buffer.from(recipe.endPage().endPDF()).toString("latin1");
+      var rectangles = [
+        ...content.matchAll(/([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+) re\s/g),
+      ].map((match) => match.slice(1).map(Number));
+      // Both runs share one top and one height, as in native (13.13 at 14 pt).
+      assert.equal(rectangles.length, 2);
+      assert.ok(Math.abs(rectangles[0][3] - rectangles[1][3]) < 0.01);
+      assert.ok(Math.abs(rectangles[0][1] - rectangles[1][1]) < 0.01);
+    });
   });
 });
