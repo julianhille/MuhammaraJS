@@ -157,6 +157,7 @@ try {
       "passwords",
       "benchmark",
       "replace-text",
+      "rtl-text",
       "watermark",
       "find-text",
       "inspect-pdf",
@@ -212,6 +213,18 @@ try {
     await runExample("delete-pages", "worker");
     await runExample("watermark", "worker");
     await runExample("find-text", "page");
+    // Right-to-left text needs a font with Hebrew glyphs; the example loads
+    // bidi-js with loadBidi(), on the page and in a Worker.
+    var font = await fetch(
+      "/packages/native-with-source/tests/TestMaterials/fonts/arial.ttf",
+    );
+    var fonts = new DataTransfer();
+    fonts.items.add(
+      new File([await font.arrayBuffer()], "arial.ttf", { type: "font/ttf" }),
+    );
+    document.querySelector('input[name="font"]').files = fonts.files;
+    await runExample("rtl-text", "page");
+    await runExample("rtl-text", "worker");
     await runExample("inspect-pdf", "worker");
     // The benchmark ignores the mode switch: it runs on the page and in a Worker.
     document.querySelector('input[name="runs"]').value = "2";

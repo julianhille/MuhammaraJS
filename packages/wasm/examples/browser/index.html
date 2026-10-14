@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Muhammara Wasm byte laboratory</title>
     <link rel="stylesheet" href="./styles.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "bidi-js": "../../../../node_modules/bidi-js/dist/bidi.mjs"
+        }
+      }
+    </script>
   </head>
   <body>
     <header class="masthead">
@@ -139,6 +146,15 @@
           data-example="replace-text"
         >
           Replace text
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          tabindex="-1"
+          data-example="rtl-text"
+        >
+          Right to left
         </button>
         <button
           type="button"
