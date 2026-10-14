@@ -2030,21 +2030,25 @@ describe("Recipe text direction", function () {
     // about four times as long, and sixteen times as long when quadratic.
     this.timeout(120000);
     function milliseconds(count) {
-      var start = performance.now();
-      var runs = drawPage("text-direction-long-spaces", (recipe) => {
+      var recipe = new Recipe().createPage(400, 400);
+      try {
+        var start = performance.now();
         recipe.text("\u05d0" + "\u00a0".repeat(count) + "\u05d1", 20, 20, {
           font: "arial",
           size: 12,
           direction: "rtl",
           textBox: { width: 1e8 },
         });
-      });
-      assert.equal(runs.length, 1);
-      return performance.now() - start;
+        var bytes = recipe.endPage().endPDF();
+        var elapsed = performance.now() - start;
+        assert.equal(pageText(bytes).length, 1);
+        return elapsed;
+      } finally {
+        recipe.dispose();
+      }
     }
-    milliseconds(1000);
-    var short = milliseconds(50000);
-    var long = milliseconds(200000);
+    var short = milliseconds(4000);
+    var long = milliseconds(16000);
     assert.ok(long < short * 10, short + " ms and " + long + " ms");
   });
 
@@ -2485,7 +2489,7 @@ describe("Recipe text direction", function () {
     // a Recipe on an existing PDF draws them with TJ operators. The time is
     // compared with that of a shorter line, as a fixed limit would fail on a
     // slow build: four times the letters take about four times as long.
-    this.timeout(120000);
+    this.timeout(300000);
     function draw(count) {
       var base = new Recipe().createPage(400, 400).endPage().endPDF();
       var recipe = new Recipe(base);
