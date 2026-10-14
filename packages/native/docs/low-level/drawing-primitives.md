@@ -55,8 +55,8 @@ For transformations or operators not covered by these helpers, use the
 ## Named Values
 
 `DrawingPathType`, `ImageFit`, `ObjectReplacementScope`, `DeviceColorSpace`,
-`PageBox`, `PDFImageType`, and `EEncoding` are frozen objects of accepted option
-strings, for example `DrawingPathType.FILL` or `ImageFit.OVERFLOW`;
+`PageBox`, `PDFImageType`, `EEncoding`, and `TextDirection` are frozen objects
+of accepted option strings, for example `DrawingPathType.FILL` or `ImageFit.OVERFLOW`;
 `LineCapStyle` and `ETokenSeparator` name numeric operands. `@muhammara/native`
 and `@muhammara/wasm` export them with the same names and members, each with a
 same-named TypeScript type. The plain values stay accepted.

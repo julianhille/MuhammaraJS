@@ -1,5 +1,5 @@
 var { htmlToTextObjects } = require("./htmlToTextObjects");
-var { cloneOptions: clone } = require("./utils");
+var { cloneOptions: clone, clearTextFlow } = require("./utils");
 var { LineCap, TableRowNth } = require("../recipe-constants");
 
 /**
@@ -46,6 +46,8 @@ function getCellHeight(self, text, column, options) {
     originCoord.ny,
   );
   pathOptions.html = colOptions.html;
+  // Measure what text() draws: reordering drops direction marks.
+  pathOptions.direction = colOptions.direction;
   var textObjects = colOptions.html
     ? htmlToTextObjects(text, colOptions)
     : self._makeTextObject(text, pathOptions.size, colOptions);
@@ -153,7 +155,8 @@ function tableFields(contents, options) {
  * Rows and headers use their rendered text-box heights, including padding,
  * minimum heights, fixed heights, and HTML layout. Empty contents or no selected
  * columns leave the Recipe unchanged. Array-form order preserves exact keys.
- * Header text styles are independent of body styles: column header options
+ * Header text styles are independent of body styles, but a header without a
+ * `direction` takes its column's, then the table's: column header options
  * (or defaults) are overridden by table header options, then alignToData
  * and column hcell box overrides are applied.
  * @name table
@@ -178,6 +181,8 @@ function tableFields(contents, options) {
  * @param {number} [options.columns[].opacity=1] - opacity
  * @param {string} [options.columns[].font=Helvetica] - The font. 'Arial', 'Helvetica'...
  * @param {number} [options.columns[].size=14] - The font size
+ * @param {Recipe.TextDirection} [options.columns[].direction] - How the column's cells and header are ordered;
+ * defaults to the table's `direction`.
  * @param {function} [options.columns[].renderer] - function to be called which can be used to modify the text options for a particular
  * table cell. The function is called with `(text, data, field, row)`, where `text` is the text to be written in the cell,
  * `data` holds the text elements in the table row, `field` is the column field, and `row` is the one-based row number. The function returns an object with the text attributes that
@@ -186,6 +191,8 @@ function tableFields(contents, options) {
  * appear at the top of the column. When presented as an object it is the set of unique options to be applied to column headers.
  * All 'text' interface options can be used.
  * @param {object} [options.header.cell] - All textBox options from the 'text' interface can be used here.
+ * @param {Recipe.TextDirection} [options.direction='none'] - How right-to-left text in the table's cells and
+ * headers is ordered, as in `text()`.
  * @param {object|boolean} [options.border] - Used to define table and cell border characteristics
  * @param {number} [options.border.width=.5] - Thickness of lines used in the border.
  * @param {string|number[]} [options.border.stroke] - line color (HexColor, PercentColor or DecimalColor)
@@ -230,7 +237,7 @@ exports.table = function table(x, y, contents, options = {}) {
     return width;
   }, 0);
 
-  this._previousTextObjects = [];
+  clearTextFlow(this);
   var nth;
   var rowOptions = {};
 
@@ -251,6 +258,10 @@ exports.table = function table(x, y, contents, options = {}) {
         colOptions.textBox,
         clone(cellOptions.textBox),
       );
+    }
+    // A header reads in the direction of its column, the table's or its own.
+    if (colOptions.direction === undefined) {
+      colOptions.direction = column.options.direction ?? options.direction;
     }
     return colOptions;
   };
@@ -426,7 +437,7 @@ exports.table = function table(x, y, contents, options = {}) {
   this.y = currentY;
   this.box = { x, y: currentY };
   this._flow = false;
-  this._previousTextObjects = [];
+  clearTextFlow(this);
 
   return this;
 };

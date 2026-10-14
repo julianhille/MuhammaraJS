@@ -15,6 +15,7 @@ on:
       - "!packages/native/.readthedocs.yaml"
       - "packages/native-core/**"
       - "packages/native-with-source/**"
+      - "test-matrices/**"
       - ".github/actions/setup-native-build-cache/**"
       - ".github/scripts/**"
       - "package.json"
@@ -570,7 +571,7 @@ jobs:
       # Emulation is far slower than hardware, so the per-test timeout is longer
       # than the 15 seconds of `npm test`.
       - name: Run native tests under emulation
-        run: docker exec --workdir /workspace/packages/native-with-source riscv64-tests node --expose-gc ../../node_modules/mocha/bin/mocha.js --require ./tests/hooks/sanitizer-gc.js -R spec --recursive ./tests --ignore "./tests/helpers/**" --timeout 120000
+        run: docker exec --workdir /workspace/packages/native-with-source riscv64-tests node --expose-gc ../../node_modules/mocha/bin/mocha.js --require ./tests/hooks/sanitizer-gc.js -R spec --recursive ./tests --ignore "./tests/helpers/**" --timeout 300000
       - name: Verify the tested prebuild is unchanged
         run: docker exec riscv64-tests node .github/scripts/prepare-native-prebuild.mjs verify
       - name: Remove the RISC-V test container

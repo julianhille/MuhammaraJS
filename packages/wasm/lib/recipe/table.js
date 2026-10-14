@@ -4,6 +4,7 @@ import {
   TextAlign,
   VerticalAlign,
 } from "../value-sets.js";
+import { hasBidi, requireBidiFor } from "../text-direction.js";
 /**
  * Reports whether a style value is a plain object whose keys can merge.
  * @param {*} value - Candidate.
@@ -121,9 +122,11 @@ export function createTableMethods() {
      * Measurements include padding, minimum heights, fixed heights, and HTML
      * layout. Overflow callbacks receive the Recipe as `this` and the first
      * argument; rows are not split across continuation areas.
-     * Header text styles are independent of body styles: column header options
-     * (or defaults) are overridden by table header options, then alignToData
-     * and column hcell box overrides are applied, matching native Recipe.
+     * Header text styles are independent of body styles, but a header without
+     * a `direction` takes its column's, then the table's: column header
+     * options (or defaults) are overridden by table header options, then
+     * alignToData and column hcell box overrides are applied, matching native
+     * Recipe.
      *
      * @name table
      * @function
@@ -243,6 +246,11 @@ export function createTableMethods() {
         if (column.options.hcell) {
           header.textBox = merge(header.textBox, column.options.hcell);
         }
+        // A header reads in the direction of its column, the table's or its
+        // own, as native.
+        if (header.direction === undefined) {
+          header.direction = column.options.direction ?? options.direction;
+        }
         return header;
       };
       /** Writes a repeated header at the current segment's top. */
@@ -274,7 +282,15 @@ export function createTableMethods() {
         );
       }
       var tableX = x;
-      for (var row = 0; row < contents.length; row += 1) {
+      /**
+       * Resolves a row's cells once: the renderer runs once per cell, and its
+       * options size the row as well as style the drawn text.
+       * @param {number} row - The zero-based row.
+       * @param {boolean} [render=true] - Whether to run the renderers; without
+       *   them, a cell has the options of its table, column and row.
+       * @returns {object[]} The row's cells.
+       */
+      var resolveRow = (row, render = true) => {
         var record = contents[row];
         var rowOptions =
           options.row &&
@@ -283,14 +299,13 @@ export function createTableMethods() {
             (options.row.nth === TableRowNth.ODD && (row + 1) % 2))
             ? options.row
             : {};
-        // Resolve every cell once: the renderer runs once per cell, and its
-        // options size the row as well as style the drawn text.
-        var cells = columns.map((column) => {
+        return columns.map((column) => {
           var text = Object.prototype.hasOwnProperty.call(record, column.field)
             ? (record[column.field] ?? "")
             : "";
           var rendered =
-            column.options.renderer?.(text, record, column.field, row + 1) ||
+            (render &&
+              column.options.renderer?.(text, record, column.field, row + 1)) ||
             {};
           // The table callback is not a text-flow overflow callback, and
           // native ignores a table-level cell rather than boxing every cell.
@@ -311,6 +326,30 @@ export function createTableMethods() {
             ),
           };
         });
+      };
+      // Text that has to be reordered needs bidi-js. Without it, the headers
+      // and every cell, with the direction of its table, column and row, are
+      // checked first, so the table throws before it draws anything; a cell
+      // of a column with a renderer is checked before its row is drawn.
+      if (!hasBidi()) {
+        if (options.header) {
+          columns.forEach((column) =>
+            requireBidiFor(column.text, headerOptions(column).direction),
+          );
+        }
+        contents.forEach((record, row) =>
+          resolveRow(row, false).forEach((cell) => {
+            if (!cell.column.options.renderer) {
+              requireBidiFor(cell.text, cell.options.direction);
+            }
+          }),
+        );
+      }
+      for (var row = 0; row < contents.length; row += 1) {
+        var cells = resolveRow(row);
+        cells.forEach((cell) =>
+          requireBidiFor(cell.text, cell.options.direction),
+        );
         var height = Math.max(
           ...cells.map((cell) =>
             this._measureTextBoxHeight(

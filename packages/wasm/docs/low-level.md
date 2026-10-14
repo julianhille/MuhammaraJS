@@ -60,6 +60,10 @@ getters propagate their original exception without partial output from the
 call. Wasm still requires finite numeric coordinates and a font from the same
 writer; native retains its historical numeric coercions.
 
+With a `direction` option such as `"auto"`, `writeText` draws Hebrew and
+other right-to-left text in visual order; without it, text is drawn as given.
+See [Write Right-to-Left Text](how-to/write-right-to-left-text.md).
+
 Stroke widths and text sizes must also be finite. Circle control points and
 underline endpoints are checked for overflow before drawing. Paths must contain
 at least two complete finite coordinate pairs, without holes or extra
@@ -69,8 +73,8 @@ and retry on the same context.
 ## Named Values
 
 `DrawingPathType`, `ImageFit`, `ObjectReplacementScope`, `DeviceColorSpace`,
-`PageBox`, `PDFImageType`, and `EEncoding` are frozen objects of accepted option
-strings, for example `DrawingPathType.FILL` or `ImageFit.OVERFLOW`;
+`PageBox`, `PDFImageType`, `EEncoding`, and `TextDirection` are frozen objects
+of accepted option strings, for example `DrawingPathType.FILL` or `ImageFit.OVERFLOW`;
 `LineCapStyle` and `ETokenSeparator` name numeric operands. `@muhammara/native`
 and `@muhammara/wasm` export them with the same names and members, each with a
 same-named TypeScript type. The plain values stay accepted.

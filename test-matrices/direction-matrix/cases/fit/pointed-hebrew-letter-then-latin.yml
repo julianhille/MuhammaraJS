@@ -1,0 +1,24 @@
+description: A pointed Hebrew letter, then Latin letters with char space, in a box 0.5 wider than them
+kind: fit
+text: "א\u05b8abc"
+charSpace: 3
+width: 35.5
+expected:
+  auto:
+    native:
+      lines:
+        - [["abc\u05b8א", 50.72]]
+      annotations: []
+    wasm: same
+  rtl:
+    native:
+      lines:
+        - [["abc\u05b8א", 50.72]]
+      annotations: []
+    wasm: same
+  ltr:
+    native:
+      lines:
+        - [["\u05b8אabc", 50.53]]
+      annotations: []
+    wasm: same

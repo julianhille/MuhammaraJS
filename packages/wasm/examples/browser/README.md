@@ -10,8 +10,9 @@ parses both final outputs, and exposes preview and download controls.
 The tabs keep that complete laboratory intact and add focused, runnable how-to
 examples for annotations, URL links, HTML lists, page boxes, rotated-page
 coordinates, grayscale form XObjects, image transformations, tables,
-watermarks, text search, and PDF inspection. Each focused example generates and
-parses its own previewable PDF; only image transformations require an upload.
+right-to-left text, watermarks, text search, and PDF inspection. Each focused
+example generates and parses its own previewable PDF; image transformations
+require an image upload, and right-to-left text a font with Hebrew glyphs.
 The Watermark, Find text, and Inspect PDF tabs read an uploaded PDF, or a
 built-in two-page sample with bookmarks and metadata when no PDF is chosen. The
 Benchmark tab recrypts an uploaded PDF, or a generated 120-page sample, with
@@ -39,6 +40,9 @@ package's public `index.js` and generated `dist/muhammara-wasm.wasm` files. The
 workflow modules contain no repository fixture paths. When installed in another
 application, preserve that relationship or replace the two relative package
 URLs with your bundler's `@muhammara/wasm` import and emitted `.wasm` URL.
+bidi-js is loaded from the repository's `node_modules` by a third relative
+URL, `bidiUrl` in `module-options.mjs` and the import map in `index.html`;
+point both at your own copy of bidi-js, or let your bundler resolve it.
 
 The workflow renders Recipe text and tables without uploads. Supplying a custom font
 and JPEG/PNG/TIFF files additionally exercises registered fonts, metrics,
@@ -71,6 +75,7 @@ The matching guides explain the focused examples:
 - [rotated pages](https://muhammarajs-wasm.readthedocs.io/how-to/add-content-to-rotated-pages/)
 - [image transformations](https://muhammarajs-wasm.readthedocs.io/how-to/place-and-transform-images/)
 - [tables](https://muhammarajs-wasm.readthedocs.io/how-to/create-tables/)
+- [right-to-left text](https://muhammarajs-wasm.readthedocs.io/how-to/write-right-to-left-text/)
 - [watermarks](https://muhammarajs-wasm.readthedocs.io/how-to/watermark-pdfs/)
 - [finding text](https://muhammarajs-wasm.readthedocs.io/how-to/find-text-positions/)
 - [inspecting PDFs](https://muhammarajs-wasm.readthedocs.io/how-to/inspect-pdf-objects/)

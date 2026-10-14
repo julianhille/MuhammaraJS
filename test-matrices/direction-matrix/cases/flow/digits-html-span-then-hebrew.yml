@@ -1,0 +1,66 @@
+description: Digits, an HTML span starting with a space, then plain Hebrew
+kind: flow
+runs:
+  - text: "1 2 3"
+  - text: "<span> 4 5</span>"
+    html: true
+  - text: " שלום"
+    html: false
+expected:
+  end none left:
+    native:
+      lines:
+        - [["1 2 3", 50], ["after", 50], [" 4 5", 76.11], [" שלום", 95.62]]
+      annotations: []
+    wasm: same
+  end none right:
+    native:
+      lines:
+        - [["after", 50], ["1 2 3", 177.9], [" 4 5", 204.02], [" שלום", 223.53]]
+      annotations: []
+    wasm: same
+  end auto left:
+    native:
+      lines:
+        - [["םולש ", 50], ["after", 50], ["5 4 ", 77.32], ["3 2 1", 97.32]]
+      annotations: []
+    wasm: same
+  end auto right:
+    native:
+      lines:
+        - [
+            ["after", 50],
+            ["םולש ", 178.23],
+            ["5 4 ", 205.55],
+            ["3 2 1", 225.54],
+          ]
+      annotations: []
+    wasm: same
+  movedown none left:
+    native:
+      lines:
+        - [["1 2 3", 50], [" 4 5", 76.11], [" שלום", 95.62]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown none right:
+    native:
+      lines:
+        - [["1 2 3", 177.9], [" 4 5", 204.02], [" שלום", 223.53]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto left:
+    native:
+      lines:
+        - [["םולש ", 50], ["5 4 ", 77.32], ["3 2 1", 97.32]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto right:
+    native:
+      lines:
+        - [["םולש ", 178.23], ["5 4 ", 205.55], ["3 2 1", 225.54]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same

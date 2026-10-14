@@ -1,0 +1,69 @@
+description: "Digits, an HTML span ending with <br>, then plain Hebrew"
+kind: flow
+runs:
+  - text: "123 (5) "
+  - text: "<span>456</span><br>"
+    html: true
+  - text: "שלום"
+    html: false
+expected:
+  end none left:
+    native:
+      lines:
+        - [["123 (5) ", 50], ["456", 93.84]]
+        - [["שלום", 50], ["after", 50]]
+      annotations: []
+    wasm: same
+  end none right:
+    native:
+      lines:
+        - [["123 (5) ", 186.7], ["456", 230.54]]
+        - [["after", 50], ["שלום", 226.85]]
+      annotations: []
+    wasm: same
+  end auto left:
+    native:
+      lines:
+        - [["123 (5) ", 50], ["456", 93.84]]
+        - [["םולש", 50], ["after", 50]]
+      annotations: []
+    wasm: same
+  end auto right:
+    native:
+      lines:
+        - [["123 (5) ", 186.7], ["456", 230.54]]
+        - [["after", 50], ["םולש", 226.59]]
+      annotations: []
+    wasm: same
+  movedown none left:
+    native:
+      lines:
+        - [["123 (5) ", 50], ["456", 93.84]]
+        - [["שלום", 50]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown none right:
+    native:
+      lines:
+        - [["123 (5) ", 186.7], ["456", 230.54]]
+        - [["שלום", 226.85]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto left:
+    native:
+      lines:
+        - [["123 (5) ", 50], ["456", 93.84]]
+        - [["םולש", 50]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto right:
+    native:
+      lines:
+        - [["123 (5) ", 186.7], ["456", 230.54]]
+        - [["םולש", 226.59]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same

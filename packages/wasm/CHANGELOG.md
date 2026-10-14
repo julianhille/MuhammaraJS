@@ -4,8 +4,58 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Draw right-to-left text such as Hebrew in visual order when `writeText()`
+  or Recipe `text()` is given the new `direction` option (`TextDirection` /
+  `Recipe.TextDirection`). `"auto"` takes each paragraph's direction from its
+  first strong letter, and `"ltr"` and `"rtl"` set it. Text is reordered with
+  the Unicode Bidirectional Algorithm ([bidi-js](https://github.com/lojjic/bidi-js),
+  MIT, a new dependency that `createMuhammaraWasm()` and `createRecipe()`
+  load with `import("bidi-js")` unless given `bidi: false`, and the new
+  `loadBidi()` loads later; a page without a bundler maps it in an import
+  map): numbers and Latin words inside
+  Hebrew keep their order, brackets are mirrored, points are drawn on their
+  letters, and invisible direction marks are neither drawn nor measured. Recipe reorders each wrapped line with the direction and levels of its
+  whole paragraph, also across the styled runs of an HTML line,
+  places justified words from right to left, and ends the last line of a
+  justified right-to-left paragraph at the right edge; `textDimensions()`
+  takes the same option, and `table()` takes it for the table and each
+  column, whose headers take it too. The default, `"none"`, draws text exactly as given,
+  as before; see [Write Right-to-Left Text](docs/how-to/write-right-to-left-text.md)
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+
 ### Fixed
 
+- Keep a word joined by a non-breaking space (U+00A0) together on a
+  justified Recipe line instead of widening the gap inside it, as native does
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Keep words joined by a figure space (U+2007) or a narrow no-break space
+  (U+202F) on one Recipe line, as native does and as U+00A0 already was;
+  Wasm wrapped lines at them
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- End right-aligned Recipe text where its glyphs end, at the right edge of a
+  text box's content, as native does. It ended the box's left padding plus
+  the first glyph's side bearing past that edge. Centered text, table
+  headers included, was off by half that bearing, and the text-markup
+  annotations of HTML lines ended that bearing short of their glyphs
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Start a new line of Recipe text, plain, HTML or flowed, at every mandatory
+  line break, as native does: `\r\n`, `\r`, vertical tab,
+  form feed, U+0085, U+2028 and U+2029 no longer draw as missing glyphs on
+  the same line [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Keep the blank line between two line breaks in plain Recipe text, such as
+  `"a\n\nb"` or `"a\r\n\r\nb"`, as native does; it was dropped
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Draw text written after a flow that ends with a paragraph separator other
+  than `\n`, or with a line break followed by a run of spaces, below the
+  flow instead of over its last line
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Measure each text once for each font and size in a Recipe: every
+  measurement read its glyphs from the font file, about a millisecond each,
+  and Recipe measured each line's height and each flowed word again and
+  again, so a flow of 3000 different words took 8.6 seconds instead of 0.8
+  [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
 - Place Recipe `text()` lines as native does. The first line sits one ascent
   below `y` instead of one full line height, so text no longer sits about
   3 pt too low, and justified words advance by their glyph edge with the last

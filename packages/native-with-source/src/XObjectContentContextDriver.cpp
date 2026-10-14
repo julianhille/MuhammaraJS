@@ -7,7 +7,7 @@ XObjectContentContextDriver::XObjectContentContextDriver()
 bool XObjectContentContextDriver::Init(ModuleState &s, napi_value exports) {
   ClassBuilder b(s, "XObjectContentContext", New);
   AbstractContentContextDriver::Init(b);
-  return b.Define(exports, false) != nullptr;
+  return b.Define(exports) != nullptr;
 }
 napi_value XObjectContentContextDriver::New(const CallbackArgs &a) {
   auto *d = new XObjectContentContextDriver();

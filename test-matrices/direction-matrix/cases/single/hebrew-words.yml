@@ -1,0 +1,152 @@
+description: Two Hebrew words
+kind: single
+text: "שלום עולם"
+expected:
+  none cs0 left:
+    native:
+      lines:
+        - [["שלום עולם", 50]]
+      annotations: []
+    wasm: same
+  none cs0 right:
+    native:
+      lines:
+        - [["שלום עולם", 301.51]]
+      annotations: []
+    wasm: same
+  none cs0 justify:
+    native:
+      lines:
+        - [["שלום עולם", 50]]
+      annotations: []
+    wasm: same
+  none cs3 left:
+    native:
+      lines:
+        - [["שלום עולם", 50]]
+      annotations: []
+    wasm: same
+  none cs3 right:
+    native:
+      lines:
+        - [["שלום עולם", 277.51]]
+      annotations: []
+    wasm: same
+  none cs3 justify:
+    native:
+      lines:
+        - [["שלום", 50]]
+        - [["עולם", 50]]
+      annotations: []
+    wasm: same
+  auto cs0 left:
+    native:
+      lines:
+        - [["םלוע םולש", 50]]
+      annotations: []
+    wasm: same
+  auto cs0 right:
+    native:
+      lines:
+        - [["םלוע םולש", 301.24]]
+      annotations: []
+    wasm: same
+  auto cs0 justify:
+    native:
+      lines:
+        - [["םלוע םולש", 61.24]]
+      annotations: []
+    wasm: same
+  auto cs3 left:
+    native:
+      lines:
+        - [["םלוע םולש", 50]]
+      annotations: []
+    wasm: same
+  auto cs3 right:
+    native:
+      lines:
+        - [["םלוע םולש", 277.24]]
+      annotations: []
+    wasm: same
+  auto cs3 justify:
+    native:
+      lines:
+        - [["םולש", 77.59]]
+        - [["םלוע", 79.77]]
+      annotations: []
+    wasm: same
+  rtl cs0 left:
+    native:
+      lines:
+        - [["םלוע םולש", 50]]
+      annotations: []
+    wasm: same
+  rtl cs0 right:
+    native:
+      lines:
+        - [["םלוע םולש", 301.24]]
+      annotations: []
+    wasm: same
+  rtl cs0 justify:
+    native:
+      lines:
+        - [["םלוע םולש", 61.24]]
+      annotations: []
+    wasm: same
+  rtl cs3 left:
+    native:
+      lines:
+        - [["םלוע םולש", 50]]
+      annotations: []
+    wasm: same
+  rtl cs3 right:
+    native:
+      lines:
+        - [["םלוע םולש", 277.24]]
+      annotations: []
+    wasm: same
+  rtl cs3 justify:
+    native:
+      lines:
+        - [["םולש", 77.59]]
+        - [["םלוע", 79.77]]
+      annotations: []
+    wasm: same
+  ltr cs0 left:
+    native:
+      lines:
+        - [["םלוע םולש", 50]]
+      annotations: []
+    wasm: same
+  ltr cs0 right:
+    native:
+      lines:
+        - [["םלוע םולש", 301.24]]
+      annotations: []
+    wasm: same
+  ltr cs0 justify:
+    native:
+      lines:
+        - [["םלוע םולש", 50]]
+      annotations: []
+    wasm: same
+  ltr cs3 left:
+    native:
+      lines:
+        - [["םלוע םולש", 50]]
+      annotations: []
+    wasm: same
+  ltr cs3 right:
+    native:
+      lines:
+        - [["םלוע םולש", 277.24]]
+      annotations: []
+    wasm: same
+  ltr cs3 justify:
+    native:
+      lines:
+        - [["םולש", 50]]
+        - [["םלוע", 50]]
+      annotations: []
+    wasm: same

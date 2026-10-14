@@ -58,7 +58,8 @@ are registered, and the different metrics can change wrapping. The low-level
 writer does not load the bundled font.
 
 Table header styling follows native precedence and is independent of body
-text styles. See [Create Multi-Page Tables](how-to/create-tables.md) for header
+text styles, except `direction`, which a header without its own takes from its
+column, then the table. See [Create Multi-Page Tables](how-to/create-tables.md) for header
 overrides; font metrics remain the source of typography differences.
 
 Wasm Recipe does not support native `chroma("!load", path)` color-file loading.
@@ -70,3 +71,9 @@ rather than throwing.
 
 Native Recipe HTML sizes `h1`–`h3` and `small` text, which Wasm does not
 recognize, and Wasm breaks lines around `div`, which native treats as inline.
+
+Wasm loads bidi-js, which the `direction` option reorders right-to-left text
+with, when `createMuhammaraWasm()` or `createRecipe()` runs, unless given
+`bidi: false`; the Wasm-only `loadBidi()` loads it later. Without it, calls
+that have to order text by direction throw. Native always has it. See
+[Browser Setup](browser-setup.md) for loading it with or without a bundler.

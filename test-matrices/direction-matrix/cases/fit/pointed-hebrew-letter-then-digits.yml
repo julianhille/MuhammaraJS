@@ -1,0 +1,24 @@
+description: A pointed Hebrew letter, then digits with char space, in a box 0.5 wider than them
+kind: fit
+text: "א\u05b8123"
+charSpace: 3
+width: 35.75
+expected:
+  auto:
+    native:
+      lines:
+        - [["123\u05b8א", 50.3]]
+      annotations: []
+    wasm: same
+  rtl:
+    native:
+      lines:
+        - [["123\u05b8א", 50.3]]
+      annotations: []
+    wasm: same
+  ltr:
+    native:
+      lines:
+        - [["123\u05b8א", 50.3]]
+      annotations: []
+    wasm: same

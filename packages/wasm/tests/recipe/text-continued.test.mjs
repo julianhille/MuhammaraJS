@@ -1188,6 +1188,52 @@ describe("Text - Continued", function () {
       assert.ok(withBlank - withoutBlank > 20);
     });
 
+    it("starts a <br> run on the line after a wrapped HTML run", async function () {
+      var runs = await drawRuns("continued-flow-html-br", (recipe) => {
+        recipe
+          .text("<b>The quick brown fox jumps over the lazy dog</b> ", 20, 20, {
+            ...flowOptions,
+            html: true,
+            textBox: { width: 200 },
+          })
+          .text("<br>Next line", { html: true })
+          .text("", { flow: false });
+      });
+      var ys = [...new Set(runs.map((run) => run.y))];
+      // No blank line comes before the line the <br> starts.
+      assert.ok(
+        Math.abs(ys[0] - ys[1] - (ys[1] - ys[2])) < 0.01,
+        JSON.stringify(ys),
+      );
+    });
+
+    it("keeps a justified flowed paragraph's last line unjustified before an empty run", async function () {
+      /**
+       * Draw the paragraph as a flow, with or without an empty run after it.
+       * @param {string} name - Output file name.
+       * @param {boolean} empty - Whether an empty run ends the paragraph.
+       * @returns {Promise<Array<{text: string, x: number, y: number}>>} The runs.
+       */
+      var draw = async (name, empty) =>
+        drawRuns(name, (recipe) => {
+          recipe.text(
+            "<p>aaa bbb ccc ddd eee fff ggg hhh iii jjj kkk lll mmm nnn ooo ppp</p>",
+            20,
+            20,
+            {
+              ...flowOptions,
+              html: true,
+              textBox: { width: 200, textAlign: "justify" },
+            },
+          );
+          if (empty) recipe.text("", { flow: true });
+          recipe.text("", { flow: false });
+        });
+      var withEmpty = await draw("continued-flow-justify-empty", true);
+      var without = await draw("continued-flow-justify", false);
+      assert.deepEqual(withEmpty, without);
+    });
+
     it("flows calls without coordinates unless they pass flow: false", async function () {
       var runs = await drawRuns("continued-flow-implicit", (recipe) => {
         recipe

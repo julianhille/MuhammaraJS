@@ -106,7 +106,9 @@ function pdfWithObject(body) {
 }
 
 describe("Content bombs", function () {
-  this.timeout(60000);
+  // A longer timeout from the command line, such as that of the emulated
+  // RISC-V run, is kept.
+  this.timeout(Math.max(60000, this.timeout()));
   // 96 MiB of whitespace and a 40 MiB unterminated string: past the 64 MiB
   // content ceiling and the 32 MiB token ceiling, from about 100 KB of PDF.
   var whitespace = pdfWithContent(Buffer.alloc(96 << 20, 0x20));

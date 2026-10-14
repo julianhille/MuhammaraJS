@@ -28,7 +28,12 @@ function reply(message, transfer = []) {
  */
 function load() {
   if (!instance) {
-    var options = { limits: settings.limits, recryptWorker: false };
+    // Recrypting draws no text, so the worker skips loading bidi-js.
+    var options = {
+      limits: settings.limits,
+      recryptWorker: false,
+      bidi: false,
+    };
     if (settings.wasmBinary !== undefined) {
       options.wasmBinary = settings.wasmBinary;
     } else if (settings.wasmLocation !== undefined) {

@@ -1,0 +1,156 @@
+description: Hebrew words joined by a no-break space (U+00A0)
+kind: single
+text: "שלום\u00a0עולם abc"
+expected:
+  none cs0 left:
+    native:
+      lines:
+        - [["שלום\u00a0עולם\u00a0abc", 50]]
+      annotations: []
+    wasm: same
+  none cs0 right:
+    native:
+      lines:
+        - [["שלום\u00a0עולם\u00a0abc", 278.11]]
+      annotations: []
+    wasm: same
+  none cs0 justify:
+    native:
+      lines:
+        - [["שלום\u00a0עולם", 50]]
+        - [["abc", 50]]
+      annotations: []
+    wasm: same
+  none cs3 left:
+    native:
+      lines:
+        - [["שלום\u00a0עולם\u00a0abc", 50]]
+      annotations: []
+    wasm: same
+  none cs3 right:
+    native:
+      lines:
+        - [["שלום\u00a0עולם\u00a0abc", 242.11]]
+      annotations: []
+    wasm: same
+  none cs3 justify:
+    native:
+      lines:
+        - [["שלום\u00a0עולם", 50]]
+        - [["abc", 50]]
+      annotations: []
+    wasm: same
+  auto cs0 left:
+    native:
+      lines:
+        - [["abc םלוע םולש", 50]]
+      annotations: []
+    wasm: same
+  auto cs0 right:
+    native:
+      lines:
+        - [["abc םלוע םולש", 278.58]]
+      annotations: []
+    wasm: same
+  auto cs0 justify:
+    native:
+      lines:
+        - [["םלוע\u00a0םולש", 61.24]]
+        - [["abc", 90.78]]
+      annotations: []
+    wasm: same
+  auto cs3 left:
+    native:
+      lines:
+        - [["abc םלוע םולש", 50]]
+      annotations: []
+    wasm: same
+  auto cs3 right:
+    native:
+      lines:
+        - [["abc םלוע םולש", 242.58]]
+      annotations: []
+    wasm: same
+  auto cs3 justify:
+    native:
+      lines:
+        - [["םלוע\u00a0םולש", 37.24]]
+        - [["abc", 84.78]]
+      annotations: []
+    wasm: same
+  rtl cs0 left:
+    native:
+      lines:
+        - [["abc םלוע םולש", 50]]
+      annotations: []
+    wasm: same
+  rtl cs0 right:
+    native:
+      lines:
+        - [["abc םלוע םולש", 278.58]]
+      annotations: []
+    wasm: same
+  rtl cs0 justify:
+    native:
+      lines:
+        - [["םלוע\u00a0םולש", 61.24]]
+        - [["abc", 90.78]]
+      annotations: []
+    wasm: same
+  rtl cs3 left:
+    native:
+      lines:
+        - [["abc םלוע םולש", 50]]
+      annotations: []
+    wasm: same
+  rtl cs3 right:
+    native:
+      lines:
+        - [["abc םלוע םולש", 242.58]]
+      annotations: []
+    wasm: same
+  rtl cs3 justify:
+    native:
+      lines:
+        - [["םלוע\u00a0םולש", 37.24]]
+        - [["abc", 84.78]]
+      annotations: []
+    wasm: same
+  ltr cs0 left:
+    native:
+      lines:
+        - [["םלוע\u00a0םולש\u00a0abc", 50]]
+      annotations: []
+    wasm: same
+  ltr cs0 right:
+    native:
+      lines:
+        - [["םלוע\u00a0םולש\u00a0abc", 278.11]]
+      annotations: []
+    wasm: same
+  ltr cs0 justify:
+    native:
+      lines:
+        - [["םלוע\u00a0םולש", 50]]
+        - [["abc", 50]]
+      annotations: []
+    wasm: same
+  ltr cs3 left:
+    native:
+      lines:
+        - [["םלוע\u00a0םולש\u00a0abc", 50]]
+      annotations: []
+    wasm: same
+  ltr cs3 right:
+    native:
+      lines:
+        - [["םלוע\u00a0םולש\u00a0abc", 242.11]]
+      annotations: []
+    wasm: same
+  ltr cs3 justify:
+    native:
+      lines:
+        - [["םלוע\u00a0םולש", 50]]
+        - [["abc", 50]]
+      annotations: []
+    wasm: same

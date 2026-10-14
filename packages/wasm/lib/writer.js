@@ -20,6 +20,7 @@ import {
   prepareUnderline,
   strokeUnderline,
 } from "./drawing-options.js";
+import { toVisual } from "./text-direction.js";
 
 /**
  * Key of a content-context method that draws an image already stored in the
@@ -1825,9 +1826,10 @@ export function createWriterFactory({
        * @param {string} text - Text to write.
        * @param {number} x - Baseline start x.
        * @param {number} y - Baseline y.
-       * @param {WriteTextOptions} [options={}] - Font, size, color, opacity, and underline.
+       * @param {WriteTextOptions} [options={}] - Font, size, color, opacity, underline, and direction.
        * @returns {this} The content context, for chaining.
-       * @throws {TypeError} If `text`, a coordinate, or the font is invalid, or a color option is invalid.
+       * @throws {TypeError} If `text`, a coordinate, or the font is invalid, or a color or direction option is invalid.
+       * @throws {Error} If the text has to be reordered by direction and bidi-js is not loaded; see `loadBidi()`.
        * @throws {RangeError} If `size` is not positive.
        * @throws {Error} If the content context is no longer active or the operator fails.
        */
@@ -1849,6 +1851,9 @@ export function createWriterFactory({
         if (!Number.isFinite(size) || size <= 0) {
           throw new RangeError("writeText requires a positive font size");
         }
+        // PDF draws glyphs left to right, so right-to-left text is written
+        // in visual order.
+        text = toVisual(text, options.direction);
         var underline = prepareUnderline(options, text, x, y, size);
         context.BT();
         applyDrawingColor(context, options, false);
@@ -2905,9 +2910,10 @@ export function createWriterFactory({
          * @param {string} text - Text to write.
          * @param {number} x - Baseline start x.
          * @param {number} y - Baseline y.
-         * @param {WriteTextOptions} [options={}] - Font, size, color, opacity, and underline.
+         * @param {WriteTextOptions} [options={}] - Font, size, color, opacity, underline, and direction.
          * @returns {this} The content context, for chaining.
-         * @throws {TypeError} If `text`, a coordinate, or the font is invalid, or a color option is invalid.
+         * @throws {TypeError} If `text`, a coordinate, or the font is invalid, or a color or direction option is invalid.
+         * @throws {Error} If the text has to be reordered by direction and bidi-js is not loaded; see `loadBidi()`.
          * @throws {RangeError} If `size` is not positive.
          * @throws {Error} If the content context is no longer active or the operator fails.
          */
@@ -2927,6 +2933,9 @@ export function createWriterFactory({
           var size = options.size ?? 1;
           if (!Number.isFinite(size) || size <= 0)
             throw new RangeError("writeText requires a positive font size");
+          // PDF draws glyphs left to right, so right-to-left text is written
+          // in visual order.
+          text = toVisual(text, options.direction);
           var underline = prepareUnderline(options, text, x, y, size);
           context.BT();
           applyDrawingColor(context, options, false);
