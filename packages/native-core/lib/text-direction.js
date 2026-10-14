@@ -149,6 +149,8 @@ var bidi = null;
 // The grapheme segmenter, created on first use; false without
 // Intl.Segmenter.
 var graphemeSegmenter = null;
+// The UTF-16 length a text is first segmented in.
+var SEGMENT_CHUNK = 1024;
 
 /**
  * The bidi-js instance, created on first use.
@@ -501,11 +503,34 @@ function graphemeContinuations(text) {
         : false;
   }
   if (!graphemeSegmenter) return joined;
-  Array.from(graphemeSegmenter.segment(text)).forEach(function (segment) {
-    for (var offset = 1; offset < segment.segment.length; ++offset) {
-      joined[segment.index + offset] = true;
+  // Segmenting a long text in one go takes memory quadratic in its length on
+  // some Node versions, so it is segmented in chunks. A chunk ends where its
+  // last segment starts, as that segment may go on in the next chunk; a
+  // segment longer than a chunk makes the chunk longer.
+  var start = 0;
+  var size = SEGMENT_CHUNK;
+  while (start < text.length) {
+    var end = Math.min(start + size, text.length);
+    // Not between the halves of a surrogate pair, which would be a cluster
+    // of its own.
+    if (isLowSurrogateAt(text, end)) ++end;
+    var last = end >= text.length;
+    var segments = Array.from(
+      graphemeSegmenter.segment(text.slice(start, end)),
+    );
+    if (!last && segments.length < 2) {
+      size *= 2;
+      continue;
     }
-  });
+    var kept = last ? segments : segments.slice(0, -1);
+    kept.forEach(function (segment) {
+      for (var offset = 1; offset < segment.segment.length; ++offset) {
+        joined[start + segment.index + offset] = true;
+      }
+    });
+    start += last ? end - start : segments[segments.length - 1].index;
+    size = SEGMENT_CHUNK;
+  }
   return joined;
 }
 

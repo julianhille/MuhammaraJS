@@ -221,6 +221,22 @@ describe("TextDirection", function () {
       assert.equal(visual, "\u05b8".repeat(200000) + "\u05d0\ufe00");
     });
 
+    it("keeps an emoji together wherever a long text is segmented", function () {
+      var family = "\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67";
+      var flag = "\ud83c\uddee\ud83c\uddf1";
+      for (var length = 1010; length < 1040; ++length) {
+        var filler = "x".repeat(length);
+        assert.equal(
+          textDirection.toVisual("\u05d0" + filler + family + "\u05d1", "rtl"),
+          "\u05d1" + family + filler + "\u05d0",
+        );
+        assert.equal(
+          textDirection.toVisual("\u05d0" + filler + flag + "\u05d1", "rtl"),
+          "\u05d1" + filler + flag + "\u05d0",
+        );
+      }
+    });
+
     it("draws lone surrogates as U+FFFD instead of joining them", function () {
       assert.equal(
         textDirection.toVisual("\ude00\ud83d", "rtl"),
