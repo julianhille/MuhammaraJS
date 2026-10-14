@@ -2649,19 +2649,31 @@ describe("Recipe text direction", function () {
   });
 
   it("spaces a long right-to-left line in several TJ operators", async function () {
-    // Every pointed letter is a piece of its own, more than one TJ takes.
+    // Every pointed letter is a piece of its own, more than one TJ takes. The
+    // time is compared with that of a shorter line, as a fixed limit would
+    // fail on a slow runner: four times the letters take about four times as
+    // long, and sixteen times as long when quadratic.
+    this.timeout(120000);
     const output = path.join(__dirname, "../output/text-direction-long-tj.pdf");
-    const recipe = new Recipe("new", output);
-    recipe.registerFont("arial", ARIAL);
-    recipe
-      .createPage(400, 400)
-      .text("\u05e9\u05b8\u05c1".repeat(6000), 10, 10, {
-        font: "arial",
-        size: 10,
-        direction: "rtl",
-        charSpace: 0.1,
-      });
-    await new Promise((resolve) => recipe.endPage().endPDF(resolve));
+    const draw = async (count) => {
+      const recipe = new Recipe("new", output);
+      recipe.registerFont("arial", ARIAL);
+      const start = performance.now();
+      recipe
+        .createPage(400, 400)
+        .text("\u05e9\u05b8\u05c1".repeat(count), 10, 10, {
+          font: "arial",
+          size: 10,
+          direction: "rtl",
+          charSpace: 0.1,
+        });
+      await new Promise((resolve) => recipe.endPage().endPDF(resolve));
+      return performance.now() - start;
+    };
+    await draw(100);
+    const short = await draw(1500);
+    const long = await draw(6000);
+    assert.ok(long < short * 10, short + " ms and " + long + " ms");
     assert.ok(pageContent(output).match(/ TJ/g).length > 1);
     assert.equal(
       pageText(output)
