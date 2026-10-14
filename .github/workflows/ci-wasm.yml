@@ -140,6 +140,9 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22
+          cache: npm
+      # The staged example serves its own copy of bidi-js.
+      - run: npm ci --ignore-scripts
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -278,6 +281,9 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22
+          cache: npm
+      # The staged example serves its own copy of bidi-js.
+      - run: npm ci --ignore-scripts
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
