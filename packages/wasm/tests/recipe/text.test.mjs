@@ -178,10 +178,12 @@ describe("Recipe text", function () {
       return new TextDecoder("latin1").decode(new Uint8Array(chunks));
     };
 
-    // Clipped lines keep the whole source and clip it to the box.
+    // As in native, a clipped line keeps the first word that does not fit,
+    // cut at the box edge, and drops the rest of its paragraph.
     var clipped = content("clip");
     assert.match(clipped, /\(one two three\) Tj/);
-    assert.match(clipped, /\(four five six seven\) Tj/);
+    assert.match(clipped, /\(four five six \) Tj/);
+    assert.doesNotMatch(clipped, /seven/);
     var ellipsized = content("ellipsis");
     assert.match(ellipsized, /\(one two/);
     assert.doesNotMatch(ellipsized, /twot/);

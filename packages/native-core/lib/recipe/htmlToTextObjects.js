@@ -33,6 +33,8 @@ const HtmlTag = Object.freeze({
   EM: "em",
   U: "u",
   DEL: "del",
+  S: "s",
+  STRIKE: "strike",
   A: "a",
 });
 
@@ -151,11 +153,19 @@ function isItalicTag(tagName = "") {
 }
 
 /**
+ * Layout objects whose text, or whose last child's, ended with a line feed.
+ */
+const endsWithLineFeed = new WeakSet();
+
+/**
  * Convert a DOM node and its children into a text layout object.
  * @private
  * @param {Object} node - The DOM node.
  * @param {Object} options - The htmlToTextObjects() options.
- * @returns {Object} The text layout object with its parsed childs.
+ * @returns {Object} The text layout object with its parsed childs. Text
+ *   that ends with a line feed loses it; when inline content follows the
+ *   text, or the inline element it ends, a `lineBreak: true` child follows,
+ *   as a `<br>` would.
  */
 function parseNode(node, options) {
   const tag = (node.tagName || "").toLowerCase();
@@ -205,6 +215,10 @@ function parseNode(node, options) {
   ) {
     value = value.replace(/\s+$/, "");
   }
+  // A line feed that ends the text is never drawn; the parent ends the line
+  // there when inline content follows.
+  const lineFeed = Boolean(value && /\S\s*\n\s*$/.test(value));
+  if (lineFeed) value = value.replace(/\s*\n\s*$/, "");
   if (value && value.charCodeAt(0) == 8203) {
     // zero width space
     value = value.substring(1);
@@ -216,7 +230,7 @@ function parseNode(node, options) {
     isBold: isBoldTag(node.tagName),
     isItalic: isItalicTag(node.tagName),
     underline: tag === HtmlTag.U,
-    strikeOut: tag === HtmlTag.DEL,
+    strikeOut: [HtmlTag.S, HtmlTag.STRIKE, HtmlTag.DEL].includes(tag),
     attributes,
     styles,
     needsLineBreaker: needsLineBreaker(node.tagName),
@@ -235,8 +249,25 @@ function parseNode(node, options) {
         : null,
     childs: [],
   };
+  if (lineFeed) endsWithLineFeed.add(parsedData);
   for (let num in node.childNodes) {
-    parsedData.childs.push(parseNode(node.childNodes[num], options));
+    const child = node.childNodes[num];
+    const parsedChild = parseNode(child, options);
+    parsedData.childs.push(parsedChild);
+    const following = child.nextSibling;
+    if (!following && endsWithLineFeed.has(parsedChild)) {
+      endsWithLineFeed.add(parsedData);
+    }
+    if (
+      endsWithLineFeed.has(parsedChild) &&
+      following &&
+      !needsLineBreaker(following.tagName) &&
+      (following.tagName || "").toLowerCase() !== HtmlTag.BR
+    ) {
+      parsedData.childs.push(
+        parseNode({ tagName: "BR", childNodes: [] }, options),
+      );
+    }
   }
   const ignoreValue = ["\n", "\n\n"];
   parsedData.childs = parsedData.childs.filter((item) => {

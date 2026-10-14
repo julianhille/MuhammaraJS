@@ -258,16 +258,6 @@ exports.Line = class Line {
   }
 
   /**
-   * @returns {number} The sum of the measured word widths.
-   */
-  get textWidth() {
-    return this.wordObjects.reduce((width, word) => {
-      width += word.dimensions.xMax;
-      return width;
-    }, 0);
-  }
-
-  /**
    * @returns {number} The available width.
    */
   get width() {

@@ -3,69 +3,7 @@ const path = require("path");
 const { expect } = require("chai");
 const muhammara = require("@muhammara/native-with-source");
 const Recipe = muhammara.Recipe;
-
-/**
- * Reads a page's content streams as one string.
- * @param {string} file - The PDF file.
- * @param {number} [pageIndex=0] - The page index.
- * @returns {string} The decoded page content.
- */
-function pageContent(file, pageIndex = 0) {
-  const reader = muhammara.createReader(file);
-  try {
-    const page = reader.parsePage(pageIndex).getDictionary();
-    const contents = reader.queryDictionaryObject(page, "Contents");
-    const streams =
-      contents.getType() === muhammara.ePDFObjectArray
-        ? contents
-            .toPDFArray()
-            .toJSArray()
-            .map((entry) =>
-              reader
-                .parseNewObject(
-                  entry.toPDFIndirectObjectReference().getObjectID(),
-                )
-                .toPDFStream(),
-            )
-        : [contents.toPDFStream()];
-    return streams
-      .map((stream) => {
-        const readStream = reader.startReadingFromStream(stream);
-        let text = "";
-        while (readStream.notEnded()) {
-          text += Buffer.from(readStream.read(4096)).toString("latin1");
-        }
-        return text;
-      })
-      .join("\n");
-  } finally {
-    reader.end();
-  }
-}
-
-/**
- * Lists the text runs drawn on a page, in drawing order.
- * @param {string} file - The PDF file.
- * @param {number} [pageIndex=0] - The page index.
- * @returns {Array<{text: string, x: number, y: number, color: string}>} The runs with their
- *   text-matrix position in PDF points and fill color.
- */
-function drawnRuns(file, pageIndex = 0) {
-  const content = pageContent(file, pageIndex);
-  return [
-    ...content.matchAll(
-      /(-?[\d.]+) (-?[\d.]+) Tm[^()<>]*?(?:\(((?:\\.|[^\\)])*)\)|<([0-9A-Fa-f]*)>) Tj/g,
-    ),
-  ].map((match) => ({
-    text:
-      match[3]?.replace(/\\(.)/g, "$1") ??
-      Buffer.from(match[4], "hex").toString("latin1"),
-    x: Number(match[1]),
-    y: Number(match[2]),
-    // The last fill color set before the run.
-    color: content.slice(0, match.index).match(/[^]*\s(\S+ \S+ \S+) rg\s/)?.[1],
-  }));
-}
+const { pageContent, drawnRuns, drawRuns } = require("../helpers/drawnRuns");
 
 /**
  * Where native places the run after a run: at its right edge, plus the width
@@ -80,22 +18,6 @@ function runAdvance(recipe, text, options) {
     recipe.textDimensions(text, options).xMax +
     (text.endsWith(" ") ? recipe.textDimensions("o", options).width : 0)
   );
-}
-
-/**
- * Draws on one 400 x 400 page and returns the runs it drew.
- * @param {string} name - Output file name without extension.
- * @param {function(Recipe): void} draw - Draws on the page.
- * @returns {Array<{text: string, x: number, y: number}>} The drawn runs.
- */
-function drawRuns(name, draw) {
-  const output = path.join(__dirname, `../output/${name}.pdf`);
-  const recipe = new Recipe("new", output);
-  recipe.createPage(400, 400);
-  draw(recipe);
-  recipe.endPage();
-  recipe.endPDF();
-  return drawnRuns(output);
 }
 
 describe("Text - Continued", () => {
@@ -1107,9 +1029,10 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
       const lineHeight = runs[0].y - runs[1].y;
       expect(lineHeight).to.be.above(5);
       expect(runs[1].x).to.equal(runs[0].x);
-      // movedown() after a closed block adds no blank line.
-      expect(runs[1].y - runs[2].y).to.be.closeTo(lineHeight, 0.01);
-      expect(runs[2].y - runs[3].y).to.be.closeTo(lineHeight, 0.01);
+      // movedown() after a closed block adds no blank line. Each line is as
+      // tall as its face, so bold and italic lines differ a little.
+      expect(runs[1].y - runs[2].y).to.be.closeTo(lineHeight, 1);
+      expect(runs[2].y - runs[3].y).to.be.closeTo(lineHeight, 1);
 
       // A run without text in between does not change that.
       const between = drawRuns(
@@ -1216,5 +1139,362 @@ faucibus orci luctus et ultrices posuere cubilia Curae;";
       expect(lineHeight).to.be.within(10, 20);
       expect(runs[2].y - runs[3].y).to.be.closeTo(lineHeight, 0.01);
     });
+  });
+
+  it("ends the line at a trailing line feed instead of drawing it", () => {
+    const html = (text) =>
+      drawRuns("text-trailing-line-feed", (recipe) =>
+        recipe.text(text, 20, 20, { font: "arial", html: true }),
+      );
+    const [bravo, x] = html("bravo\n<b>x</b>");
+    expect(bravo.text).to.equal("bravo");
+    expect(x.text).to.equal("x");
+    expect(x.y).to.be.lessThan(bravo.y);
+    expect(html("<p>bravo\n</p><p>x</p>").map((run) => run.text)).to.eql([
+      "bravo",
+      "x",
+    ]);
+    // Also when the line feed ends a nested inline element.
+    const [a, c] = html("<i><b>a\n</b></i>c");
+    expect(c.y).to.be.lessThan(a.y);
+  });
+
+  it("shortens a flow that overflows its box and drops the rest", () => {
+    // As one call does, trim drops the word that does not fit and clip keeps
+    // it, cut at the box edge.
+    [
+      ["trim", "alpha bravo"],
+      ["clip", "alpha bravo charlie "],
+    ].forEach(([wrap, line]) => {
+      const runs = drawRuns(`text-flow-${wrap}`, (recipe) =>
+        recipe
+          .text("alpha bravo ", 20, 20, {
+            font: "arial",
+            flow: true,
+            textBox: { width: 80, wrap },
+          })
+          .text("charlie delta echo ", {})
+          .text("fox golf", { flow: false }),
+      );
+      expect(runs.map((run) => run.text)).to.eql([line]);
+    });
+    // A run that continues a line ends it with the ellipsis, without throwing.
+    const runs = drawRuns("text-flow-ellipsis", (recipe) =>
+      recipe
+        .text("delta ", 20, 20, {
+          flow: true,
+          font: "arial",
+          size: 25,
+          textBox: { width: 78, wrap: "ellipsis" },
+        })
+        .text("hotel", { flow: false }),
+    );
+    expect(runs).to.have.length(1);
+    expect(runs[0].text).to.match(/^delta./);
+    // A line the flow moves down to is drawn again.
+    const below = drawRuns("text-flow-trim-movedown", (recipe) =>
+      recipe
+        .text("alpha bravo ", 20, 20, {
+          font: "arial",
+          flow: true,
+          textBox: { width: 80, wrap: "trim" },
+        })
+        .text("charlie ", {})
+        .movedown()
+        .text("next line", { flow: false }),
+    );
+    expect(below.map((run) => run.text)).to.eql(["alpha bravo", "next line"]);
+    // So does the line after a trailing line feed.
+    const afterBreak = drawRuns("text-flow-trim-line-feed", (recipe) =>
+      recipe
+        .text("alpha bravo ", 20, 20, {
+          font: "arial",
+          flow: true,
+          textBox: { width: 80, wrap: "trim" },
+        })
+        .text("charlie\n", {})
+        .text("next line", { flow: false }),
+    );
+    expect(afterBreak.map((run) => run.text)).to.eql([
+      "alpha bravo",
+      "next line",
+    ]);
+    // An ellipsized flow is cut where the same text in one call is.
+    const cut = (name, draw) => drawRuns(name, draw).map((run) => run.text);
+    const E = { font: "arial", textBox: { width: 80, wrap: "ellipsis" } };
+    expect(
+      cut("text-flow-ellipsis-runs", (recipe) =>
+        recipe
+          .text("alpha bravo ", 20, 20, { ...E, flow: true })
+          .text("charlie delta echo ", {})
+          .text("fox golf", { flow: false }),
+      ),
+    ).to.eql(
+      cut("text-flow-ellipsis-one", (recipe) =>
+        recipe.text("alpha bravo charlie delta echo fox golf", 20, 20, E),
+      ),
+    );
+    const D = {
+      font: "arial",
+      size: 25,
+      textBox: { width: 78, wrap: "ellipsis" },
+    };
+    expect(
+      cut("text-flow-ellipsis-word", (recipe) =>
+        recipe
+          .text("delta ", 20, 20, { ...D, flow: true })
+          .text("hotel", { flow: false }),
+      ),
+    ).to.eql(
+      cut("text-flow-ellipsis-word-one", (recipe) =>
+        recipe.text("delta hotel", 20, 20, D),
+      ),
+    );
+  });
+
+  it("continues the open line up to a line break in a flowed run", () => {
+    const [foxtrot, golf, mike] = drawRuns("text-flow-line-break", (recipe) =>
+      recipe
+        .text("foxtrot", 20, 20, {
+          flow: true,
+          font: "arial",
+          textBox: { width: 200 },
+        })
+        .text("golf\nmike", { flow: false }),
+    );
+    expect(golf.y).to.equal(foxtrot.y);
+    expect(golf.x).to.be.greaterThan(foxtrot.x);
+    expect(mike.x).to.equal(foxtrot.x);
+    expect(mike.y).to.be.lessThan(foxtrot.y);
+  });
+
+  it("keeps the spaces that start a flowed line before movedown()", () => {
+    const [indented, x] = drawRuns("text-flow-indent-movedown", (recipe) =>
+      recipe
+        .text("   Indented", 50, 50, { flow: true, font: "arial" })
+        .movedown()
+        .text("x", {})
+        .text("", { flow: false }),
+    );
+    expect(indented.text).to.equal("   Indented");
+    expect(x.x).to.equal(50);
+    // Right-aligned lines that end with a line break keep them too.
+    const [right] = drawRuns("text-right-leading-spaces", (recipe) =>
+      recipe.text("   right\n   two", 20, 20, {
+        font: "arial",
+        textBox: { width: 200, textAlign: "right" },
+      }),
+    );
+    expect(right.text).to.equal("   right");
+  });
+
+  it("aligns the runs of one flowed line as one line", () => {
+    const flow = { flow: true, font: "arial", textBox: { width: 300 } };
+    const place = (name, draw) =>
+      drawRuns(name, (recipe) => draw(recipe.text("alpha ", 20, 20, flow)));
+    // Only the second run centers: both runs move together.
+    const centered = place("text-flow-align-a", (recipe) =>
+      recipe
+        .text("bravo", { textBox: { textAlign: "center" } })
+        .text("", { flow: false }),
+    );
+    expect(centered.map((run) => Math.round(run.x * 100) / 100)).to.eql([
+      132.23, 173.28,
+    ]);
+    // The call that ends the flow sets the alignment of the last line.
+    const ending = place("text-flow-align-c", (recipe) =>
+      recipe
+        .text("bravo", {})
+        .text("", { flow: false, textBox: { textAlign: "center" } }),
+    );
+    expect(ending.map((run) => Math.round(run.x * 100) / 100)).to.eql([
+      132.23, 173.28,
+    ]);
+    // A later run that switches back to left leaves no overlap.
+    const left = drawRuns("text-flow-align-b", (recipe) =>
+      recipe
+        .text("alpha ", 20, 20, {
+          ...flow,
+          textBox: { width: 300, textAlign: "center" },
+        })
+        .text("bravo", { textBox: { textAlign: "left" } })
+        .text("", { flow: false }),
+    );
+    expect(left.map((run) => Math.round(run.x * 100) / 100)).to.eql([
+      20, 61.05,
+    ]);
+    // The call that ends the flow aligns every line of it, as in Wasm.
+    const lines = drawRuns("text-flow-align-lines", (recipe) =>
+      recipe
+        .text("alpha ", 20, 20, flow)
+        .movedown()
+        .text("bravo", { textBox: { textAlign: "center" } })
+        .text("", { flow: false }),
+    );
+    lines.forEach((run) => expect(run.x).to.be.above(100));
+    // It sets the vertical alignment as well.
+    const bottom = drawRuns("text-flow-align-vertical", (recipe) =>
+      recipe
+        .text("alpha ", 20, 20, {
+          ...flow,
+          textBox: { width: 300, height: 200 },
+        })
+        .text("bravo", { flow: false, textBox: { textAlign: "left bottom" } }),
+    );
+    expect(bottom[0].y).to.be.below(200);
+  });
+
+  it("keeps per-run markup annotations in a flow", () => {
+    const output = path.join(__dirname, "../output/continued-flow-markup.pdf");
+    new Recipe("new", output, { compress: false })
+      .createPage(400, 400)
+      .text("Plain ", 20, 20, { flow: true, font: "arial" })
+      .text("marked", { highlight: true })
+      .text(" plain", { highlight: false })
+      .text("wavy", { squiggly: true })
+      .text("", { flow: false })
+      .endPage()
+      .endPDF();
+    const pdf = fs.readFileSync(output, "latin1");
+    expect(pdf.match(/\/Subtype \/Highlight/g)).to.have.length(1);
+    expect(pdf.match(/\/Subtype \/Squiggly/g)).to.have.length(1);
+  });
+
+  it("wraps the HTML text that follows an inline element at the box edge", () => {
+    const runs = drawRuns("text-html-inline-wrap", (recipe) =>
+      recipe.text(
+        "<p>the quick <u>brown</u> fox jumps over the lazy dog and again over the dog</p>",
+        20,
+        20,
+        { html: true, size: 12, textBox: { width: 200 } },
+      ),
+    );
+    const firstLine = runs.filter((run) => run.y === runs[0].y);
+    expect(firstLine.map((run) => run.text).join("")).to.not.include("dog");
+    // Justified HTML stays inside the box, too.
+    const justified = drawRuns("text-html-justify-inline", (recipe) =>
+      recipe.text("aa bb cc <b>dd</b> ee ff gg hh ii jj kk", 20, 20, {
+        html: true,
+        font: "arial",
+        textBox: { width: 100, textAlign: "justify" },
+      }),
+    );
+    justified
+      .filter((run) => run.y === justified[0].y)
+      .forEach((run) => expect(run.x).to.be.below(120));
+    // The text after an inline element that wrapped continues its line.
+    const lineOf = (name, html, textBox) =>
+      drawRuns(name, (recipe) =>
+        recipe.text(html, 20, 20, { html: true, font: "arial", textBox }),
+      ).map((run) => [run.text, run.y]);
+    const wrapped = lineOf(
+      "text-html-wrapped-inline",
+      "<p>aaaa bbbb cccc <b>dddd eeee</b> ffff gg</p>",
+      { width: 100 },
+    );
+    expect(wrapped[2][1]).to.equal(wrapped[1][1]);
+    // A list item starts its own line, with its marker.
+    expect(
+      lineOf(
+        "text-html-list-items",
+        "<ul><li>aa bb cc dd ee ff</li><li>xxxx yyyy zzzz</li></ul>",
+        { width: 100 },
+      )[2][0].trim(),
+    ).to.equal("* xxxx yyyy");
+    // Clipped HTML keeps the spaces between its runs.
+    expect(
+      lineOf("text-html-clip-spaces", "aa <b>bb</b> cc dd ee ff", {
+        width: 60,
+        wrap: "clip",
+      })
+        .map(([text]) => text)
+        .join(""),
+    ).to.equal("aa bb cc dd ");
+    // A list item's later runs are not indented again.
+    const item = lineOf(
+      "text-html-list-inline",
+      "<ol><li>aa <b>bb</b> cc dd ee ff gg hh ii jj</li></ol>",
+      { width: 100 },
+    );
+    expect(
+      item.filter(([, y]) => y === item[0][1]).map(([text]) => text),
+    ).to.eql(["      1. aa ", "bb", " cc"]);
+    // Ellipsized HTML is cut as plain text is, inside the box.
+    const ellipsized = (name, html) =>
+      lineOf(name, html, { width: 60, wrap: "ellipsis" })
+        .map(([text]) => text)
+        .join("");
+    expect(
+      ellipsized("text-html-ellipsis", "aa bb <b>cc</b> dd ee ff"),
+    ).to.equal(ellipsized("text-plain-ellipsis", "aa bb cc dd ee ff"));
+  });
+
+  it("justifies a flow line by line and leaves its last line left-aligned", () => {
+    const J = {
+      flow: true,
+      font: "arial",
+      textBox: { width: 269, textAlign: "justify" },
+    };
+    // The last line stays at the left, also when its first run starts with a space.
+    const last = drawRuns("text-flow-justify-last", (recipe) =>
+      recipe.text(" india ", 20, 20, J).text("golf", { flow: false }),
+    );
+    expect(last.map((run) => run.x.toFixed(2))).to.eql(["20.00", "60.25"]);
+    // Runs that start with a space get gaps as wide as the others, so no
+    // word comes close to the next one.
+    const end = {};
+    const wide = drawRuns("text-flow-justify-space", (recipe) => {
+      ["alpha", "bravo"].forEach((word) => {
+        end[word] = recipe.textDimensions(word, { font: "arial" }).xMax;
+      });
+      recipe
+        .text(" alpha", 20, 20, {
+          ...J,
+          textBox: { width: 150, textAlign: "justify" },
+        })
+        .text(" bravo charlie", {})
+        .text("lima delta echo foxtrot golf", { flow: false });
+    });
+    const [alpha, bravo, charlie] = wide;
+    const gaps = [
+      bravo.x - alpha.x - end.alpha,
+      charlie.x - bravo.x - end.bravo,
+    ];
+    // Words keep the width of the space they end with, as in Wasm.
+    expect(gaps[1]).to.be.closeTo(gaps[0], 1);
+  });
+
+  it("lays out bold and italic HTML runs with the face they are drawn in", () => {
+    const html = drawRuns("text-html-bold-measure", (recipe) =>
+      recipe.text("<b>bold</b> next", 20, 20, { font: "arial", html: true }),
+    );
+    const flow = drawRuns("text-flow-bold-measure", (recipe) =>
+      recipe
+        .text("bold", 20, 20, {
+          font: "arial",
+          bold: true,
+          flow: true,
+          textBox: { width: 300 },
+        })
+        .text(" next", { bold: false, flow: false }),
+    );
+    expect(html[1].x).to.be.closeTo(flow[1].x, 0.01);
+    // Its baseline and line spacing come from the bold face too.
+    const wrap = (name, text, options) =>
+      drawRuns(name, (recipe) =>
+        recipe.text(text, 20, 20, { ...options, textBox: { width: 80 } }),
+      ).map((run) => [run.x, run.y]);
+    expect(
+      wrap("text-html-bold-lines", "<b>wwww wwww wwww</b>", { html: true }),
+    ).to.eql(wrap("text-bold-lines", "wwww wwww wwww", { bold: true }));
+    // Bold and italic faces differ in width, so " next" starts apart.
+    const bold = drawRuns("text-html-bold-w", (recipe) =>
+      recipe.text("<b>wwww</b> next", 20, 20, { html: true }),
+    );
+    const italic = drawRuns("text-html-italic-w", (recipe) =>
+      recipe.text("<i>wwww</i> next", 20, 20, { html: true }),
+    );
+    expect(bold[1].x).to.be.closeTo(63.36, 0.01);
+    expect(italic[1].x).to.be.closeTo(62.55, 0.01);
   });
 });

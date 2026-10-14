@@ -1210,4 +1210,96 @@ describe("Text - Continued", function () {
       assert.ok(Math.abs(runs[2].y - runs[3].y - lineHeight) < 0.01);
     });
   });
+
+  describe("layout parity with native", function () {
+    it("puts the first baseline one ascent below y", async function () {
+      var runs = await drawRuns("layout-first-baseline", (recipe) =>
+        recipe.text("Hello", 20, 20, { font: "arial" }),
+      );
+      // Native draws the same call at 369.81 on a 400 pt page.
+      assert.ok(Math.abs(runs[0].y - 369.81) < 0.05, `y was ${runs[0].y}`);
+    });
+
+    it("keeps the padding when aligning text to the bottom or center", async function () {
+      var baseline = async (name, textAlign, padding) =>
+        (
+          await drawRuns(name, (recipe) =>
+            recipe.text("alpha", 20, 20, {
+              font: "arial",
+              textBox: { width: 200, height: 100, padding, textAlign },
+            }),
+          )
+        )[0].y;
+      // Native asserts the same offsets in text.js.
+      var bottom =
+        (await baseline("layout-bottom-padding", "left bottom", 10)) -
+        (await baseline("layout-bottom-plain", "left bottom", 0));
+      assert.ok(Math.abs(bottom - 10) < 0.01, `bottom moved ${bottom}`);
+      var center =
+        (await baseline(
+          "layout-center-padding",
+          "left center",
+          [30, 0, 0, 0],
+        )) - (await baseline("layout-center-plain", "left center", 0));
+      assert.ok(Math.abs(center + 15) < 0.01, `center moved ${center}`);
+    });
+
+    it("right-aligns inside the padded box", async function () {
+      var place = async (name, padding) =>
+        (
+          await drawRuns(name, (recipe) =>
+            recipe.text("charlie delta", 20, 20, {
+              font: "arial",
+              textBox: { width: 150, padding, textAlign: "right" },
+            }),
+          )
+        )[0].x;
+      var shift =
+        (await place("layout-right-plain", 0)) -
+        (await place("layout-right-padded", 4));
+      // Native moves right-aligned text left by the right padding alone.
+      assert.ok(Math.abs(shift - 4) < 0.01, `shift was ${shift}`);
+    });
+
+    it("aligns text in a box grown to minHeight as in one with that height", async function () {
+      for (var textAlign of ["left bottom", "left center"]) {
+        var grown = await drawRuns("layout-min-height", (recipe) =>
+          recipe.text("alpha", 20, 20, {
+            font: "arial",
+            textBox: { width: 200, minHeight: 100, textAlign },
+          }),
+        );
+        var fixed = await drawRuns("layout-height", (recipe) =>
+          recipe.text("alpha", 20, 20, {
+            font: "arial",
+            textBox: { width: 200, height: 100, textAlign },
+          }),
+        );
+        assert.ok(Math.abs(grown[0].y - fixed[0].y) < 0.01, textAlign);
+      }
+    });
+
+    it("hilites the line box of every run", async function () {
+      var recipe = new (await getRecipe())({ compress: false }).createPage(
+        400,
+        400,
+      );
+      recipe
+        .text("alpha ", 20, 20, {
+          flow: true,
+          font: "arial",
+          hilite: true,
+          textBox: { width: 300 },
+        })
+        .text("bravo", { flow: false });
+      var content = Buffer.from(recipe.endPage().endPDF()).toString("latin1");
+      var rectangles = [
+        ...content.matchAll(/([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+) re\s/g),
+      ].map((match) => match.slice(1).map(Number));
+      // Both runs share one top and one height, as in native (13.13 at 14 pt).
+      assert.equal(rectangles.length, 2);
+      assert.ok(Math.abs(rectangles[0][3] - rectangles[1][3]) < 0.01);
+      assert.ok(Math.abs(rectangles[0][1] - rectangles[1][1]) < 0.01);
+    });
+  });
 });

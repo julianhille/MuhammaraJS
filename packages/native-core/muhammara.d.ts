@@ -3699,7 +3699,10 @@ declare namespace muhammara {
 
     type LineToOptions = PathOptions;
 
-    type LineOptions = PathOptions;
+    interface LineOptions
+      extends
+        PathOptions,
+        Pick<TransformOptions, "rotation" | "rotationOrigin"> {}
 
     interface LinkFillOptions {
       link?: string;
@@ -4778,6 +4781,8 @@ declare namespace muhammara {
      * @param options.lineWidth - The line width
      * @param options.opacity - The opacity
      * @param options.dash - The dash style [number, number]
+     * @param options.rotation - Clockwise rotation in degrees. Default: 0
+     * @param options.rotationOrigin - [originX, originY] Default: the center
      * @param options.link - Make the circle's bounding square open this URL.
      * @returns The recipe instance.
      * @throws {TypeError} If no page is active.
@@ -4803,7 +4808,7 @@ declare namespace muhammara {
      * @param options.opacity - The opacity
      * @param options.dash - The dash style [number, number]
      * @param options.rotation - Accept: +/- 0 through 360. Default: 0
-     * @param options.rotationOrigin - [originX, originY] Default: x, y
+     * @param options.rotationOrigin - [originX, originY] Default: x, y (the top-left corner)
      * @param options.borderRadius - Radius size for rounded corners.
      * When a one to four number array can be used to give specific sizees to each corner.
      * The numbering starts from the top, left corner, and goes clockwise around the text box.

@@ -27,6 +27,9 @@ A positive `rotation` option turns a shape, text, or image clockwise on the
 page, around `rotationOrigin`. Text without `rotationOrigin` turns around the
 `x` and `y` given to `text()`, before `align` moves it, so every line of a text
 box turns as one block.
+Without `rotationOrigin`, `rectangle()` turns around its top-left corner,
+`polygon()` around the center of its bounding box, `line()` around its first
+point, and `circle()` around its center.
 
 `rotateContent(degrees, x, y)` rotates subsequent drawing around a point in
 Recipe's top-left coordinates. Unlike the `rotation` option, a positive angle

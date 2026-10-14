@@ -639,6 +639,16 @@ describe("HTML to TextObjects", () => {
     assert.isTrue(italic.isItalic);
   });
 
+  it("strikes out s, strike and del text", () => {
+    const [paragraph] = htmlToTextObjects(
+      "<p><s>a</s><strike>b</strike><del>c</del>d</p>",
+    );
+    assert.deepEqual(
+      paragraph.childs.map((child) => child.strikeOut),
+      [true, true, true, false],
+    );
+  });
+
   it("lays out upper-case lists with bullets and numbers", () => {
     const output = path.join(__dirname, "../output/html-upper-case-lists.pdf");
     new muhammara.Recipe("new", output)

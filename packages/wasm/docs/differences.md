@@ -1,8 +1,7 @@
 # Differences And Restrictions
 
-Differences fall into three groups: Wasm platform bounds that will not change,
-Wasm gaps that could be closed, and native behavior that is itself the defect.
-Gaps and native defects are tracked in [#971](https://github.com/julianhille/MuhammaraJS/issues/971).
+Differences fall into two groups: Wasm platform bounds that will not change,
+and Wasm gaps that could be closed. Gaps are tracked in [#971](https://github.com/julianhille/MuhammaraJS/issues/971).
 
 ## Wasm bounds (by design)
 
@@ -69,13 +68,5 @@ The Recipe HTML parser is more forgiving than the XML-strict native parser: an
 omitted `</li>` ends that item at its next sibling or at the end of its list
 rather than throwing.
 
-## Native defects (tracked)
-
-In a flowed `text()`, `highlight`, `underline`, `strikeOut`, and `squiggly`
-annotate the run that sets them, as links do on both ends. Native Recipe
-currently takes them from the call that ends the flow and spans each over the
-whole line ([#909](https://github.com/julianhille/MuhammaraJS/issues/909)).
-Its `textBox.textAlign` aligns the whole flow as the call that ends it sets
-it, merged over the earlier runs' options. Native Recipe places each run by
-that run's own alignment, so runs of one line that set different alignments
-overlap or leave a gap.
+Native Recipe HTML sizes `h1`–`h3` and `small` text, which Wasm does not
+recognize, and Wasm breaks lines around `div`, which native treats as inline.

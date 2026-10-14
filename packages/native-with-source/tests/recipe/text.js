@@ -1,6 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 const Recipe = require("@muhammara/native-with-source").Recipe;
+const { expect } = require("chai");
+const { drawRuns } = require("../helpers/drawnRuns");
 const htmlCodes = fs.readFileSync(
   path.join(__dirname, "../TestMaterials/recipe/text.html"),
   "utf8",
@@ -867,6 +869,65 @@ describe("Text", () => {
     assert.deepEqual(
       reader.extractPageText(0).map((run) => run.content),
       ["bravo", "echo"],
+    );
+  });
+
+  it("keeps the padding when aligning text to the bottom or center", () => {
+    const baseline = (name, textAlign, padding) =>
+      drawRuns(name, (recipe) =>
+        recipe.text("alpha", 20, 20, {
+          font: "arial",
+          textBox: { width: 200, height: 100, padding, textAlign },
+        }),
+      )[0].y;
+    // Bottom padding lifts the last line by its own size, not by none.
+    expect(
+      baseline("text-bottom-padding", "left bottom", 10) -
+        baseline("text-bottom-plain", "left bottom", 0),
+    ).to.be.closeTo(10, 0.01);
+    // Unequal padding moves centered text by half the difference.
+    expect(
+      baseline("text-center-padding", "left center", [30, 0, 0, 0]) -
+        baseline("text-center-plain", "left center", 0),
+    ).to.be.closeTo(-15, 0.01);
+  });
+
+  it("right-aligns inside the padded box", () => {
+    const x = (name, padding) =>
+      drawRuns(name, (recipe) =>
+        recipe.text("charlie delta", 20, 20, {
+          font: "arial",
+          textBox: { width: 150, padding, textAlign: "right" },
+        }),
+      )[0].x;
+    // Only the right padding moves right-aligned text, as in Wasm.
+    expect(x("text-right-plain", 0) - x("text-right-padded", 4)).to.be.closeTo(
+      4,
+      0.01,
+    );
+  });
+
+  it("turns a text link with the rotated text", () => {
+    const rect = (rotation) => {
+      const output = path.join(
+        __dirname,
+        `../output/text-link-${rotation}.pdf`,
+      );
+      new Recipe("new", output, { compress: false })
+        .createPage(400, 400)
+        .text("alpha", 100, 300, { rotation, link: "https://example.com" })
+        .endPage()
+        .endPDF();
+      return fs
+        .readFileSync(output, "latin1")
+        .match(/\/Rect \[([^\]]*)\]/)[1]
+        .trim()
+        .split(/\s+/)
+        .map(Number);
+    };
+    // The box around the turned text, as Wasm draws it within its glyph edge.
+    rect(30).forEach((value, index) =>
+      expect(value).to.be.closeTo([93, 70.87, 129.46, 100][index], 0.01),
     );
   });
 });
