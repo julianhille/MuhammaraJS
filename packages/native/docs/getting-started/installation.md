@@ -129,14 +129,13 @@ architecture, runtime, or libc combination, install
 | Node.js  | 20, 22, 24, >=25      | macOS x64 and arm64               | Yes                |
 | Node.js  | 20, 22, 24, >=25      | Windows x64                       | Yes                |
 | Node.js  | Any other combination | Any                               | Use source package |
-| Electron | 36.0 through 44.4.5   | Linux x64                         | Yes                |
-| Electron | 36.0 through 44.4.5   | macOS arm64                       | Yes                |
-| Electron | 36.0 through 38.1     | macOS x64                         | Yes                |
-| Electron | 36.0 through 44.4.5   | Windows x64                       | Yes                |
+| Electron | 36.0 through 44.7.1   | Linux x64                         | Yes                |
+| Electron | 36.0 through 44.7.1   | macOS x64 and arm64               | Yes                |
+| Electron | 36.0 through 44.7.1   | Windows x64                       | Yes                |
 | Electron | Any other combination | Any                               | Use source package |
 
 Windows arm64 and Linux arm64 Electron builds are not part of the current
-prebuilt matrix, and macOS x64 Electron builds cover only 36.0 through 38.1.
+prebuilt matrix.
 
 The Linux glibc riscv64 prebuild is cross-built and then tested under QEMU
 emulation with Node.js 20 (Ubuntu 25.10) and 22 (Ubuntu 26.04), because
