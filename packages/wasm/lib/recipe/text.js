@@ -12,7 +12,6 @@ import {
   TextDirection,
   drawnLineWidth,
   drawnText,
-  hasReorderingCharacters,
   readDirection,
   requireBidiFor,
   resolveDirection,
@@ -109,21 +108,6 @@ function endsWithBreakableSpace(value) {
 }
 
 /**
- * Whether a paragraph is drawn reordered: asked to be, in a right-to-left
- * paragraph or with characters that reorder it.
- * @param {string} paragraph - The paragraph's text.
- * @param {string} direction - The paragraph's resolved direction.
- * @param {string} [requested] - The `direction` option.
- * @returns {boolean} Whether its characters can be drawn in another order.
- */
-function reordersLine(paragraph, direction, requested) {
-  return (
-    readDirection(requested) !== TextDirection.NONE &&
-    (direction === TextDirection.RTL || hasReorderingCharacters(paragraph))
-  );
-}
-
-/**
  * Lays out plain text into lines for a width and wrap mode.
  * @param {string} value - Text; a line break such as `\n` or U+2028 starts a
  *   paragraph.
@@ -154,11 +138,9 @@ function lines(value, width, measure, options, wrap) {
         line = word;
       } else if (wrap === TextWrap.CLIP) {
         // As in native, clipped text keeps the first word that does not fit,
-        // cut at the box edge, and drops the rest of the paragraph, unless the
-        // line reorders: that can draw the words after it anywhere in the
-        // line, and the clip cuts what overflows.
+        // cut at the box edge, and drops the rest of the paragraph.
         line = next;
-        truncated = !reordersLine(paragraph, direction, options.direction);
+        truncated = true;
       } else if (wrap === TextWrap.ELLIPSIS) {
         line = ellipsize(line || word, width, measure, options, direction);
         truncated = true;
@@ -513,9 +495,8 @@ function htmlLines(source, width, measure, options, wrap) {
             truncated = true;
             return;
           } else if (wrap === TextWrap.CLIP) {
-            // The word is clipped at the box edge and later words are
-            // dropped, unless the line reorders, as in lines().
-            truncated = !reordersLine(fragment, direction, requested);
+            // The word is clipped at the box edge; later words are dropped.
+            truncated = true;
           } else {
             truncated = true;
             return;

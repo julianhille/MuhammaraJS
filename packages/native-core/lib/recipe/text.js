@@ -7,7 +7,6 @@ const { clearTextFlow, resolveFontSize, trimBreakableEnd } = require("./utils");
 const { miterLimitOption, rotationOption } = require("../recipe-options");
 const {
   readDirection,
-  hasReorderingCharacters,
   hasStrongCharacter,
   resolveDirection,
   paragraphDirections,
@@ -53,7 +52,6 @@ const BLOCK_START = /^\s*<(?:p|div|ul|ol|li|h[1-6]|blockquote|pre)\b/i;
  * Matches the line break that ends a word at a required break.
  */
 const LINE_BREAK_END = new RegExp(`(?:\\r\\n|[${LINE_BREAKS}])$`);
-const LINE_BREAK = new RegExp(`[${LINE_BREAKS}]`);
 // The mandatory breaks inside a text, captured, to split it into paragraphs.
 const PARAGRAPH_PIECES = new RegExp(`(\\r\\n|[${LINE_BREAKS}])`);
 // The same breaks, to find where the paragraphs of a text start.
@@ -2992,22 +2990,6 @@ function makeTextObjects(
       // now deal with text line wrap (what happens to text that doesn't fit in line)
       if (textBox.wrap !== TextWrap.AUTO) {
         flushLine = true;
-        // A clipped line that reorders keeps the rest of its line, as in
-        // Wasm: reordering can draw the words after the first one that
-        // overflows anywhere in it, and the clip cuts what overflows.
-        if (
-          textBox.wrap === TextWrap.CLIP &&
-          readDirection(pathOptions.direction) !== TextDirection.NONE
-        ) {
-          const end = text.slice(last).search(LINE_BREAK);
-          const rest = text.slice(last, end < 0 ? text.length : last + end);
-          if (
-            directionAt(lineStart) === TextDirection.RTL ||
-            hasReorderingCharacters(newLine.value + rest)
-          ) {
-            word = new Word(rest, writeOptions);
-          }
-        }
         // A line of only spaces has no word of this call to shorten either.
         const ownWords = newLine.words.some((lineWord) =>
           lineWord.value.trim(),

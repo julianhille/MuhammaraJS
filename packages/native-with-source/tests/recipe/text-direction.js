@@ -797,40 +797,26 @@ describe("Recipe text direction", function () {
       ) < 1,
       JSON.stringify(centred),
     );
-    // A justified line too wide for its box is not squeezed: it is drawn
-    // as the same line aligned to its start, the right edge.
-    /**
-     * Draw the overflowing clipped line with an alignment.
-     * @param {string} name - Output file name.
-     * @param {string} textAlign - The alignment.
-     * @returns {Promise<Object[]>} The drawn runs.
-     */
-    const clipped = (name, textAlign) =>
-      drawPage(name, (recipe) => {
+    // A justified line keeps its start at the right edge too.
+    const justified = lineRuns(
+      await drawPage("text-direction-clip-justify", (recipe) => {
         recipe.text("שלום עולם גדול מאוד יותר\nx", 100, 50, {
           font: "arial",
           size: 14,
           direction: "rtl",
-          textBox: { width: 80, wrap: "clip", textAlign },
+          textBox: { width: 80, wrap: "clip", textAlign: "justify" },
         });
-      });
-    assert.deepEqual(
-      lineRuns(await clipped("text-direction-clip-justify", "justify")),
-      lineRuns(await clipped("text-direction-clip-justify-right", "right")),
+      }),
     );
-    // A line that mixes directions keeps its words after the first one that
-    // overflows: reordered, they are drawn inside the box.
-    const mixed = await drawPage("text-direction-clip-mixed", (recipe) => {
-      recipe.text("שלום עולם abc def ghi jkl", 20, 20, {
-        font: "arial",
-        size: 12,
-        direction: "rtl",
-        textBox: { width: 90, wrap: "clip" },
-      });
-    });
-    assert.deepEqual(
-      mixed.map((each) => each.text.trim()),
-      ["abc def ghi jkl םלוע םולש"],
+    const start = justified[justified.length - 1];
+    assert.ok(start.text.trim().endsWith("םולש"), JSON.stringify(justified));
+    assert.ok(
+      Math.abs(
+        start.x +
+          font.calculateTextDimensions(start.text.trimEnd(), 14).xMax -
+          180,
+      ) < 1,
+      JSON.stringify(justified),
     );
   });
 
