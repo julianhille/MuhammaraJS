@@ -15,6 +15,7 @@ on:
       - "package-lock.json"
       - "packages/native-with-source/src/**"
       - "packages/wasm/**"
+      - "test-matrices/**"
       - "!packages/wasm/docs/**"
       - "!packages/wasm/mkdocs.yml"
       - "!packages/wasm/.readthedocs.yaml"

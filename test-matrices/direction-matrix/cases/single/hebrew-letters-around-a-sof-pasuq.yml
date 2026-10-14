@@ -1,0 +1,148 @@
+description: Hebrew letters around a sof pasuq
+kind: single
+text: "א׃ב\u05b0"
+expected:
+  none cs0 left:
+    native:
+      lines:
+        - [["א׃ב\u05b0", 50]]
+      annotations: []
+    wasm: same
+  none cs0 right:
+    native:
+      lines:
+        - [["א׃ב\u05b0", 330.96]]
+      annotations: []
+    wasm: same
+  none cs0 justify:
+    native:
+      lines:
+        - [["א׃ב\u05b0", 50]]
+      annotations: []
+    wasm: same
+  none cs3 left:
+    native:
+      lines:
+        - [["א׃ב\u05b0", 50]]
+      annotations: []
+    wasm: same
+  none cs3 right:
+    native:
+      lines:
+        - [["א׃ב\u05b0", 321.96]]
+      annotations: []
+    wasm: same
+  none cs3 justify:
+    native:
+      lines:
+        - [["א׃ב\u05b0", 50]]
+      annotations: []
+    wasm: same
+  auto cs0 left:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 50]]
+      annotations: []
+    wasm: same
+  auto cs0 right:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 333.75]]
+      annotations: []
+    wasm: same
+  auto cs0 justify:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 93.75]]
+      annotations: []
+    wasm: same
+  auto cs3 left:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 50]]
+      annotations: []
+    wasm: same
+  auto cs3 right:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 327.75]]
+      annotations: []
+    wasm: same
+  auto cs3 justify:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 87.75]]
+      annotations: []
+    wasm: same
+  rtl cs0 left:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 50]]
+      annotations: []
+    wasm: same
+  rtl cs0 right:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 333.75]]
+      annotations: []
+    wasm: same
+  rtl cs0 justify:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 93.75]]
+      annotations: []
+    wasm: same
+  rtl cs3 left:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 50]]
+      annotations: []
+    wasm: same
+  rtl cs3 right:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 327.75]]
+      annotations: []
+    wasm: same
+  rtl cs3 justify:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 87.75]]
+      annotations: []
+    wasm: same
+  ltr cs0 left:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 50]]
+      annotations: []
+    wasm: same
+  ltr cs0 right:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 333.75]]
+      annotations: []
+    wasm: same
+  ltr cs0 justify:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 50]]
+      annotations: []
+    wasm: same
+  ltr cs3 left:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 50]]
+      annotations: []
+    wasm: same
+  ltr cs3 right:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 327.75]]
+      annotations: []
+    wasm: same
+  ltr cs3 justify:
+    native:
+      lines:
+        - [["\u05b0ב׃א", 50]]
+      annotations: []
+    wasm: same

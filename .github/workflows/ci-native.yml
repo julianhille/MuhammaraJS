@@ -15,6 +15,7 @@ on:
       - "!packages/native/.readthedocs.yaml"
       - "packages/native-core/**"
       - "packages/native-with-source/**"
+      - "test-matrices/**"
       - ".github/actions/setup-native-build-cache/**"
       - ".github/scripts/**"
       - "package.json"

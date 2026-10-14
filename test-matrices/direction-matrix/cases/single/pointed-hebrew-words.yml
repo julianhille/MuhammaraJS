@@ -1,0 +1,152 @@
+description: Two Hebrew words with points
+kind: single
+text: "ש\u05c1\u05b8לו\u05b9ם עו\u05b9ל\u05b8ם"
+expected:
+  none cs0 left:
+    native:
+      lines:
+        - [["ש\u05c1\u05b8לו\u05b9ם עו\u05b9ל\u05b8ם", 50]]
+      annotations: []
+    wasm: same
+  none cs0 right:
+    native:
+      lines:
+        - [["ש\u05c1\u05b8לו\u05b9ם עו\u05b9ל\u05b8ם", 301.51]]
+      annotations: []
+    wasm: same
+  none cs0 justify:
+    native:
+      lines:
+        - [["ש\u05c1\u05b8לו\u05b9ם עו\u05b9ל\u05b8ם", 50]]
+      annotations: []
+    wasm: same
+  none cs3 left:
+    native:
+      lines:
+        - [["ש\u05c1\u05b8לו\u05b9ם עו\u05b9ל\u05b8ם", 50]]
+      annotations: []
+    wasm: same
+  none cs3 right:
+    native:
+      lines:
+        - [["ש\u05c1\u05b8לו\u05b9ם עו\u05b9ל\u05b8ם", 262.51]]
+      annotations: []
+    wasm: same
+  none cs3 justify:
+    native:
+      lines:
+        - [["ש\u05c1\u05b8לו\u05b9ם", 50]]
+        - [["עו\u05b9ל\u05b8ם", 50]]
+      annotations: []
+    wasm: same
+  auto cs0 left:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 50]]
+      annotations: []
+    wasm: same
+  auto cs0 right:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 301.24]]
+      annotations: []
+    wasm: same
+  auto cs0 justify:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 61.24]]
+      annotations: []
+    wasm: same
+  auto cs3 left:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 50]]
+      annotations: []
+    wasm: same
+  auto cs3 right:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 277.24]]
+      annotations: []
+    wasm: same
+  auto cs3 justify:
+    native:
+      lines:
+        - [["ם\u05b9ול\u05b8\u05c1ש", 77.59]]
+        - [["ם\u05b8ל\u05b9וע", 79.77]]
+      annotations: []
+    wasm: same
+  rtl cs0 left:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 50]]
+      annotations: []
+    wasm: same
+  rtl cs0 right:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 301.24]]
+      annotations: []
+    wasm: same
+  rtl cs0 justify:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 61.24]]
+      annotations: []
+    wasm: same
+  rtl cs3 left:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 50]]
+      annotations: []
+    wasm: same
+  rtl cs3 right:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 277.24]]
+      annotations: []
+    wasm: same
+  rtl cs3 justify:
+    native:
+      lines:
+        - [["ם\u05b9ול\u05b8\u05c1ש", 77.59]]
+        - [["ם\u05b8ל\u05b9וע", 79.77]]
+      annotations: []
+    wasm: same
+  ltr cs0 left:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 50]]
+      annotations: []
+    wasm: same
+  ltr cs0 right:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 301.24]]
+      annotations: []
+    wasm: same
+  ltr cs0 justify:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 50]]
+      annotations: []
+    wasm: same
+  ltr cs3 left:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 50]]
+      annotations: []
+    wasm: same
+  ltr cs3 right:
+    native:
+      lines:
+        - [["ם\u05b8ל\u05b9וע ם\u05b9ול\u05b8\u05c1ש", 277.24]]
+      annotations: []
+    wasm: same
+  ltr cs3 justify:
+    native:
+      lines:
+        - [["ם\u05b9ול\u05b8\u05c1ש", 50]]
+        - [["ם\u05b8ל\u05b9וע", 50]]
+      annotations: []
+    wasm: same
