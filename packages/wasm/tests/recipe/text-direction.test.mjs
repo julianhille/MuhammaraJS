@@ -2041,18 +2041,29 @@ describe("Recipe text direction", function () {
     assert.ok(Math.abs(starts.ltr - starts.none) < 0.1, JSON.stringify(starts));
   });
 
-  it("measures a reordered piece with a long run of spaces in time", function () {
-    // A no-break space keeps the run of spaces inside its word's piece.
-    this.timeout(5000);
-    var runs = drawPage("text-direction-long-spaces", (recipe) => {
-      recipe.text("\u05d0" + "\u00a0".repeat(200000) + "\u05d1", 20, 20, {
-        font: "arial",
-        size: 12,
-        direction: "rtl",
-        textBox: { width: 1e8 },
+  it("measures a reordered piece with a long run of spaces in linear time", function () {
+    // A no-break space keeps the run of spaces inside its word's piece. The
+    // time is compared with that of a shorter run rather than to a fixed
+    // limit, which a slow build would exceed: four times the spaces take
+    // about four times as long, and sixteen times as long when quadratic.
+    this.timeout(120000);
+    function milliseconds(count) {
+      var start = performance.now();
+      var runs = drawPage("text-direction-long-spaces", (recipe) => {
+        recipe.text("\u05d0" + "\u00a0".repeat(count) + "\u05d1", 20, 20, {
+          font: "arial",
+          size: 12,
+          direction: "rtl",
+          textBox: { width: 1e8 },
+        });
       });
-    });
-    assert.equal(runs.length, 1);
+      assert.equal(runs.length, 1);
+      return performance.now() - start;
+    }
+    milliseconds(1000);
+    var short = milliseconds(50000);
+    var long = milliseconds(200000);
+    assert.ok(long < short * 10, short + " ms and " + long + " ms");
   });
 
   it("draws the words of a justified line kept in logical order as typed", function () {
@@ -2489,21 +2500,37 @@ describe("Recipe text direction", function () {
 
   it("spaces a long right-to-left line in several TJ operators", function () {
     // Every pointed letter is a piece of its own, more than one TJ takes;
-    // a Recipe on an existing PDF draws them with TJ operators.
-    var base = new Recipe().createPage(400, 400).endPage().endPDF();
-    var recipe = new Recipe(base);
-    var bytes;
-    try {
-      recipe.editPage(1).text("\u05e9\u05b8\u05c1".repeat(6000), 10, 10, {
-        font: "arial",
-        size: 10,
-        direction: "rtl",
-        charSpace: 0.1,
-      });
-      bytes = recipe.endPage().endPDF();
-    } finally {
-      recipe.dispose();
+    // a Recipe on an existing PDF draws them with TJ operators. The time is
+    // compared with that of a shorter line, as a fixed limit would fail on a
+    // slow build: four times the letters take about four times as long.
+    this.timeout(120000);
+    function draw(count) {
+      var base = new Recipe().createPage(400, 400).endPage().endPDF();
+      var recipe = new Recipe(base);
+      var start = performance.now();
+      try {
+        recipe.editPage(1).text("\u05e9\u05b8\u05c1".repeat(count), 10, 10, {
+          font: "arial",
+          size: 10,
+          direction: "rtl",
+          charSpace: 0.1,
+        });
+        return {
+          bytes: recipe.endPage().endPDF(),
+          milliseconds: performance.now() - start,
+        };
+      } finally {
+        recipe.dispose();
+      }
     }
+    draw(100);
+    var short = draw(1500).milliseconds;
+    var drawn = draw(6000);
+    assert.ok(
+      drawn.milliseconds < short * 10,
+      short + " ms and " + drawn.milliseconds + " ms",
+    );
+    var bytes = drawn.bytes;
     // The edited page draws in a form, so every stream of the file is read.
     var reader = muhammara.createReader(bytes);
     var content = "";
