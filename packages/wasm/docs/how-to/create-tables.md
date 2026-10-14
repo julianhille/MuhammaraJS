@@ -57,8 +57,9 @@ only body text box, so a column-level `textBox` is ignored. A row or header
 merge across column, row, and renderer options. A table-level `cell` is
 ignored; style cells through each column's `cell` or the table's `row.cell`.
 
-Header text styles are independent of table/body text styles. Recipe resolves
-them in this order:
+Header text styles are independent of table/body text styles, except
+`direction`: a header without its own takes its column's, then the table's.
+Recipe resolves them in this order:
 
 1. Start with the column's `header` object, or the default bold, centered header
    with 2pt padding when that option is omitted or boolean. A column-level

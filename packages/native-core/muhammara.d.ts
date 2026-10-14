@@ -1069,10 +1069,13 @@ declare namespace muhammara {
      * @param text - The text.
      * @param x - The baseline start x.
      * @param y - The baseline y.
-     * @param options - The font, size, color, underline and strike-out.
+     * @param options - The font, size, color, underline and text direction.
+     *   With a `direction` other than `TextDirection.NONE`, right-to-left
+     *   text is reordered into the visual order PDF draws in.
      * @returns This context.
      * @throws {TypeError} If fewer than 3 arguments are given, or the coordinates,
-     *   font size or underline geometry are not finite.
+     *   font size or underline geometry are not finite, or `direction` is not a
+     *   `TextDirection` value.
      * @throws {TypeError} If there is no content context.
      */
     writeText(text: string, x: PosX, y: PosY, options?: WriteTextOptions): this;
@@ -1125,7 +1128,26 @@ declare namespace muhammara {
 
   export interface WriteTextOptions extends FontOptions, ColorOptions {
     underline?: boolean;
+    /**
+     * How right-to-left text such as Hebrew is ordered before it is drawn.
+     * Defaults to `TextDirection.NONE`, which draws the text as given.
+     */
+    direction?: TextDirection;
   }
+
+  /** How `writeText()` and Recipe `text()` order text before drawing it. */
+  export const TextDirection: {
+    /** Each paragraph takes the direction of its first strong letter. */
+    readonly AUTO: "auto";
+    /** A left-to-right paragraph; right-to-left runs inside it are reordered. */
+    readonly LTR: "ltr";
+    /** A right-to-left paragraph. */
+    readonly RTL: "rtl";
+    /** Draw the text exactly as given; the default. */
+    readonly NONE: "none";
+  };
+  export type TextDirection =
+    (typeof TextDirection)[keyof typeof TextDirection];
 
   export interface XObjectContentContext extends AbstractContentContext {}
 
@@ -3253,6 +3275,8 @@ declare namespace muhammara {
     type HorizontalAlign = "left" | "center" | "right";
     type VerticalAlign = "top" | "center" | "bottom";
     type TextAlign = "left" | "center" | "right" | "justify";
+    /** A `Recipe.TextDirection` value. */
+    type TextDirection = "auto" | "ltr" | "rtl" | "none";
     /** Known text-box alignments, with string compatibility for computed values. */
     type TextBoxAlign =
       TextAlign | `${TextAlign} ${VerticalAlign}` | (string & {});
@@ -3530,6 +3554,13 @@ declare namespace muhammara {
       strikeOut?: boolean | TextMarkupOptions;
       squiggly?: boolean | TextMarkupOptions;
       html?: boolean;
+      /**
+       * How right-to-left text such as Hebrew is ordered: `"auto"` takes
+       * each paragraph's direction from its first strong letter, `"ltr"` and
+       * `"rtl"` set it, and `"none"` (default) draws the text exactly as
+       * given.
+       */
+      direction?: TextDirection;
       hilite?:
         | boolean
         | {
@@ -3586,7 +3617,7 @@ declare namespace muhammara {
       width?: number;
       /** Cell text-box options, including onClip callbacks preserved during table layout. */
       cell?: TextBox;
-      /** Header text styles, independent of body styles; booleans use the default header style. Table-level header options take precedence. */
+      /** Header text styles, independent of body styles but `direction`, which a header without its own takes from its column, then the table; booleans use the default header style. Table-level header options take precedence. */
       header?: boolean | TextOptions;
       /** Final header text-box overrides, applied after header styles and alignToData. */
       hcell?: TextBox;
@@ -3632,7 +3663,7 @@ declare namespace muhammara {
         | TableField<RecordType>[]
         | readonly [TableField<RecordType>, ...TableField<RecordType>[]];
       columns?: readonly TableColumnOptions<RecordType>[];
-      /** Enables headers and overrides column header styles; body text styles are not inherited. */
+      /** Enables headers and overrides column header styles; body text styles but `direction` are not inherited. */
       header?:
         boolean | (TextOptions & { alignToData?: boolean; cell?: TextBox });
       border?: boolean | PolygonOptions;
@@ -3843,6 +3874,13 @@ declare namespace muhammara {
       readonly CENTER: "center";
       readonly RIGHT: "right";
       readonly JUSTIFY: "justify";
+    };
+    /** How text() orders right-to-left text such as Hebrew before drawing it. */
+    static readonly TextDirection: {
+      readonly AUTO: "auto";
+      readonly LTR: "ltr";
+      readonly RTL: "rtl";
+      readonly NONE: "none";
     };
     /** Which table rows the `row` options apply to. */
     static readonly TableRowNth: {
@@ -4531,6 +4569,11 @@ declare namespace muhammara {
      * @param options.underline - Text markup annotation.
      * @param options.strikeOut - Text markup annotation.
      * @param options.html - Interpret text as html
+     * @param options.direction - How right-to-left text such as Hebrew is ordered, a `Recipe.TextDirection` value:
+     * 'auto' picks each paragraph's direction from its first strong letter, 'ltr' and 'rtl' set it, and 'none' writes
+     * the text exactly as given. Each laid-out line is reordered on its own; a line made of several HTML or flowed runs
+     * is reordered as one line in its paragraph's direction, and a flowed call whose direction differs from the
+     * line's is placed in it as one block; defaults to 'none'.
      * @param options.flow - Used to activate/deactivate text flow which is the
      * ability to use multiple calls to 'text' to create an overall text box. Defaults to
      * `true` for a call without coordinates and `false` for a call with them.
@@ -4574,7 +4617,8 @@ declare namespace muhammara {
      * @param options.subject - Subject of annotation.
      * @param options.link - Make the text open this URL.
      * @returns The recipe instance. Without an active page nothing is drawn.
-     * @throws {TypeError} If `options.charSpace` is not a finite number; nothing is drawn.
+     * @throws {TypeError} If `options.charSpace` is not a finite number, or `options.direction` is not a
+     * `Recipe.TextDirection` value; nothing is drawn.
      * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
      */
     text(text: string, options?: Recipe.TextOptions): Recipe;
@@ -4593,8 +4637,11 @@ declare namespace muhammara {
      * @param options.charSpace - character spacing being applied to the given text; defaults to 0.
      * @param options.bold - Measure with the bold style of the font.
      * @param options.italic - Measure with the italic style of the font.
+     * @param options.direction - The direction text() would draw the text with; other than 'none', the text is
+     * measured as drawn: in visual order, without the formatting characters reordering drops; defaults to 'none'.
      * @returns measurement components of given text: width, height, xMin, xMax, yMin, yMax
      * @throws {Error} If the font file cannot be loaded.
+     * @throws {TypeError} If `options.direction` is not a `Recipe.TextDirection` value.
      */
     textDimensions(text: string, options?: Recipe.TextOptions): TextDimension;
     /**
@@ -4634,7 +4681,8 @@ declare namespace muhammara {
      * Rows and headers use their rendered text-box heights, including padding,
      * minimum heights, fixed heights, and HTML layout. Empty contents or no selected
      * columns leave the Recipe unchanged. Array-form order preserves exact keys.
-     * Header text styles are independent of body styles: column header options
+     * Header text styles are independent of body styles, but a header without a
+     * `direction` takes its column's, then the table's: column header options
      * (or defaults) are overridden by table header options, then alignToData
      * and column hcell box overrides are applied.
      * @param x - The coordinate x used to position table on page
@@ -4656,6 +4704,8 @@ declare namespace muhammara {
      * @param options.columns - [].opacity=1] - opacity
      * @param options.columns - [].font=Helvetica] - The font. 'Arial', 'Helvetica'...
      * @param options.columns - [].size=14] - The font size
+     * @param options.columns - [].direction] - How the column's cells and header are ordered;
+     * defaults to the table's `direction`.
      * @param options.columns - [].renderer] - function to be called which can be used to modify the text options for a particular
      * table cell. The function is called with `(text, data, field, row)`, where `text` is the text to be written in the cell,
      * `data` holds the text elements in the table row, `field` is the column field, and `row` is the one-based row number. The function returns an object with the text attributes that
@@ -4664,6 +4714,8 @@ declare namespace muhammara {
      * appear at the top of the column. When presented as an object it is the set of unique options to be applied to column headers.
      * All 'text' interface options can be used.
      * @param options.header.cell - All textBox options from the 'text' interface can be used here.
+     * @param options.direction - How right-to-left text in the table's cells and
+     * headers is ordered, as in `text()`; defaults to "none".
      * @param options.border - Used to define table and cell border characteristics
      * @param options.border.width - Thickness of lines used in the border; defaults to .5.
      * @param options.border.stroke - line color (HexColor, PercentColor or DecimalColor)

@@ -70,8 +70,9 @@ they never load Node modules, filesystem paths, or Recipe plugins.
 
 Table header styling follows native precedence: column header options (or
 defaults), table header overrides, `alignToData`, then `hcell` box overrides.
-Body text styles do not flow into headers. Default font metrics can still
-produce different wrapping as described above.
+Body text styles do not flow into headers, except `direction`, which a header
+without its own takes from its column, then the table. Default font metrics
+can still produce different wrapping as described above.
 
 The current PDFWriter `AppendPDFPagesFromPDF` byte path does not deep-copy an
 existing page's `/Annots` graph. Recipe-created annotations are preserved in
@@ -96,6 +97,14 @@ when its `defaultFont` option is omitted. Pass custom default bytes/Blob/File or
 bytes use the family name `default`. The low-level runtime never imports Roboto.
 These initialization options are specific to the byte-first Wasm factory;
 native Recipe loads its bundled fonts synchronously.
+
+Wasm loads bidi-js, which the `direction` option reorders right-to-left text
+with, by importing `"bidi-js"` when `createMuhammaraWasm()` or
+`createRecipe()` runs, unless given `bidi: false`. The Wasm-only `loadBidi()`
+loads it later, from that import or from a module the caller passes. It is
+loaded once for the page, Worker or process and shared by every instance.
+Without it, calls that have to order text by direction throw. Native always
+has it.
 
 No filesystem PDF output or plugin loader is emulated. Recipe always returns an
 owned `Uint8Array` from `endPDF()` and its optional callback; custom assets must

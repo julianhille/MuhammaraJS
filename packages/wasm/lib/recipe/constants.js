@@ -22,6 +22,7 @@ import {
   TriangleTrait,
   VerticalAlign,
 } from "../value-sets.js";
+import { TextDirection } from "../text-direction.js";
 
 /**
  * Named values for Recipe string options, assigned to the Recipe class as
@@ -31,6 +32,7 @@ import {
 export var recipeConstants = Object.freeze({
   TextWrap,
   TextAlign,
+  TextDirection,
   TableRowNth,
   LineCap,
   LineJoin,

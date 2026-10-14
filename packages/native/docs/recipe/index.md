@@ -20,6 +20,6 @@ type for its values, for example `Recipe.TextWrap` or `Recipe.AnnotFlag`. Native
 names and members: `TextWrap`, `TextAlign`, `HorizontalAlign`, `VerticalAlign`, `TableRowNth`,
 `LineCap`, `LineJoin`, `ArrowAt`, `ArrowType`, `TriangleTrait`,
 `TrianglePosition`, `PageLayout`, `PageSize`, `FontStyle`, `Permission`,
-`Coordinate`, `Colorspace`, `AnnotSubtype`, `AnnotFlag`, `AnnotIcon`, and
-`ChromaCommand`. Native also has `Recipe.Source.NEW`, the sentinel for creating a new PDF;
+`Coordinate`, `Colorspace`, `AnnotSubtype`, `AnnotFlag`, `AnnotIcon`,
+`ChromaCommand`, and `TextDirection`. Native also has `Recipe.Source.NEW`, the sentinel for creating a new PDF;
 Wasm has no such sentinel and adds `Recipe.StructureFormat` instead.

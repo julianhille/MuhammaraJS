@@ -1,12 +1,23 @@
+import { drawnGaps, spacedGaps } from "../text-direction.js";
+
 /**
- * Calculates spacing between retained Unicode characters.
- * @param {string} text - Text.
+ * Calculates spacing between retained Unicode characters, except between a
+ * right-to-left letter and the points drawn before it.
+ * @param {string} text - Text; see `drawn` for its order.
  * @param {number} [charSpace=0] - Spacing per character gap.
+ * @param {string} [direction] - The `direction` text option.
+ * @param {boolean} [drawn=false] - Whether the text is already in the order
+ *   it is drawn, as a piece of a reordered line is; otherwise it is in the
+ *   order it is typed.
  * @returns {number} Total spacing.
  */
-export function charSpacing(text, charSpace = 0) {
-  var characterCount = Array.from(String(text)).length;
-  return characterCount ? (characterCount - 1) * charSpace : 0;
+export function charSpacing(
+  text,
+  charSpace = 0,
+  direction = undefined,
+  drawn = false,
+) {
+  return (drawn ? drawnGaps : spacedGaps)(String(text), direction) * charSpace;
 }
 
 /** A rectangular text column used by Recipe layout. */

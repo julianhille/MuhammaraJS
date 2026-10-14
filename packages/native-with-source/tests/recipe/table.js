@@ -399,11 +399,35 @@ describe("Recipe table layout", () => {
             },
           },
         ],
-      });
+      })
+      // Rows are resolved one at a time: an overflow that ends the table
+      // runs before the renderer of a row that is never drawn.
+      .table(
+        20,
+        300,
+        Array.from({ length: 6 }, (_, index) => ({ c: "row" + index })),
+        {
+          size: 30,
+          columns: [
+            {
+              name: "c",
+              renderer: (text, record, field, row) => {
+                calls.push(["render", row]);
+              },
+            },
+          ],
+          overflow: (self, row) => {
+            calls.push(["overflow", row]);
+            return true;
+          },
+        },
+      );
     finish(recipe);
     assert.deepEqual(calls, [
       ["x", "b", 1],
       ["z", "b", 2],
+      ["render", 1],
+      ["overflow", 1],
     ]);
     var entries = texts();
     var control = entries.find((entry) => entry.content === "y");

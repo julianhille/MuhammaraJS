@@ -30,8 +30,8 @@ type for its values, for example `Recipe.TextWrap` or `Recipe.AnnotFlag`. Native
 names and members: `TextWrap`, `TextAlign`, `HorizontalAlign`, `VerticalAlign`, `TableRowNth`,
 `LineCap`, `LineJoin`, `ArrowAt`, `ArrowType`, `TriangleTrait`,
 `TrianglePosition`, `PageLayout`, `PageSize`, `FontStyle`, `Permission`,
-`Coordinate`, `Colorspace`, `AnnotSubtype`, `AnnotFlag`, `AnnotIcon`, and
-`ChromaCommand`. Wasm also has `Recipe.StructureFormat` for `structure()`; native's
+`Coordinate`, `Colorspace`, `AnnotSubtype`, `AnnotFlag`, `AnnotIcon`,
+`ChromaCommand`, and `TextDirection`. Wasm also has `Recipe.StructureFormat` for `structure()`; native's
 `Recipe.Source` has no Wasm counterpart because Wasm Recipe never writes to a
 path.
 
