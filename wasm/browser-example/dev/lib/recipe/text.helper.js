@@ -9,63 +9,6 @@ export function charSpacing(text, charSpace = 0) {
   return characterCount ? (characterCount - 1) * charSpace : 0;
 }
 
-/** A measurable text fragment used by Recipe layout. */
-export class Word {
-  constructor(value, measure, options) {
-    this.value = value;
-    this.measure = measure;
-    this.options = options;
-  }
-  /**
-   * Measures the word including character spacing.
-   * @returns {number} The width in points.
-   */
-  get width() {
-    return (
-      this.measure(this.value, this.options).width +
-      charSpacing(this.value, this.options.charSpace)
-    );
-  }
-}
-
-/** A width-constrained collection of measurable text fragments. */
-export class Line {
-  constructor(width, measure, options) {
-    this.width = width;
-    this.measure = measure;
-    this.options = options;
-    this.words = [];
-  }
-  /**
-   * Joins the words of the line.
-   * @returns {string} The line text.
-   */
-  get value() {
-    return this.words.join("");
-  }
-  /**
-   * Measures the line including character spacing.
-   * @returns {number} The width in points.
-   */
-  get currentWidth() {
-    return (
-      this.measure(this.value, this.options).width +
-      charSpacing(this.value, this.options.charSpace)
-    );
-  }
-  /**
-   * Reports whether a word still fits on the line.
-   * @param {string} value - Word.
-   * @returns {boolean} Whether it fits within `width`.
-   */
-  canFit(value) {
-    return (
-      this.currentWidth + new Word(value, this.measure, this.options).width <=
-      this.width
-    );
-  }
-}
-
 /** A rectangular text column used by Recipe layout. */
 export class Column {
   constructor(x, y, width, height, text = "", field = "", options = {}) {

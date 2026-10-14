@@ -1,5 +1,5 @@
 // Lower-case names of the HTML elements the parser handles, as native names
-// them; DIV, S, and STRIKE are Wasm additions.
+// them; DIV is a Wasm addition.
 var HtmlTag = Object.freeze({
   HTML: "html",
   P: "p",

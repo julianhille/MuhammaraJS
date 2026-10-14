@@ -121,7 +121,10 @@ function lines(value, width, measure, options, wrap) {
           result.push({ text: trimBreakableEnd(line), last: false });
           line = word;
         } else if (wrap === TextWrap.CLIP) {
+          // As in native, clipped text keeps the first word that does not
+          // fit, cut at the box edge, and drops the rest of the paragraph.
           line = next;
+          truncated = true;
         } else if (wrap === TextWrap.ELLIPSIS) {
           line = ellipsize(line || word, width, measure, options);
           truncated = true;
@@ -354,7 +357,10 @@ function htmlLines(source, width, measure, options, wrap) {
               ellipsizeHtmlParts(parts, width, measure, options);
               truncated = true;
               return;
-            } else if (wrap !== TextWrap.CLIP) {
+            } else if (wrap === TextWrap.CLIP) {
+              // The word is clipped at the box edge; later words are dropped.
+              truncated = true;
+            } else {
               truncated = true;
               return;
             }
@@ -445,8 +451,7 @@ function clipEntries(entries, availableHeight, lineHeights) {
 
 /**
  * Text options that describe the whole flowed text box rather than one run.
- * The call that ends a flow decides them, as in native, except that native
- * aligns each run by its own `textBox.textAlign`.
+ * The call that ends a flow decides them, as in native.
  */
 var FLOW_BOX_OPTIONS = [
   "align",
@@ -691,7 +696,7 @@ export function createTextMethods({ drawText, measure, module }) {
    * @param {Recipe} recipe - Recipe instance.
    * @param {object} options - text() options with `highlight`, `underline`, `strikeOut`, or `squiggly`.
    * @param {number} x - Line left.
-   * @param {number} baseline - Line baseline.
+   * @param {number} lineBottom - Bottom of the line box.
    * @param {number} width - Line width; nothing is added for 0.
    * @param {boolean} [validateOnly=false] - Validate the options without writing.
    * @param {{x: number, y: number, width: number, height: number}} [clip] - Visible box.
@@ -701,7 +706,7 @@ export function createTextMethods({ drawText, measure, module }) {
     recipe,
     options,
     x,
-    baseline,
+    lineBottom,
     width,
     validateOnly = false,
     clip,
@@ -712,7 +717,7 @@ export function createTextMethods({ drawText, measure, module }) {
       if (!options[key]) return;
       // Native measures markup against one sample so every run on a line
       // gets the same height, including descenders and tall glyphs, and
-      // boxes a fixed 0.2 text heights below the baseline to 1.2 above it.
+      // boxes a fixed 0.2 text heights below the line box to 1.2 above it.
       bounds ||= dimensions(
         recipe,
         "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}",
@@ -720,8 +725,8 @@ export function createTextMethods({ drawText, measure, module }) {
       );
       var left = x;
       var right = x + width;
-      var top = baseline - bounds.height * 1.2;
-      var bottom = baseline + bounds.height * 0.2;
+      var top = lineBottom - bounds.height * 1.2;
+      var bottom = lineBottom + bounds.height * 0.2;
       if (clip) {
         left = Math.max(left, clip.x);
         right = Math.min(right, clip.x + clip.width);
@@ -1149,16 +1154,36 @@ export function createTextMethods({ drawText, measure, module }) {
             wrap,
           ).map((line) => ({ ...line, styles: {} }));
       /**
-       * Measures the line height of text with the given run styles.
+       * Measures the reference glyphs that size a line, with the given run
+       * styles.
        * @param {object} [styles] - Run styles over the box options.
-       * @returns {number} The line height in points.
+       * @returns {TextDimensions} The measured box.
        */
-      var styledLineHeight = (styles) =>
+      var styledMetrics = (styles) =>
         dimensions(this, "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}", {
           ...options,
           fontSize,
           ...styles,
-        }).height;
+        });
+      /**
+       * Measures the line height of text with the given run styles.
+       * @param {object} [styles] - Run styles over the box options.
+       * @returns {number} The line height in points.
+       */
+      var styledLineHeight = (styles) => styledMetrics(styles).height;
+      /**
+       * Measures how far the glyphs of a line reach above its baseline. As in
+       * native, the baseline sits one ascent below the top of the line.
+       * @param {{parts: (object[]|undefined)}} entry - Laid-out line.
+       * @returns {number} The ascent in points.
+       */
+      var entryAscent = (entry) =>
+        Math.max(
+          ...(entry.parts?.some((part) => part.text)
+            ? entry.parts.filter((part) => part.text)
+            : [{ styles: flowSource?.[0]?.styles }]
+          ).map((part) => styledMetrics(part.styles).yMax),
+        );
       var lineHeight =
         box.lineHeight || styledLineHeight(flowSource?.[0]?.styles);
       // As in native, each line of a flow is as tall as its tallest run; an
@@ -1205,13 +1230,11 @@ export function createTextMethods({ drawText, measure, module }) {
           };
         }
       }
-      var contentHeight = Math.max(
-        box.minHeight || 0,
+      var contentHeight =
         entries.reduce((sum, entry, index) => sum + entryHeights[index], 0) +
-          top +
-          bottom,
-      );
-      var height = box.height || contentHeight;
+        top +
+        bottom;
+      var height = box.height || Math.max(box.minHeight || 0, contentHeight);
       var topAlign = options.align?.split(" ") || [];
       /**
        * Measures a line with per-fragment HTML styles when present.
@@ -1305,9 +1328,9 @@ export function createTextMethods({ drawText, measure, module }) {
           (horizontal === TextAlign.CENTER
             ? (width - left - right - textWidth) / 2
             : horizontal === TextAlign.RIGHT
-              ? width - right - textWidth
+              ? width - left - right - textWidth
               : 0);
-        var baseline = currentY + lineHeight;
+        var baseline = currentY + entryAscent(entry);
         if (textOptions.rotation && !textOptions.rotationOrigin) {
           textOptions.rotationOrigin = textOrigin;
         }
@@ -1374,13 +1397,13 @@ export function createTextMethods({ drawText, measure, module }) {
         if (textOptions.hilite && !entry.parts) {
           var hilite =
             typeof textOptions.hilite === "object" ? textOptions.hilite : {};
-          var bounds = dimensions(this, entry.text, textOptions);
           drawHilite(
             this,
-            drawX + bounds.xMin,
-            baseline - bounds.yMax,
-            bounds.xMax - bounds.xMin,
-            bounds.yMax - bounds.yMin,
+            drawX,
+            currentY,
+            // A justified line spreads its words over the box, as in native.
+            isJustifiedLine ? width - left - right : textWidth,
+            lineHeight,
             textOptions,
             hilite,
           );
@@ -1453,20 +1476,12 @@ export function createTextMethods({ drawText, measure, module }) {
                 typeof partOptions.hilite === "object"
                   ? partOptions.hilite
                   : {};
-              var partBounds = dimensions(this, part.text, partOptions);
-              var partHiliteBounds = partBounds.height
-                ? partBounds
-                : dimensions(
-                    this,
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}",
-                    partOptions,
-                  );
               drawHilite(
                 this,
-                drawX + partHiliteBounds.xMin,
-                baseline - partHiliteBounds.yMax,
+                drawX,
+                currentY,
                 partWidth + (hasGapAfter(part, partIndex) ? partGap : 0),
-                partHiliteBounds.yMax - partHiliteBounds.yMin,
+                lineHeight,
                 partOptions,
                 partHilite,
               );
@@ -1500,7 +1515,7 @@ export function createTextMethods({ drawText, measure, module }) {
                 this,
                 { ...partOptions, ...partOptions._markup },
                 drawX,
-                baseline,
+                currentY + lineHeight,
                 hasText(part.text) ? partWidth : 0,
                 false,
                 clip,
@@ -1512,17 +1527,27 @@ export function createTextMethods({ drawText, measure, module }) {
           linkWidth = drawX - linkX;
         } else if (isJustifiedLine) {
           var words = entry.text.match(/\S+\s*/g) || [entry.text];
-          var wordsWidth = words.reduce(
-            (sum, word) => sum + dimensions(this, word, textOptions).width,
-            0,
-          );
+          // As in native, words advance by their right glyph edge, and the
+          // last word ends at the right edge so measuring error is absorbed
+          // by its gap.
+          /**
+           * Measures where a word's glyphs end.
+           * @param {string} word - The word, with any space after it.
+           * @returns {number} The right glyph edge in points.
+           */
+          var wordEnd = (word) => dimensions(this, word, textOptions).xMax;
+          var wordsWidth = words.reduce((sum, word) => sum + wordEnd(word), 0);
           var gap =
             words.length > 1
               ? (width - left - right - wordsWidth) / (words.length - 1)
               : 0;
-          words.forEach((word) => {
-            drawText.call(this, word, drawX, baseline, textOptions);
-            drawX += dimensions(this, word, textOptions).width + gap;
+          words.forEach((word, index) => {
+            var wordX =
+              index && index === words.length - 1
+                ? x + width - right - wordEnd(word)
+                : drawX;
+            drawText.call(this, word, wordX, baseline, textOptions);
+            drawX += wordEnd(word) + gap;
           });
           linkWidth = width - left - right;
         } else {
@@ -1540,7 +1565,7 @@ export function createTextMethods({ drawText, measure, module }) {
           this,
           { ...options, fontSize },
           linkX,
-          baseline,
+          currentY + lineHeight,
           hasText(entry.text) ? markupWidth : 0,
           false,
           clipping
