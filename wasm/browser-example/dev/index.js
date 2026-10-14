@@ -38,6 +38,82 @@ import {
   LineCapStyle,
   EEncoding,
 } from "./lib/value-sets.js";
+import { TextDirection, useBidi } from "./lib/text-direction.js";
+
+var bidiLoading;
+// Whether bidi-js was loaded, by a factory or by loadBidi().
+var bidiLoaded = false;
+
+/**
+ * Imports bidi-js, which reorders right-to-left text, once per page. Bundlers
+ * keep the dynamic import as a chunk; without one, the page maps the bare
+ * "bidi-js" specifier with an import map. A failed load fails the calls that
+ * have to order text by direction, unless bidi-js was loaded before, and the
+ * next call tries again.
+ * @returns {Promise<Error|undefined>} Settles once bidi-js is loaded, with
+ *   the error when the import failed.
+ */
+function importBidi() {
+  if (bidiLoaded) return Promise.resolve(undefined);
+  bidiLoading ??= import("bidi-js")
+    .then((bidiModule) => {
+      // A module loadBidi() was given in the meantime stays.
+      if (!bidiLoaded) {
+        // Such as the package's UMD build, which exports nothing.
+        if (typeof bidiModule.default !== "function") {
+          throw new TypeError(
+            '"bidi-js" did not resolve to the bidi-js module',
+          );
+        }
+        useBidi(bidiModule.default);
+      }
+      bidiLoaded = true;
+      return undefined;
+    })
+    .catch((error) => {
+      bidiLoading = undefined;
+      if (!bidiLoaded) useBidi(error);
+      return error;
+    });
+  return bidiLoading;
+}
+
+/**
+ * Loads bidi-js, which the `direction` option reorders right-to-left text
+ * with, after `createMuhammaraWasm()` or `createRecipe()` skipped it with
+ * `bidi: false` or could not import it. Instances already created reorder
+ * text as soon as it resolves. Without a source, it imports `"bidi-js"`, as
+ * the factories do; a page or Worker that cannot resolve that specifier
+ * passes the module it imported itself.
+ * @param {object|Function} [source] - The bidi-js module, or its default
+ *   export.
+ * @returns {Promise<void>} Resolves once text can be reordered.
+ * @throws {TypeError} If `source` is neither the module nor its default
+ *   export.
+ * @throws {Error} If `"bidi-js"` cannot be imported; the promise rejects.
+ */
+export async function loadBidi(source) {
+  if (source !== undefined) {
+    var factory = typeof source === "function" ? source : source?.default;
+    // The instance built to check the source is the one used.
+    var api;
+    try {
+      api = typeof factory === "function" ? factory() : undefined;
+    } catch {
+      api = undefined;
+    }
+    if (typeof api?.getEmbeddingLevels !== "function") {
+      throw new TypeError(
+        "loadBidi() takes the bidi-js module or its default export",
+      );
+    }
+    useBidi(() => api);
+    bidiLoaded = true;
+    return;
+  }
+  var error = await importBidi();
+  if (error) throw error;
+}
 
 export {
   ByteReader,
@@ -55,6 +131,7 @@ export {
   PDFImageType,
   PDFRStreamForBuffer,
   PDFWStreamForBuffer,
+  TextDirection,
 };
 
 /**
@@ -62,7 +139,7 @@ export {
  * @param {MuhammaraWasmOptions} [options] - Emscripten options and byte `limits`.
  * @returns {Promise<object>} The API, module, helpers, and byte guards.
  * @throws {TypeError} If `limits` is not an object, `wasmBinary` is not bytes,
- *   or `recryptWorker` is not a boolean.
+ *   or `recryptWorker` or `bidi` is not a boolean.
  * @throws {RangeError} If a byte limit is not a positive safe integer.
  */
 async function createRuntime(options) {
@@ -84,6 +161,11 @@ async function createRuntime(options) {
     throw new TypeError("recryptWorker must be a boolean");
   }
   delete moduleOptions.recryptWorker;
+  var useBidiJs = moduleOptions.bidi ?? true;
+  if (typeof useBidiJs !== "boolean") {
+    throw new TypeError("bidi must be a boolean");
+  }
+  delete moduleOptions.bidi;
   // A worker loads its own instance. It receives wasmBinary, and the binary
   // location locateFile returns here; any other module option, such as
   // instantiateWasm, keeps recrypting on this thread. Checked before
@@ -125,7 +207,9 @@ async function createRuntime(options) {
         ? wasmBinary.slice(0)
         : Uint8Array.prototype.slice.call(wasmBinary);
   }
+  var bidiImport = useBidiJs && importBidi();
   var module = await createModule(moduleOptions);
+  await bidiImport;
   /**
    * Copies byte input and enforces `maxInputBytes`.
    * @param {ByteSource} value - Bytes.
@@ -614,6 +698,12 @@ async function createRuntime(options) {
  * @param {boolean} [options.recryptWorker=true] Whether `recryptAsync()` runs
  * in a worker. With `false`, or with module options other than `wasmBinary`,
  * `locateFile`, and `limits`, it recrypts on the calling thread.
+ * @param {boolean} [options.bidi=true] Whether to load bidi-js, which the
+ * `direction` option reorders right-to-left text with. It is loaded once for
+ * the page, Worker or process, and every instance shares it. With `false`,
+ * this call does not load it; while nothing has loaded it, or when it cannot
+ * be loaded, every call that has to order text by direction throws instead
+ * of drawing it in the wrong order.
  * @returns {Promise<object>} The initialized Muhammara API.
  */
 export async function createMuhammaraWasm(options) {
@@ -629,6 +719,10 @@ export async function createMuhammaraWasm(options) {
  * @param {Uint8Array|ArrayBuffer|Blob|false} [options.defaultFont] Custom default
  * font bytes (also accepts File), or false to require explicit registered fonts.
  * Omitting this option dynamically imports bundled Roboto Regular.
+ * @param {boolean} [options.bidi=true] Whether to load bidi-js, which the
+ * `direction` option reorders right-to-left text with. It is loaded once for
+ * the page, Worker or process, and every instance shares it; with `false`,
+ * this call does not load it.
  * @returns {Promise<Function>} The initialized Recipe constructor.
  */
 export async function createRecipe(options) {

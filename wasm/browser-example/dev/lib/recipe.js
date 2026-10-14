@@ -28,6 +28,7 @@ import { createVectorMethods } from "./recipe/vector.js";
 import { createTextMethods } from "./recipe/text.js";
 import { resolveFontSize } from "./recipe/text.helper.js";
 import { htmlToTextObjects } from "./recipe/htmlToTextObjects.js";
+import { spacedPieces } from "./text-direction.js";
 import { createTableMethods } from "./recipe/table.js";
 import { createAnnotationMethods } from "./recipe/annotation.js";
 import {
@@ -661,6 +662,14 @@ export function createRecipeFactory({
       }
       var fontPath = resolveFont(options);
       var fontSize = resolveFontSize(options);
+      // Character spacing leaves out the points drawn before a right-to-left
+      // letter, so they stay over it; spacing too large to take back with a
+      // TJ adjustment is not taken back.
+      var pieces =
+        characterSpacing &&
+        Number.isFinite((characterSpacing * 1000) / fontSize)
+          ? spacedPieces(String(value), options.direction)
+          : [String(value)];
       if (this._pageContext) {
         var editContext = this._pageContext
           .BT()
@@ -672,38 +681,75 @@ export function createRecipeFactory({
         else if (fill.colorspace === DeviceColorSpace.CMYK)
           editContext.k(...fill.values);
         else editContext.rg(...fill.values);
-        editContext.Tm(1, 0, 0, 1, point.nx, point.ny).Tj(String(value)).ET();
+        editContext.Tm(1, 0, 0, 1, point.nx, point.ny);
+        if (pieces.length === 1) editContext.Tj(String(value));
+        else {
+          // A positive adjustment moves the next glyph back by the spacing
+          // added after the previous one.
+          var back = (characterSpacing * 1000) / fontSize;
+          var items = pieces.flatMap((piece, index) =>
+            index ? [back, piece] : [piece],
+          );
+          // A long line takes several TJ operators, each continuing where
+          // the one before it ended, so each stays within TJ's item limit.
+          for (var start = 0; start < items.length; start += 10000) {
+            editContext.TJ(...items.slice(start, start + 10000));
+          }
+        }
+        editContext.ET();
       } else {
         var packedFill = textColor(fill);
         if (separation) {
           this._save();
           this._setSeparationColor(fill, false);
         }
-        withString(value, (textPointer) =>
-          withString(fontPath, (fontPointer) => {
-            call(
-              "_muhammara_wasm_recipe_text",
-              this._recipe,
-              point.nx,
-              point.ny,
-              textPointer,
-              fontPointer,
-              fontSize,
-              packedFill.space,
-              packedFill.value,
-              characterSpacing,
-            );
-          }),
-        );
+        // The UTF-8 byte offsets where each piece but the last ends; the
+        // spacing after them is taken back, as on native.
+        var breaks = [];
+        var offset = 0;
+        pieces.slice(0, -1).forEach((piece) => {
+          offset += encoder.encode(piece).length;
+          breaks.push(offset);
+        });
+        var breaksPointer = breaks.length
+          ? module._malloc(breaks.length * 4)
+          : 0;
+        try {
+          if (breaksPointer) module.HEAP32.set(breaks, breaksPointer >>> 2);
+          withString(value, (textPointer) =>
+            withString(fontPath, (fontPointer) => {
+              call(
+                "_muhammara_wasm_recipe_text",
+                this._recipe,
+                point.nx,
+                point.ny,
+                textPointer,
+                fontPointer,
+                fontSize,
+                packedFill.space,
+                packedFill.value,
+                characterSpacing,
+                breaksPointer,
+                breaks.length,
+              );
+            }),
+          );
+        } finally {
+          if (breaksPointer) module._free(breaksPointer);
+        }
         if (separation) this._restore();
       }
       // Text-markup annotations are added per line by text(); only HTML
       // underline and strike-out styles draw a visible decoration line.
       if (options.htmlUnderline || options.htmlStrikeOut) {
-        var runWidth = this.textDimensions(value, {
-          ...options,
-          fontSize,
-        }).xMax;
+        // A reordered piece's lines stay under its glyphs, without the
+        // spaces that end it.
+        var runWidth =
+          options._decorationWidth ??
+          this.textDimensions(value, {
+            ...options,
+            fontSize,
+          }).xMax;
         // Native measures markup against one sample so every run on a line
         // gets the same height, including descenders and tall glyphs.
         var textHeight = this.textDimensions(
@@ -736,6 +782,15 @@ export function createRecipeFactory({
     Recipe.prototype,
     createTextMethods({
       module,
+      /**
+       * The font and size text options measure in. A font registered again
+       * has a path of its own.
+       * @param {object} options - Font and size options.
+       * @returns {string} The key.
+       * @throws {Error} If the font is not registered.
+       */
+      fontKey: (options) =>
+        resolveFont(options) + "\u0000" + resolveFontSize(options),
       /**
        * Draws one text run for the shared text methods.
        * @param {string} value - Text.
