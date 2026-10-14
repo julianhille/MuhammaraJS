@@ -11,13 +11,13 @@ var bindingGyp = readFileSync(
 );
 var expectedCases = [
   ["ubuntu-22.04", "linux", "x64", "36.0.0", "22.14.0"],
-  ["ubuntu-22.04", "linux", "x64", "44.4.5", "24.18.1"],
+  ["ubuntu-22.04", "linux", "x64", "44.7.1", "24.21.0"],
   ["macos-15", "darwin", "x64", "36.0.0", "22.14.0"],
-  ["macos-15", "darwin", "x64", "38.1.0", "22.19.0"],
+  ["macos-15", "darwin", "x64", "44.7.1", "24.21.0"],
   ["macos-15", "darwin", "arm64", "36.0.0", "22.14.0"],
-  ["macos-15", "darwin", "arm64", "44.4.5", "24.18.1"],
+  ["macos-15", "darwin", "arm64", "44.7.1", "24.21.0"],
   ["windows-2022", "win32", "x64", "36.0.0", "22.14.0"],
-  ["windows-2022", "win32", "x64", "44.4.5", "24.18.1"],
+  ["windows-2022", "win32", "x64", "44.7.1", "24.21.0"],
 ];
 
 /**
@@ -129,7 +129,7 @@ assert.doesNotMatch(
 var armMuslTests = getJob("test-node-musl-arm64");
 assert.match(armMuslTests, /runs-on: ubuntu-22\.04-arm/);
 assert.doesNotMatch(armMuslTests, /^    container:/m);
-assert.match(armMuslTests, /node: \[20\.19\.0, 26\.8\.1\]/);
+assert.match(armMuslTests, /node: \[20\.19\.0, 26\.11\.1\]/);
 assert.match(armMuslTests, /docker exec musl-tests npm ci --ignore-scripts/);
 assert.match(armMuslTests, /docker exec musl-tests npm test/);
 assert.match(
