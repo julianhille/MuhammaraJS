@@ -110,6 +110,7 @@ nav:
           - Set Page Boxes: how-to/set-page-boxes.md
           - Draw in Gray and CMYK: how-to/draw-in-gray-and-cmyk.md
           - Write Right-to-Left Text: how-to/write-right-to-left-text.md
+          - Write PDF/A Documents: how-to/write-pdfa-documents.md
       - Project Documentation:
           - Breaking Changes: breaking-changes.md
           - Contributing Documentation: contributing.md

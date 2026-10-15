@@ -58,7 +58,12 @@ npm run wasm:test:paths
 npm run wasm:test:exports
 npm run wasm:test:manifests
 npm run wasm:test:browser
+npm run test:pdfa
 ```
+
+`npm run test:pdfa` runs the PDF/A tests of the native and Wasm packages and
+validates their samples with veraPDF: `verapdf` from `PATH`, or the command in
+`VERAPDF`, and otherwise the `verapdf/cli` Docker image.
 
 The manifest check compares the native GYP and Wasm CMake PDFWriter translation
 units without changing either vendored manifest. The export check requires the

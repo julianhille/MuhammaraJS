@@ -34,6 +34,21 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Write PDF/A documents with the new `pdfa` Recipe option,
+  `{ level, iccProfile, outputCondition }`: PDF/A-1b, 2b, 2u, 3b, 3u, 4, 4e
+  and 4f (`Recipe.PdfA`), with the PDF version of the level, XMP metadata that
+  identifies it, and an output intent with the caller's ICC profile bytes.
+  Recipe throws where the document would not conform: transparency in
+  PDF/A-1, colors the profile does not describe, hidden annotations,
+  annotations without an appearance stream from PDF/A-2 on, custom Info
+  entries in PDF/A-4, and encryption; see
+  [Write PDF/A Documents](docs/how-to/write-pdfa-documents.md)
+- Attach files to a new PDF with Recipe `attach(name, file, options)`, with a
+  MIME type, a description, and how each file relates to the document
+  (`Recipe.AFRelationship`)
+- Remove the creation or modification date of an Info dictionary with
+  `setCreationDate(null)` and `setModDate(null)`
+
 - Write XMP metadata that mirrors the Info dictionary with the new `xmp` option
   of Recipe, and read the XMP packet of a source PDF with `recipe.xmp()`. An
   edit keeps the existing packet, or, with `xmp: true`, replaces it with one

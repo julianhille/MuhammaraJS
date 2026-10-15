@@ -47,7 +47,14 @@ npm pack --workspace=@muhammara/native
 
 # Execute documentation examples.
 npm run test:docs
+
+# Validate the PDF/A samples of the native and Wasm tests with veraPDF.
+npm run test:pdfa
 ```
+
+`npm run test:pdfa` uses `verapdf` from `PATH`, or the command in `VERAPDF`, and
+otherwise the `verapdf/cli` Docker image. It runs the PDF/A tests of both
+packages, so build the Wasm package first.
 
 ## Fuzzing
 
