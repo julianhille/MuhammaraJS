@@ -23,6 +23,7 @@ import {
   VerticalAlign,
 } from "../value-sets.js";
 import { TextDirection } from "../text-direction.js";
+import { PdfA } from "../pdfa.js";
 
 /**
  * Named values for Recipe string options, assigned to the Recipe class as
@@ -33,6 +34,7 @@ export var recipeConstants = Object.freeze({
   TextWrap,
   TextAlign,
   TextDirection,
+  PdfA,
   TableRowNth,
   LineCap,
   LineJoin,

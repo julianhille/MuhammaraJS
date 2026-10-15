@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const PDFWStreamForBuffer = require("./PDFWStreamForBuffer");
 var { standardInfoKeys } = require("./recipe-info");
+var { pdfaOptions } = require("./pdfa");
 var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
 
 /**
@@ -15,6 +16,8 @@ var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
  *   the source path; for a Buffer source the result is only returned by
  *   `endPDF()` unless an output path is given.
  * @param {Object} [options] - The options for pdfDoc
+ * @param {Recipe.PdfA} [options.pdfa] - Write a new PDF as PDF/A of this
+ *   level, with its PDF version, XMP metadata and an sRGB output intent.
  * @param {boolean} [options.xmp] - Write XMP metadata that mirrors the Info values of the PDF, in place of the packet of a source PDF that is edited.
  * @param {number} [options.version] - The PDF version of a new PDF: 1.0 through
  *   1.7 or 2.0. Other values fall back to 1.7.
@@ -98,19 +101,27 @@ class Recipe {
    * @throws {Error} If the source PDF cannot be read or opened for editing.
    */
   _createWriter() {
+    this.pdfa_ = pdfaOptions(
+      this.options,
+      this.isNewPDF,
+      Object.keys(this.encryptOptions || {}).length > 0,
+    );
+    var version = this._getVersion(
+      this.pdfa_ ? this.pdfa_.version : this.options.version,
+    );
     if (this.isNewPDF) {
       if (!this.isBufferSrc) {
         this.writer = this.muhammara.createWriter(
           this.output,
           Object.assign({}, this.encryptOptions, {
-            version: this._getVersion(this.options.version),
+            version,
           }),
         );
       } else {
         this.writer = this.muhammara.createWriter(
           this.outStream,
           Object.assign({}, this.encryptOptions, {
-            version: this._getVersion(this.options.version),
+            version,
             log: this.logFile,
           }),
         );

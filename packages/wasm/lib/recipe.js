@@ -44,6 +44,7 @@ import { createSecurityMethods, permission } from "./recipe/security.js";
 import { createReplaceTextMethods } from "./recipe/replace-text.js";
 import { thirdPartyLicenses } from "./recipe/licenses.js";
 import { standardInfoKeys } from "./recipe-info.js";
+import { pdfaOptions } from "./pdfa.js";
 
 /**
  * Packs a Recipe color model for the text export: a color-space index (0 gray,
@@ -150,9 +151,22 @@ export function createRecipeFactory({
       if (!options || typeof options !== "object" || Array.isArray(options)) {
         throw new TypeError("Recipe options must be an object");
       }
-      var version = recipeVersion(options.version);
       initializeRecipe(this, options);
       this.encryption_ = hasSource ? {} : this._getEncryptOptions(options);
+      this._pdfa = pdfaOptions(
+        {
+          ...options,
+          version:
+            options.version === undefined
+              ? undefined
+              : recipeVersion(options.version) / 10,
+        },
+        !hasSource,
+        Object.keys(this.encryption_).length > 0,
+      );
+      var version = recipeVersion(
+        this._pdfa ? this._pdfa.version : options.version,
+      );
       this._version = version;
       this._recipe = 0;
       if (!hasSource) {

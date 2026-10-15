@@ -3277,6 +3277,8 @@ declare namespace muhammara {
     type TextAlign = "left" | "center" | "right" | "justify";
     /** A `Recipe.TextDirection` value. */
     type TextDirection = "auto" | "ltr" | "rtl" | "none";
+    /** A `Recipe.PdfA` value. */
+    type PdfA = "1B";
     /** Known text-box alignments, with string compatibility for computed values. */
     type TextBoxAlign =
       TextAlign | `${TextAlign} ${VerticalAlign}` | (string & {});
@@ -3290,6 +3292,12 @@ declare namespace muhammara {
     interface RecipeOptions {
       /** PDF version of a new PDF: 1.0 through 1.7 or 2.0; other values use 1.7. */
       version?: number;
+      /**
+       * Write a new PDF as PDF/A of this level (ISO 19005): its PDF version,
+       * XMP metadata with the PDF/A identification, and an sRGB output intent.
+       * Not with `version` set to another version, encryption, or a source PDF.
+       */
+      pdfa?: Recipe.PdfA;
       /**
        * Write XMP metadata that mirrors the Info values of the PDF, in place of
        * the packet of an edited one. Everything else in an old packet is lost.
@@ -3886,6 +3894,11 @@ declare namespace muhammara {
       readonly LTR: "ltr";
       readonly RTL: "rtl";
       readonly NONE: "none";
+    };
+    /** The PDF/A levels (ISO 19005) of the `pdfa` option. */
+    static readonly PdfA: {
+      /** PDF/A-1b: PDF 1.4. */
+      readonly A1B: "1B";
     };
     /** Which table rows the `row` options apply to. */
     static readonly TableRowNth: {

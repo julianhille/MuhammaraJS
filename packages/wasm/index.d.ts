@@ -137,6 +137,12 @@ export interface RecipeOptions {
   /** Enables stream compression. Defaults to true. */
   compress?: boolean;
   /**
+   * Write a new PDF as PDF/A of this level (ISO 19005): its PDF version, XMP
+   * metadata with the PDF/A identification, and an sRGB output intent. Not
+   * with `version` set to another version, encryption, or a source PDF.
+   */
+  pdfa?: Recipe.PdfA;
+  /**
    * Write XMP metadata that mirrors the Info values of the PDF, in place of
    * the packet of an edited one. Everything else in an old packet is lost.
    */
@@ -966,6 +972,8 @@ export declare namespace Recipe {
   type TextAlign = Recipe.HorizontalAlign | "justify";
   /** How Recipe text() orders right-to-left text before drawing it. */
   type TextDirection = "auto" | "ltr" | "rtl" | "none";
+  /** A `Recipe.PdfA` value: the PDF/A level of the `pdfa` option. */
+  type PdfA = "1B";
   /** Horizontal placement keyword for Recipe text and images. */
   type HorizontalAlign = "left" | "center" | "right";
   /** Vertical placement keyword for Recipe text, images, and text boxes. */
@@ -1210,6 +1218,11 @@ export interface RecipeConstructor {
     readonly LTR: "ltr";
     readonly RTL: "rtl";
     readonly NONE: "none";
+  };
+  /** The PDF/A levels (ISO 19005) of the `pdfa` option. */
+  readonly PdfA: {
+    /** PDF/A-1b: PDF 1.4. */
+    readonly A1B: "1B";
   };
   /** Which table rows the `row` options apply to. */
   readonly TableRowNth: {

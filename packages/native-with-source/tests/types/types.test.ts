@@ -1073,3 +1073,6 @@ var xmpPacket: string | undefined = new muhammara.Recipe(
   "out.pdf",
   { xmp: true },
 ).xmp();
+new muhammara.Recipe("new", "out.pdf", { pdfa: muhammara.Recipe.PdfA.A1B });
+// @ts-expect-error pdfa takes a Recipe.PdfA value.
+new muhammara.Recipe("new", "out.pdf", { pdfa: "9Z" });

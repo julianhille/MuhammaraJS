@@ -6,6 +6,7 @@ import {
   pdfDateToXmp,
   hasPlainMetadata,
 } from "../xmp.js";
+import { SRGB_PROFILE, writeOutputIntents } from "../pdfa.js";
 
 var trappedValues = {
   True: constants.EInfoTrappedTrue,
@@ -137,7 +138,16 @@ export function createInfoMethods({ call, withString, createReader }) {
         ? this.writer.getDocumentContext().getInfoDictionary()
         : null;
       var now = new Date();
-      if (this.options.xmp) this._writeXmp(now);
+      if (this.options.xmp || this._pdfa) this._writeXmp(now);
+      if (this._pdfa) {
+        this._setCatalogReference(
+          "OutputIntents",
+          writeOutputIntents(
+            this._objectsContext(),
+            Uint8Array.from(atob(SRGB_PROFILE), (c) => c.charCodeAt(0)),
+          ),
+        );
+      }
       if (info) {
         [
           ["modDate", "source-ModDate"],
@@ -224,6 +234,7 @@ export function createInfoMethods({ call, withString, createReader }) {
           ? dateToXmp(now)
           : pdfDateToXmp(this._sourceInfo?.creationDate),
         modifyDate: dateToXmp(now),
+        pdfa: this._pdfa,
       });
       var objects = this._objectsContext();
       var id = objects.startNewIndirectObject();
@@ -235,18 +246,34 @@ export function createInfoMethods({ call, withString, createReader }) {
       var stream = objects.startUnfilteredPDFStream(dictionary);
       stream.getWriteStream().write(new TextEncoder().encode(packet));
       objects.endPDFStream(stream);
+      this._setCatalogReference("Metadata", id);
+    },
+
+    /**
+     * Points a catalog entry at an object when the catalog is written, in
+     * place of the entry of a source PDF.
+     *
+     * @name _setCatalogReference
+     * @function
+     * @memberof Recipe#
+     * @private
+     * @param {string} key - The catalog key.
+     * @param {number} id - The object ID.
+     * @returns {void}
+     */
+    _setCatalogReference: function (key, id) {
       if (this._sourceMode) {
-        this.writer._setCatalogEntry("Metadata", id);
-      } else {
-        withString("Metadata", (keyPointer) =>
-          call(
-            "_muhammara_wasm_recipe_set_catalog_entry",
-            this._recipe,
-            keyPointer,
-            id,
-          ),
-        );
+        this.writer._setCatalogEntry(key, id);
+        return;
       }
+      withString(key, (keyPointer) =>
+        call(
+          "_muhammara_wasm_recipe_set_catalog_entry",
+          this._recipe,
+          keyPointer,
+          id,
+        ),
+      );
     },
 
     /**

@@ -346,6 +346,13 @@ var TextAlign = Object.freeze({
 var TextDirection = require("./text-direction").TextDirection;
 
 /**
+ * The PDF/A levels (ISO 19005) of the `pdfa` Recipe option.
+ * @readonly
+ * @enum {string}
+ */
+var PdfA = require("./pdfa").PdfA;
+
+/**
  * Special Recipe sources.
  * @readonly
  * @enum {string}
@@ -360,6 +367,7 @@ module.exports = {
   TextWrap,
   TextAlign,
   TextDirection,
+  PdfA,
   TableRowNth,
   LineCap,
   LineJoin,

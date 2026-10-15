@@ -105,8 +105,10 @@ exports._getEncryptOptions = function _getEncryptOptions(
  * @returns {Recipe} The recipe instance. The output is encrypted by `endPDF()`:
  *   the output file for a path source, and the Buffer passed to the callback
  *   (or written to the output path) for a Buffer source.
+ * @throws {Error} If the Recipe writes PDF/A, which does not allow encryption.
  */
 exports.encrypt = function encrypt(options = {}) {
+  if (this.pdfa_) throw new Error("PDF/A does not allow encryption");
   this.needToEncrypt = true;
   this.encryption_ = this._getEncryptOptions(options);
 
