@@ -42,12 +42,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   PDF/A-1, colors the profile does not describe, hidden annotations,
   annotations without an appearance stream from PDF/A-2 on, custom Info
   entries in PDF/A-4, and encryption; see
-  [Write PDF/A Documents](docs/how-to/write-pdfa-documents.md)
+  [Write PDF/A Documents](docs/how-to/write-pdfa-documents.md) [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
 - Attach files to a new PDF with Recipe `attach(name, file, options)`, with a
   MIME type, a description, and how each file relates to the document
-  (`Recipe.AFRelationship`)
+  (`Recipe.AFRelationship`) [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
 - Remove the creation or modification date of an Info dictionary with
-  `setCreationDate(null)` and `setModDate(null)`
+  `setCreationDate(null)` and `setModDate(null)` [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
 
 - Write XMP metadata that mirrors the Info dictionary with the new `xmp` option
   of Recipe, and read the XMP packet of a source PDF with `recipe.xmp()`. An

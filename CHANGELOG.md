@@ -45,12 +45,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   transparency in PDF/A-1, colors the profile does not describe, hidden
   annotations, annotations without an appearance stream from PDF/A-2 on,
   custom Info entries in PDF/A-4, and encryption; see
-  [Write PDF/A Documents](packages/native/docs/how-to/write-pdfa-documents.md)
+  [Write PDF/A Documents](packages/native/docs/how-to/write-pdfa-documents.md) [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
 - Attach files to a new PDF with Recipe `attach(name, file, options)`, with a
   MIME type, a description, and how each file relates to the document
-  (`Recipe.AFRelationship`)
+  (`Recipe.AFRelationship`) [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
 - Remove the creation or modification date of an Info dictionary with
-  `setCreationDate(null)` and `setModDate(null)`
+  `setCreationDate(null)` and `setModDate(null)` [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
 
 - Write XMP metadata that mirrors the Info dictionary with the new `xmp` option
   of Recipe, and read the XMP packet of a source PDF with `recipe.xmp()`. An
@@ -92,7 +92,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   over those it carries from an earlier edit, as `@muhammara/wasm` does
   [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
 - Start the objects that native Recipe appends when it writes annotations on
-  their own line, after the `%%EOF` of the first pass, as PDF/A requires
+  their own line, after the `%%EOF` of the first pass, as PDF/A requires [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
 - Keep the custom text Info entries of a source PDF, empty ones included, in their
   original spelling when Recipe edits it. They used to be dropped by the next
   edit
