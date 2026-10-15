@@ -60,9 +60,12 @@ function pdfa(level, more) {
  * @param {Object} option The pdfa option.
  * @param {Object} [options] More Recipe options.
  * @param {function(Recipe): void} [draw] Draws on the page.
+ * @param {string} [sample] Writes the PDF to tests/output as
+ *   `PDFA-<level>[-<case>].pdf`, which `npm run test:pdfa` validates with
+ *   veraPDF; give it only to documents that must conform.
  * @returns {Buffer} The PDF.
  */
-function create(option, options, draw) {
+function create(option, options, draw, sample) {
   var recipe = new Recipe(
     Buffer.from("new"),
     undefined,
@@ -73,7 +76,7 @@ function create(option, options, draw) {
   if (option.level === "4F") recipe.attach("data.xml", Buffer.from("<x/>"));
   if (draw) draw(recipe);
   var bytes = recipe.endPage().endPDF((output) => output);
-  writeOutput("PDFA-" + option.level, bytes);
+  if (sample) writeOutput("PDFA-" + sample, bytes);
   return bytes;
 }
 
@@ -137,7 +140,21 @@ describe("PDF/A", function () {
     describe("PDF/A-" + level, function () {
       var bytes;
       before(function () {
-        bytes = create(pdfa(level));
+        // a sample of what the level allows, for veraPDF
+        bytes = create(
+          pdfa(level),
+          {},
+          (r) => {
+            r.link("https://example.com", 50, 100, 100, 20)
+              .comment("note", 50, 150)
+              .image(images + "soundcloud_logo.jpg", 50, 200, { width: 50 });
+            if (level[0] !== "1") {
+              r.rectangle(50, 300, 50, 50, { color: "#ff0000", opacity: 0.5 });
+            }
+            if (level[0] === "3") r.attach("data.xml", Buffer.from("<x/>"));
+          },
+          level,
+        );
       });
 
       it("writes the PDF version of the level", function () {
@@ -255,23 +272,31 @@ describe("PDF/A", function () {
     });
 
     it("draws what PDF/A-1 allows", function () {
-      create(pdfa("1B"), {}, (r) =>
-        r
-          .rectangle(10, 10, 50, 50, { color: "#ff0000", opacity: 1 })
-          .image(images + "png/pnglogo-grr.png", 10, 100, { width: 50 })
-          .image(images + "soundcloud_logo.jpg", 10, 200, { width: 50 })
-          .text("text", 10, 300, { color: "#00ff00" }),
+      create(
+        pdfa("1B"),
+        {},
+        (r) =>
+          r
+            .rectangle(10, 10, 50, 50, { color: "#ff0000", opacity: 1 })
+            .image(images + "png/pnglogo-grr.png", 10, 100, { width: 50 })
+            .image(images + "soundcloud_logo.jpg", 10, 200, { width: 50 })
+            .text("text", 10, 300, { color: "#00ff00" }),
+        "1B-content",
       );
     });
   });
 
   describe("PDF/A-2 content", function () {
     it("allows transparency", function () {
-      create(pdfa("2B"), {}, (r) =>
-        r
-          .rectangle(10, 10, 50, 50, { color: "#ff0000", opacity: 0.5 })
-          .image(images + "png/original.png", 10, 100, { width: 50 })
-          .comment("note", 50, 300, { opacity: 0.5 }),
+      create(
+        pdfa("2B"),
+        {},
+        (r) =>
+          r
+            .rectangle(10, 10, 50, 50, { color: "#ff0000", opacity: 0.5 })
+            .image(images + "png/original.png", 10, 100, { width: 50 })
+            .comment("note", 50, 300, { opacity: 0.5 }),
+        "2B-transparency",
       );
     });
 
@@ -294,8 +319,11 @@ describe("PDF/A", function () {
 
   describe("PDF/A-4", function () {
     it("keeps the document information in XMP only", function () {
-      var bytes = create(pdfa("4"), { author: "Someone" }, (r) =>
-        r.info({ subject: "About" }).comment("note", 50, 300),
+      var bytes = create(
+        pdfa("4"),
+        { author: "Someone" },
+        (r) => r.info({ subject: "About" }).comment("note", 50, 300),
+        "4-xmp",
       );
       assert.doesNotMatch(Buffer.from(bytes).toString("latin1"), /\/Info/);
       var recipe = new Recipe(bytes);
@@ -326,11 +354,15 @@ describe("PDF/A", function () {
   describe("attached files", function () {
     it("allows them where the level does", function () {
       ["3B", "3U", "4F"].forEach((level) =>
-        create(pdfa(level), {}, (r) =>
-          r.attach("invoice.xml", Buffer.from("<x/>"), {
-            mimeType: "text/xml",
-            relationship: Recipe.AFRelationship.DATA,
-          }),
+        create(
+          pdfa(level),
+          {},
+          (r) =>
+            r.attach("invoice.xml", Buffer.from("<x/>"), {
+              mimeType: "text/xml",
+              relationship: Recipe.AFRelationship.DATA,
+            }),
+          level + "-attached",
         ),
       );
     });

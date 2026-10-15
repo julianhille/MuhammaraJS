@@ -32,7 +32,8 @@
     "docs:build": "npm run docs:generate && mkdocs build --config-file packages/native/mkdocs.yml",
     "docs:check": "npm run docs:generate && mkdocs build --strict --config-file packages/native/mkdocs.yml",
     "docs:serve": "npm run docs:generate && mkdocs serve --config-file packages/native/mkdocs.yml",
-    "test:docs": "npm run test:docs --workspace=@muhammara/native-with-source"
+    "test:docs": "npm run test:docs --workspace=@muhammara/native-with-source",
+    "test:pdfa": "node scripts/validate-pdfa.mjs"
   },
   "overrides": {
     "serialize-javascript": "^7.0.5"
