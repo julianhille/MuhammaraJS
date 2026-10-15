@@ -1,6 +1,12 @@
 var assert = require("node:assert/strict");
 var muhammara = require("@muhammara/native-with-source");
-var { SRGB_PROFILE } = require("../../native-core/lib/pdfa");
+var fs = require("node:fs");
+var path = require("node:path");
+var {
+  PdfAFeature,
+  SRGB_PROFILE,
+  imagePdfaFeature,
+} = require("../../native-core/lib/pdfa");
 var { writeOutput } = require("./helpers/testOutput");
 
 var Recipe = muhammara.Recipe;
@@ -95,6 +101,72 @@ describe("PDF/A", function () {
         assert.equal(n, 3);
       });
     });
+  });
+
+  describe("PDF/A-1 content", function () {
+    var images = path.join(__dirname, "TestMaterials/images/");
+
+    /**
+     * Draws on a PDF/A-1b page.
+     * @param {function(Recipe): void} draw Draws on the page.
+     * @returns {void}
+     */
+    function draw(draw) {
+      var recipe = new Recipe(Buffer.from("new"), undefined, {
+        pdfa: Recipe.PdfA.A1B,
+      });
+      recipe.createPage("a4");
+      draw(recipe);
+      recipe.endPage().endPDF(() => {});
+    }
+
+    it("rejects transparency", function () {
+      var message = { message: "PDF/A-1 does not allow transparency" };
+      assert.throws(
+        () => draw((r) => r.rectangle(10, 10, 50, 50, { opacity: 0.5 })),
+        message,
+      );
+      assert.throws(
+        () => draw((r) => r.image(images + "png/original.png", 10, 10)),
+        message,
+      );
+    });
+
+    it("rejects CMYK colors", function () {
+      var message = { message: "PDF/A-1 does not allow CMYK colors" };
+      assert.throws(
+        () => draw((r) => r.rectangle(10, 10, 50, 50, { color: "#ff00ff00" })),
+        message,
+      );
+      assert.throws(
+        () => draw((r) => r.image(images + "cmyk.jpg", 10, 10)),
+        message,
+      );
+    });
+
+    it("draws what PDF/A-1 allows", function () {
+      draw((r) =>
+        r
+          .rectangle(10, 10, 50, 50, { color: "#ff0000", opacity: 1 })
+          .image(images + "png/pnglogo-grr.png", 10, 100, { width: 50 })
+          .image(images + "soundcloud_logo.jpg", 10, 200, { width: 50 })
+          .text("text", 10, 300, { color: "#00ff00" }),
+      );
+    });
+  });
+
+  it("finds the features images need", function () {
+    var images = path.join(__dirname, "TestMaterials/images/");
+    var feature = (file) => imagePdfaFeature(fs.readFileSync(images + file));
+    assert.equal(feature("png/original.png"), PdfAFeature.TRANSPARENCY);
+    assert.equal(
+      feature("png/gray-alpha-8-linear.png"),
+      PdfAFeature.TRANSPARENCY,
+    );
+    assert.equal(feature("png/pnglogo-grr.png"), null);
+    assert.equal(feature("cmyk.jpg"), PdfAFeature.CMYK);
+    assert.equal(feature("grayscale.jpg"), null);
+    assert.equal(feature("soundcloud_logo.jpg"), null);
   });
 
   it("names the levels", function () {

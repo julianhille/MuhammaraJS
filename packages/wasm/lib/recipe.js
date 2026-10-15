@@ -44,7 +44,7 @@ import { createSecurityMethods, permission } from "./recipe/security.js";
 import { createReplaceTextMethods } from "./recipe/replace-text.js";
 import { thirdPartyLicenses } from "./recipe/licenses.js";
 import { standardInfoKeys } from "./recipe-info.js";
-import { pdfaOptions } from "./pdfa.js";
+import { PdfAFeature, pdfaOptions, requirePdfaAllows } from "./pdfa.js";
 
 /**
  * Packs a Recipe color model for the text export: a color-space index (0 gray,
@@ -551,9 +551,11 @@ export function createRecipeFactory({
      * @private
      * @param {number} value - Opacity from 0 to 1.
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If the opacity cannot be applied.
+     * @throws {Error} If the opacity cannot be applied, or the PDF/A level does
+     *   not allow transparency.
      */
     _setOpacity(value) {
+      if (value < 1) requirePdfaAllows(this._pdfa, PdfAFeature.TRANSPARENCY);
       if (this._pageContext) this._pageContext.setOpacity(value);
       else call("_muhammara_wasm_recipe_set_opacity", this._recipe, value);
       return this;

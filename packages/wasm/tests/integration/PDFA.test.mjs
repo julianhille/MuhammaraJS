@@ -1,7 +1,8 @@
 // Ports tests/PDFA.js.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
-import { SRGB_PROFILE } from "../../lib/pdfa.js";
+import { PdfAFeature, SRGB_PROFILE, imagePdfaFeature } from "../../lib/pdfa.js";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("PDF/A", function () {
@@ -103,6 +104,101 @@ describe("PDF/A", function () {
         });
       });
     }
+  });
+
+  describe("PDF/A-1 content", function () {
+    var images = new URL(
+      "../../../native-with-source/tests/TestMaterials/images/",
+      import.meta.url,
+    );
+
+    before(function () {
+      Recipe.registerImage(
+        "pdfa-alpha",
+        readFileSync(new URL("png/original.png", images)),
+        "png",
+      );
+      Recipe.registerImage(
+        "pdfa-png",
+        readFileSync(new URL("png/pnglogo-grr.png", images)),
+        "png",
+      );
+      Recipe.registerImage(
+        "pdfa-cmyk",
+        readFileSync(new URL("cmyk.jpg", images)),
+        "jpeg",
+      );
+      Recipe.registerImage(
+        "pdfa-jpg",
+        readFileSync(new URL("soundcloud_logo.jpg", images)),
+        "jpeg",
+      );
+    });
+
+    /**
+     * Draws on a PDF/A-1b page.
+     * @param {function(object): void} draw Draws on the page.
+     * @returns {void}
+     */
+    function draw(draw) {
+      var recipe = new Recipe({ pdfa: Recipe.PdfA.A1B });
+      recipe.createPage("a4");
+      draw(recipe);
+      recipe.endPage().endPDF();
+    }
+
+    it("rejects transparency", function () {
+      var message = { message: "PDF/A-1 does not allow transparency" };
+      assert.throws(
+        () => draw((r) => r.rectangle(10, 10, 50, 50, { opacity: 0.5 })),
+        message,
+      );
+      assert.throws(() => draw((r) => r.image("pdfa-alpha", 10, 10)), message);
+    });
+
+    it("rejects CMYK colors", function () {
+      var message = { message: "PDF/A-1 does not allow CMYK colors" };
+      assert.throws(
+        () => draw((r) => r.rectangle(10, 10, 50, 50, { color: "#ff00ff00" })),
+        message,
+      );
+      assert.throws(() => draw((r) => r.image("pdfa-cmyk", 10, 10)), message);
+    });
+
+    it("draws what PDF/A-1 allows", function () {
+      draw((r) =>
+        r
+          .rectangle(10, 10, 50, 50, { color: "#ff0000", opacity: 1 })
+          .image("pdfa-png", 10, 100, { width: 50 })
+          .image("pdfa-jpg", 10, 200, { width: 50 })
+          .text("text", 10, 300, { color: "#00ff00" }),
+      );
+    });
+  });
+
+  it("finds the features images need", function () {
+    /**
+     * @param {string} file An image of the shared fixtures.
+     * @returns {string|null} The feature the image needs.
+     */
+    var feature = (file) =>
+      imagePdfaFeature(
+        readFileSync(
+          new URL(
+            "../../../native-with-source/tests/TestMaterials/images/" + file,
+            import.meta.url,
+          ),
+        ),
+      );
+    assert.equal(feature("png/original.png"), PdfAFeature.TRANSPARENCY);
+    assert.equal(
+      feature("png/gray-alpha-8-linear.png"),
+      PdfAFeature.TRANSPARENCY,
+    );
+    assert.equal(feature("png/pnglogo-grr.png"), null);
+    assert.equal(feature("cmyk.jpg"), PdfAFeature.CMYK);
+    assert.equal(feature("grayscale.jpg"), null);
+    assert.equal(feature("soundcloud_logo.jpg"), null);
   });
 
   it("names the levels", function () {

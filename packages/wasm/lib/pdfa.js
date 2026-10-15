@@ -12,10 +12,27 @@ var PdfA = Object.freeze({
   A1B: "1B",
 });
 
-// What each level writes: its identification and the PDF version it is based
-// on.
+/**
+ * What a PDF/A level may not allow, named as in the errors Recipe throws.
+ * @readonly
+ * @enum {string}
+ */
+var PdfAFeature = Object.freeze({
+  /** Opacity below 1 and images with an alpha channel. */
+  TRANSPARENCY: "transparency",
+  /** CMYK colors and images, which the sRGB output intent cannot describe. */
+  CMYK: "CMYK colors",
+});
+
+// What each level writes, its identification and the PDF version it is based
+// on, and the features it does not allow.
 var PDFA_LEVELS = Object.freeze({
-  [PdfA.A1B]: Object.freeze({ part: 1, conformance: "B", version: 1.4 }),
+  [PdfA.A1B]: Object.freeze({
+    part: 1,
+    conformance: "B",
+    version: 1.4,
+    forbids: Object.freeze([PdfAFeature.TRANSPARENCY, PdfAFeature.CMYK]),
+  }),
 });
 
 // The output condition of the bundled profile.
@@ -38,8 +55,9 @@ var SRGB_PROFILE =
 /**
  * Look up a PDF/A level.
  * @param {string} level - A `PdfA` value.
- * @returns {{part: number, conformance: (string|undefined), version: number}}
- *   The identification and PDF version of the level.
+ * @returns {{part: number, conformance: (string|undefined), version: number, forbids: string[]}}
+ *   The identification and PDF version of the level, and the `PdfAFeature`
+ *   values it does not allow.
  * @throws {TypeError} If level is not a `PdfA` value.
  */
 function pdfaLevel(level) {
@@ -48,6 +66,58 @@ function pdfaLevel(level) {
     throw new TypeError(`Unknown PDF/A level ${level}; use a PdfA value`);
   }
   return found;
+}
+
+/**
+ * Throw when a PDF/A level does not allow a feature.
+ * @param {Object|null} level - The level of the Recipe, see `pdfaLevel()`, or
+ *   null when it does not write PDF/A.
+ * @param {string|null} feature - A `PdfAFeature` value, or null for none.
+ * @returns {void}
+ * @throws {Error} If the level does not allow the feature.
+ */
+function requirePdfaAllows(level, feature) {
+  if (level && level.forbids.includes(feature)) {
+    throw new Error(`PDF/A-${level.part} does not allow ${feature}`);
+  }
+}
+
+/**
+ * Find the feature an image needs that a PDF/A level may not allow: a PNG
+ * with an alpha channel or a transparent color, or a JPEG with four (CMYK)
+ * components. Other images, such as TIFF, are not inspected.
+ * @param {Uint8Array} bytes - The image file.
+ * @returns {string|null} A `PdfAFeature` value, or null.
+ */
+function imagePdfaFeature(bytes) {
+  /**
+   * @param {number} at - A byte offset.
+   * @returns {number} The big-endian 16-bit number there.
+   */
+  var uint16 = (at) => (bytes[at] << 8) | bytes[at + 1];
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e) {
+    // the IHDR color type: 4 is gray with alpha, 6 RGB with alpha
+    if (bytes[25] === 4 || bytes[25] === 6) return PdfAFeature.TRANSPARENCY;
+    for (var at = 8; at + 8 <= bytes.length;) {
+      var type = String.fromCharCode(...bytes.subarray(at + 4, at + 8));
+      if (type === "tRNS") return PdfAFeature.TRANSPARENCY;
+      if (type === "IDAT") break;
+      at += 12 + uint16(at) * 65536 + uint16(at + 2);
+    }
+    return null;
+  }
+  if (bytes[0] === 0xff && bytes[1] === 0xd8) {
+    for (var marker = 2; marker + 9 < bytes.length;) {
+      if (bytes[marker] !== 0xff) break;
+      var code = bytes[marker + 1];
+      // a start of frame: C0 to CF, except DHT (C4), JPG (C8) and DAC (CC)
+      if (code >= 0xc0 && code <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(code)) {
+        return bytes[marker + 9] === 4 ? PdfAFeature.CMYK : null;
+      }
+      marker += 2 + uint16(marker + 2);
+    }
+  }
+  return null;
 }
 
 /**
@@ -115,4 +185,13 @@ function pdfaOptions(options, isNewPDF, encrypted) {
   return level;
 }
 
-export { PdfA, SRGB_PROFILE, pdfaLevel, pdfaOptions, writeOutputIntents };
+export {
+  PdfA,
+  PdfAFeature,
+  SRGB_PROFILE,
+  imagePdfaFeature,
+  pdfaLevel,
+  pdfaOptions,
+  requirePdfaAllows,
+  writeOutputIntents,
+};

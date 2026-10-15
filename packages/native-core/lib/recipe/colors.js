@@ -1,5 +1,6 @@
 const fs = require("fs");
 const { Colorspace, ChromaCommand } = require("../recipe-constants");
+const { PdfAFeature, requirePdfaAllows } = require("../pdfa");
 
 /**
  * Register a color under a name as an own property, so any name, including
@@ -221,8 +222,10 @@ function tintTransform(self, color) {
  * @param {number} value - The opacity, from 0 to 1.
  * @returns {{stroke: number, fill: number}} The object IDs of the stroking
  *   (CA) and non-stroking (ca) ExtGState dictionaries.
+ * @throws {Error} If the PDF/A level of the Recipe does not allow transparency.
  */
 exports._createExtGStates = function _createExtGStates(value) {
+  if (value < 1) requirePdfaAllows(this.pdfa_, PdfAFeature.TRANSPARENCY);
   this.extGStates = this.extGStates || {};
   if (this.extGStates[value]) {
     return this.extGStates[value];
@@ -368,6 +371,7 @@ function percentToHex(code) {
  * @returns {number|Object} The color as a number, or the color model when
  *   `opt.wantColorModel` is set. Invalid values fall back to the default color.
  * @throws {TypeError} If `opt.colorspace` is not a `Recipe.Colorspace` value.
+ * @throws {Error} If the PDF/A level of the Recipe does not allow CMYK colors.
  */
 exports._transformColor = function _transformColor(code = "", opt = {}) {
   this.knownColors = this.knownColors || {};
@@ -429,6 +433,8 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
   ) {
     code = defaultColor;
   }
+  // eight digits are CMYK components, also as a separation's alternate
+  if (code.length === 8) requirePdfaAllows(this.pdfa_, PdfAFeature.CMYK);
 
   if (wantColorModel) {
     transformation = toColorModel(this, code, colorspace, colorName);
