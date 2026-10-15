@@ -3293,11 +3293,12 @@ declare namespace muhammara {
       /** PDF version of a new PDF: 1.0 through 1.7 or 2.0; other values use 1.7. */
       version?: number;
       /**
-       * Write a new PDF as PDF/A of this level (ISO 19005): its PDF version,
-       * XMP metadata with the PDF/A identification, and an sRGB output intent.
-       * Not with `version` set to another version, encryption, or a source PDF.
+       * Write a new PDF as PDF/A (ISO 19005): the PDF version of the level, XMP
+       * metadata with the PDF/A identification, and an output intent with the
+       * given ICC profile. Not with `version` set to another version,
+       * encryption, or a source PDF.
        */
-      pdfa?: Recipe.PdfA;
+      pdfa?: Recipe.PdfAOptions;
       /**
        * Write XMP metadata that mirrors the Info values of the PDF, in place of
        * the packet of an edited one. Everything else in an old packet is lost.
@@ -3439,6 +3440,19 @@ declare namespace muhammara {
       fill?: Color;
       /** Outline the image box in green and mark the placement point in red. */
       debug?: boolean | number;
+    }
+
+    interface PdfAOptions {
+      /** The PDF/A level. */
+      level: Recipe.PdfA;
+      /**
+       * The ICC profile of the output intent, or its path: an RGB, CMYK or
+       * gray profile. The document's device colors must use its color space;
+       * gray is always allowed.
+       */
+      iccProfile: Buffer | string;
+      /** The output condition identifier, such as `sRGB IEC61966-2.1`. Defaults to `Custom`. */
+      outputCondition?: string;
     }
 
     interface InfoOptions {

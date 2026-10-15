@@ -153,6 +153,7 @@ export function createRecipeFactory({
       }
       initializeRecipe(this, options);
       this.encryption_ = hasSource ? {} : this._getEncryptOptions(options);
+      var iccProfile = options.pdfa?.iccProfile;
       this._pdfa = pdfaOptions(
         {
           ...options,
@@ -161,6 +162,9 @@ export function createRecipeFactory({
               ? undefined
               : recipeVersion(options.version) / 10,
         },
+        iccProfile instanceof ArrayBuffer
+          ? new Uint8Array(iccProfile)
+          : iccProfile,
         !hasSource,
         Object.keys(this.encryption_).length > 0,
       );

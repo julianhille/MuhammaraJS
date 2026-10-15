@@ -131,17 +131,29 @@ export interface RecipeMargins {
   top?: number;
   bottom?: number;
 }
+export interface RecipePdfAOptions {
+  /** The PDF/A level. */
+  level: Recipe.PdfA;
+  /**
+   * The ICC profile of the output intent: an RGB, CMYK or gray profile. The
+   * document's device colors must use its color space; gray is always allowed.
+   */
+  iccProfile: Uint8Array | ArrayBuffer;
+  /** The output condition identifier, such as `sRGB IEC61966-2.1`. Defaults to `Custom`. */
+  outputCondition?: string;
+}
 export interface RecipeOptions {
   /** PDF version; canonical decimal levels 1.0 through 1.7 and 2.0, and integer enums 10 through 17 and 20, are accepted. */
   version?: RecipePDFVersion;
   /** Enables stream compression. Defaults to true. */
   compress?: boolean;
   /**
-   * Write a new PDF as PDF/A of this level (ISO 19005): its PDF version, XMP
-   * metadata with the PDF/A identification, and an sRGB output intent. Not
-   * with `version` set to another version, encryption, or a source PDF.
+   * Write a new PDF as PDF/A (ISO 19005): the PDF version of the level, XMP
+   * metadata with the PDF/A identification, and an output intent with the
+   * given ICC profile. Not with `version` set to another version, encryption,
+   * or a source PDF.
    */
-  pdfa?: Recipe.PdfA;
+  pdfa?: RecipePdfAOptions;
   /**
    * Write XMP metadata that mirrors the Info values of the PDF, in place of
    * the packet of an edited one. Everything else in an old packet is lost.

@@ -1073,6 +1073,19 @@ var xmpPacket: string | undefined = new muhammara.Recipe(
   "out.pdf",
   { xmp: true },
 ).xmp();
-new muhammara.Recipe("new", "out.pdf", { pdfa: muhammara.Recipe.PdfA.A1B });
-// @ts-expect-error pdfa takes a Recipe.PdfA value.
-new muhammara.Recipe("new", "out.pdf", { pdfa: "9Z" });
+new muhammara.Recipe("new", "out.pdf", {
+  pdfa: {
+    level: muhammara.Recipe.PdfA.A1B,
+    iccProfile: "sRGB.icc",
+    outputCondition: "sRGB IEC61966-2.1",
+  },
+});
+new muhammara.Recipe("new", "out.pdf", {
+  pdfa: { level: "1B", iccProfile: Buffer.alloc(0) },
+});
+// @ts-expect-error pdfa.level takes a Recipe.PdfA value.
+new muhammara.Recipe("new", "out.pdf", {
+  pdfa: { level: "9Z", iccProfile: "" },
+});
+// @ts-expect-error pdfa needs an ICC profile.
+new muhammara.Recipe("new", "out.pdf", { pdfa: { level: "1B" } });

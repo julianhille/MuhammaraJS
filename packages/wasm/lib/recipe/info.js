@@ -6,7 +6,7 @@ import {
   pdfDateToXmp,
   hasPlainMetadata,
 } from "../xmp.js";
-import { SRGB_PROFILE, writeOutputIntents } from "../pdfa.js";
+import { writeOutputIntents } from "../pdfa.js";
 
 var trappedValues = {
   True: constants.EInfoTrappedTrue,
@@ -144,7 +144,8 @@ export function createInfoMethods({ call, withString, createReader }) {
           "OutputIntents",
           writeOutputIntents(
             this._objectsContext(),
-            Uint8Array.from(atob(SRGB_PROFILE), (c) => c.charCodeAt(0)),
+            this._pdfa,
+            this._pdfa.profile,
           ),
         );
       }

@@ -1,6 +1,6 @@
 const fs = require("fs");
 const { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
-const { imagePdfaFeature, requirePdfaAllows } = require("../pdfa");
+const { imagePdfaFeatures, requirePdfaAllows } = require("../pdfa");
 
 /**
  * Place images to pdf
@@ -54,14 +54,17 @@ const { imagePdfaFeature, requirePdfaAllows } = require("../pdfa");
  *   a size is not a finite number, or `miterLimit` is not a number of at
  *   least 1.
  * @throws {TypeError} If `rotation` is not a finite number.
- * @throws {Error} If the PDF/A level of the Recipe does not allow the image.
+ * @throws {Error} If the PDF/A document does not allow the image.
  * @throws {Error} If the image, or the PDF page `page` selects, cannot be read.
  */
 exports.image = function image(imgSrc, x, y, options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
   if (this.pdfa_) {
-    requirePdfaAllows(this.pdfa_, imagePdfaFeature(fs.readFileSync(imgSrc)));
+    requirePdfaAllows(
+      this.pdfa_,
+      ...imagePdfaFeatures(fs.readFileSync(imgSrc)),
+    );
   }
   const index = imageIndex(options);
   const { width, height, offsetX, offsetY, page } = this._getImgOffset(

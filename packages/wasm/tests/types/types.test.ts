@@ -467,9 +467,17 @@ async function usesLowLevelSurface() {
   var recipe = new Recipe({ version: 1.7, compress: false, title: "Byte PDF" });
   var xmpPacket: string | undefined = new Recipe({ xmp: true }).xmp();
   var infoValues: Record<string, string> = new Recipe().info();
-  new Recipe({ pdfa: Recipe.PdfA.A1B });
-  // @ts-expect-error pdfa takes a Recipe.PdfA value.
-  new Recipe({ pdfa: "9Z" });
+  new Recipe({
+    pdfa: {
+      level: Recipe.PdfA.A1B,
+      iccProfile: new Uint8Array(),
+      outputCondition: "sRGB IEC61966-2.1",
+    },
+  });
+  // @ts-expect-error pdfa.level takes a Recipe.PdfA value.
+  new Recipe({ pdfa: { level: "9Z", iccProfile: new ArrayBuffer(0) } });
+  // @ts-expect-error pdfa needs an ICC profile.
+  new Recipe({ pdfa: { level: "1B" } });
   recipe
     .createPage()
     .setPageBox(muhammara.ePDFPageBoxCropBox, 18, 18, 594, 774)

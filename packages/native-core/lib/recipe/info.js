@@ -10,7 +10,7 @@ var {
   pdfDateToXmp,
   hasPlainMetadata,
 } = require("../xmp");
-var { SRGB_PROFILE, writeOutputIntents } = require("../pdfa");
+var { writeOutputIntents } = require("../pdfa");
 
 var PLAIN_METADATA =
   "Recipe cannot read or write the XMP of a PDF whose metadata is not encrypted";
@@ -347,7 +347,8 @@ exports._writeInfo = function _writeInfo() {
       "OutputIntents",
       writeOutputIntents(
         this.writer.getObjectsContext(),
-        Array.from(Buffer.from(SRGB_PROFILE, "base64")),
+        this.pdfa_,
+        Array.from(this.pdfa_.profile),
       ),
     );
   }

@@ -371,7 +371,7 @@ function percentToHex(code) {
  * @returns {number|Object} The color as a number, or the color model when
  *   `opt.wantColorModel` is set. Invalid values fall back to the default color.
  * @throws {TypeError} If `opt.colorspace` is not a `Recipe.Colorspace` value.
- * @throws {Error} If the PDF/A level of the Recipe does not allow CMYK colors.
+ * @throws {Error} If the PDF/A output intent does not allow the color.
  */
 exports._transformColor = function _transformColor(code = "", opt = {}) {
   this.knownColors = this.knownColors || {};
@@ -433,8 +433,11 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
   ) {
     code = defaultColor;
   }
-  // eight digits are CMYK components, also as a separation's alternate
-  if (code.length === 8) requirePdfaAllows(this.pdfa_, PdfAFeature.CMYK);
+  // the device colors, also as a separation's alternate
+  requirePdfaAllows(
+    this.pdfa_,
+    { 6: PdfAFeature.RGB, 8: PdfAFeature.CMYK }[code.length],
+  );
 
   if (wantColorModel) {
     transformation = toColorModel(this, code, colorspace, colorName);

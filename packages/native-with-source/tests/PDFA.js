@@ -1,15 +1,14 @@
 var assert = require("node:assert/strict");
-var muhammara = require("@muhammara/native-with-source");
 var fs = require("node:fs");
 var path = require("node:path");
-var {
-  PdfAFeature,
-  SRGB_PROFILE,
-  imagePdfaFeature,
-} = require("../../native-core/lib/pdfa");
+var muhammara = require("@muhammara/native-with-source");
+var { PdfAFeature, imagePdfaFeatures } = require("../../native-core/lib/pdfa");
 var { writeOutput } = require("./helpers/testOutput");
 
 var Recipe = muhammara.Recipe;
+var images = path.join(__dirname, "TestMaterials/images/");
+var profilePath = path.join(__dirname, "TestMaterials/icc/sRGB-v2-micro.icc");
+var PROFILE = fs.readFileSync(profilePath);
 
 // Each level and what a document of it carries; checked against veraPDF.
 var LEVELS = [
@@ -22,22 +21,48 @@ var LEVELS = [
 ];
 
 /**
- * Creates a one page PDF/A document.
+ * A copy of the sRGB test profile with another color space or version in its
+ * header, for the checks of the profile; not a usable profile.
+ * @param {number} at The header offset.
+ * @param {string} value The bytes to put there, as latin1.
+ * @returns {Buffer} The changed profile.
+ */
+function changedProfile(at, value) {
+  var copy = Buffer.from(PROFILE);
+  copy.write(value, at, "latin1");
+  return copy;
+}
+
+/**
+ * The pdfa option for a level with the sRGB test profile.
  * @param {string} level A Recipe.PdfA value.
+ * @param {Object} [more] Options that replace the defaults.
+ * @returns {Object} The option.
+ */
+function pdfa(level, more) {
+  return Object.assign(
+    { level, iccProfile: PROFILE, outputCondition: "sRGB IEC61966-2.1" },
+    more,
+  );
+}
+
+/**
+ * Creates a one page PDF/A document.
+ * @param {Object} option The pdfa option.
  * @param {Object} [options] More Recipe options.
+ * @param {function(Recipe): void} [draw] Draws on the page.
  * @returns {Buffer} The PDF.
  */
-function create(level, options) {
+function create(option, options, draw) {
   var recipe = new Recipe(
     Buffer.from("new"),
     undefined,
-    Object.assign({ pdfa: level, title: "Archived" }, options),
+    Object.assign({ pdfa: option, title: "Archived" }, options),
   );
-  recipe.createPage("a4").text("Archived text", 50, 50).endPage();
-  var bytes = recipe.endPDF(function (output) {
-    return output;
-  });
-  writeOutput("PDFA-" + level, bytes);
+  recipe.createPage("a4").text("Archived text", 50, 50);
+  if (draw) draw(recipe);
+  var bytes = recipe.endPage().endPDF((output) => output);
+  writeOutput("PDFA-" + option.level, bytes);
   return bytes;
 }
 
@@ -77,7 +102,7 @@ describe("PDF/A", function () {
     describe("PDF/A-" + level, function () {
       var bytes;
       before(function () {
-        bytes = create(level);
+        bytes = create(pdfa(level));
       });
 
       it("writes the PDF version of the level", function () {
@@ -92,81 +117,15 @@ describe("PDF/A", function () {
         assert.ok(packet.includes(">Archived</rdf:li>"));
       });
 
-      it("writes an sRGB output intent", function () {
+      it("writes the output intent with the given profile", function () {
         var { intent, profile, n } = outputIntent(bytes);
         assert.equal(intent.Type, "OutputIntent");
         assert.equal(intent.S, "GTS_PDFA1");
         assert.equal(intent.OutputConditionIdentifier, "sRGB IEC61966-2.1");
-        assert.deepEqual(profile, Buffer.from(SRGB_PROFILE, "base64"));
+        assert.deepEqual(profile, PROFILE);
         assert.equal(n, 3);
       });
     });
-  });
-
-  describe("PDF/A-1 content", function () {
-    var images = path.join(__dirname, "TestMaterials/images/");
-
-    /**
-     * Draws on a PDF/A-1b page.
-     * @param {function(Recipe): void} draw Draws on the page.
-     * @returns {void}
-     */
-    function draw(draw) {
-      var recipe = new Recipe(Buffer.from("new"), undefined, {
-        pdfa: Recipe.PdfA.A1B,
-      });
-      recipe.createPage("a4");
-      draw(recipe);
-      recipe.endPage().endPDF(() => {});
-    }
-
-    it("rejects transparency", function () {
-      var message = { message: "PDF/A-1 does not allow transparency" };
-      assert.throws(
-        () => draw((r) => r.rectangle(10, 10, 50, 50, { opacity: 0.5 })),
-        message,
-      );
-      assert.throws(
-        () => draw((r) => r.image(images + "png/original.png", 10, 10)),
-        message,
-      );
-    });
-
-    it("rejects CMYK colors", function () {
-      var message = { message: "PDF/A-1 does not allow CMYK colors" };
-      assert.throws(
-        () => draw((r) => r.rectangle(10, 10, 50, 50, { color: "#ff00ff00" })),
-        message,
-      );
-      assert.throws(
-        () => draw((r) => r.image(images + "cmyk.jpg", 10, 10)),
-        message,
-      );
-    });
-
-    it("draws what PDF/A-1 allows", function () {
-      draw((r) =>
-        r
-          .rectangle(10, 10, 50, 50, { color: "#ff0000", opacity: 1 })
-          .image(images + "png/pnglogo-grr.png", 10, 100, { width: 50 })
-          .image(images + "soundcloud_logo.jpg", 10, 200, { width: 50 })
-          .text("text", 10, 300, { color: "#00ff00" }),
-      );
-    });
-  });
-
-  it("finds the features images need", function () {
-    var images = path.join(__dirname, "TestMaterials/images/");
-    var feature = (file) => imagePdfaFeature(fs.readFileSync(images + file));
-    assert.equal(feature("png/original.png"), PdfAFeature.TRANSPARENCY);
-    assert.equal(
-      feature("png/gray-alpha-8-linear.png"),
-      PdfAFeature.TRANSPARENCY,
-    );
-    assert.equal(feature("png/pnglogo-grr.png"), null);
-    assert.equal(feature("cmyk.jpg"), PdfAFeature.CMYK);
-    assert.equal(feature("grayscale.jpg"), null);
-    assert.equal(feature("soundcloud_logo.jpg"), null);
   });
 
   it("names the levels", function () {
@@ -177,22 +136,53 @@ describe("PDF/A", function () {
     );
   });
 
+  it("takes the profile as a path", function () {
+    var bytes = create(pdfa("1B", { iccProfile: profilePath }));
+    assert.deepEqual(outputIntent(bytes).profile, PROFILE);
+  });
+
+  it("names the output condition Custom unless it is given", function () {
+    var bytes = create(pdfa("1B", { outputCondition: undefined }));
+    assert.equal(
+      outputIntent(bytes).intent.OutputConditionIdentifier,
+      "Custom",
+    );
+  });
+
   it("rejects what PDF/A does not allow", function () {
-    var source = create(Recipe.PdfA.A1B);
-    assert.throws(() => create("1Z"), {
+    var source = create(pdfa("1B"));
+    assert.throws(() => create(pdfa("1Z")), {
       name: "TypeError",
       message: "Unknown PDF/A level 1Z; use a PdfA value",
     });
-    assert.throws(() => create(Recipe.PdfA.A1B, { version: 1.7 }), {
+    assert.throws(() => create(pdfa("1B", { iccProfile: undefined })), {
+      name: "TypeError",
+      message: "pdfa.iccProfile must be the bytes of an ICC profile",
+    });
+    assert.throws(() => create(pdfa("1B", { iccProfile: Buffer.alloc(200) })), {
+      name: "TypeError",
+      message: "pdfa.iccProfile must be the bytes of an ICC profile",
+    });
+    assert.throws(
+      () => create(pdfa("1B", { iccProfile: changedProfile(16, "Lab ") })),
+      { message: "pdfa.iccProfile must be an RGB, CMYK or gray profile" },
+    );
+    assert.throws(
+      () => create(pdfa("1B", { iccProfile: changedProfile(8, "\u0004") })),
+      { message: "PDF/A-1 needs an ICC profile of version 2 or earlier" },
+    );
+    assert.throws(() => create(pdfa("1B"), { version: 1.7 }), {
       message: "PDF/A-1 is written as PDF 1.4",
     });
-    assert.throws(() => create(Recipe.PdfA.A1B, { userPassword: "u" }), {
+    assert.throws(() => create(pdfa("1B"), { userPassword: "u" }), {
       message: "PDF/A does not allow encryption",
     });
-    assert.throws(() => new Recipe(source, undefined, { pdfa: "1B" }), {
+    assert.throws(() => new Recipe(source, undefined, { pdfa: pdfa("1B") }), {
       message: "The pdfa option applies to a new PDF",
     });
-    var recipe = new Recipe(Buffer.from("new"), undefined, { pdfa: "1B" });
+    var recipe = new Recipe(Buffer.from("new"), undefined, {
+      pdfa: pdfa("1B"),
+    });
     assert.throws(() => recipe.encrypt({ userPassword: "u" }), {
       message: "PDF/A does not allow encryption",
     });
@@ -200,6 +190,109 @@ describe("PDF/A", function () {
       .createPage("a4")
       .endPage()
       .endPDF(() => {});
-    assert.doesNotThrow(() => create(Recipe.PdfA.A1B, { version: 1.4 }));
+    assert.doesNotThrow(() => create(pdfa("1B"), { version: 1.4 }));
+  });
+
+  describe("PDF/A-1 content", function () {
+    it("rejects transparency", function () {
+      var message = { message: "PDF/A-1 does not allow transparency" };
+      assert.throws(
+        () =>
+          create(pdfa("1B"), {}, (r) =>
+            r.rectangle(10, 10, 50, 50, { opacity: 0.5 }),
+          ),
+        message,
+      );
+      assert.throws(
+        () =>
+          create(pdfa("1B"), {}, (r) =>
+            r.image(images + "png/original.png", 10, 10),
+          ),
+        message,
+      );
+    });
+
+    it("draws what PDF/A-1 allows", function () {
+      create(pdfa("1B"), {}, (r) =>
+        r
+          .rectangle(10, 10, 50, 50, { color: "#ff0000", opacity: 1 })
+          .image(images + "png/pnglogo-grr.png", 10, 100, { width: 50 })
+          .image(images + "soundcloud_logo.jpg", 10, 200, { width: 50 })
+          .text("text", 10, 300, { color: "#00ff00" }),
+      );
+    });
+  });
+
+  describe("device colors", function () {
+    it("allows only the colors of the profile's color space and gray", function () {
+      var rgb = {
+        message: "PDF/A with the RGB output intent does not allow CMYK colors",
+      };
+      assert.throws(
+        () =>
+          create(pdfa("1B"), {}, (r) =>
+            r.rectangle(10, 10, 50, 50, { color: "#ff00ff00" }),
+          ),
+        rgb,
+      );
+      assert.throws(
+        () =>
+          create(pdfa("1B"), {}, (r) => r.image(images + "cmyk.jpg", 10, 10)),
+        rgb,
+      );
+
+      var cmyk = pdfa("1B", { iccProfile: changedProfile(16, "CMYK") });
+      var cmykMessage = {
+        message: "PDF/A with the CMYK output intent does not allow RGB colors",
+      };
+      assert.throws(
+        () =>
+          create(cmyk, {}, (r) =>
+            r.rectangle(10, 10, 50, 50, { color: "#ff0000" }),
+          ),
+        cmykMessage,
+      );
+      assert.throws(
+        () =>
+          create(cmyk, {}, (r) =>
+            r.image(images + "soundcloud_logo.jpg", 10, 10),
+          ),
+        cmykMessage,
+      );
+      var bytes = create(cmyk, { colorspace: Recipe.Colorspace.CMYK }, (r) =>
+        r
+          .rectangle(10, 10, 50, 50, { color: "#ff00ff00" })
+          .rectangle(10, 100, 50, 50, { color: "#80" }),
+      );
+      assert.equal(outputIntent(bytes).n, 4);
+
+      var gray = pdfa("1B", { iccProfile: changedProfile(16, "GRAY") });
+      assert.throws(
+        () =>
+          create(gray, {}, (r) =>
+            r.rectangle(10, 10, 50, 50, { color: "#ff0000" }),
+          ),
+        {
+          message:
+            "PDF/A with the gray output intent does not allow RGB colors",
+        },
+      );
+      assert.equal(
+        outputIntent(create(gray, { colorspace: Recipe.Colorspace.GRAY })).n,
+        1,
+      );
+    });
+  });
+
+  it("finds the features images need", function () {
+    var features = (file) => imagePdfaFeatures(fs.readFileSync(images + file));
+    var { RGB, CMYK, TRANSPARENCY } = PdfAFeature;
+    assert.deepEqual(features("png/original.png"), [RGB, TRANSPARENCY]);
+    assert.deepEqual(features("png/gray-alpha-8-linear.png"), [TRANSPARENCY]);
+    assert.deepEqual(features("png/gray-16-linear.png"), []);
+    assert.deepEqual(features("png/pnglogo-grr.png"), [RGB]);
+    assert.deepEqual(features("cmyk.jpg"), [CMYK]);
+    assert.deepEqual(features("grayscale.jpg"), []);
+    assert.deepEqual(features("soundcloud_logo.jpg"), [RGB]);
   });
 });

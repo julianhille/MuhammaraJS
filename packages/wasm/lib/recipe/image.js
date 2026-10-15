@@ -3,7 +3,7 @@ import { isColorspace } from "./colors.js";
 import { DRAW_IMAGE_PATH } from "../writer.js";
 import { miterLimitOption, rotationOption } from "./vector.helper.js";
 import { unknownAsset } from "./registration.js";
-import { imagePdfaFeature, requirePdfaAllows } from "../pdfa.js";
+import { imagePdfaFeatures, requirePdfaAllows } from "../pdfa.js";
 
 // The error a modifier throws for an image it cannot measure.
 var UNREADABLE_IMAGE = "Unable to read image dimensions";
@@ -298,7 +298,7 @@ export function createImageMethods(runtime) {
      * @param {RecipeImageOptions} [options] - Image sizing, alignment, page-index, frame, and transformation options.
      * @returns {Recipe} The recipe instance.
      * @throws {Error} If the image name is unknown, no target page is
-     *   available, or the PDF/A level does not allow the image.
+     *   available, or the PDF/A document does not allow the image.
      * @throws {RangeError} If `page` is not an integer from 1 to 4294967296,
      *   a size is not a finite number, or `miterLimit` is not a number of at
      *   least 1.
@@ -313,7 +313,7 @@ export function createImageMethods(runtime) {
       if (this._pdfa) {
         requirePdfaAllows(
           this._pdfa,
-          imagePdfaFeature(runtime.module.FS.readFile(path)),
+          ...imagePdfaFeatures(runtime.module.FS.readFile(path)),
         );
       }
       var index = imageIndex(options);

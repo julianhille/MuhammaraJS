@@ -16,8 +16,14 @@ var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
  *   the source path; for a Buffer source the result is only returned by
  *   `endPDF()` unless an output path is given.
  * @param {Object} [options] - The options for pdfDoc
- * @param {Recipe.PdfA} [options.pdfa] - Write a new PDF as PDF/A of this
- *   level, with its PDF version, XMP metadata and an sRGB output intent.
+ * @param {Object} [options.pdfa] - Write a new PDF as PDF/A, with the PDF
+ *   version of the level, XMP metadata and an output intent.
+ * @param {Recipe.PdfA} options.pdfa.level - The PDF/A level.
+ * @param {Buffer|string} options.pdfa.iccProfile - The ICC profile of the
+ *   output intent, or its path: an RGB, CMYK or gray profile, whose color
+ *   space the document's colors must use.
+ * @param {string} [options.pdfa.outputCondition="Custom"] - The output
+ *   condition identifier, such as `sRGB IEC61966-2.1`.
  * @param {boolean} [options.xmp] - Write XMP metadata that mirrors the Info values of the PDF, in place of the packet of a source PDF that is edited.
  * @param {number} [options.version] - The PDF version of a new PDF: 1.0 through
  *   1.7 or 2.0. Other values fall back to 1.7.
@@ -101,8 +107,10 @@ class Recipe {
    * @throws {Error} If the source PDF cannot be read or opened for editing.
    */
   _createWriter() {
+    const iccProfile = this.options.pdfa?.iccProfile;
     this.pdfa_ = pdfaOptions(
       this.options,
+      typeof iccProfile === "string" ? fs.readFileSync(iccProfile) : iccProfile,
       this.isNewPDF,
       Object.keys(this.encryptOptions || {}).length > 0,
     );

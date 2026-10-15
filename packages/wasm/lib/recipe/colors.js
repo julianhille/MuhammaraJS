@@ -110,7 +110,7 @@ function hex(value) {
  * @param {object} [options={}] - Options with `colorspace` and `colorName`.
  * @returns {{colorspace: RecipeColorSpace, values: number[], name: string, alternate: (DeviceColorSpace|undefined)}} Components from 0 to 1.
  * @throws {TypeError} If the color space is unknown.
- * @throws {Error} If the PDF/A level of the Recipe does not allow CMYK colors.
+ * @throws {Error} If the PDF/A output intent does not allow the color.
  */
 export function colorModel(recipe, value, options = {}) {
   var colorspace = options.colorspace || recipe.options.colorspace || "";
@@ -143,8 +143,11 @@ export function colorModel(recipe, value, options = {}) {
   ) {
     code = defaultCodeByColorspace[colorspace];
   }
-  // eight digits are CMYK components, also as a separation's alternate
-  if (code.length === 8) requirePdfaAllows(recipe._pdfa, PdfAFeature.CMYK);
+  // the device colors, also as a separation's alternate
+  requirePdfaAllows(
+    recipe._pdfa,
+    { 6: PdfAFeature.RGB, 8: PdfAFeature.CMYK }[code.length],
+  );
   var values = code.match(/../g).map((part) => Number.parseInt(part, 16) / 255);
   if (separation) {
     if (
