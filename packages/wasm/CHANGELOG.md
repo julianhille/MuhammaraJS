@@ -2,6 +2,13 @@
 
 All notable changes to `@muhammara/wasm` are documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Fix a security vulnerability
+  [GHSA-f2qr-8r8j-mm94](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-f2qr-8r8j-mm94)
+
 ## [1.2.0] - 2026-10-12
 
 ### Added
