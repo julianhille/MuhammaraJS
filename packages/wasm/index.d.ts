@@ -985,7 +985,7 @@ export declare namespace Recipe {
   /** How Recipe text() orders right-to-left text before drawing it. */
   type TextDirection = "auto" | "ltr" | "rtl" | "none";
   /** A `Recipe.PdfA` value: the PDF/A level of the `pdfa` option. */
-  type PdfA = "1B" | "2B" | "2U";
+  type PdfA = "1B" | "2B" | "2U" | "3B" | "3U";
   /** Horizontal placement keyword for Recipe text and images. */
   type HorizontalAlign = "left" | "center" | "right";
   /** Vertical placement keyword for Recipe text, images, and text boxes. */
@@ -1239,6 +1239,10 @@ export interface RecipeConstructor {
     readonly A2B: "2B";
     /** PDF/A-2u: PDF 1.7, text that maps to Unicode. */
     readonly A2U: "2U";
+    /** PDF/A-3b: PDF/A-2b that may carry attached files. */
+    readonly A3B: "3B";
+    /** PDF/A-3u: PDF/A-2u that may carry attached files. */
+    readonly A3U: "3U";
   };
   /** Which table rows the `row` options apply to. */
   readonly TableRowNth: {

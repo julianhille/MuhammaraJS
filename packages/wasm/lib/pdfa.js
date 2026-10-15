@@ -15,6 +15,10 @@ var PdfA = Object.freeze({
   A2B: "2B",
   /** PDF/A-2u (ISO 19005-2, Unicode): PDF 1.7, text that maps to Unicode. */
   A2U: "2U",
+  /** PDF/A-3b (ISO 19005-3, basic): PDF/A-2b that may carry attached files. */
+  A3B: "3B",
+  /** PDF/A-3u (ISO 19005-3, Unicode): PDF/A-2u that may carry attached files. */
+  A3U: "3U",
 });
 
 /**
@@ -53,6 +57,18 @@ var PDFA_LEVELS = Object.freeze({
   }),
   [PdfA.A2U]: Object.freeze({
     part: 2,
+    conformance: "U",
+    version: 1.7,
+    forbids: Object.freeze([PdfAFeature.ANNOTATION_APPEARANCE]),
+  }),
+  [PdfA.A3B]: Object.freeze({
+    part: 3,
+    conformance: "B",
+    version: 1.7,
+    forbids: Object.freeze([PdfAFeature.ANNOTATION_APPEARANCE]),
+  }),
+  [PdfA.A3U]: Object.freeze({
+    part: 3,
     conformance: "U",
     version: 1.7,
     forbids: Object.freeze([PdfAFeature.ANNOTATION_APPEARANCE]),

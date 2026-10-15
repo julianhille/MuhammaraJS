@@ -15,6 +15,8 @@ var LEVELS = [
   ["1B", "%PDF-1.4"],
   ["2B", "%PDF-1.7"],
   ["2U", "%PDF-1.7"],
+  ["3B", "%PDF-1.7"],
+  ["3U", "%PDF-1.7"],
 ].map(([level, header]) => ({
   level,
   header,
@@ -159,6 +161,8 @@ describe("PDF/A", function () {
     assert.equal(Recipe.PdfA.A1B, "1B");
     assert.equal(Recipe.PdfA.A2B, "2B");
     assert.equal(Recipe.PdfA.A2U, "2U");
+    assert.equal(Recipe.PdfA.A3B, "3B");
+    assert.equal(Recipe.PdfA.A3U, "3U");
     assert.deepEqual(
       LEVELS.map(({ level }) => level),
       Object.values(Recipe.PdfA),
