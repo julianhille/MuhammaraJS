@@ -383,13 +383,16 @@ class Recipe {
         (this.annotations && this.annotations.length > 0) ||
         (this.annotationsToWrite && this.annotationsToWrite.length > 0)
       ) {
+        // The first pass ends with %%EOF; the objects the second appends must
+        // start on their own line (PDF/A requires it).
+        const eol = Buffer.from("\r\n");
         if (this.isBufferSrc) {
           const oldStream = this.outStream;
           this.outStream = new PDFWStreamForBuffer();
 
           this.writer = this.muhammara.createWriterToModify(
             new this.muhammara.PDFRStreamForBuffer(
-              oldStream.buffer || Buffer.alloc(0),
+              Buffer.concat([oldStream.buffer || Buffer.alloc(0), eol]),
             ),
             this.outStream,
             Object.assign({}, this.encryptOptions, {
@@ -397,6 +400,7 @@ class Recipe {
             }),
           );
         } else {
+          fs.appendFileSync(this.output, eol);
           this.writer = this.muhammara.createWriterToModify(
             this.output,
             Object.assign({}, this.encryptOptions, {

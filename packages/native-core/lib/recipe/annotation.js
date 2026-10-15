@@ -6,6 +6,7 @@ const {
   Coordinate,
 } = require("../recipe-constants");
 const { cssColors } = require("../css-colors");
+const { pdfaAnnotationFlags } = require("../pdfa");
 
 /**
  * Encodes annotation text as a PDF text string, so characters outside
@@ -65,10 +66,16 @@ function annotationDate(writer, value) {
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If `options.color` is not a known color, or a
  *   position, size, opacity, border, or `quadPoints` value is invalid.
+ * @throws {Error} If a PDF/A document does not allow the flags or opacity.
  */
 exports.comment = function comment(text = "", x, y, options = {}) {
   this._validateAnnot(options);
   validateAnnotationPosition(x, y, options);
+  pdfaAnnotationFlags(
+    this.pdfa_,
+    getFlagBitNumberByName(options.flag ?? options.flags),
+    options.opacity,
+  );
   this.annotationsToWrite.push({
     subtype: AnnotSubtype.TEXT,
     pageNumber: this.pageNumber,
@@ -191,6 +198,7 @@ Object.defineProperty(exports, "linkPdf", { value: linkPdf });
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If `options.color` is not a known color, or a
  *   position, size, opacity, border, or `quadPoints` value is invalid.
+ * @throws {Error} If a PDF/A document does not allow the flags or opacity.
  */
 exports.annot = function annot(
   x,
@@ -202,6 +210,11 @@ exports.annot = function annot(
   const text = options.text || options.contents;
   this._validateAnnot(options);
   validateAnnotationPosition(x, y, options);
+  pdfaAnnotationFlags(
+    this.pdfa_,
+    getFlagBitNumberByName(options.flag ?? options.flags),
+    options.opacity,
+  );
   this.annotationsToWrite.push({
     subtype,
     args: { text, x, y, width, height, options },
@@ -333,7 +346,9 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
     .writeKey("Open")
     .writeBooleanValue(params.open)
     .writeKey("F")
-    .writeNumberValue(getFlagBitNumberByName(params.flag));
+    .writeNumberValue(
+      pdfaAnnotationFlags(this.pdfa_, getFlagBitNumberByName(params.flag)),
+    );
 
   var opacity = (reply || options).opacity ?? 1;
   if (opacity !== 1) {

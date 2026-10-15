@@ -97,6 +97,30 @@ function outputIntent(bytes) {
   }
 }
 
+/**
+ * Reads the flags of the annotations on the first page of a PDF.
+ * @param {Buffer} bytes The PDF.
+ * @returns {number[]} The /F value of each annotation.
+ */
+function annotationFlags(bytes) {
+  var reader = muhammara.createReader(new muhammara.PDFRStreamForBuffer(bytes));
+  try {
+    var catalog = reader.queryDictionaryObject(reader.getTrailer(), "Root");
+    var pages = reader.queryDictionaryObject(catalog, "Pages");
+    var page = reader.queryArrayObject(
+      reader.queryDictionaryObject(pages, "Kids"),
+      0,
+    );
+    var annots = reader.queryDictionaryObject(page, "Annots");
+    return Array.from(
+      { length: annots.getLength() },
+      (_, i) => reader.queryArrayObject(annots, i).queryObject("F").value,
+    );
+  } finally {
+    reader.end();
+  }
+}
+
 describe("PDF/A", function () {
   LEVELS.forEach(function ({ level, header, identification }) {
     describe("PDF/A-" + level, function () {
@@ -280,6 +304,41 @@ describe("PDF/A", function () {
       assert.equal(
         outputIntent(create(gray, { colorspace: Recipe.Colorspace.GRAY })).n,
         1,
+      );
+    });
+  });
+
+  describe("annotations", function () {
+    it("flags them for printing", function () {
+      var bytes = create(pdfa("1B"), {}, (r) =>
+        r
+          .comment("note", 50, 350)
+          .annot(50, 400, "Highlight", { width: 100, height: 20 })
+          .annot(50, 450, "Square", {
+            width: 10,
+            height: 10,
+            flag: "readonly",
+          }),
+      );
+      assert.deepEqual(annotationFlags(bytes), [4, 4, 68]);
+      // the objects of each section start on their own line
+      assert.doesNotMatch(Buffer.from(bytes).toString("latin1"), /%%EOF\d/);
+    });
+
+    it("rejects hidden and transparent ones", function () {
+      ["hidden", "invisible", "noview"].forEach((flag) =>
+        assert.throws(
+          () =>
+            create(pdfa("1B"), {}, (r) => r.comment("note", 50, 50, { flag })),
+          { message: "PDF/A does not allow hidden annotations" },
+        ),
+      );
+      assert.throws(
+        () =>
+          create(pdfa("1B"), {}, (r) =>
+            r.comment("note", 50, 50, { opacity: 0.5 }),
+          ),
+        { message: "PDF/A-1 does not allow transparency" },
       );
     });
   });

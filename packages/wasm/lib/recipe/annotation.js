@@ -5,6 +5,7 @@ import {
   AnnotSubtype,
   Colorspace,
 } from "../value-sets.js";
+import { pdfaAnnotationFlags } from "../pdfa.js";
 
 /**
  * Resolves an annotation color string to `0xRRGGBB`, as native does.
@@ -374,7 +375,8 @@ export function createAnnotationMethods({ module, withString, withDoubles }) {
      * @param {RecipeAnnotationOptions} [options={}] Annotation options. The
      * `text` argument supplies the contents and the default icon is `Comment`.
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If there is no active page or a flag is unknown.
+     * @throws {Error} If there is no active page, a flag is unknown, or a
+     * PDF/A document does not allow the flags or opacity.
      * @throws {TypeError} If the options cannot form a valid PDF annotation.
      */
     comment: function (text = "", x, y, options = {}) {
@@ -397,7 +399,8 @@ export function createAnnotationMethods({ module, withString, withDoubles }) {
      * @param {RecipeAnnotationOptions} [options={}] Annotation appearance,
      * contents, replies, dimensions, flags, and rotation handling.
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If there is no active page or a flag is unknown.
+     * @throws {Error} If there is no active page, a flag is unknown, or a
+     * PDF/A document does not allow the flags or opacity.
      * @throws {TypeError} If `subtype` is not a non-empty string or the
      * options cannot form a valid PDF annotation.
      */
@@ -536,7 +539,11 @@ export function createAnnotationMethods({ module, withString, withDoubles }) {
             quadPoints,
             source.opacity ?? 1,
           );
-          var flags = annotationFlags(source.flag ?? source.flags);
+          var flags = pdfaAnnotationFlags(
+            this._pdfa,
+            annotationFlags(source.flag ?? source.flags),
+            source.opacity ?? 1,
+          );
           if (validateOnly) return 0;
           if (this._sourceMode) {
             return writeSourceAnnotation(

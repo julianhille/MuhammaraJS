@@ -152,6 +152,26 @@ function requirePdfaAllows(pdfa, ...features) {
 }
 
 /**
+ * The flags an annotation of a PDF/A document is written with: printed, and
+ * never invisible, hidden or unviewed. Also checks its opacity.
+ * @param {Object|null} pdfa - The PDF/A settings of the Recipe, see
+ *   `pdfaOptions()`, or null when it does not write PDF/A.
+ * @param {number} flags - The annotation flag bits.
+ * @param {number} [opacity=1] - The annotation opacity.
+ * @returns {number} The flag bits to write.
+ * @throws {Error} If the flags hide the annotation, or the document does not
+ *   allow the opacity.
+ */
+function pdfaAnnotationFlags(pdfa, flags, opacity = 1) {
+  if (!pdfa) return flags;
+  if (opacity < 1) requirePdfaAllows(pdfa, PdfAFeature.TRANSPARENCY);
+  // Invisible (1), Hidden (2) and NoView (32)
+  if (flags & 35) throw new Error("PDF/A does not allow hidden annotations");
+  // Print (4)
+  return flags | 4;
+}
+
+/**
  * Find the features an image needs that a PDF/A document may not allow: the
  * device colors of a PNG or JPEG, and the transparency of a PNG with an alpha
  * channel or a transparent color. Other images, such as TIFF, are not
@@ -239,6 +259,7 @@ export {
   PdfA,
   PdfAFeature,
   imagePdfaFeatures,
+  pdfaAnnotationFlags,
   pdfaLevel,
   pdfaOptions,
   requirePdfaAllows,
