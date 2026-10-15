@@ -1018,6 +1018,19 @@ int muhammara_wasm_recipe_set_info(WasmRecipe* recipe, const char* key,
   return 1;
 }
 
+// Adds a custom entry under any key, as native addAdditionalInfoEntry() does;
+// set_info maps title, creator and the other field names to the fields.
+WASM_EXPORT int muhammara_wasm_recipe_add_info_entry(WasmRecipe* recipe,
+                                                     const char* key,
+                                                     const char* value) {
+  if (recipe == nullptr || key == nullptr || value == nullptr || recipe->finished) {
+    return 0;
+  }
+  recipe->writer.GetDocumentContext().GetTrailerInformation().GetInfo()
+      .AddAdditionalInfoEntry(key, PDFTextString().FromUTF8(value));
+  return 1;
+}
+
 WASM_EXPORT int muhammara_wasm_recipe_remove_info(WasmRecipe* recipe,
                                                   const char* key) {
   if (recipe == nullptr || key == nullptr || recipe->finished) {

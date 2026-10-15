@@ -5,6 +5,44 @@ import { recipeFixture } from "./recipe.mjs";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe encryption", function () {
+  it("opens a source that needs its user password", async function () {
+    var Recipe = await createRecipe();
+    var recipe = new Recipe(
+      new Uint8Array(readFileSync("tests/TestMaterials/ProtectedAES256.pdf")),
+      { password: "user" },
+    );
+    assert.equal(recipe.pageInfo(1).width, 200);
+    // the Info of a source that needs its user password is not read
+    assert.deepEqual(recipe.info(), {});
+    assert.equal(recipe.xmp(), undefined);
+    // the writer would encrypt new entries with a key that does not match
+    assert.throws(() => recipe.endPDF(), {
+      message:
+        "Editing a password-protected source is unsupported; decrypt it with recrypt() first",
+    });
+    recipe.dispose();
+  });
+
+  it("reads and edits the Info of a source only an owner password protects", async function () {
+    var Recipe = await createRecipe();
+    // a new Recipe encrypts through recrypt(), which drops the Info
+    var source = new Uint8Array(
+      readFileSync("tests/TestMaterials/recipe/xmp-plain-metadata.pdf"),
+    );
+    var recipe = new Recipe(source, { password: "owner" });
+    assert.equal(recipe.info().title, "Plain");
+    var edited = recipe.info({ author: "A" }).endPDF();
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(edited);
+    try {
+      var info = reader.queryDictionaryObject(reader.getTrailer(), "Info");
+      assert.equal(info.queryObject("Title").toText(), "Plain");
+      assert.equal(info.queryObject("Author").toText(), "A");
+    } finally {
+      reader.end();
+    }
+  });
+
   it("encrypts the final bytes and caches the encrypted result", async function () {
     var Recipe = await createRecipe();
     var recipe = new Recipe({ userPassword: "view", ownerPassword: "edit" })
@@ -143,6 +181,9 @@ describe("Recipe encryption", function () {
     reading.dispose();
     recipe = new Recipe(aes, { password: "user" });
     assert.equal(recipe.pageInfo(1).height, 300);
+    // its Info is not read, as on native
+    assert.deepEqual(recipe.info(), {});
+    assert.equal(recipe.xmp(), undefined);
     // Editing stays unsupported, so no output is written over the encryption.
     assert.throws(
       () => recipe.info({ title: "T" }).endPDF(),

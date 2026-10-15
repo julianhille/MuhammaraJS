@@ -3290,6 +3290,11 @@ declare namespace muhammara {
     interface RecipeOptions {
       /** PDF version of a new PDF: 1.0 through 1.7 or 2.0; other values use 1.7. */
       version?: number;
+      /**
+       * Write XMP metadata that mirrors the Info values of the PDF, in place of
+       * the packet of an edited one. Everything else in an old packet is lost.
+       */
+      xmp?: boolean;
       author?: string;
       title?: string;
       subject?: string;
@@ -3429,8 +3434,8 @@ declare namespace muhammara {
     }
 
     interface InfoOptions {
-      /** Additional Info dictionary entries; arrays are joined with a comma and space. */
-      [key: string]: string | string[] | undefined;
+      /** Additional Info dictionary entries; arrays are joined with a comma and space, other values are converted with String(). */
+      [key: string]: unknown;
       version?: string;
       author?: string;
       title?: string;
@@ -4295,26 +4300,48 @@ declare namespace muhammara {
      * @param options.title - The title
      * @param options.subject - The subject
      * @param options.keywords - The array of keywords
-     * @returns The existing information dictionary when options are omitted, otherwise the recipe instance.
-     *   A new PDF has no existing information, so the call without options returns undefined.
-     * @throws {Error} If the source information cannot be read.
+     * @returns The recipe instance. A standard field set to an empty array is cleared; one without a value (such as `""`), and a custom one that is null or undefined, is left as it is. The Info name
+     *   of a standard field, such as `Title`, sets that field.
+     * @throws {TypeError} For an empty key, or Creator, Producer,
+     *   CreationDate, ModDate, Trapped and the `source-*` entries, which
+     *   Recipe writes itself.
+     * @throws {Error} If the source information cannot be read, or after endPDF().
      */
     info(options: Recipe.InfoOptions): Recipe;
     /**
-     * Read the existing information dictionary of the source PDF.
-     * @returns The information keyed by lower-cased entry name, or undefined
-     *   for a new PDF or a source without an Info dictionary.
+     * Read the Info entries of the source PDF, overlaid with the values set
+     * on this Recipe, as text: the standard fields by their option names
+     * (`title`, `author`, `subject`, `keywords`), the source's own
+     * `creationDate`, `modDate`, `creator`, `producer` and `trapped`, and
+     * custom entries as spelled; a field wins over a source custom entry
+     * of the same name, and a value set on this Recipe over both. The Creator, Producer, ModDate and `source-*` entries Recipe
+     * writes at endPDF() are not included.
+     * A source's own `source-*` entries are
+     * reported as custom entries.
+     * @returns The information; empty for a new PDF without values and for
+     *   a source that needs its user password.
      * @throws {Error} If the source information cannot be read.
      */
-    info(): Record<string, string> | undefined;
+    info(): Record<string, string>;
+    /**
+     * Read the XMP metadata packet of the source PDF.
+     * @returns The packet as text, or undefined for a new PDF, a source
+     *   without one, or a source that needs its user password.
+     * @throws {Error} If the source cannot be read, or keeps its metadata
+     *   unencrypted (`/EncryptMetadata false`).
+     */
+    xmp(): string | undefined;
 
     /**
      * @param key - The key
-     * @param value - The value; other values are converted with toString().
+     * @param value - The value; arrays are joined with a comma and space,
+     *   other values are converted with String().
      * @returns The recipe instance.
-     * @throws {TypeError} If the key or value is null or undefined.
+     * @throws {TypeError} If the key or value is null or undefined, or the
+     *   key is one `info()` rejects.
+     * @throws {Error} After endPDF().
      */
-    custom(key: string, value: string): Recipe;
+    custom(key: string, value: unknown): Recipe;
 
     /**
      * Insert a page from the other pdf

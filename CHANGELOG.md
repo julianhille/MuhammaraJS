@@ -7,8 +7,41 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- Recipe `info()` without arguments reports the custom keys of a source PDF
+  in their own spelling, as the PDF stores them, instead of lower-cased:
+  `info().reportid` is now `info().ReportId`; see
+  [Breaking Changes](packages/native/docs/breaking-changes.md#recipe-information)
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Recipe `info()` without arguments returns `{}` for a new PDF, and for a
+  source without an Info dictionary, instead of `undefined`, and includes the
+  values set on the Recipe, as `@muhammara/wasm`
+  does; see
+  [Breaking Changes](packages/native/docs/breaking-changes.md#recipe-information)
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Recipe `custom()` with `title`, `author`, `subject` or `keywords` sets that
+  field, as `info()` and `@muhammara/wasm` do, instead of writing a custom
+  `/title` entry; see
+  [Breaking Changes](packages/native/docs/breaking-changes.md#recipe-information)
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Recipe `info()` and `custom()` throw a `TypeError` for `Trapped`, the
+  `source-Creator`, `source-Producer` and `source-ModDate` entries and an empty
+  key, which used to write custom entries. Recipe writes these itself; use
+  another key. `Trapped` is only carried over from a source PDF; see
+  [Breaking Changes](packages/native/docs/breaking-changes.md#recipe-information)
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Recipe `info(options)` after `endPDF()` throws `PDF writer has ended`, as
+  `@muhammara/wasm` does, instead of ignoring the values; set them before
+  `endPDF()` [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+
 ### Added
 
+- Write XMP metadata that mirrors the Info dictionary with the new `xmp` option
+  of Recipe, and read the XMP packet of a source PDF with `recipe.xmp()`. An
+  edit keeps the existing packet, or, with `xmp: true`, replaces it with one
+  built from the Info values the PDF is written with
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
 - Draw right-to-left text such as Hebrew in visual order when `writeText()`
   or Recipe `text()` is given the new `direction` option (`TextDirection` /
   `Recipe.TextDirection`). `"auto"` takes each paragraph's direction from its
@@ -32,6 +65,34 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Set the field when Recipe `info()` or `custom()` gets the Info name of a
+  standard field, such as `Title`, instead of writing a value without a key,
+  which broke or overrode the Info dictionary. Creator, Producer, CreationDate
+  and ModDate,
+  which Recipe writes itself, throw a `TypeError` before any entry is set
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Keep the custom entries of a source PDF that are named like Recipe's own
+  fields (`creator`, `modDate`, `trapped`) when Recipe edits it, and write the
+  `source-Creator`, `source-Producer` and `source-ModDate` of the edited source
+  over those it carries from an earlier edit, as `@muhammara/wasm` does
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Keep the custom text Info entries of a source PDF, empty ones included, in their
+  original spelling when Recipe edits it. They used to be dropped by the next
+  edit
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Keep the custom Info entries set with Recipe `info()` or `custom()` when the
+  Recipe also writes annotations. They used to be dropped
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Keep a title, author, subject or keywords set through the low-level writer
+  of a Recipe that edits a PDF, as `@muhammara/wasm` does. `endPDF()` used to
+  write the value of the source over it
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Leave a custom Recipe `info()` value that is `null` or `undefined` out of the
+  PDF instead of writing the text `null` or `undefined`, as `@muhammara/wasm`
+  does [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Write a Recipe `keywords` array, and an array passed to `custom()`, as
+  comma-and-space-separated text, as `@muhammara/wasm` does, instead of `a,b`
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
 - Turn a rotated Recipe `rectangle()` without `rotationOrigin` around its
   top-left corner, as documented and as in `@muhammara/wasm`, instead of its
   bottom-left corner. Pass `rotationOrigin: [x, y + height]` to keep the old
@@ -105,6 +166,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Recipe `info()` of a source that needs its user password returns `{}`
+  instead of throwing, the new `xmp()` returns `undefined` for it, and
+  `endPDF()` throws as `@muhammara/wasm` does, instead of
+  `unable to create copying context`:
+  `Editing a password-protected source is unsupported; decrypt it with recrypt() first`
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
 - Test the native prebuilds up to Node.js 26.11.1 and Electron 44.7.1
   [#984](https://github.com/julianhille/MuhammaraJS/issues/984)
 

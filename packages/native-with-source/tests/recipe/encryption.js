@@ -25,6 +25,50 @@ function assertPdfCannotBeReadWithoutPassword(filePath) {
 }
 
 describe("Encryption", () => {
+  it("opens a source that needs its user password", () => {
+    const recipe = new Recipe(
+      path.join(__dirname, "../TestMaterials/ProtectedAES256.pdf"),
+      path.join(__dirname, "../output/ProtectedAES256-info.pdf"),
+      { password: "user" },
+    );
+    assert.equal(recipe.pageInfo(1).width, 200);
+    // the Info of a source that needs its user password is not read
+    assert.deepEqual(recipe.info(), {});
+    assert.equal(recipe.xmp(), undefined);
+    // the writer would encrypt new entries with a key that does not match
+    assert.throws(() => recipe.endPDF(), {
+      message:
+        "Editing a password-protected source is unsupported; decrypt it with recrypt() first",
+    });
+  });
+
+  it("reads and edits the Info of a source only an owner password protects", () => {
+    var created = new Recipe(Buffer.from("new"), undefined, {
+      password: "owner",
+      title: "Original",
+    });
+    created.createPage(100, 100).endPage();
+    var source = created.endPDF((output) => output);
+    var recipe = new Recipe(source, undefined, { password: "owner" });
+    assert.equal(recipe.info().title, "Original");
+    assert.ok(recipe.xmp() === undefined);
+    var edited = recipe.info({ author: "A" }).endPDF((output) => output);
+    var reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(edited),
+    );
+    try {
+      var info = reader.queryDictionaryObject(reader.getTrailer(), "Info");
+      assert.equal(info.queryObject("Title").toText(), "Original");
+      assert.equal(info.queryObject("Author").toText(), "A");
+      assert.match(
+        info.queryObject("source-Producer").toText(),
+        /^MuhammaraJS/,
+      );
+    } finally {
+      reader.end();
+    }
+  });
+
   const taskAVP = "Add view password";
   it(taskAVP, (done) => {
     const src = path.join(__dirname, "../TestMaterials/recipe/test2.pdf");
@@ -327,7 +371,7 @@ describe("Encryption", () => {
     // Editing stays unsupported, so no output is written over the encryption.
     assert.throws(
       () => aesRecipe.info({ title: "T" }).endPDF(() => {}),
-      /copying context/,
+      /Editing a password-protected source is unsupported/,
     );
     // An owner-password-only source opens without a password and stays editable.
     let ownerOnly;

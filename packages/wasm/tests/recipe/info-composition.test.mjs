@@ -150,7 +150,7 @@ describe("Recipe byte metadata and composition", function () {
     assert.deepEqual(recipe.info(), {
       author: "browser",
       title: "metadata",
-      keywords: ["one", "two"],
+      keywords: "one, two",
       custom: "value",
     });
     var bytes = recipe.endPDF();

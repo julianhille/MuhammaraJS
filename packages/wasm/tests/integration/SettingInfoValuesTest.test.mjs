@@ -129,6 +129,20 @@ describe("SettingInfoValuesTest", function () {
       assert.equal(info.title, "kept");
     }
   });
+  it("keeps a custom entry named like a field apart from it", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter();
+    var info = writer.getDocumentContext().getInfoDictionary();
+    info.addAdditionalInfoEntry("title", "custom");
+    info.title = "field";
+    assert.equal(info.title, "field");
+    assert.equal(info.getAdditionalInfoEntry("title"), "custom");
+    writer.writePage(writer.createPage(0, 0, 10, 10));
+    var pdf = new TextDecoder("latin1").decode(writer.end());
+    assert.ok(pdf.includes("/Title (field)"));
+    assert.ok(pdf.includes("/title (custom)"));
+  });
+
   it("writes a Date's time zone offset with its minutes", async function () {
     var muhammara = await createMuhammaraWasm();
     var writer = muhammara.createWriter();

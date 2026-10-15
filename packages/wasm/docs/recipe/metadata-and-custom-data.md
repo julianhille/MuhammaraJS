@@ -30,11 +30,18 @@ accepted.
 New documents receive canonical creation and modification dates. When modifying
 source bytes, Recipe updates ModDate and writes MuhammaraJS Producer/Creator
 values. Existing ModDate, Creator, and Producer values are retained as
-`source-ModDate`, `source-Creator`, and `source-Producer` entries. Read-back
-through the underlying PDF Info dictionary can normalize key casing and does
-not preserve every arbitrary source entry.
+`source-ModDate`, `source-Creator`, and `source-Producer` entries. Custom
+entries of the source are kept with their spelling, and `info()` reports them
+with it.
 
-Use `info()` to read the document metadata currently known to Recipe.
+Pass `xmp: true` to also write an XMP metadata packet that mirrors these Info
+values, and use `xmp()` to read the packet of a source PDF.
+
+Use `info()` to read the Info entries of the source overlaid with the values set
+on the Recipe, as text. `info({ Title: "..." })` sets the title like `title` does. Creator, Producer,
+CreationDate, ModDate, Trapped and the `source-*` entries are written by Recipe,
+and they and an empty key throw a `TypeError`; a source's own `source-*` entries
+are reported by `info()` as custom entries.
 `getPageInfo()` is the native-compatible accessor; during source editing it
 returns the writable output Info dictionary rather than parsed source values.
 For page geometry use `pageInfo(pageNumber)` or `getCurrentPageInfo()`. See [Add

@@ -90,6 +90,21 @@ describe("SettingInfoValues", function () {
     pdfWriter.writePage(pdfWriter.createPage(0, 0, 595, 842));
     pdfWriter.end();
   });
+  it("keeps a custom entry named like a field apart from it", function () {
+    var stream = new muhammara.PDFWStreamForBuffer();
+    var writer = muhammara.createWriter(stream);
+    var info = writer.getDocumentContext().getInfoDictionary();
+    info.addAdditionalInfoEntry("title", "custom");
+    info.title = "field";
+    assert.equal(info.title, "field");
+    assert.equal(info.getAdditionalInfoEntry("title"), "custom");
+    writer.writePage(writer.createPage(0, 0, 10, 10));
+    writer.end();
+    var pdf = stream.buffer.toString("latin1");
+    assert.include(pdf, "/Title (field)");
+    assert.include(pdf, "/title (custom)");
+  });
+
   it("writes a Date's time zone offset with its minutes", function () {
     var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
     var time = Date.UTC(2026, 0, 2, 3, 4, 5);

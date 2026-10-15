@@ -7,7 +7,7 @@ import { createTextMethods } from "../../lib/recipe/text.js";
 import { permission } from "../../lib/recipe/security.js";
 
 describe("Recipe extracted modules", function () {
-  it("keeps metadata byte writes and shallow reads at the info boundary", function () {
+  it("keeps metadata byte writes and text reads at the info boundary", function () {
     var writes = [];
     var methods = createInfoMethods({
       call: (...args) => writes.push(args),
@@ -22,8 +22,9 @@ describe("Recipe extracted modules", function () {
       ["_muhammara_wasm_recipe_set_info", 7, "keywords", "one, two"],
     ]);
     var info = methods.info.call(recipe);
-    info.keywords.push("three");
-    assert.deepEqual(recipe._info.keywords, ["one", "two", "three"]);
+    assert.equal(info.keywords, "one, two");
+    info.keywords = "changed";
+    assert.equal(recipe._info.keywords, "one, two");
   });
 
   it("measures text once for each font and size", function () {

@@ -15,6 +15,8 @@ WASM_EXPORT WasmRecipe* muhammara_wasm_recipe_create_with_options(
     delete recipe;
     return nullptr;
   }
+  recipe->writer.GetDocumentContext().AddDocumentContextExtender(
+      &recipe->catalogUpdate);
   return recipe;
 }
 
@@ -38,6 +40,8 @@ WASM_EXPORT WasmRecipe* muhammara_wasm_recipe_create_encrypted(
     delete recipe;
     return nullptr;
   }
+  recipe->writer.GetDocumentContext().AddDocumentContextExtender(
+      &recipe->catalogUpdate);
   return recipe;
 }
 

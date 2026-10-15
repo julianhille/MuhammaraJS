@@ -1168,24 +1168,26 @@ export function createWriterToModifyFactory({
     var additionalInfo = new Map();
     /**
      * Writes a text Info dictionary entry.
-     * @param {string} key - Entry name.
+     * @param {string} key - Entry name, or a field name such as `title`.
      * @param {string} value - Text value.
+     * @param {boolean} [custom=false] - Write a custom entry under `key`, also
+     *   when it is a field name.
      * @returns {void}
      * @throws {TypeError} If `key` or `value` is not a string.
      * @throws {Error} If the modifier has ended or the entry cannot be set.
      */
-    function setInfo(key, value) {
+    function setInfo(key, value, custom = false) {
       requireOpen();
       if (typeof key !== "string" || typeof value !== "string")
         throw new TypeError("addAdditionalInfoEntry requires two strings");
       withString(key, (keyPointer) =>
         withString(value, (valuePointer) => {
           if (
-            !module._muhammara_wasm_modifier_set_info(
-              modifier,
-              keyPointer,
-              valuePointer,
-            )
+            !module[
+              custom
+                ? "_muhammara_wasm_modifier_add_info_entry"
+                : "_muhammara_wasm_modifier_set_info"
+            ](modifier, keyPointer, valuePointer)
           )
             throw new Error("Unable to set additional info entry");
         }),
@@ -1201,7 +1203,7 @@ export function createWriterToModifyFactory({
        * @throws {Error} If the modifier has ended or the entry cannot be set.
        */
       addAdditionalInfoEntry: function (key, value) {
-        setInfo(key, value);
+        setInfo(key, value, true);
         additionalInfo.set(key, value);
       },
       /**

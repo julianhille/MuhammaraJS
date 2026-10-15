@@ -4,8 +4,41 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- Recipe `info()` without arguments reports the custom keys of a source PDF
+  in their own spelling, as the PDF stores them, instead of lower-cased:
+  `info().reportid` is now `info().ReportId`; see
+  [Breaking Changes](docs/breaking-changes.md#recipe-information)
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Recipe `info()` without arguments returns its values as text, as native
+  does: a `keywords` array reads back as `"a, b"` instead of `["a", "b"]`, and
+  a number as a string; see
+  [Breaking Changes](docs/breaking-changes.md#recipe-information)
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Recipe `info()` and `custom()` throw a `TypeError` for `Trapped`, the
+  `source-Creator`, `source-Producer` and `source-ModDate` entries and an empty
+  key, which used to write custom entries. Recipe writes these itself; use
+  another key. `Trapped` is only carried over from a source PDF; see
+  [Breaking Changes](docs/breaking-changes.md#recipe-information)
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Recipe `custom()` throws a `TypeError` for a `null` or `undefined` key or
+  value, as native does, instead of writing the text `null` or `undefined`;
+  pass the text to write [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Recipe `info({ title: "" })`, and `""` for the other standard fields, leaves
+  the field as it is, as native does, instead of clearing it; pass `[]` to
+  clear a field. `info(undefined)` reads the information, as native does,
+  instead of returning the Recipe; pass `{}` to chain; see
+  [Breaking Changes](docs/breaking-changes.md#recipe-information)
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+
 ### Added
 
+- Write XMP metadata that mirrors the Info dictionary with the new `xmp` option
+  of Recipe, and read the XMP packet of a source PDF with `recipe.xmp()`. An
+  edit keeps the existing packet, or, with `xmp: true`, replaces it with one
+  built from the Info values the PDF is written with
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
 - Draw right-to-left text such as Hebrew in visual order when `writeText()`
   or Recipe `text()` is given the new `direction` option (`TextDirection` /
   `Recipe.TextDirection`). `"auto"` takes each paragraph's direction from its
@@ -33,8 +66,33 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   reads its page geometry instead of throwing. `read()` and `readAsync()` also
   open encrypted bytes with the Recipe `password` and throw for bytes without
   readable pages. As in native, a source that needs a password to open cannot
-  be edited: `endPDF()` throws instead of writing a corrupt PDF
+  be edited: `endPDF()` throws instead of writing a corrupt PDF, and `info()`
+  returns `{}` for it
   [#1003](https://github.com/julianhille/MuhammaraJS/issues/1003)
+- Set the field when Recipe `info()` or `custom()` gets the Info name of a
+  standard field, such as `Title`, instead of writing a value without a key,
+  which broke or overrode the Info dictionary. Creator, Producer, CreationDate
+  and ModDate,
+  which Recipe writes itself, throw a `TypeError` before any entry is set
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Write a custom entry for `info({ creator: … })` and for the low-level
+  `addAdditionalInfoEntry()` with a field name such as `title`, as native does,
+  instead of setting that field
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Keep source Info entries that are stored as indirect objects, and custom
+  entries named like Recipe's own fields (`creator`, `modDate`), when Recipe
+  edits a PDF [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Leave a Recipe `info()` value that is `null` or `undefined` out of the PDF
+  instead of writing the text `null` or `undefined`, as native does
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Keep the custom text Info entries of a source PDF, empty ones included, in their
+  original spelling when Recipe edits it. They used to be dropped by the next
+  edit
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Keep the Info values of a source PDF that are stored as hex strings, such as
+  UTF-16 titles, when Recipe edits it, and return them from `info()`. They
+  used to be dropped
+  [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
 - Keep a word joined by a non-breaking space (U+00A0) together on a
   justified Recipe line instead of widening the gap inside it, as native does
   [#330](https://github.com/julianhille/MuhammaraJS/issues/330)

@@ -15,6 +15,7 @@ var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
  *   the source path; for a Buffer source the result is only returned by
  *   `endPDF()` unless an output path is given.
  * @param {Object} [options] - The options for pdfDoc
+ * @param {boolean} [options.xmp] - Write XMP metadata that mirrors the Info values of the PDF, in place of the packet of a source PDF that is edited.
  * @param {number} [options.version] - The PDF version of a new PDF: 1.0 through
  *   1.7 or 2.0. Other values fall back to 1.7.
  * @param {string} [options.author] - The author
@@ -137,6 +138,18 @@ class Recipe {
       } catch (err) {
         throw new Error(err);
       }
+      // the fields and custom entries of the source, once, so that low-level
+      // changes to the Info dictionary stick, as on Wasm
+      const source = this._readInfo();
+      const infoDictionary = this.writer
+        .getDocumentContext()
+        .getInfoDictionary();
+      standardInfoKeys.forEach((key) => {
+        if (source[key]) infoDictionary[key] = source[key];
+      });
+      Object.entries(this.sourceCustomInfo_).forEach(([key, value]) =>
+        infoDictionary.addAdditionalInfoEntry(key, value),
+      );
     }
 
     var info = {};
@@ -339,6 +352,11 @@ class Recipe {
     try {
       this._deletePages();
       this._writeInfo();
+      // the annotation pass writes a new Info dictionary: carry the fields
+      // and custom entries over
+      const info = this.writer.getDocumentContext().getInfoDictionary();
+      const fields = standardInfoKeys.map((key) => [key, info[key]]);
+      const customInfo = info.getAdditionalInfoEntries();
       this.writer.end();
       // This is a temporary work around for copying context will overwrite the current one
       // write annotations at the end.
@@ -369,6 +387,15 @@ class Recipe {
           );
         }
 
+        const infoDictionary = this.writer
+          .getDocumentContext()
+          .getInfoDictionary();
+        fields.forEach(([key, value]) => {
+          if (value) infoDictionary[key] = value;
+        });
+        Object.entries(customInfo).forEach(([key, value]) =>
+          infoDictionary.addAdditionalInfoEntry(key, value),
+        );
         this._writeAnnotations();
         this._writeInfo();
         this.writer.end();

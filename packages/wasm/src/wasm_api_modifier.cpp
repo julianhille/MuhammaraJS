@@ -102,6 +102,17 @@ WASM_EXPORT int muhammara_wasm_modifier_set_info(WasmModifier* modifier,
   return 1;
 }
 
+// Adds a custom entry under any key, as native addAdditionalInfoEntry() does;
+// set_info maps title, creator and the other field names to the fields.
+WASM_EXPORT int muhammara_wasm_modifier_add_info_entry(WasmModifier* modifier,
+                                                       const char* key,
+                                                       const char* value) {
+  if (modifier == nullptr || modifier->finished || key == nullptr || value == nullptr) return 0;
+  modifier->writer.GetDocumentContext().GetTrailerInformation().GetInfo()
+      .AddAdditionalInfoEntry(key, PDFTextString().FromUTF8(value));
+  return 1;
+}
+
 WASM_EXPORT int muhammara_wasm_modifier_remove_info(WasmModifier* modifier,
                                                      const char* key) {
   if (modifier == nullptr || modifier->finished || key == nullptr) return 0;
@@ -334,6 +345,14 @@ WASM_EXPORT int muhammara_wasm_modifier_require_catalog_update(
     WasmModifier* modifier) {
   if (modifier == nullptr || modifier->finished) return 0;
   modifier->catalogUpdate.required = true;
+  return 1;
+}
+
+WASM_EXPORT int muhammara_wasm_recipe_set_catalog_entry(
+    WasmRecipe* recipe, const char* key, unsigned long objectId) {
+  if (recipe == nullptr || recipe->finished || key == nullptr || *key == '\0')
+    return 0;
+  recipe->catalogUpdate.SetEntry(key, objectId);
   return 1;
 }
 
