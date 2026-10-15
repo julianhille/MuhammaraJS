@@ -73,6 +73,7 @@ describe("Recipe prototype", function () {
       "appendPage",
       "arc",
       "arrow",
+      "attach",
       "chroma",
       "circle",
       "comment",

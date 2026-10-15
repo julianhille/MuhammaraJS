@@ -24,6 +24,7 @@ var LEVELS = [
   ["3U", "%PDF-1.7"],
   ["4", "%PDF-2.0"],
   ["4E", "%PDF-2.0"],
+  ["4F", "%PDF-2.0"],
 ].map(([level, header]) => ({
   level,
   header,
@@ -86,6 +87,9 @@ function pdfa(level, more) {
 function create(option, options, draw) {
   var recipe = new Recipe({ pdfa: option, title: "Archived", ...options });
   recipe.createPage("a4").text("Archived text", 50, 50);
+  // PDF/A-4f needs an attached file
+  if (option.level === "4F")
+    recipe.attach("data.xml", new TextEncoder().encode("<x/>"));
   if (draw) draw(recipe);
   var bytes = recipe.endPage().endPDF();
   writeOutput("PDFA-" + option.level, bytes);
@@ -194,6 +198,7 @@ describe("PDF/A", function () {
     assert.equal(Recipe.PdfA.A3U, "3U");
     assert.equal(Recipe.PdfA.A4, "4");
     assert.equal(Recipe.PdfA.A4E, "4E");
+    assert.equal(Recipe.PdfA.A4F, "4F");
     assert.deepEqual(
       LEVELS.map(({ level }) => level),
       Object.values(Recipe.PdfA),
@@ -343,6 +348,45 @@ describe("PDF/A", function () {
       );
       assert.throws(() => create(pdfa("4"), { version: 1.7 }), {
         message: "PDF/A-4 is written as PDF 2.0",
+      });
+    });
+  });
+
+  describe("attached files", function () {
+    it("allows them where the level does", function () {
+      ["3B", "3U", "4F"].forEach((level) =>
+        create(pdfa(level), {}, (r) =>
+          r.attach("invoice.xml", new TextEncoder().encode("<x/>"), {
+            mimeType: "text/xml",
+            relationship: Recipe.AFRelationship.DATA,
+          }),
+        ),
+      );
+    });
+
+    it("rejects them where the level does not", function () {
+      [
+        ["1B", "PDF/A-1"],
+        ["2B", "PDF/A-2"],
+        ["2U", "PDF/A-2"],
+        ["4", "PDF/A-4"],
+        ["4E", "PDF/A-4"],
+      ].forEach(([level, name]) =>
+        assert.throws(
+          () =>
+            create(pdfa(level), {}, (r) =>
+              r.attach("a", new TextEncoder().encode("<x/>")),
+            ),
+          { message: name + " does not allow attached files" },
+        ),
+      );
+    });
+
+    it("needs one in PDF/A-4f", function () {
+      var recipe = new Recipe({ pdfa: pdfa("4F") });
+      recipe.createPage("a4").endPage();
+      assert.throws(() => recipe.endPDF(), {
+        message: "PDF/A-4f needs an attached file",
       });
     });
   });

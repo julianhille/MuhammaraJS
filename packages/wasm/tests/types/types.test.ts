@@ -476,6 +476,16 @@ async function usesLowLevelSurface() {
   });
   // @ts-expect-error pdfa.level takes a Recipe.PdfA value.
   new Recipe({ pdfa: { level: "9Z", iccProfile: new ArrayBuffer(0) } });
+  new Recipe()
+    .attach("data.xml", new Uint8Array(), {
+      mimeType: "text/xml",
+      description: "Data",
+      relationship: Recipe.AFRelationship.DATA,
+      modDate: new Date(),
+    })
+    .attach("notes.txt", new ArrayBuffer(0));
+  // @ts-expect-error relationship takes a Recipe.AFRelationship value.
+  new Recipe().attach("a", new Uint8Array(), { relationship: "X" });
   // @ts-expect-error pdfa needs an ICC profile.
   new Recipe({ pdfa: { level: "1B" } });
   recipe

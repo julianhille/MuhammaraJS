@@ -82,6 +82,7 @@ export function createRecipeFactory({
   createReader,
   createWriterToModify,
   recrypt,
+  valueTypes,
   pageBoxes,
   registerWriterFont,
   unregisterWriterFont,
@@ -888,7 +889,7 @@ export function createRecipeFactory({
     createShapeMethods(),
     createImageMethods(runtime),
     createAnnotationMethods({ module, withString, withDoubles }),
-    createInfoMethods({ call, withString, createReader }),
+    createInfoMethods({ call, withString, createReader, valueTypes }),
     createSecurityMethods(),
     createReplaceTextMethods(),
   );

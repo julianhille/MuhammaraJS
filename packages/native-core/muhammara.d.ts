@@ -3280,7 +3280,17 @@ declare namespace muhammara {
     /** A `Recipe.TextDirection` value. */
     type TextDirection = "auto" | "ltr" | "rtl" | "none";
     /** A `Recipe.PdfA` value. */
-    type PdfA = "1B" | "2B" | "2U" | "3B" | "3U" | "4" | "4E";
+    type PdfA = "1B" | "2B" | "2U" | "3B" | "3U" | "4" | "4E" | "4F";
+    /** A `Recipe.AFRelationship` value. */
+    type AFRelationship =
+      | "Source"
+      | "Data"
+      | "Alternative"
+      | "Supplement"
+      | "EncryptedPayload"
+      | "FormData"
+      | "Schema"
+      | "Unspecified";
     /** Known text-box alignments, with string compatibility for computed values. */
     type TextBoxAlign =
       TextAlign | `${TextAlign} ${VerticalAlign}` | (string & {});
@@ -3442,6 +3452,17 @@ declare namespace muhammara {
       fill?: Color;
       /** Outline the image box in green and mark the placement point in red. */
       debug?: boolean | number;
+    }
+
+    interface AttachOptions {
+      /** The MIME type. Defaults to `application/octet-stream`. */
+      mimeType?: string;
+      /** A description of the file. */
+      description?: string;
+      /** How the file relates to the document. Defaults to `Unspecified`. */
+      relationship?: Recipe.AFRelationship;
+      /** The modification date. Defaults to now. */
+      modDate?: Date;
     }
 
     interface PdfAOptions {
@@ -3927,6 +3948,19 @@ declare namespace muhammara {
       readonly A4: "4";
       /** PDF/A-4e: PDF/A-4 that may carry 3D content. */
       readonly A4E: "4E";
+      /** PDF/A-4f: PDF/A-4 with at least one attached file. */
+      readonly A4F: "4F";
+    };
+    /** How a file passed to `attach()` relates to the document. */
+    static readonly AFRelationship: {
+      readonly SOURCE: "Source";
+      readonly DATA: "Data";
+      readonly ALTERNATIVE: "Alternative";
+      readonly SUPPLEMENT: "Supplement";
+      readonly ENCRYPTED_PAYLOAD: "EncryptedPayload";
+      readonly FORM_DATA: "FormData";
+      readonly SCHEMA: "Schema";
+      readonly UNSPECIFIED: "Unspecified";
     };
     /** Which table rows the `row` options apply to. */
     static readonly TableRowNth: {
@@ -4372,6 +4406,22 @@ declare namespace muhammara {
      *   unencrypted (`/EncryptMetadata false`).
      */
     xmp(): string | undefined;
+    /**
+     * Attach a file to a new PDF, as an embedded file that the document lists
+     * as associated with it. A file attached again under the same name
+     * replaces the earlier one.
+     * @param name - The file name.
+     * @param file - The file content, or its path.
+     * @throws {TypeError} If the name is empty, the file is no bytes, or the
+     *   relationship is unknown.
+     * @throws {Error} After endPDF(), for a source PDF, or when the PDF/A level
+     *   does not allow attached files.
+     */
+    attach(
+      name: string,
+      file: Buffer | string,
+      options?: Recipe.AttachOptions,
+    ): Recipe;
 
     /**
      * @param key - The key

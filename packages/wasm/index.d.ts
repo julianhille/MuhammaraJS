@@ -131,6 +131,16 @@ export interface RecipeMargins {
   top?: number;
   bottom?: number;
 }
+export interface RecipeAttachOptions {
+  /** The MIME type. Defaults to `application/octet-stream`. */
+  mimeType?: string;
+  /** A description of the file. */
+  description?: string;
+  /** How the file relates to the document. Defaults to `Unspecified`. */
+  relationship?: Recipe.AFRelationship;
+  /** The modification date. Defaults to now. */
+  modDate?: Date;
+}
 export interface RecipePdfAOptions {
   /** The PDF/A level. */
   level: Recipe.PdfA;
@@ -921,6 +931,20 @@ export interface Recipe {
    */
   xmp(): string | undefined;
   /**
+   * Attach a file to a new PDF, as an embedded file that the document lists as
+   * associated with it. A file attached again under the same name replaces the
+   * earlier one.
+   * @throws {TypeError} If the name is empty, the file is no bytes, or the
+   *   relationship is unknown.
+   * @throws {Error} After endPDF(), for a source PDF, or when the PDF/A level
+   *   does not allow attached files.
+   */
+  attach(
+    name: string,
+    file: Uint8Array | ArrayBuffer,
+    options?: RecipeAttachOptions,
+  ): this;
+  /**
    * Set a custom information entry; arrays are joined with a comma and space.
    * @throws {TypeError} If the key or value is null or undefined, or the key
    *   is one `info()` rejects.
@@ -985,7 +1009,17 @@ export declare namespace Recipe {
   /** How Recipe text() orders right-to-left text before drawing it. */
   type TextDirection = "auto" | "ltr" | "rtl" | "none";
   /** A `Recipe.PdfA` value: the PDF/A level of the `pdfa` option. */
-  type PdfA = "1B" | "2B" | "2U" | "3B" | "3U" | "4" | "4E";
+  type PdfA = "1B" | "2B" | "2U" | "3B" | "3U" | "4" | "4E" | "4F";
+  /** A `Recipe.AFRelationship` value: how an attached file relates to the document. */
+  type AFRelationship =
+    | "Source"
+    | "Data"
+    | "Alternative"
+    | "Supplement"
+    | "EncryptedPayload"
+    | "FormData"
+    | "Schema"
+    | "Unspecified";
   /** Horizontal placement keyword for Recipe text and images. */
   type HorizontalAlign = "left" | "center" | "right";
   /** Vertical placement keyword for Recipe text, images, and text boxes. */
@@ -1247,6 +1281,19 @@ export interface RecipeConstructor {
     readonly A4: "4";
     /** PDF/A-4e: PDF/A-4 that may carry 3D content. */
     readonly A4E: "4E";
+    /** PDF/A-4f: PDF/A-4 with at least one attached file. */
+    readonly A4F: "4F";
+  };
+  /** How a file passed to `attach()` relates to the document. */
+  readonly AFRelationship: {
+    readonly SOURCE: "Source";
+    readonly DATA: "Data";
+    readonly ALTERNATIVE: "Alternative";
+    readonly SUPPLEMENT: "Supplement";
+    readonly ENCRYPTED_PAYLOAD: "EncryptedPayload";
+    readonly FORM_DATA: "FormData";
+    readonly SCHEMA: "Schema";
+    readonly UNSPECIFIED: "Unspecified";
   };
   /** Which table rows the `row` options apply to. */
   readonly TableRowNth: {

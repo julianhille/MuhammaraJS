@@ -353,6 +353,14 @@ var TextDirection = require("./text-direction").TextDirection;
 var PdfA = require("./pdfa").PdfA;
 
 /**
+ * How an attached file relates to the document, the `relationship` option of
+ * `attach()`.
+ * @readonly
+ * @enum {string}
+ */
+var AFRelationship = require("./attachments").AFRelationship;
+
+/**
  * Special Recipe sources.
  * @readonly
  * @enum {string}
@@ -368,6 +376,7 @@ module.exports = {
   TextAlign,
   TextDirection,
   PdfA,
+  AFRelationship,
   TableRowNth,
   LineCap,
   LineJoin,

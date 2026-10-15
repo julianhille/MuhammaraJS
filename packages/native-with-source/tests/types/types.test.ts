@@ -1087,5 +1087,15 @@ new muhammara.Recipe("new", "out.pdf", {
 new muhammara.Recipe("new", "out.pdf", {
   pdfa: { level: "9Z", iccProfile: "" },
 });
+new muhammara.Recipe("new", "out.pdf")
+  .attach("data.xml", Buffer.from("<x/>"), {
+    mimeType: "text/xml",
+    description: "Data",
+    relationship: muhammara.Recipe.AFRelationship.DATA,
+    modDate: new Date(),
+  })
+  .attach("notes.txt", "notes.txt");
+// @ts-expect-error relationship takes a Recipe.AFRelationship value.
+new muhammara.Recipe("new", "out.pdf").attach("a", "a", { relationship: "X" });
 // @ts-expect-error pdfa needs an ICC profile.
 new muhammara.Recipe("new", "out.pdf", { pdfa: { level: "1B" } });

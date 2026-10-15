@@ -45,6 +45,7 @@ function functionSource(file, name) {
 
 describe("SharedModulesParity", function () {
   [
+    "attachments.js",
     "content-stream.js",
     "font-text.js",
     "glyph-list.js",

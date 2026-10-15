@@ -23,6 +23,8 @@ var PdfA = Object.freeze({
   A4: "4",
   /** PDF/A-4e (ISO 19005-4:2020, engineering): PDF/A-4 that may carry 3D content. */
   A4E: "4E",
+  /** PDF/A-4f (ISO 19005-4:2020): PDF/A-4 with at least one attached file. */
+  A4F: "4F",
 });
 
 /**
@@ -47,29 +49,40 @@ var PdfAFeature = Object.freeze({
    * information in XMP only, which has no place for them.
    */
   CUSTOM_INFO: "custom Info entries",
+  /**
+   * Attached files: PDF/A-1 allows none, and PDF/A-2, 4 and 4e only files
+   * that are PDF/A themselves, which Recipe does not check.
+   */
+  ATTACHMENTS: "attached files",
 });
 
 // What each level writes, its identification and the PDF version it is based
 // on, and the features it does not allow. `withoutInfo` levels write no Info
-// dictionary, only XMP.
+// dictionary, only XMP; `needsAttachment` levels need an attached file.
 var PDFA_LEVELS = Object.freeze({
   [PdfA.A1B]: Object.freeze({
     part: 1,
     conformance: "B",
     version: 1.4,
-    forbids: Object.freeze([PdfAFeature.TRANSPARENCY]),
+    forbids: Object.freeze([PdfAFeature.TRANSPARENCY, PdfAFeature.ATTACHMENTS]),
   }),
   [PdfA.A2B]: Object.freeze({
     part: 2,
     conformance: "B",
     version: 1.7,
-    forbids: Object.freeze([PdfAFeature.ANNOTATION_APPEARANCE]),
+    forbids: Object.freeze([
+      PdfAFeature.ANNOTATION_APPEARANCE,
+      PdfAFeature.ATTACHMENTS,
+    ]),
   }),
   [PdfA.A2U]: Object.freeze({
     part: 2,
     conformance: "U",
     version: 1.7,
-    forbids: Object.freeze([PdfAFeature.ANNOTATION_APPEARANCE]),
+    forbids: Object.freeze([
+      PdfAFeature.ANNOTATION_APPEARANCE,
+      PdfAFeature.ATTACHMENTS,
+    ]),
   }),
   [PdfA.A3B]: Object.freeze({
     part: 3,
@@ -91,6 +104,7 @@ var PDFA_LEVELS = Object.freeze({
     forbids: Object.freeze([
       PdfAFeature.ANNOTATION_APPEARANCE,
       PdfAFeature.CUSTOM_INFO,
+      PdfAFeature.ATTACHMENTS,
     ]),
   }),
   [PdfA.A4E]: Object.freeze({
@@ -99,6 +113,19 @@ var PDFA_LEVELS = Object.freeze({
     revision: 2020,
     version: 2.0,
     withoutInfo: true,
+    forbids: Object.freeze([
+      PdfAFeature.ANNOTATION_APPEARANCE,
+      PdfAFeature.CUSTOM_INFO,
+      PdfAFeature.ATTACHMENTS,
+    ]),
+  }),
+  [PdfA.A4F]: Object.freeze({
+    part: 4,
+    conformance: "F",
+    revision: 2020,
+    version: 2.0,
+    withoutInfo: true,
+    needsAttachment: true,
     forbids: Object.freeze([
       PdfAFeature.ANNOTATION_APPEARANCE,
       PdfAFeature.CUSTOM_INFO,
@@ -122,9 +149,10 @@ var PROFILE_SPACES = Object.freeze({
 /**
  * Look up a PDF/A level.
  * @param {string} level - A `PdfA` value.
- * @returns {{part: number, conformance: (string|undefined), revision: (number|undefined), version: number, withoutInfo: (boolean|undefined), forbids: string[]}}
+ * @returns {{part: number, conformance: (string|undefined), revision: (number|undefined), version: number, withoutInfo: (boolean|undefined), needsAttachment: (boolean|undefined), forbids: string[]}}
  *   The identification and PDF version of the level, whether it writes no
- *   Info dictionary, and the `PdfAFeature` values it does not allow.
+ *   Info dictionary or needs an attached file, and the `PdfAFeature` values it
+ *   does not allow.
  * @throws {TypeError} If level is not a `PdfA` value.
  */
 function pdfaLevel(level) {
@@ -220,6 +248,22 @@ function requirePdfaAllows(pdfa, ...features) {
 }
 
 /**
+ * Throw when a PDF/A document is missing an attached file its level needs.
+ * @param {Object|null} pdfa - The PDF/A settings of the Recipe, see
+ *   `pdfaOptions()`, or null when it does not write PDF/A.
+ * @param {number} count - The number of attached files.
+ * @returns {void}
+ * @throws {Error} If the level needs an attached file and there is none.
+ */
+function requirePdfaAttachment(pdfa, count) {
+  if (pdfa && pdfa.needsAttachment && count === 0) {
+    throw new Error(
+      `PDF/A-${pdfa.part}${pdfa.conformance.toLowerCase()} needs an attached file`,
+    );
+  }
+}
+
+/**
  * The flags an annotation of a PDF/A document is written with: printed, and
  * never invisible, hidden or unviewed. Also checks its opacity.
  * @param {Object|null} pdfa - The PDF/A settings of the Recipe, see
@@ -292,17 +336,15 @@ function imagePdfaFeatures(bytes) {
  * the array the catalog's /OutputIntents entry refers to.
  * @param {Object} objects - The objects context of the writer.
  * @param {Object} pdfa - The PDF/A settings, see `pdfaOptions()`.
- * @param {*} profile - The bytes of the profile in the form the writer's
- *   streams take.
  * @returns {number} The object ID of the /OutputIntents array.
  */
-function writeOutputIntents(objects, pdfa, profile) {
+function writeOutputIntents(objects, pdfa) {
   var profileId = objects.startNewIndirectObject();
   var profileDictionary = objects.startDictionary();
   profileDictionary.writeKey("N");
   profileDictionary.writeNumberValue(pdfa.space.components);
   var stream = objects.startPDFStream(profileDictionary);
-  stream.getWriteStream().write(profile);
+  stream.getWriteStream().write(pdfa.profile);
   objects.endPDFStream(stream);
 
   var intentId = objects.startNewIndirectObject();
@@ -335,5 +377,6 @@ export {
   pdfaLevel,
   pdfaOptions,
   requirePdfaAllows,
+  requirePdfaAttachment,
   writeOutputIntents,
 };

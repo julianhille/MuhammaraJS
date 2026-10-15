@@ -10,7 +10,13 @@ var {
   pdfDateToXmp,
   hasPlainMetadata,
 } = require("../xmp");
-var { PdfAFeature, requirePdfaAllows, writeOutputIntents } = require("../pdfa");
+var {
+  PdfAFeature,
+  requirePdfaAllows,
+  requirePdfaAttachment,
+  writeOutputIntents,
+} = require("../pdfa");
+var { attachment, writeAttachments } = require("../attachments");
 
 var PLAIN_METADATA =
   "Recipe cannot read or write the XMP of a PDF whose metadata is not encrypted";
@@ -353,15 +359,25 @@ exports._writeInfo = function _writeInfo() {
   if (this.options.xmp || this.pdfa_) {
     writeXmp(this.writer, infoDictionary, xmpDates, this.pdfa_);
   }
+  const attachments = this.attachments_ ? [...this.attachments_.values()] : [];
+  requirePdfaAttachment(this.pdfa_, attachments.length);
+  if (attachments.length) {
+    // once: the annotation pass appends to the file that has them
+    this.attachmentIds_ =
+      this.attachmentIds_ ||
+      writeAttachments(
+        this.writer.getObjectsContext(),
+        attachments,
+        this.muhammara,
+      );
+    setCatalogEntry(this.writer, "Names", this.attachmentIds_.names);
+    setCatalogEntry(this.writer, "AF", this.attachmentIds_.associated);
+  }
   if (this.pdfa_) {
     setCatalogEntry(
       this.writer,
       "OutputIntents",
-      writeOutputIntents(
-        this.writer.getObjectsContext(),
-        this.pdfa_,
-        Array.from(this.pdfa_.profile),
-      ),
+      writeOutputIntents(this.writer.getObjectsContext(), this.pdfa_),
     );
   }
   return this;
@@ -424,6 +440,41 @@ function setCatalogEntry(writer, key, id) {
     event.catalogDictionaryContext.writeObjectReferenceValue(id);
   });
 }
+
+/**
+ * @name attach
+ * @desc Attach a file to a new PDF, as an embedded file that the document
+ *   lists as associated with it. A file attached again under the same name
+ *   replaces the earlier one.
+ * @memberof Recipe#
+ * @function
+ * @param {string} name - The file name.
+ * @param {Buffer|string} file - The file content, or its path.
+ * @param {Object} [options] - The options.
+ * @param {string} [options.mimeType="application/octet-stream"] - The MIME type.
+ * @param {string} [options.description] - A description of the file.
+ * @param {Recipe.AFRelationship} [options.relationship="Unspecified"] - How the
+ *   file relates to the document.
+ * @param {Date} [options.modDate] - The modification date; now by default.
+ * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If the name is empty, the file is no bytes, or the
+ *   relationship is unknown.
+ * @throws {Error} After endPDF(), for a source PDF, or when the PDF/A level
+ *   does not allow attached files.
+ */
+exports.attach = function attach(name, file, options) {
+  if (this.ended) throw new Error("PDF writer has ended");
+  if (!this.isNewPDF) throw new Error("attach() applies to a new PDF");
+  requirePdfaAllows(this.pdfa_, PdfAFeature.ATTACHMENTS);
+  const bytes = typeof file === "string" ? fs.readFileSync(file) : file;
+  if (!(bytes instanceof Uint8Array)) {
+    throw new TypeError("An attached file needs its bytes");
+  }
+  const entry = attachment(name, bytes, options);
+  this.attachments_ = this.attachments_ || new Map();
+  this.attachments_.set(name, entry);
+  return this;
+};
 
 /**
  * @name custom
