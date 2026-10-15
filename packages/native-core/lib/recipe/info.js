@@ -10,7 +10,7 @@ var {
   pdfDateToXmp,
   hasPlainMetadata,
 } = require("../xmp");
-var { writeOutputIntents } = require("../pdfa");
+var { PdfAFeature, requirePdfaAllows, writeOutputIntents } = require("../pdfa");
 
 var PLAIN_METADATA =
   "Recipe cannot read or write the XMP of a PDF whose metadata is not encrypted";
@@ -86,6 +86,7 @@ exports.info = function info(options) {
       // an empty array clears the field
       if (value) setInfoValue(this, name, value);
     } else if (value !== undefined && value !== null) {
+      requirePdfaAllows(this.pdfa_, PdfAFeature.CUSTOM_INFO);
       // written now, and again by endPDF() over the entries of the source
       this.writer
         .getDocumentContext()
@@ -281,7 +282,18 @@ exports._writeInfo = function _writeInfo() {
         I have to disable this part before it gets fixed in HummusJS.
     */
 
-  const infoDictionary = this.writer.getDocumentContext().getInfoDictionary();
+  // PDF/A-4 has no Info dictionary: its values only reach the XMP packet, and
+  // the date the writer stamps on an edit, the annotation pass, is removed
+  if (this.pdfa_?.withoutInfo) {
+    this.writer.getDocumentContext().getInfoDictionary().setModDate(null);
+  }
+  const infoDictionary = this.pdfa_?.withoutInfo
+    ? {
+        setCreationDate() {},
+        setModDate() {},
+        addAdditionalInfoEntry() {},
+      }
+    : this.writer.getDocumentContext().getInfoDictionary();
   const xmpDates = {};
   if (oldInfo) {
     Object.getOwnPropertyNames(oldInfo).forEach((key) => {
@@ -424,7 +436,8 @@ function setCatalogEntry(writer, key, id) {
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If the key or value is null or undefined, or the key is
  *   an Info entry Recipe writes itself.
- * @throws {Error} After endPDF().
+ * @throws {Error} After endPDF(), or in a PDF/A-4 document, which has no
+ *   Info dictionary.
  */
 exports.custom = function custom(key, value) {
   if ([key, value].some((part) => part === undefined || part === null)) {

@@ -77,15 +77,13 @@ describe("SettingInfoValues", function () {
     );
     var infoDictionary = pdfWriter.getDocumentContext().getInfoDictionary();
 
-    [[], [42], [null], ["D:20140720204655+03'00'", 42]].forEach(
-      function (args) {
-        ["setCreationDate", "setModDate"].forEach(function (method) {
-          assert.throws(function () {
-            infoDictionary[method].apply(infoDictionary, args);
-          }, /Provide 1 argument which is a date/);
-        });
-      },
-    );
+    [[], [42], ["D:20140720204655+03'00'", 42]].forEach(function (args) {
+      ["setCreationDate", "setModDate"].forEach(function (method) {
+        assert.throws(function () {
+          infoDictionary[method].apply(infoDictionary, args);
+        }, /Provide 1 argument which is a date/);
+      });
+    });
 
     pdfWriter.writePage(pdfWriter.createPage(0, 0, 595, 842));
     pdfWriter.end();
@@ -103,6 +101,20 @@ describe("SettingInfoValues", function () {
     var pdf = stream.buffer.toString("latin1");
     assert.include(pdf, "/Title (field)");
     assert.include(pdf, "/title (custom)");
+  });
+
+  it("removes a date set to null", function () {
+    var stream = new muhammara.PDFWStreamForBuffer();
+    var writer = muhammara.createWriter(stream);
+    var info = writer.getDocumentContext().getInfoDictionary();
+    info.setCreationDate(new Date());
+    info.setModDate(new Date());
+    info.setCreationDate(null);
+    info.setModDate(null);
+    writer.writePage(writer.createPage(0, 0, 10, 10));
+    writer.end();
+    // with no entry left, the writer writes no Info dictionary
+    assert.notInclude(stream.buffer.toString("latin1"), "/Info");
   });
 
   it("writes a Date's time zone offset with its minutes", function () {

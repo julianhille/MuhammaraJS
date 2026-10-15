@@ -19,6 +19,10 @@ var PdfA = Object.freeze({
   A3B: "3B",
   /** PDF/A-3u (ISO 19005-3, Unicode): PDF/A-2u that may carry attached files. */
   A3U: "3U",
+  /** PDF/A-4 (ISO 19005-4:2020): PDF 2.0, document information in XMP only. */
+  A4: "4",
+  /** PDF/A-4e (ISO 19005-4:2020, engineering): PDF/A-4 that may carry 3D content. */
+  A4E: "4E",
 });
 
 /**
@@ -38,10 +42,16 @@ var PdfAFeature = Object.freeze({
    * stream for them, which PDF/A-2 and later require.
    */
   ANNOTATION_APPEARANCE: "annotations without an appearance stream",
+  /**
+   * Custom document information entries: PDF/A-4 keeps the document
+   * information in XMP only, which has no place for them.
+   */
+  CUSTOM_INFO: "custom Info entries",
 });
 
 // What each level writes, its identification and the PDF version it is based
-// on, and the features it does not allow.
+// on, and the features it does not allow. `withoutInfo` levels write no Info
+// dictionary, only XMP.
 var PDFA_LEVELS = Object.freeze({
   [PdfA.A1B]: Object.freeze({
     part: 1,
@@ -73,6 +83,27 @@ var PDFA_LEVELS = Object.freeze({
     version: 1.7,
     forbids: Object.freeze([PdfAFeature.ANNOTATION_APPEARANCE]),
   }),
+  [PdfA.A4]: Object.freeze({
+    part: 4,
+    revision: 2020,
+    version: 2.0,
+    withoutInfo: true,
+    forbids: Object.freeze([
+      PdfAFeature.ANNOTATION_APPEARANCE,
+      PdfAFeature.CUSTOM_INFO,
+    ]),
+  }),
+  [PdfA.A4E]: Object.freeze({
+    part: 4,
+    conformance: "E",
+    revision: 2020,
+    version: 2.0,
+    withoutInfo: true,
+    forbids: Object.freeze([
+      PdfAFeature.ANNOTATION_APPEARANCE,
+      PdfAFeature.CUSTOM_INFO,
+    ]),
+  }),
 });
 
 // The ICC color spaces an output intent profile may have: the number of
@@ -91,9 +122,9 @@ var PROFILE_SPACES = Object.freeze({
 /**
  * Look up a PDF/A level.
  * @param {string} level - A `PdfA` value.
- * @returns {{part: number, conformance: (string|undefined), version: number, forbids: string[]}}
- *   The identification and PDF version of the level, and the `PdfAFeature`
- *   values it does not allow.
+ * @returns {{part: number, conformance: (string|undefined), revision: (number|undefined), version: number, withoutInfo: (boolean|undefined), forbids: string[]}}
+ *   The identification and PDF version of the level, whether it writes no
+ *   Info dictionary, and the `PdfAFeature` values it does not allow.
  * @throws {TypeError} If level is not a `PdfA` value.
  */
 function pdfaLevel(level) {

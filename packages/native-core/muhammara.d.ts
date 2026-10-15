@@ -2025,18 +2025,20 @@ declare namespace muhammara {
     getAdditionalInfoEntries(): { [key: string]: string };
     /**
      * Sets the creation date.
-     * @param date - The date, a PDF date string, or a PDFDate to copy.
+     * @param date - The date, a PDF date string, or a PDFDate to copy; null
+     *   removes the date.
      * @throws {TypeError} If the dictionary was not obtained from a document
      *   context.
      */
-    setCreationDate(date: string | Date | PDFDate): void;
+    setCreationDate(date: string | Date | PDFDate | null): void;
     /**
      * Sets the modification date.
-     * @param date - The date, a PDF date string, or a PDFDate to copy.
+     * @param date - The date, a PDF date string, or a PDFDate to copy; null
+     *   removes the date.
      * @throws {TypeError} If the dictionary was not obtained from a document
      *   context.
      */
-    setModDate(date: string | Date | PDFDate): void;
+    setModDate(date: string | Date | PDFDate | null): void;
 
     title: string;
     author: string;
@@ -3278,7 +3280,7 @@ declare namespace muhammara {
     /** A `Recipe.TextDirection` value. */
     type TextDirection = "auto" | "ltr" | "rtl" | "none";
     /** A `Recipe.PdfA` value. */
-    type PdfA = "1B" | "2B" | "2U" | "3B" | "3U";
+    type PdfA = "1B" | "2B" | "2U" | "3B" | "3U" | "4" | "4E";
     /** Known text-box alignments, with string compatibility for computed values. */
     type TextBoxAlign =
       TextAlign | `${TextAlign} ${VerticalAlign}` | (string & {});
@@ -3921,6 +3923,10 @@ declare namespace muhammara {
       readonly A3B: "3B";
       /** PDF/A-3u: PDF/A-2u that may carry attached files. */
       readonly A3U: "3U";
+      /** PDF/A-4: PDF 2.0, document information in XMP only. */
+      readonly A4: "4";
+      /** PDF/A-4e: PDF/A-4 that may carry 3D content. */
+      readonly A4E: "4E";
     };
     /** Which table rows the `row` options apply to. */
     static readonly TableRowNth: {

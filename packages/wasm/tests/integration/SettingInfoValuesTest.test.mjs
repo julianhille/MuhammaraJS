@@ -143,6 +143,21 @@ describe("SettingInfoValuesTest", function () {
     assert.ok(pdf.includes("/title (custom)"));
   });
 
+  it("removes a date set to null", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter();
+    var info = writer.getDocumentContext().getInfoDictionary();
+    info.setCreationDate(new Date());
+    info.setModDate(new Date());
+    info.setCreationDate(null);
+    info.setModDate(null);
+    writer.writePage(writer.createPage(0, 0, 10, 10));
+    // with no entry left, the writer writes no Info dictionary
+    assert.ok(
+      !new TextDecoder("latin1").decode(writer.end()).includes("/Info"),
+    );
+  });
+
   it("writes a Date's time zone offset with its minutes", async function () {
     var muhammara = await createMuhammaraWasm();
     var writer = muhammara.createWriter();

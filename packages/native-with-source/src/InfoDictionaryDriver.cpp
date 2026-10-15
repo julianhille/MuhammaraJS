@@ -95,6 +95,16 @@ static napi_value SetDate(const CallbackArgs &args, bool creation) {
   auto *driver = Driver(args);
   if (!driver->InfoDictionaryInstance)
     return ThrowTypeError(args.Env(), kUninitialized);
+  if (args.Length() == 1 && IsType(args.Env(), args[0], napi_null)) {
+    // null removes the date, as the Wasm writer does
+    PDFDate none;
+    none.ParseString("");
+    if (creation)
+      driver->InfoDictionaryInstance->CreationDate = none;
+    else
+      driver->InfoDictionaryInstance->ModDate = none;
+    return Undefined(args.Env());
+  }
   PDFDateDriver *dateDriver = nullptr;
   if (args.Length() == 1 && driver->holder->IsPDFDateInstance(args[0])) {
     // An existing PDFDate is copied, as Wasm accepts.

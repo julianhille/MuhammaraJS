@@ -826,14 +826,16 @@ export function createWriterFactory({
       },
       /**
        * Sets `/CreationDate`.
-       * @param {string|Date|PDFDate} value - PDF date string, Date, or PDFDate.
+       * @param {string|Date|PDFDate|null} value - PDF date string, Date, or
+       *   PDFDate; null removes the date.
        * @returns {void}
        * @throws {TypeError} If `value` is not a valid date.
        * @throws {Error} If the writer has ended or the date cannot be parsed or set.
        */
       setCreationDate: function (value) {
         requireOpenWriter();
-        var date = normalizePDFDate(value);
+        // null removes the date, as native does
+        var date = value === null ? "" : normalizePDFDate(value);
         withString(date, (pointer) => {
           if (
             !module._muhammara_wasm_recipe_set_info_date(recipe, 0, pointer)
@@ -844,14 +846,16 @@ export function createWriterFactory({
       },
       /**
        * Sets `/ModDate`.
-       * @param {string|Date|PDFDate} value - PDF date string, Date, or PDFDate.
+       * @param {string|Date|PDFDate|null} value - PDF date string, Date, or
+       *   PDFDate; null removes the date.
        * @returns {void}
        * @throws {TypeError} If `value` is not a valid date.
        * @throws {Error} If the writer has ended or the date cannot be parsed or set.
        */
       setModDate: function (value) {
         requireOpenWriter();
-        var date = normalizePDFDate(value);
+        // null removes the date, as native does
+        var date = value === null ? "" : normalizePDFDate(value);
         withString(date, (pointer) => {
           if (
             !module._muhammara_wasm_recipe_set_info_date(recipe, 1, pointer)

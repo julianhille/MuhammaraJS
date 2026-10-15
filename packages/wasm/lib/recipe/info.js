@@ -6,7 +6,7 @@ import {
   pdfDateToXmp,
   hasPlainMetadata,
 } from "../xmp.js";
-import { writeOutputIntents } from "../pdfa.js";
+import { PdfAFeature, requirePdfaAllows, writeOutputIntents } from "../pdfa.js";
 
 var trappedValues = {
   True: constants.EInfoTrappedTrue,
@@ -62,7 +62,8 @@ export function createInfoMethods({ call, withString, createReader }) {
      * @throws {TypeError} For an empty key, or Creator, Producer,
      * CreationDate, ModDate, Trapped and the `source-*` entries, which Recipe
      * writes itself.
-     * @throws {Error} If entries are set after endPDF().
+     * @throws {Error} If entries are set after endPDF(), or custom entries
+     * in a PDF/A-4 document, which has no Info dictionary.
      */
     info: function (options) {
       // the fields win over source custom entries of the same name
@@ -79,8 +80,11 @@ export function createInfoMethods({ call, withString, createReader }) {
         if (standard ? !value : value === undefined || value === null) {
           return;
         }
+        if (!standard) requirePdfaAllows(this._pdfa, PdfAFeature.CUSTOM_INFO);
         var text = Array.isArray(value) ? value.join(", ") : String(value);
         this._info[name] = text;
+        // PDF/A-4 has no Info dictionary: the values only reach XMP
+        if (this._pdfa?.withoutInfo) return;
         if (this._sourceMode) {
           var info = this.writer.getDocumentContext().getInfoDictionary();
           if (standard) info[name] = text;
@@ -149,6 +153,7 @@ export function createInfoMethods({ call, withString, createReader }) {
           ),
         );
       }
+      if (this._pdfa?.withoutInfo) return this;
       if (info) {
         [
           ["modDate", "source-ModDate"],

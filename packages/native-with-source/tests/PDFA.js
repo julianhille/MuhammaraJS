@@ -17,12 +17,15 @@ var LEVELS = [
   ["2U", "%PDF-1.7"],
   ["3B", "%PDF-1.7"],
   ["3U", "%PDF-1.7"],
+  ["4", "%PDF-2.0"],
+  ["4E", "%PDF-2.0"],
 ].map(([level, header]) => ({
   level,
   header,
   identification:
     `<pdfaid:part>${level[0]}</pdfaid:part>` +
-    `<pdfaid:conformance>${level[1]}</pdfaid:conformance>`,
+    (level[1] ? `<pdfaid:conformance>${level[1]}</pdfaid:conformance>` : "") +
+    (level[0] === "4" ? "<pdfaid:rev>2020</pdfaid:rev>" : ""),
 }));
 
 /**
@@ -163,6 +166,8 @@ describe("PDF/A", function () {
     assert.equal(Recipe.PdfA.A2U, "2U");
     assert.equal(Recipe.PdfA.A3B, "3B");
     assert.equal(Recipe.PdfA.A3U, "3U");
+    assert.equal(Recipe.PdfA.A4, "4");
+    assert.equal(Recipe.PdfA.A4E, "4E");
     assert.deepEqual(
       LEVELS.map(({ level }) => level),
       Object.values(Recipe.PdfA),
@@ -279,6 +284,37 @@ describe("PDF/A", function () {
       );
       assert.throws(() => create(pdfa("2B"), { version: 1.4 }), {
         message: "PDF/A-2 is written as PDF 1.7",
+      });
+    });
+  });
+
+  describe("PDF/A-4", function () {
+    it("keeps the document information in XMP only", function () {
+      var bytes = create(pdfa("4"), { author: "Someone" }, (r) =>
+        r.info({ subject: "About" }).comment("note", 50, 300),
+      );
+      assert.doesNotMatch(Buffer.from(bytes).toString("latin1"), /\/Info/);
+      var recipe = new Recipe(bytes);
+      var packet = recipe.xmp();
+      recipe.endPDF();
+      ["Archived", "Someone", "About"].forEach((value) =>
+        assert.ok(packet.includes(">" + value + "<"), value),
+      );
+      assert.ok(packet.includes("<xmp:CreateDate>"));
+    });
+
+    it("rejects custom Info entries, which have no place", function () {
+      var message = { message: "PDF/A-4 does not allow custom Info entries" };
+      assert.throws(
+        () => create(pdfa("4E"), {}, (r) => r.custom("ReportId", "X")),
+        message,
+      );
+      assert.throws(
+        () => create(pdfa("4"), {}, (r) => r.info({ ReportId: "X" })),
+        message,
+      );
+      assert.throws(() => create(pdfa("4"), { version: 1.7 }), {
+        message: "PDF/A-4 is written as PDF 2.0",
       });
     });
   });

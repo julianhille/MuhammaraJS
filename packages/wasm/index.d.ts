@@ -985,7 +985,7 @@ export declare namespace Recipe {
   /** How Recipe text() orders right-to-left text before drawing it. */
   type TextDirection = "auto" | "ltr" | "rtl" | "none";
   /** A `Recipe.PdfA` value: the PDF/A level of the `pdfa` option. */
-  type PdfA = "1B" | "2B" | "2U" | "3B" | "3U";
+  type PdfA = "1B" | "2B" | "2U" | "3B" | "3U" | "4" | "4E";
   /** Horizontal placement keyword for Recipe text and images. */
   type HorizontalAlign = "left" | "center" | "right";
   /** Vertical placement keyword for Recipe text, images, and text boxes. */
@@ -1243,6 +1243,10 @@ export interface RecipeConstructor {
     readonly A3B: "3B";
     /** PDF/A-3u: PDF/A-2u that may carry attached files. */
     readonly A3U: "3U";
+    /** PDF/A-4: PDF 2.0, document information in XMP only. */
+    readonly A4: "4";
+    /** PDF/A-4e: PDF/A-4 that may carry 3D content. */
+    readonly A4E: "4E";
   };
   /** Which table rows the `row` options apply to. */
   readonly TableRowNth: {
@@ -1972,8 +1976,10 @@ export interface InfoDictionary {
   clearAdditionalInfoEntries(): void;
   getAdditionalInfoEntry(key: string): string;
   getAdditionalInfoEntries(): Record<string, string>;
-  setCreationDate(value: string | Date | PDFDate): void;
-  setModDate(value: string | Date | PDFDate): void;
+  /** Sets `/CreationDate`; null removes the date. */
+  setCreationDate(value: string | Date | PDFDate | null): void;
+  /** Sets `/ModDate`; null removes the date. */
+  setModDate(value: string | Date | PDFDate | null): void;
 }
 
 export interface PDFByteReader {
