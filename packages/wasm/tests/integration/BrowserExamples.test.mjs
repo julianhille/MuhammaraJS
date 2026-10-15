@@ -56,6 +56,7 @@ describe("Browser how-to examples", function () {
         "watermark",
         "find-text",
         "inspect-pdf",
+        "acroform",
       ],
     );
   });
@@ -364,6 +365,45 @@ describe("Browser how-to examples", function () {
       reader.end();
       muhammara.disposeAssets();
     }
+  });
+
+  it("lists the AcroForm fields of the built-in sample form", async function () {
+    var result = await runHowToExample("acroform");
+    writeOutput("BrowserExamples-acroform-sample", result.bytes);
+    assert.equal(result.summary.source, "Built-in sample form");
+    assert.deepEqual(result.summary.fields, [
+      { name: "name", kind: "text", value: "Ada Lovelace", pages: [1] },
+      { name: "newsletter", kind: "checkbox", value: "Yes", pages: [1] },
+      { name: "plan", kind: "radio", value: "pro", pages: [1, 1] },
+      { name: "country", kind: "combobox", value: "France", pages: [1] },
+    ]);
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(result.bytes);
+    try {
+      var text = reader.extractPageText(0).map((item) => item.content);
+      assert.ok(text.includes("AcroForm fields"));
+      assert.ok(text.includes("Ada Lovelace"));
+    } finally {
+      reader.end();
+      muhammara.disposeAssets();
+    }
+  });
+
+  it("lists the AcroForm fields of an uploaded PDF", async function () {
+    var pdf = new Uint8Array(
+      await readFile(
+        new URL(
+          "../../../native-with-source/tests/TestMaterials/recipe/AcroFormPdfLib.pdf",
+          import.meta.url,
+        ),
+      ),
+    );
+    var result = await runHowToExample("acroform", { assets: { pdf } });
+    assert.equal(result.summary.source, "Uploaded PDF");
+    assert.deepEqual(
+      result.summary.fields.map((field) => field.name),
+      ["person.name", "notes", "agree", "color", "country", "langs", "submit"],
+    );
   });
 
   it("counts XObjects in an uploaded PDF", async function () {

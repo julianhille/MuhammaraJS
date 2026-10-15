@@ -76,6 +76,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   widgets, and the `Recipe.FormFieldKind` and `Recipe.FormFieldFlag`
   constants to compare them against
   [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
+- Add an AcroForm tab to the browser example that lists the form fields of an
+  uploaded PDF, or of a built-in sample form, in a one-page report
+  [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
 
 ### Fixed
 
