@@ -74,7 +74,7 @@ exports.comment = function comment(text = "", x, y, options = {}) {
   pdfaAnnotationFlags(
     this.pdfa_,
     getFlagBitNumberByName(options.flag ?? options.flags),
-    options.opacity,
+    { opacity: options.opacity },
   );
   this.annotationsToWrite.push({
     subtype: AnnotSubtype.TEXT,
@@ -213,7 +213,14 @@ exports.annot = function annot(
   pdfaAnnotationFlags(
     this.pdfa_,
     getFlagBitNumberByName(options.flag ?? options.flags),
-    options.opacity,
+    {
+      opacity: options.opacity,
+      // subtypes match in any case, as when they are written
+      sized:
+        width > 0 &&
+        height > 0 &&
+        String(subtype).toLowerCase() !== AnnotSubtype.LINK.toLowerCase(),
+    },
   );
   this.annotationsToWrite.push({
     subtype,

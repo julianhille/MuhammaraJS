@@ -12,13 +12,16 @@ var PROFILE = fs.readFileSync(profilePath);
 
 // Each level and what a document of it carries; checked against veraPDF.
 var LEVELS = [
-  {
-    level: Recipe.PdfA.A1B,
-    header: "%PDF-1.4",
-    identification:
-      "<pdfaid:part>1</pdfaid:part><pdfaid:conformance>B</pdfaid:conformance>",
-  },
-];
+  ["1B", "%PDF-1.4"],
+  ["2B", "%PDF-1.7"],
+  ["2U", "%PDF-1.7"],
+].map(([level, header]) => ({
+  level,
+  header,
+  identification:
+    `<pdfaid:part>${level[0]}</pdfaid:part>` +
+    `<pdfaid:conformance>${level[1]}</pdfaid:conformance>`,
+}));
 
 /**
  * A copy of the sRGB test profile with another color space or version in its
@@ -154,6 +157,8 @@ describe("PDF/A", function () {
 
   it("names the levels", function () {
     assert.equal(Recipe.PdfA.A1B, "1B");
+    assert.equal(Recipe.PdfA.A2B, "2B");
+    assert.equal(Recipe.PdfA.A2U, "2U");
     assert.deepEqual(
       LEVELS.map(({ level }) => level),
       Object.values(Recipe.PdfA),
@@ -244,6 +249,33 @@ describe("PDF/A", function () {
           .image(images + "soundcloud_logo.jpg", 10, 200, { width: 50 })
           .text("text", 10, 300, { color: "#00ff00" }),
       );
+    });
+  });
+
+  describe("PDF/A-2 content", function () {
+    it("allows transparency", function () {
+      create(pdfa("2B"), {}, (r) =>
+        r
+          .rectangle(10, 10, 50, 50, { color: "#ff0000", opacity: 0.5 })
+          .image(images + "png/original.png", 10, 100, { width: 50 })
+          .comment("note", 50, 300, { opacity: 0.5 }),
+      );
+    });
+
+    it("rejects annotations without an appearance stream", function () {
+      assert.throws(
+        () =>
+          create(pdfa("2U"), {}, (r) =>
+            r.annot(50, 400, "Highlight", { width: 100, height: 20 }),
+          ),
+        {
+          message:
+            "PDF/A-2 does not allow annotations without an appearance stream",
+        },
+      );
+      assert.throws(() => create(pdfa("2B"), { version: 1.4 }), {
+        message: "PDF/A-2 is written as PDF 1.7",
+      });
     });
   });
 

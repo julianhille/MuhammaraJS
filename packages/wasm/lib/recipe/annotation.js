@@ -542,7 +542,13 @@ export function createAnnotationMethods({ module, withString, withDoubles }) {
           var flags = pdfaAnnotationFlags(
             this._pdfa,
             annotationFlags(source.flag ?? source.flags),
-            source.opacity ?? 1,
+            {
+              opacity: source.opacity ?? 1,
+              sized:
+                width > 0 &&
+                height > 0 &&
+                annotation.subtype !== AnnotSubtype.LINK,
+            },
           );
           if (validateOnly) return 0;
           if (this._sourceMode) {

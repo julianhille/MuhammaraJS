@@ -3278,7 +3278,7 @@ declare namespace muhammara {
     /** A `Recipe.TextDirection` value. */
     type TextDirection = "auto" | "ltr" | "rtl" | "none";
     /** A `Recipe.PdfA` value. */
-    type PdfA = "1B";
+    type PdfA = "1B" | "2B" | "2U";
     /** Known text-box alignments, with string compatibility for computed values. */
     type TextBoxAlign =
       TextAlign | `${TextAlign} ${VerticalAlign}` | (string & {});
@@ -3913,6 +3913,10 @@ declare namespace muhammara {
     static readonly PdfA: {
       /** PDF/A-1b: PDF 1.4. */
       readonly A1B: "1B";
+      /** PDF/A-2b: PDF 1.7. */
+      readonly A2B: "2B";
+      /** PDF/A-2u: PDF 1.7, text that maps to Unicode. */
+      readonly A2U: "2U";
     };
     /** Which table rows the `row` options apply to. */
     static readonly TableRowNth: {

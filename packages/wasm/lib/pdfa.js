@@ -11,6 +11,10 @@
 var PdfA = Object.freeze({
   /** PDF/A-1b (ISO 19005-1, basic): PDF 1.4. */
   A1B: "1B",
+  /** PDF/A-2b (ISO 19005-2, basic): PDF 1.7. */
+  A2B: "2B",
+  /** PDF/A-2u (ISO 19005-2, Unicode): PDF 1.7, text that maps to Unicode. */
+  A2U: "2U",
 });
 
 /**
@@ -25,6 +29,11 @@ var PdfAFeature = Object.freeze({
   RGB: "RGB colors",
   /** CMYK colors and images, which only a CMYK output intent describes. */
   CMYK: "CMYK colors",
+  /**
+   * Annotations with an area other than links: Recipe writes no appearance
+   * stream for them, which PDF/A-2 and later require.
+   */
+  ANNOTATION_APPEARANCE: "annotations without an appearance stream",
 });
 
 // What each level writes, its identification and the PDF version it is based
@@ -35,6 +44,18 @@ var PDFA_LEVELS = Object.freeze({
     conformance: "B",
     version: 1.4,
     forbids: Object.freeze([PdfAFeature.TRANSPARENCY]),
+  }),
+  [PdfA.A2B]: Object.freeze({
+    part: 2,
+    conformance: "B",
+    version: 1.7,
+    forbids: Object.freeze([PdfAFeature.ANNOTATION_APPEARANCE]),
+  }),
+  [PdfA.A2U]: Object.freeze({
+    part: 2,
+    conformance: "U",
+    version: 1.7,
+    forbids: Object.freeze([PdfAFeature.ANNOTATION_APPEARANCE]),
   }),
 });
 
@@ -157,14 +178,18 @@ function requirePdfaAllows(pdfa, ...features) {
  * @param {Object|null} pdfa - The PDF/A settings of the Recipe, see
  *   `pdfaOptions()`, or null when it does not write PDF/A.
  * @param {number} flags - The annotation flag bits.
- * @param {number} [opacity=1] - The annotation opacity.
+ * @param {Object} [annotation] - What else the document must allow.
+ * @param {number} [annotation.opacity=1] - The annotation opacity.
+ * @param {boolean} [annotation.sized=false] - Whether the annotation has an
+ *   area and is no link, so that it needs an appearance stream.
  * @returns {number} The flag bits to write.
  * @throws {Error} If the flags hide the annotation, or the document does not
- *   allow the opacity.
+ *   allow the opacity or an annotation without an appearance stream.
  */
-function pdfaAnnotationFlags(pdfa, flags, opacity = 1) {
+function pdfaAnnotationFlags(pdfa, flags, { opacity = 1, sized = false } = {}) {
   if (!pdfa) return flags;
   if (opacity < 1) requirePdfaAllows(pdfa, PdfAFeature.TRANSPARENCY);
+  if (sized) requirePdfaAllows(pdfa, PdfAFeature.ANNOTATION_APPEARANCE);
   // Invisible (1), Hidden (2) and NoView (32)
   if (flags & 35) throw new Error("PDF/A does not allow hidden annotations");
   // Print (4)
