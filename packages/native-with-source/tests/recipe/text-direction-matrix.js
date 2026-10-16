@@ -2,7 +2,10 @@
 const assert = require("node:assert/strict");
 const path = require("path");
 const muhammara = require("@muhammara/native-with-source");
-const { drawnGaps } = require("@muhammara/native-core/lib/text-direction");
+const { drawnGaps } = require("@muhammara/shared/text-direction.js");
+
+// The package bundles its own copy; this source copy needs bidi-js too.
+require("@muhammara/shared/text-direction.js").useBidi(require("bidi-js"));
 const {
   cases,
   summarize,

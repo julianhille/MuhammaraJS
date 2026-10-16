@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
-import { PdfAFeature, imagePdfaFeatures } from "../../lib/pdfa.js";
+import { PdfAFeature, imagePdfaFeatures } from "@muhammara/shared/pdfa.js";
 import { writeOutput } from "../testOutput.mjs";
 
 var materials = new URL(

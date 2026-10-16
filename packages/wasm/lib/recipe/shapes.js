@@ -3,7 +3,7 @@ import {
   ArrowType,
   TrianglePosition,
   TriangleTrait,
-} from "../value-sets.js";
+} from "@muhammara/shared/value-sets.js";
 /**
  * Converts degrees to radians.
  * @param {number} angle - Degrees.

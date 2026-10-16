@@ -3,20 +3,23 @@ var {
   standardInfoKeys,
   pdfInfoNames,
   infoOptionName,
-} = require("../recipe-info");
+} = require("@muhammara/shared/recipe-info.js");
 var {
   buildXmpPacket,
   dateToXmp,
   pdfDateToXmp,
   hasPlainMetadata,
-} = require("../xmp");
+} = require("@muhammara/shared/xmp.js");
 var {
   PdfAFeature,
   requirePdfaAllows,
   requirePdfaAttachment,
   writeOutputIntents,
-} = require("../pdfa");
-var { attachment, writeAttachments } = require("../attachments");
+} = require("@muhammara/shared/pdfa.js");
+var {
+  attachment,
+  writeAttachments,
+} = require("@muhammara/shared/attachments.js");
 
 var PLAIN_METADATA =
   "Recipe cannot read or write the XMP of a PDF whose metadata is not encrypted";

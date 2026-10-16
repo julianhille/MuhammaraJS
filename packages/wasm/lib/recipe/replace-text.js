@@ -1,6 +1,6 @@
 import { constants } from "../constants.js";
-import * as contentStream from "../content-stream.js";
-import { createPageFontLookup } from "../font-text.js";
+import * as contentStream from "@muhammara/shared/content-stream.js";
+import { createPageFontLookup } from "@muhammara/shared/font-text.js";
 
 var PdfOperator = contentStream.PdfOperator;
 var TokenKind = contentStream.TokenKind;

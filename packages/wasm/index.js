@@ -37,8 +37,8 @@ import {
   ETokenSeparator,
   LineCapStyle,
   EEncoding,
-} from "./lib/value-sets.js";
-import { TextDirection, useBidi } from "./lib/text-direction.js";
+} from "@muhammara/shared/value-sets.js";
+import { TextDirection, useBidi } from "@muhammara/shared/text-direction.js";
 
 var bidiLoading;
 // Whether bidi-js was loaded, by a factory or by loadBidi().

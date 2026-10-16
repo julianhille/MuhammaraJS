@@ -5,8 +5,8 @@ const {
   Colorspace,
   Coordinate,
 } = require("../recipe-constants");
-const { cssColors } = require("../css-colors");
-const { pdfaAnnotationFlags } = require("../pdfa");
+const { cssColors } = require("@muhammara/shared/css-colors.js");
+const { pdfaAnnotationFlags } = require("@muhammara/shared/pdfa.js");
 
 /**
  * Encodes annotation text as a PDF text string, so characters outside

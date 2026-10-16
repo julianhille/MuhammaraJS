@@ -1,18 +1,21 @@
 import { constants } from "../constants.js";
-import { infoOptionName, standardInfoKeys } from "../recipe-info.js";
+import {
+  infoOptionName,
+  standardInfoKeys,
+} from "@muhammara/shared/recipe-info.js";
 import {
   buildXmpPacket,
   dateToXmp,
   pdfDateToXmp,
   hasPlainMetadata,
-} from "../xmp.js";
+} from "@muhammara/shared/xmp.js";
 import {
   PdfAFeature,
   requirePdfaAllows,
   requirePdfaAttachment,
   writeOutputIntents,
-} from "../pdfa.js";
-import { attachment, writeAttachments } from "../attachments.js";
+} from "@muhammara/shared/pdfa.js";
+import { attachment, writeAttachments } from "@muhammara/shared/attachments.js";
 
 var trappedValues = {
   True: constants.EInfoTrappedTrue,

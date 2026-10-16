@@ -3,9 +3,9 @@ import {
   DeviceColorSpace,
   LineCap,
   LineJoin,
-} from "../value-sets.js";
+} from "@muhammara/shared/value-sets.js";
 import { colorModel, pathColors } from "./colors.js";
-import { PdfAFeature, requirePdfaAllows } from "../pdfa.js";
+import { PdfAFeature, requirePdfaAllows } from "@muhammara/shared/pdfa.js";
 
 /**
  * Reads a `rotation` option in degrees. A numeric string counts as its number.

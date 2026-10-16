@@ -1,5 +1,8 @@
-import { pdfInfoNames, standardInfoKeys } from "../recipe-info.js";
-import { hasPlainMetadata } from "../xmp.js";
+import {
+  pdfInfoNames,
+  standardInfoKeys,
+} from "@muhammara/shared/recipe-info.js";
+import { hasPlainMetadata } from "@muhammara/shared/xmp.js";
 import { mediumSizes } from "./parameters.js";
 import { pageRecord } from "./page-record.js";
 import { PAGE_CONTEXT_STATE } from "./context-state.js";

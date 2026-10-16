@@ -1,4 +1,4 @@
-import { ImageFit, StructureFormat } from "../value-sets.js";
+import { ImageFit, StructureFormat } from "@muhammara/shared/value-sets.js";
 import { constants } from "../constants.js";
 import { endActivePage } from "./page.js";
 import { unknownAsset } from "./registration.js";

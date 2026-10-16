@@ -7,7 +7,7 @@ var {
   toVisual,
   spacedGaps,
   spacedCharacters,
-} = require("../text-direction");
+} = require("@muhammara/shared/text-direction.js");
 
 // A word that starts with a mark or joiner, after any direction marks,
 // continues the cluster of the word before it.

@@ -14,7 +14,7 @@
 
 const { linkPdf } = require("./annotation");
 const { miterLimitOption } = require("../recipe-options");
-const { PdfAFeature, requirePdfaAllows } = require("../pdfa");
+const { PdfAFeature, requirePdfaAllows } = require("@muhammara/shared/pdfa.js");
 
 /**
  * Draw a circle

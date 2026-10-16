@@ -1,4 +1,4 @@
-const { trimBreakableEnd } = require("../text-direction");
+const { trimBreakableEnd } = require("@muhammara/shared/text-direction.js");
 
 const ANNOTATION_PREFIX = "Annots";
 

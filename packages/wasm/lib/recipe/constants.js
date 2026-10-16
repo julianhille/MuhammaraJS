@@ -24,10 +24,10 @@ import {
   TrianglePosition,
   TriangleTrait,
   VerticalAlign,
-} from "../value-sets.js";
-import { TextDirection } from "../text-direction.js";
-import { PdfA } from "../pdfa.js";
-import { AFRelationship } from "../attachments.js";
+} from "@muhammara/shared/value-sets.js";
+import { TextDirection } from "@muhammara/shared/text-direction.js";
+import { PdfA } from "@muhammara/shared/pdfa.js";
+import { AFRelationship } from "@muhammara/shared/attachments.js";
 
 /**
  * Named values for Recipe string options, assigned to the Recipe class as

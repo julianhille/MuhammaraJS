@@ -1,5 +1,5 @@
 import { recipeConstants } from "./recipe/constants.js";
-import { Colorspace, DeviceColorSpace } from "./value-sets.js";
+import { Colorspace, DeviceColorSpace } from "@muhammara/shared/value-sets.js";
 import { coordinateMethods } from "./recipe/coordinate.js";
 import {
   colorModel,
@@ -28,7 +28,7 @@ import { createVectorMethods } from "./recipe/vector.js";
 import { createTextMethods } from "./recipe/text.js";
 import { resolveFontSize } from "./recipe/text.helper.js";
 import { htmlToTextObjects } from "./recipe/htmlToTextObjects.js";
-import { spacedPieces } from "./text-direction.js";
+import { spacedPieces } from "@muhammara/shared/text-direction.js";
 import { createTableMethods } from "./recipe/table.js";
 import { createAnnotationMethods } from "./recipe/annotation.js";
 import {
@@ -44,8 +44,12 @@ import { createSecurityMethods, permission } from "./recipe/security.js";
 import { createReplaceTextMethods } from "./recipe/replace-text.js";
 import { createFormMethods } from "./recipe/form.js";
 import { thirdPartyLicenses } from "./recipe/licenses.js";
-import { standardInfoKeys } from "./recipe-info.js";
-import { PdfAFeature, pdfaOptions, requirePdfaAllows } from "./pdfa.js";
+import { standardInfoKeys } from "@muhammara/shared/recipe-info.js";
+import {
+  PdfAFeature,
+  pdfaOptions,
+  requirePdfaAllows,
+} from "@muhammara/shared/pdfa.js";
 
 /**
  * Packs a Recipe color model for the text export: a color-space index (0 gray,

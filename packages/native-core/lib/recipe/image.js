@@ -1,6 +1,9 @@
 const fs = require("fs");
 const { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
-const { imagePdfaFeatures, requirePdfaAllows } = require("../pdfa");
+const {
+  imagePdfaFeatures,
+  requirePdfaAllows,
+} = require("@muhammara/shared/pdfa.js");
 
 /**
  * Place images to pdf

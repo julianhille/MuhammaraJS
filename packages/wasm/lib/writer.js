@@ -5,7 +5,7 @@ import {
   PageBox,
   PDFImageType,
   RegisteredImageFormat,
-} from "./value-sets.js";
+} from "@muhammara/shared/value-sets.js";
 import { isPageBoxType } from "./constants.js";
 import { imageXObjects } from "./image-xobjects.js";
 import { selectedPageRanges } from "./page-ranges.js";
@@ -20,7 +20,7 @@ import {
   prepareUnderline,
   strokeUnderline,
 } from "./drawing-options.js";
-import { toVisual } from "./text-direction.js";
+import { toVisual } from "@muhammara/shared/text-direction.js";
 
 /**
  * Key of a content-context method that draws an image already stored in the

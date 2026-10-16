@@ -1,4 +1,4 @@
-import { drawnGaps, spacedGaps } from "../text-direction.js";
+import { drawnGaps, spacedGaps } from "@muhammara/shared/text-direction.js";
 
 /**
  * Calculates spacing between retained Unicode characters, except between a

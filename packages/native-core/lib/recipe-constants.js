@@ -343,7 +343,8 @@ var TextAlign = Object.freeze({
  * @readonly
  * @enum {string}
  */
-var TextDirection = require("./text-direction").TextDirection;
+var TextDirection =
+  require("@muhammara/shared/text-direction.js").TextDirection;
 
 /**
  * How an attached file relates to the document, the `relationship` option of
@@ -351,7 +352,7 @@ var TextDirection = require("./text-direction").TextDirection;
  * @readonly
  * @enum {string}
  */
-var AFRelationship = require("./attachments").AFRelationship;
+var AFRelationship = require("@muhammara/shared/attachments.js").AFRelationship;
 
 /**
  * Kinds of interactive form fields returned by `formFields()`, derived from

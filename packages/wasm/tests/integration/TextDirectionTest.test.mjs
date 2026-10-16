@@ -25,7 +25,7 @@ import {
   useBidi,
   visualRuns,
   visualWords,
-} from "../../lib/text-direction.js";
+} from "@muhammara/shared/text-direction.js";
 import { writeOutput } from "../testOutput.mjs";
 
 /** Reads the shared Arial fixture, which has Hebrew glyphs. */

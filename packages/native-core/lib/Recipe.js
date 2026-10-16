@@ -1,9 +1,9 @@
 const path = require("path");
 const fs = require("fs");
 const PDFWStreamForBuffer = require("./PDFWStreamForBuffer");
-var { standardInfoKeys } = require("./recipe-info");
+var { standardInfoKeys } = require("@muhammara/shared/recipe-info.js");
 // PdfA joins the constants here: pdfa.js needs recipe-constants itself
-var { PdfA, pdfaOptions } = require("./pdfa");
+var { PdfA, pdfaOptions } = require("@muhammara/shared/pdfa.js");
 var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
 
 /**
@@ -552,31 +552,51 @@ class Recipe {
   }
 }
 
+// Every module whose exports become Recipe methods, listed statically so a
+// bundler can follow them. utils.js, xObjectForm.js and page-references.js
+// hold private helpers and are required by the modules that use them.
+const recipeModules = {
+  "annotation.js": require("./recipe/annotation"),
+  "appendPage.js": require("./recipe/appendPage"),
+  "colors.js": require("./recipe/colors"),
+  "coordinate.js": require("./recipe/coordinate"),
+  "encrypt.js": require("./recipe/encrypt"),
+  "font.js": require("./recipe/font"),
+  "form.js": require("./recipe/form"),
+  "graphics-state.js": require("./recipe/graphics-state"),
+  "htmlToTextObjects.js": require("./recipe/htmlToTextObjects"),
+  "image.js": require("./recipe/image"),
+  "info.js": require("./recipe/info"),
+  "insertPage.js": require("./recipe/insertPage"),
+  "overlay.js": require("./recipe/overlay"),
+  "page.js": require("./recipe/page"),
+  "parameters.js": require("./recipe/parameters"),
+  "replaceText.js": require("./recipe/replaceText"),
+  "shapes.js": require("./recipe/shapes"),
+  "split.js": require("./recipe/split"),
+  "table.js": require("./recipe/table"),
+  "text.helper.js": require("./recipe/text.helper"),
+  "text.js": require("./recipe/text"),
+  "vector-line.js": require("./recipe/vector-line"),
+  "vector-polygon.js": require("./recipe/vector-polygon"),
+  "vector.helper.js": require("./recipe/vector.helper"),
+  "vector.js": require("./recipe/vector"),
+};
+
 /**
- * Install every method exported by lib/recipe/*.js on the Recipe prototype.
+ * Install every method exported by the Recipe modules on the Recipe prototype.
  * @returns {void}
  * @throws {string} If two recipe modules export the same member.
  */
 function loadPrototypes() {
-  const ignores = [
-    "utils.js",
-    "xObjectForm.js",
-    "page-references.js",
-    "form-appearance.js",
-  ];
-  fs.readdirSync(path.join(__dirname, "recipe"))
-    .filter((file) => {
-      return file[0] != "." && !ignores.includes(file);
-    })
-    .forEach((file) => {
-      const module = require(path.join(__dirname, "recipe", file));
-      for (let key in module) {
-        if (Recipe.prototype[key]) {
-          throw `Found conflict prototypes=${key} in ${file}.`;
-        }
-        Recipe.prototype[key] = module[key];
+  for (const [file, module] of Object.entries(recipeModules)) {
+    for (let key in module) {
+      if (Recipe.prototype[key]) {
+        throw `Found conflict prototypes=${key} in ${file}.`;
       }
-    });
+      Recipe.prototype[key] = module[key];
+    }
+  }
 }
 
 loadPrototypes();

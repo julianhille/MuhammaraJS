@@ -1,5 +1,5 @@
-var contentStream = require("../content-stream");
-var fontText = require("../font-text");
+var contentStream = require("@muhammara/shared/content-stream.js");
+var fontText = require("@muhammara/shared/font-text.js");
 
 var PdfOperator = contentStream.PdfOperator;
 var TokenKind = contentStream.TokenKind;

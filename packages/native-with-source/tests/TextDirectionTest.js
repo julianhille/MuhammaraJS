@@ -1,5 +1,8 @@
 var muhammara = require("@muhammara/native-with-source");
-var textDirection = require("@muhammara/native-core/lib/text-direction");
+var textDirection = require("@muhammara/shared/text-direction.js");
+
+// The package bundles its own copy; this source copy needs bidi-js too.
+textDirection.useBidi(require("bidi-js"));
 var assert = require("chai").assert;
 var path = require("path");
 

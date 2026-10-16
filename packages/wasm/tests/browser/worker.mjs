@@ -1,5 +1,5 @@
 import { runValidation } from "./validation.mjs";
-import { toVisual } from "../../lib/text-direction.js";
+import { toVisual } from "@muhammara/shared/text-direction.js";
 
 /**
  * Checks text in a worker, which has no import map unless the browser shares

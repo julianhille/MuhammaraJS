@@ -1,5 +1,5 @@
 import { fontStyleKey } from "./font.js";
-import { FontStyle } from "../value-sets.js";
+import { FontStyle } from "@muhammara/shared/value-sets.js";
 
 /**
  * Creates the error for an asset name that is not registered. A non-string

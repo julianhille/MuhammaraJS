@@ -1,6 +1,6 @@
 const fs = require("fs");
 const { Colorspace, ChromaCommand } = require("../recipe-constants");
-const { PdfAFeature, requirePdfaAllows } = require("../pdfa");
+const { PdfAFeature, requirePdfaAllows } = require("@muhammara/shared/pdfa.js");
 
 /**
  * Register a color under a name as an own property, so any name, including

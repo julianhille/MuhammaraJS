@@ -1,4 +1,4 @@
-import { FontStyle, FontStyleKey } from "../value-sets.js";
+import { FontStyle, FontStyleKey } from "@muhammara/shared/value-sets.js";
 /**
  * Picks the registry key for bold and italic text options.
  * @param {object} [options={}] - `bold`/`isBold` and `italic`/`isItalic`.

@@ -5,6 +5,9 @@ const path = require("path");
 const zlib = require("zlib");
 
 const Recipe = muhammara.Recipe;
+
+// The package bundles its own copy; this source copy needs bidi-js too.
+require("@muhammara/shared/text-direction.js").useBidi(require("bidi-js"));
 const ARIAL = path.join(__dirname, "../TestMaterials/fonts/arial.ttf");
 
 /**
@@ -1892,7 +1895,7 @@ describe("Recipe text direction", function () {
       Word,
       Line,
     } = require("@muhammara/native-core/lib/recipe/text.helper");
-    const { drawnText } = require("@muhammara/native-core/lib/text-direction");
+    const { drawnText } = require("@muhammara/shared/text-direction.js");
     const font = muhammara
       .createWriter(new muhammara.PDFWStreamForBuffer())
       .getFontForFile(ARIAL);

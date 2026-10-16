@@ -1,6 +1,6 @@
-import { Colorspace, ChromaCommand } from "../value-sets.js";
+import { Colorspace, ChromaCommand } from "@muhammara/shared/value-sets.js";
 import { PAGE_CONTEXT_STATE } from "./context-state.js";
-import { PdfAFeature, requirePdfaAllows } from "../pdfa.js";
+import { PdfAFeature, requirePdfaAllows } from "@muhammara/shared/pdfa.js";
 
 /** Device color space of a hex color code, keyed by its length. */
 var deviceColorspaceByLength = {

@@ -1,5 +1,5 @@
 import { runValidation } from "./validation.mjs";
-import { toVisual } from "../../lib/text-direction.js";
+import { toVisual } from "@muhammara/shared/text-direction.js";
 
 var resultElement = document.getElementById("result");
 

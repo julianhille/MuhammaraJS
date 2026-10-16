@@ -1,4 +1,7 @@
-import { HorizontalAlign, VerticalAlign } from "../value-sets.js";
+import {
+  HorizontalAlign,
+  VerticalAlign,
+} from "@muhammara/shared/value-sets.js";
 /** Recipe coordinate conversion methods. */
 export var coordinateMethods = {
   /**

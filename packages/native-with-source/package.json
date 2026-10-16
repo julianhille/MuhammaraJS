@@ -21,7 +21,12 @@
     "test:docs": "mocha docs/tests/**/*.js --timeout 15000",
     "test:jest": "jest --config tests-jest/jest.config.js",
     "fuzz": "node fuzz/fuzz.js",
-    "bench:recrypt": "node benchmarks/recrypt-server.js"
+    "bench:recrypt": "node benchmarks/recrypt-server.js",
+    "pretest": "npm run build --workspace=@muhammara/native-core",
+    "pretest:electron": "npm run build --workspace=@muhammara/native-core",
+    "pretest:jest": "npm run build --workspace=@muhammara/native-core",
+    "pretest:docs": "npm run build --workspace=@muhammara/native-core",
+    "pretest:types": "npm run build --workspace=@muhammara/native-core"
   },
   "repository": {
     "type": "git",

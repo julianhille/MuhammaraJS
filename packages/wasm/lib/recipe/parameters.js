@@ -1,5 +1,5 @@
 import { PAGE_CONTEXT_STATE } from "./context-state.js";
-import { PageSize } from "../value-sets.js";
+import { PageSize } from "@muhammara/shared/value-sets.js";
 
 /** Standard page sizes in PDF points. */
 export var mediumSizes = {

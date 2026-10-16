@@ -2,7 +2,7 @@ import {
   createMuhammaraWasm as loadMuhammaraWasm,
   createRecipe as loadRecipe,
   loadBidi as loadBidiFrom,
-} from "../../index.js";
+} from "../../dist/index.js";
 
 var wasmUrl = new URL("../../dist/muhammara-wasm.wasm", import.meta.url);
 // bidi-js, by URL, so pages and Workers load it without an import map. The

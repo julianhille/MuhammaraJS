@@ -1,11 +1,11 @@
-import { cssColors } from "../css-colors.js";
+import { cssColors } from "@muhammara/shared/css-colors.js";
 import {
   AnnotFlag,
   AnnotIcon,
   AnnotSubtype,
   Colorspace,
-} from "../value-sets.js";
-import { pdfaAnnotationFlags } from "../pdfa.js";
+} from "@muhammara/shared/value-sets.js";
+import { pdfaAnnotationFlags } from "@muhammara/shared/pdfa.js";
 
 /**
  * Resolves an annotation color string to `0xRRGGBB`, as native does.

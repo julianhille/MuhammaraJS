@@ -3,8 +3,8 @@ import {
   TableRowNth,
   TextAlign,
   VerticalAlign,
-} from "../value-sets.js";
-import { hasBidi, requireBidiFor } from "../text-direction.js";
+} from "@muhammara/shared/value-sets.js";
+import { hasBidi, requireBidiFor } from "@muhammara/shared/text-direction.js";
 /**
  * Reports whether a style value is a plain object whose keys can merge.
  * @param {*} value - Candidate.

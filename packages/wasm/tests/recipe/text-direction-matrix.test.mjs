@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
-import { drawnGaps } from "../../lib/text-direction.js";
+import { drawnGaps } from "@muhammara/shared/text-direction.js";
 
 var require = createRequire(import.meta.url);
 var {

@@ -20,7 +20,7 @@ const {
   toVisual,
   visualRuns,
   visualWords,
-} = require("../text-direction");
+} = require("@muhammara/shared/text-direction.js");
 
 // HTML whose text starts with a space, after any tags that open it.
 const LEADING_HTML_SPACE = /^(?:<(?:[^>"']|"[^"]*"|'[^']*')*>|\s)*?\s/;

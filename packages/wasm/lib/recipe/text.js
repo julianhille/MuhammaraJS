@@ -4,7 +4,7 @@ import {
   TextAlign,
   TextWrap,
   VerticalAlign,
-} from "../value-sets.js";
+} from "@muhammara/shared/value-sets.js";
 import { htmlToTextObjects } from "./htmlToTextObjects.js";
 import { charSpacing, Column, resolveFontSize } from "./text.helper.js";
 import { miterLimitOption, rotationOption } from "./vector.helper.js";
@@ -26,7 +26,7 @@ import {
   toVisual,
   visualRuns,
   visualWords,
-} from "../text-direction.js";
+} from "@muhammara/shared/text-direction.js";
 
 /**
  * Deep-merges plain option objects; arrays and dates are replaced, not merged.

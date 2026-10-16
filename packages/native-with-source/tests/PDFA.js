@@ -2,7 +2,7 @@ var assert = require("node:assert/strict");
 var fs = require("node:fs");
 var path = require("node:path");
 var muhammara = require("@muhammara/native-with-source");
-var { PdfAFeature, imagePdfaFeatures } = require("../../native-core/lib/pdfa");
+var { PdfAFeature, imagePdfaFeatures } = require("@muhammara/shared/pdfa.js");
 var { writeOutput } = require("./helpers/testOutput");
 
 var Recipe = muhammara.Recipe;

@@ -39,6 +39,7 @@
     "serialize-javascript": "^7.0.5"
   },
   "devDependencies": {
+    "esbuild": "^0.25.12",
     "js-yaml": "^5.4.2"
   }
 }

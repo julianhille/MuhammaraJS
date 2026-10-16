@@ -1,9 +1,16 @@
-import { ImageFit, HorizontalAlign, VerticalAlign } from "../value-sets.js";
+import {
+  ImageFit,
+  HorizontalAlign,
+  VerticalAlign,
+} from "@muhammara/shared/value-sets.js";
 import { isColorspace } from "./colors.js";
 import { DRAW_IMAGE_PATH } from "../writer.js";
 import { miterLimitOption, rotationOption } from "./vector.helper.js";
 import { unknownAsset } from "./registration.js";
-import { imagePdfaFeatures, requirePdfaAllows } from "../pdfa.js";
+import {
+  imagePdfaFeatures,
+  requirePdfaAllows,
+} from "@muhammara/shared/pdfa.js";
 
 // The error a modifier throws for an image it cannot measure.
 var UNREADABLE_IMAGE = "Unable to read image dimensions";

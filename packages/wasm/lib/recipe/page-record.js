@@ -1,4 +1,4 @@
-import { PageLayout } from "../value-sets.js";
+import { PageLayout } from "@muhammara/shared/value-sets.js";
 /**
  * Creates normalized Recipe metadata for a PDF page.
  * @param {number} pageNumber - One-based page number.

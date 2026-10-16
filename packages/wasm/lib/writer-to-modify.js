@@ -2,7 +2,7 @@ import {
   ObjectReplacementScope,
   PDFImageType,
   RegisteredImageFormat,
-} from "./value-sets.js";
+} from "@muhammara/shared/value-sets.js";
 import { createChildLifecycle } from "./lifecycle.js";
 import { isPageBoxType } from "./constants.js";
 import { imageXObjects } from "./image-xobjects.js";
@@ -19,7 +19,7 @@ import {
   prepareUnderline,
   strokeUnderline,
 } from "./drawing-options.js";
-import { toVisual } from "./text-direction.js";
+import { toVisual } from "@muhammara/shared/text-direction.js";
 
 /**
  * Creates the byte-first PDF modifier factory.
