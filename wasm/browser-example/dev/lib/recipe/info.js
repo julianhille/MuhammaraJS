@@ -1,5 +1,11 @@
 import { constants } from "../constants.js";
-import { writableInfoKeys } from "../recipe-info.js";
+import { infoOptionName, standardInfoKeys } from "../recipe-info.js";
+import {
+  buildXmpPacket,
+  dateToXmp,
+  pdfDateToXmp,
+  hasPlainMetadata,
+} from "../xmp.js";
 
 var trappedValues = {
   True: constants.EInfoTrappedTrue,
@@ -7,12 +13,17 @@ var trappedValues = {
   Unknown: constants.EInfoTrappedUnknown,
 };
 
+var PRODUCER = "MuhammaraJS (https://github.com/julianhille/MuhammaraJS)";
+var CREATOR = "Muhammara-Recipe (https://github.com/julianhille/MuhammaraJS)";
+var PLAIN_METADATA =
+  "Recipe cannot read or write the XMP of a PDF whose metadata is not encrypted";
+
 /**
  * Creates Recipe document-information methods.
- * @param {{call: Function, withString: Function}} dependencies - Export helpers.
+ * @param {{call: Function, withString: Function, createReader: Function}} dependencies - Export helpers and the reader factory.
  * @returns {object} Methods mixed into Recipe.prototype.
  */
-export function createInfoMethods({ call, withString }) {
+export function createInfoMethods({ call, withString, createReader }) {
   /**
    * Formats a Date as a local-time PDF date.
    * @param {Date} date - Date.
@@ -32,7 +43,7 @@ export function createInfoMethods({ call, withString }) {
 
   return {
     /**
-     * Gets the document information dictionary or sets information entries.
+     * Gets the document information or sets information entries.
      * Array values are written as comma-and-space-separated text; custom key
      * spelling is preserved.
      *
@@ -40,35 +51,53 @@ export function createInfoMethods({ call, withString }) {
      * @function
      * @memberof Recipe#
      * @param {Record<string, unknown>} [options] Information entries to set.
-     * Omit this argument to return a copy of the current information.
-     * @returns {Recipe|Record<string, unknown>} The Recipe instance when
-     * setting entries, otherwise a copy of the current information.
+     * A standard field set to an empty array is cleared; one without a value (such as `""`), and a custom one that is null or undefined, is left as it is. Omit this argument to read the information.
+     * @returns {Recipe|Record<string, string>} The Recipe instance when
+     * setting entries, otherwise the Info entries of the source PDF overlaid
+     * with the values set on this Recipe, as text; a field wins over
+     * a source custom entry of the same name, and a value set on this Recipe
+     * over both. Empty for a new PDF without values and for a source that
+     * needs a password to open.
+     * @throws {TypeError} For an empty key, or Creator, Producer,
+     * CreationDate, ModDate, Trapped and the `source-*` entries, which Recipe
+     * writes itself.
+     * @throws {Error} If entries are set after endPDF().
      */
-    info: function (options = {}) {
-      if (arguments.length === 0) return { ...this._info };
+    info: function (options) {
+      // the fields win over source custom entries of the same name
+      if (!options) return { ...this._customInfo, ...this._info };
+      if (this._endedBytes || this._endError) {
+        throw new Error("PDF writer has ended");
+      }
+      // check every key before any is set
+      Object.keys(options).forEach(infoOptionName);
       Object.entries(options).forEach(([key, value]) => {
-        var text = Array.isArray(value) ? value.join(", ") : String(value);
-        if (this._sourceMode) {
-          var info = this.writer.getDocumentContext().getInfoDictionary();
-          if (writableInfoKeys.includes(key)) {
-            info[key] = text;
-          } else {
-            info.addAdditionalInfoEntry(key, text);
-          }
-          this._info[key] = Array.isArray(value) ? value.slice() : value;
+        var name = infoOptionName(key);
+        var standard = standardInfoKeys.includes(name);
+        // an empty array clears a standard field
+        if (standard ? !value : value === undefined || value === null) {
           return;
         }
-        withString(key, (keyPointer) =>
+        var text = Array.isArray(value) ? value.join(", ") : String(value);
+        this._info[name] = text;
+        if (this._sourceMode) {
+          var info = this.writer.getDocumentContext().getInfoDictionary();
+          if (standard) info[name] = text;
+          else info.addAdditionalInfoEntry(name, text);
+          return;
+        }
+        withString(name, (keyPointer) =>
           withString(text, (valuePointer) => {
             call(
-              "_muhammara_wasm_recipe_set_info",
+              standard
+                ? "_muhammara_wasm_recipe_set_info"
+                : "_muhammara_wasm_recipe_add_info_entry",
               this._recipe,
               keyPointer,
               valuePointer,
             );
           }),
         );
-        this._info[key] = Array.isArray(value) ? value.slice() : value;
       });
       return this;
     },
@@ -80,10 +109,17 @@ export function createInfoMethods({ call, withString }) {
      * @function
      * @memberof Recipe#
      * @param {string} key Information dictionary key.
-     * @param {unknown} value Value converted to text for the PDF.
+     * @param {unknown} value Value converted to text for the PDF; arrays are
+     * joined with a comma and space.
      * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If the key or value is null or undefined, or the
+     * key is one info() rejects.
+     * @throws {Error} After endPDF().
      */
     custom: function (key, value) {
+      if ([key, value].some((part) => part === undefined || part === null)) {
+        throw new TypeError("custom() needs a key and a value");
+      }
       return this.info({ [key]: value });
     },
 
@@ -101,6 +137,7 @@ export function createInfoMethods({ call, withString }) {
         ? this.writer.getDocumentContext().getInfoDictionary()
         : null;
       var now = new Date();
+      if (this.options.xmp) this._writeXmp(now);
       if (info) {
         [
           ["modDate", "source-ModDate"],
@@ -118,10 +155,8 @@ export function createInfoMethods({ call, withString }) {
           info.setCreationDate(this._sourceInfo.creationDate);
         }
         info.setModDate(now);
-        info.producer =
-          "MuhammaraJS (https://github.com/julianhille/MuhammaraJS)";
-        info.creator =
-          "Muhammara-Recipe (https://github.com/julianhille/MuhammaraJS)";
+        info.producer = PRODUCER;
+        info.creator = CREATOR;
         return this;
       }
       withString(pdfDate(now), (datePointer) => {
@@ -139,14 +174,8 @@ export function createInfoMethods({ call, withString }) {
         );
       });
       [
-        [
-          "producer",
-          "MuhammaraJS (https://github.com/julianhille/MuhammaraJS)",
-        ],
-        [
-          "creator",
-          "Muhammara-Recipe (https://github.com/julianhille/MuhammaraJS)",
-        ],
+        ["producer", PRODUCER],
+        ["creator", CREATOR],
       ].forEach(([key, value]) =>
         withString(key, (keyPointer) =>
           withString(value, (valuePointer) =>
@@ -160,6 +189,99 @@ export function createInfoMethods({ call, withString }) {
         ),
       );
       return this;
+    },
+
+    /**
+     * Writes the XMP metadata stream for the Info values this Recipe writes,
+     * and points the catalog at it in place of any packet the source PDF had.
+     * The stream is not filtered, so that tools which know nothing about PDF
+     * can read it.
+     *
+     * @name _writeXmp
+     * @function
+     * @memberof Recipe#
+     * @private
+     * @param {Date} now - The modification date, and creation date of a new PDF.
+     * @returns {void}
+     * @throws {Error} For a source that keeps its metadata unencrypted, since
+     * the writer would encrypt the packet.
+     */
+    _writeXmp: function (now) {
+      if (this._plainMetadata) throw new Error(PLAIN_METADATA);
+      // the fields the PDF is written with: an edit's writer dictionary also
+      // has low-level changes
+      var fields = this._sourceMode
+        ? this.writer.getDocumentContext().getInfoDictionary()
+        : this._info;
+      var packet = buildXmpPacket({
+        title: fields.title,
+        author: fields.author,
+        subject: fields.subject,
+        keywords: fields.keywords,
+        creator: CREATOR,
+        producer: PRODUCER,
+        createDate: this._isNewPDF
+          ? dateToXmp(now)
+          : pdfDateToXmp(this._sourceInfo?.creationDate),
+        modifyDate: dateToXmp(now),
+      });
+      var objects = this._objectsContext();
+      var id = objects.startNewIndirectObject();
+      var dictionary = objects.startDictionary();
+      dictionary.writeKey("Type");
+      dictionary.writeNameValue("Metadata");
+      dictionary.writeKey("Subtype");
+      dictionary.writeNameValue("XML");
+      var stream = objects.startUnfilteredPDFStream(dictionary);
+      stream.getWriteStream().write(new TextEncoder().encode(packet));
+      objects.endPDFStream(stream);
+      if (this._sourceMode) {
+        this.writer._setCatalogEntry("Metadata", id);
+      } else {
+        withString("Metadata", (keyPointer) =>
+          call(
+            "_muhammara_wasm_recipe_set_catalog_entry",
+            this._recipe,
+            keyPointer,
+            id,
+          ),
+        );
+      }
+    },
+
+    /**
+     * Reads the XMP metadata packet of the source PDF.
+     *
+     * @name xmp
+     * @function
+     * @memberof Recipe#
+     * @returns {string|undefined} The XMP packet as text, or undefined for a
+     * new PDF, a source without one, or a source that needs a password to
+     * open.
+     * @throws {Error} If the source cannot be read, or keeps its metadata
+     * unencrypted (`/EncryptMetadata false`).
+     */
+    xmp: function () {
+      if (!this._sourceMode || this._sourceNeedsPassword) return undefined;
+      var reader = createReader(this._sourceBytes);
+      try {
+        if (hasPlainMetadata(reader)) throw new Error(PLAIN_METADATA);
+        var root = reader.queryDictionaryObject(reader.getTrailer(), "Root");
+        var metadata = root && reader.queryDictionaryObject(root, "Metadata");
+        if (metadata?.getType() !== constants.ePDFObjectStream) {
+          return undefined;
+        }
+        // the reader decodes the stream filters
+        var input = reader.startReadingFromStream(metadata.toPDFStream());
+        var decoder = new TextDecoder();
+        var packet = "";
+        while (input.notEnded()) {
+          packet += decoder.decode(input.read(4096), { stream: true });
+        }
+        return packet + decoder.decode();
+      } finally {
+        reader.end();
+      }
     },
   };
 }
