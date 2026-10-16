@@ -1,10 +1,10 @@
-const { PAGE_CONTEXT_STATE, clearTextFlow } = require("./utils");
-const { PageLayout, Colorspace } = require("../recipe-constants");
-const {
+import { PAGE_CONTEXT_STATE, clearTextFlow } from "./utils.js";
+import { PageLayout, Colorspace } from "../recipe-constants.js";
+import {
   planDeletedPageReferences,
   pruneDeletedPageReferences,
   setCatalogEntry,
-} = require("./page-references");
+} from "./page-references.js";
 
 // PDF dictionary keys and names the page-tree and page-label code reads.
 const PdfName = Object.freeze({
@@ -542,7 +542,7 @@ function writePageLabels(writer, copyingContext, pageLabels) {
  * @throws {Error} If pages were deleted with deletePage() on this Recipe.
  * @throws {Error} If another page is still active; call endPage() first.
  */
-exports.createPage = function createPage(pageWidth, pageHeight, margins) {
+export const createPage = function createPage(pageWidth, pageHeight, margins) {
   if (this.deletedPages?.size) {
     throw new Error("createPage cannot be combined with deletePage");
   }
@@ -681,7 +681,7 @@ function checkRotation(page, rotation) {
  * @throws {RangeError} If `rotation` is not a multiple of 90.
  * @throws {Error} If the active page was opened with `editPage()`.
  */
-exports.rotate = function rotate(rotation) {
+export const rotate = function rotate(rotation) {
   // A page modifier keeps the source page's /Rotate, so the rotation would
   // only change Recipe's coordinate bookkeeping.
   if (this.editingPage) {
@@ -709,7 +709,7 @@ exports.rotate = function rotate(rotation) {
  * @throws {RangeError} If the page box constant is unknown.
  * @throws {TypeError} If no page is active.
  */
-exports.setPageBox = function setPageBox(box, left, bottom, right, top) {
+export const setPageBox = function setPageBox(box, left, bottom, right, top) {
   const muhammara = this.muhammara;
   box = pageBoxConstants(muhammara)[box] ?? box;
   if ([left, bottom, right, top].some((value) => typeof value === "bigint")) {
@@ -750,7 +750,7 @@ exports.setPageBox = function setPageBox(box, left, bottom, right, top) {
  * @returns {Recipe} The recipe instance.
  * @throws {Error} If the page cannot be written.
  */
-exports.endPage = function endPage() {
+export const endPage = function endPage() {
   if (!this.page) {
     return this;
   }
@@ -784,7 +784,7 @@ exports.endPage = function endPage() {
  * @throws {Error} If the page does not exist in the source PDF.
  * @throws {Error} If another page is still active; call endPage() first.
  */
-exports.editPage = function editPage(pageNumber) {
+export const editPage = function editPage(pageNumber) {
   if (this.isNewPDF) {
     throw new Error(
       "editPage requires a Recipe constructed from an existing PDF",
@@ -818,7 +818,10 @@ exports.editPage = function editPage(pageNumber) {
     const startX = mediaBox[0];
     const startY = mediaBox[1];
     const textOptions = {
-      font: this.writer.getFontForFile(this.fonts.helvetica.b),
+      font: this._getFont({
+        font: this.platform.defaultFontFamily,
+        bold: true,
+      }),
       size: 50,
       colorspace: Colorspace.GRAY,
       color: 0x00,
@@ -955,7 +958,7 @@ function planPageDeletion(recipe, copyingContext, deletedPages, prune) {
  * page labels or retained references cannot be rewritten. A failed call
  * leaves the queued deletions unchanged.
  */
-exports.deletePage = function deletePage(pageNumbers, options) {
+export const deletePage = function deletePage(pageNumbers, options) {
   if (this.ended) {
     throw new Error("Cannot delete a page after endPDF");
   }
@@ -1018,7 +1021,7 @@ exports.deletePage = function deletePage(pageNumbers, options) {
  *   cannot be rewritten safely, for example after editing a page that holds
  *   a pruned reference.
  */
-exports._deletePages = function _deletePages() {
+export const _deletePages = function _deletePages() {
   if (!this.deletedPages?.size) return this;
 
   const copyingContext = this.writer.createPDFCopyingContextForModifiedFile();
@@ -1084,7 +1087,7 @@ exports._deletePages = function _deletePages() {
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If the page is unknown.
  */
-exports._resumePageRotation = function _resumePageRotation(
+export const _resumePageRotation = function _resumePageRotation(
   pageNumber,
   context,
 ) {
@@ -1129,7 +1132,7 @@ exports._resumePageRotation = function _resumePageRotation(
  * @returns {RecipePageInfo} The page information.
  * @throws {TypeError} If the page is unknown.
  */
-exports.pageInfo = function pageInfo(pageNumber) {
+export const pageInfo = function pageInfo(pageNumber) {
   const pageInfo = this.metadata[pageNumber];
   if (!pageInfo) {
     throw new TypeError(`Unknown page number: ${pageNumber}`);
@@ -1149,7 +1152,7 @@ exports.pageInfo = function pageInfo(pageNumber) {
  * @memberof Recipe#
  * @returns {RecipePageInfo|null} The current page information, or null when no page has been created or edited.
  */
-exports.getCurrentPageInfo = function getCurrentPageInfo() {
+export const getCurrentPageInfo = function getCurrentPageInfo() {
   const pageNumber =
     this.pageNumber || this.metadata?.pageCount || this.metadata?.pages;
   return pageNumber ? this.pageInfo(pageNumber) : null;
@@ -1163,7 +1166,7 @@ exports.getCurrentPageInfo = function getCurrentPageInfo() {
  * @returns {Recipe} The recipe instance.
  * @throws {Error} If there is no active page content context.
  */
-exports.pauseContext = function pauseContext() {
+export const pauseContext = function pauseContext() {
   if (this.contextState === PAGE_CONTEXT_STATE.ACTIVE_EDIT) {
     this.page.endContext();
     this.pageContext = null;
@@ -1185,7 +1188,7 @@ exports.pauseContext = function pauseContext() {
  * @returns {Recipe} The recipe instance.
  * @throws {Error} If there is no paused page content context.
  */
-exports.resumeContext = function resumeContext() {
+export const resumeContext = function resumeContext() {
   if (this.contextState === PAGE_CONTEXT_STATE.PAUSED_EDIT) {
     this.pageContext = this.page.startContext().getContext();
     this._resumePageRotation();
@@ -1205,7 +1208,7 @@ exports.resumeContext = function resumeContext() {
  * @memberof Recipe#
  * @returns {Object} The document information dictionary.
  */
-exports.getPageInfo = function getPageInfo() {
+export const getPageInfo = function getPageInfo() {
   const info = this.writer.getDocumentContext().getInfoDictionary();
   return info;
 };
@@ -1223,7 +1226,7 @@ exports.getPageInfo = function getPageInfo() {
  * @returns {object} When parameters are given, the value returned is the recipe handle. When no
  * parameters given, the return value is the current page margin object.
  */
-exports.margins = function margins(left, right, top, bottom) {
+export const margins = function margins(left, right, top, bottom) {
   let marginSet = false;
 
   if (typeof left === "object") {

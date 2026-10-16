@@ -429,7 +429,7 @@ function pruneDeletedPageReferences(
   });
 }
 
-module.exports = {
+export {
   planDeletedPageReferences,
   planPrunedValue,
   pruneDeletedPageReferences,

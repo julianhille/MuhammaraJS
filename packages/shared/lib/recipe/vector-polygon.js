@@ -35,7 +35,7 @@
  * @param {string} [options.link] - Make the polygon's bounding box open this URL.
  * @throws {TypeError} If no page is active or there are no coordinates.
  */
-exports.polygon = function polygon(coordinates = [], options = {}) {
+export const polygon = function polygon(coordinates = [], options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
   if (!Array.isArray(coordinates) || coordinates.length === 0) {

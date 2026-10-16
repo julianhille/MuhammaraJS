@@ -10,7 +10,7 @@
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
  */
-exports.rotateContent = function rotateContent(degrees, x = 0, y = 0) {
+export const rotateContent = function rotateContent(degrees, x = 0, y = 0) {
   const radians = (degrees * Math.PI) / 180;
   const cosine = Math.cos(radians);
   const sine = Math.sin(radians);

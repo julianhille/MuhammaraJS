@@ -1,7 +1,5 @@
 const assert = require("assert");
-const {
-  _getDistance,
-} = require("@muhammara/native-core/lib/recipe/vector.helper");
+const { _getDistance } = require("@muhammara/shared/recipe/vector.helper.js");
 
 describe("Vector helpers", () => {
   it("measures vertical and diagonal distances", () => {

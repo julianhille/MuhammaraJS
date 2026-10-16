@@ -1,6 +1,6 @@
-var { htmlToTextObjects } = require("./htmlToTextObjects");
-var { cloneOptions: clone, clearTextFlow } = require("./utils");
-var { LineCap, TableRowNth } = require("../recipe-constants");
+import { htmlToTextObjects } from "./htmlToTextObjects.js";
+import { cloneOptions as clone, clearTextFlow } from "./utils.js";
+import { LineCap, TableRowNth } from "../recipe-constants.js";
 
 /**
  * Convert a table cell style into text options: a copy of the options with
@@ -215,7 +215,7 @@ function tableFields(contents, options) {
  * @throws {Error} If the overflow callback continues after ending the page
  * without starting another one.
  */
-exports.table = function table(x, y, contents, options = {}) {
+export const table = function table(x, y, contents, options = {}) {
   if (!Array.isArray(contents) || contents.length === 0) {
     return this;
   }

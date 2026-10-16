@@ -1,11 +1,11 @@
-const LineBreaker = require("linebreak");
-const { Word, Line, Column } = require("./text.helper");
-const { htmlToTextObjects, HtmlTag } = require("./htmlToTextObjects");
-const { Color, xObjectForm } = require("./xObjectForm");
-const { linkPdf } = require("./annotation");
-const { clearTextFlow, resolveFontSize, trimBreakableEnd } = require("./utils");
-const { miterLimitOption, rotationOption } = require("../recipe-options");
-const {
+import LineBreaker from "linebreak";
+import { Word, Line, Column } from "./text.helper.js";
+import { htmlToTextObjects, HtmlTag } from "./htmlToTextObjects.js";
+import { Color, xObjectForm } from "./xObjectForm.js";
+import { linkPdf } from "./annotation.js";
+import { clearTextFlow, resolveFontSize, trimBreakableEnd } from "./utils.js";
+import { miterLimitOption, rotationOption } from "../recipe-options.js";
+import {
   readDirection,
   hasStrongCharacter,
   resolveDirection,
@@ -20,7 +20,7 @@ const {
   toVisual,
   visualRuns,
   visualWords,
-} = require("@muhammara/shared/text-direction.js");
+} from "../text-direction.js";
 
 // HTML whose text starts with a space, after any tags that open it.
 const LEADING_HTML_SPACE = /^(?:<(?:[^>"']|"[^"]*"|'[^']*')*>|\s)*?\s/;
@@ -29,14 +29,14 @@ const LEADING_HTML_TAGS = /^(?:<(?:[^>"']|"[^"]*"|'[^']*')*>|\s)*/;
 // The line breaks that end a text, every paragraph separator among them; a
 // CRLF is one of them as splitParagraphs() counts them.
 const TRAILING_LINE_BREAKS = new RegExp(`[${LINE_BREAKS}]+$`);
-const {
+import {
   TextWrap,
   TextAlign,
   TextDirection,
   VerticalAlign,
   HorizontalAlign,
   Colorspace,
-} = require("../recipe-constants");
+} from "../recipe-constants.js";
 
 /**
  * Matches HTML that ends with a closed block element, which ends its line.
@@ -134,7 +134,7 @@ function hasLayout(textObject) {
  * @param {Object} source - The overriding options.
  * @returns {Object} The merged options.
  */
-exports._merge = function merge(target, source) {
+export const _merge = function merge(target, source) {
   // Iterate through `source` properties and if an `Object` set property to merge of `target` and `source` properties
   for (const key of Object.keys(source)) {
     if (Array.isArray(source[key])) {
@@ -278,7 +278,7 @@ function isEmpty(obj) {
  * @param {Object} options - The text options: font, bold and italic.
  * @returns {Object[]} The text layout objects.
  */
-exports._makeTextObject = function _makeTextObject(text, size, options) {
+export const _makeTextObject = function _makeTextObject(text, size, options) {
   return [
     {
       value: text,
@@ -306,7 +306,7 @@ exports._makeTextObject = function _makeTextObject(text, size, options) {
  * @returns {Object} The text box: width, height, lineHeight, padding,
  *   minHeight, style, textAlign, clipping and wrap settings.
  */
-exports._makeTextBox = function _makeTextBox(options) {
+export const _makeTextBox = function _makeTextBox(options) {
   return isEmpty(options.textBox)
     ? {
         // use page width with padding and margin
@@ -412,7 +412,7 @@ exports._makeTextBox = function _makeTextBox(options) {
  *   `options.miterLimit` is below 1; nothing is drawn.
  * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
  */
-exports.text = function text(text = "", x, y, options = {}) {
+export const text = function text(text = "", x, y, options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
   if (!this.pageContext) {
@@ -1626,7 +1626,11 @@ function flushTextLinks(recipe, annotations) {
  *   runs and the total text height.
  * @throws {Error} If a font cannot be loaded.
  */
-exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
+export const _layoutText = function _layoutText(
+  textObjects,
+  textBox,
+  pathOptions,
+) {
   let totalHeight = 0;
   // allow user to treat wrap as boolean
   if (textBox.wrap === true) {
@@ -3230,7 +3234,7 @@ function markLineComplete(toWriteTextObjects, lines = null, keepEnd = false) {
  * @returns {Recipe} The recipe instance.
  * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
  */
-exports._flushTextFlow = function _flushTextFlow() {
+export const _flushTextFlow = function _flushTextFlow() {
   if (this._flow && this.pageContext && this._previousTextObjects?.length) {
     this.text("", { flow: false });
   }
@@ -3245,7 +3249,7 @@ exports._flushTextFlow = function _flushTextFlow() {
  * @param {Boolean} [returnCoords=false] - indicate whether or not to return [x,y] coordinates
  * @returns {Object|number[]} - when returnCoord false, the recipe object, when true, the new [x,y] coordinates.
  */
-exports.movedown = function movedown(lines = 1, returnCoords = false) {
+export const movedown = function movedown(lines = 1, returnCoords = false) {
   if (!this._flow || this._previousTextObjects.length === 0) {
     clearTextFlow(this);
     // Before any text is written there is no cursor or line height yet.
@@ -3301,7 +3305,7 @@ function adjustcolumnPosition(columns, x, y) {
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If width or height is omitted while no page is active.
  */
-exports.layout = function layout(id, x, y, width, height, options = {}) {
+export const layout = function layout(id, x, y, width, height, options = {}) {
   this._layouts = this._layouts || {};
   this._layouts[id] = this._layouts[id] || [];
 

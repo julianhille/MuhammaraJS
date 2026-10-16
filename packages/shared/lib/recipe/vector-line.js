@@ -1,5 +1,5 @@
-const { Colorspace } = require("../recipe-constants");
-const { rotationOption } = require("../recipe-options");
+import { Colorspace } from "../recipe-constants.js";
+import { rotationOption } from "../recipe-options.js";
 
 /**
  * move the current position to target position
@@ -11,7 +11,7 @@ const { rotationOption } = require("../recipe-options");
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
  */
-exports.moveTo = function moveTo(x, y) {
+export const moveTo = function moveTo(x, y) {
   const { nx, ny } = this._calibrateCoordinate(x, y);
   this._position = {
     x: nx,
@@ -40,7 +40,7 @@ exports.moveTo = function moveTo(x, y) {
  * @param {Recipe.LineJoin} [options.lineJoin] - joined line end style, a `Recipe.LineJoin` value (default: 'round')
  * @param {number} [options.miterLimit] - limit at which 'miter' joins are forced to 'bevel' (default: 1.414)
  */
-exports.lineTo = function lineTo(x, y, options = {}) {
+export const lineTo = function lineTo(x, y, options = {}) {
   const from = [this._position.x, this._position.y];
   const { nx, ny } = this._calibrateCoordinate(x, y);
   this._strokePolyline([from, [nx, ny]], options);
@@ -57,7 +57,7 @@ exports.lineTo = function lineTo(x, y, options = {}) {
  * @returns {void}
  * @throws {TypeError} If no page is active.
  */
-exports._strokePolyline = function _strokePolyline(points, options) {
+export const _strokePolyline = function _strokePolyline(points, options) {
   // _getPathOptions() may pause the page to write graphics states, and an
   // edited page resumes into a new context, so read the context afterwards.
   const pathOptions = this._getPathOptions(options);
@@ -128,7 +128,7 @@ exports._strokePolyline = function _strokePolyline(points, options) {
  * @param {number[]} [options.rotationOrigin] - [originX, originY] Default: the first point
  * @throws {TypeError} If no page is active or `rotation` is not a finite number.
  */
-exports.line = function line(coordinates = [], options = {}) {
+export const line = function line(coordinates = [], options = {}) {
   // null arguments act like omitted ones.
   if (coordinates === null) coordinates = [];
   if (options === null) options = {};

@@ -1,4 +1,4 @@
-const { Coordinate } = require("../recipe-constants");
+import { Coordinate } from "../recipe-constants.js";
 
 /**
  * Look up the metadata of a page, or of the active page.
@@ -27,7 +27,7 @@ function pageMetadata(recipe, pageNumber) {
  * @returns {number[]} The numeric [x, y].
  * @throws {TypeError} If no page is active.
  */
-exports._centrify = function _centrify(x, y, pageNumber) {
+export const _centrify = function _centrify(x, y, pageNumber) {
   const { width, height } = pageMetadata(this, pageNumber);
   if (x === Coordinate.CENTER) x = width / 2;
   if (y === Coordinate.CENTER) y = height / 2;
@@ -47,7 +47,7 @@ exports._centrify = function _centrify(x, y, pageNumber) {
  * @returns {{nx: number, ny: number}} The PDF coordinates.
  * @throws {TypeError} If no page is active.
  */
-exports._calibrateCoordinate = function _calibrateCoordinate(
+export const _calibrateCoordinate = function _calibrateCoordinate(
   x,
   y,
   offsetX = 0,
@@ -80,55 +80,56 @@ exports._calibrateCoordinate = function _calibrateCoordinate(
  * @returns {{nx: number, ny: number}} The PDF coordinates.
  * @throws {TypeError} If the page is unknown.
  */
-exports._calibrateCoordinateForAnnots = function _calibrateCoordinateForAnnots(
-  x,
-  y,
-  offsetX = 0,
-  offsetY = 0,
-  pageNumber,
-) {
-  const { nx: tx, ny: ty } = this._calibrateCoordinate(
+export const _calibrateCoordinateForAnnots =
+  function _calibrateCoordinateForAnnots(
     x,
     y,
-    offsetX,
-    offsetY,
+    offsetX = 0,
+    offsetY = 0,
     pageNumber,
-  );
-  const { width, height, rotate, mediaBox } = pageMetadata(this, pageNumber);
-  const startX = mediaBox[0];
-  const startY = mediaBox[1];
-  let rotateOffsetX = 0,
-    rotateOffsetY = 0;
-  switch (rotate) {
-    case 90:
-      rotateOffsetX = height - startX;
-      rotateOffsetY = startY;
-      break;
-    case 180:
-      rotateOffsetX = width;
-      rotateOffsetY = height;
-      break;
-    case 270:
-      rotateOffsetX = startX;
-      rotateOffsetY = width - startY;
-      break;
-    default:
-  }
-  // return { nx: tx, ny: ty };
-  const { nx, ny } = rotateCoord(
-    0,
-    0,
-    tx,
-    ty,
-    360 - rotate,
-    rotateOffsetX,
-    rotateOffsetY,
-  );
-  return {
-    nx,
-    ny,
+  ) {
+    const { nx: tx, ny: ty } = this._calibrateCoordinate(
+      x,
+      y,
+      offsetX,
+      offsetY,
+      pageNumber,
+    );
+    const { width, height, rotate, mediaBox } = pageMetadata(this, pageNumber);
+    const startX = mediaBox[0];
+    const startY = mediaBox[1];
+    let rotateOffsetX = 0,
+      rotateOffsetY = 0;
+    switch (rotate) {
+      case 90:
+        rotateOffsetX = height - startX;
+        rotateOffsetY = startY;
+        break;
+      case 180:
+        rotateOffsetX = width;
+        rotateOffsetY = height;
+        break;
+      case 270:
+        rotateOffsetX = startX;
+        rotateOffsetY = width - startY;
+        break;
+      default:
+    }
+    // return { nx: tx, ny: ty };
+    const { nx, ny } = rotateCoord(
+      0,
+      0,
+      tx,
+      ty,
+      360 - rotate,
+      rotateOffsetX,
+      rotateOffsetY,
+    );
+    return {
+      nx,
+      ny,
+    };
   };
-};
 
 /**
  * Convert PDF coordinates back to Recipe coordinates.
@@ -141,7 +142,7 @@ exports._calibrateCoordinateForAnnots = function _calibrateCoordinateForAnnots(
  * @returns {{ox: number, oy: number}} The Recipe coordinates.
  * @throws {TypeError} If no page is active.
  */
-exports._reverseCoordinate = function _reverseCoordinate(
+export const _reverseCoordinate = function _reverseCoordinate(
   x,
   y,
   offsetX = 0,

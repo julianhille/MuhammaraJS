@@ -1,7 +1,7 @@
-const { PAGE_CONTEXT_STATE } = require("./utils");
-const { PageSize } = require("../recipe-constants");
+import { PAGE_CONTEXT_STATE } from "./utils.js";
+import { PageSize } from "../recipe-constants.js";
 
-this.mediumSizes = {
+export const mediumSizes = {
   executive: [521.86, 756.0], // north american
   folio: [612.0, 936.0],
   legal: [612.0, 1008.0],
@@ -64,7 +64,7 @@ this.mediumSizes = {
  * @private
  * @returns {void}
  */
-exports._setParameters = function _setParameters() {
+export const _setParameters = function _setParameters() {
   this.debug = false;
   this.metadata = {
     pageCount: 0,

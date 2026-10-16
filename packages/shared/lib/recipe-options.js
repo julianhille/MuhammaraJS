@@ -44,4 +44,4 @@ function optionNumber(value) {
   return NaN;
 }
 
-module.exports = { miterLimitOption, rotationOption };
+export { miterLimitOption, rotationOption };

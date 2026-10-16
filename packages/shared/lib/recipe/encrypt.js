@@ -1,6 +1,4 @@
-const fs = require("fs");
-const { Permission } = require("../recipe-constants");
-const PDFWStreamForBuffer = require("../PDFWStreamForBuffer");
+import { Permission } from "../recipe-constants.js";
 
 /**
  * Encryption user access permissions
@@ -17,7 +15,7 @@ const PDFWStreamForBuffer = require("../PDFWStreamForBuffer");
  * @returns {number} The numeric user protection flag.
  * @throws {Error} If a name is not a `Recipe.Permission` value.
  */
-exports.permission = function permission(flags = Permission.PRINT) {
+export const permission = function permission(flags = Permission.PRINT) {
   // https://www.adobe.com/content/dam/acom/en/devnet/pdf/pdfs/PDF32000_2008.pdf
 
   const userAccessPermissions = {
@@ -55,7 +53,7 @@ exports.permission = function permission(flags = Permission.PRINT) {
  * @param {boolean} [addPermissions=true] - Copy `userProtectionFlag` into the result.
  * @returns {Object} The writer encryption options; empty when no password is set.
  */
-exports._getEncryptOptions = function _getEncryptOptions(
+export const _getEncryptOptions = function _getEncryptOptions(
   options,
   addPermissions = true,
 ) {
@@ -107,7 +105,7 @@ exports._getEncryptOptions = function _getEncryptOptions(
  *   (or written to the output path) for a Buffer source.
  * @throws {Error} If the Recipe writes PDF/A, which does not allow encryption.
  */
-exports.encrypt = function encrypt(options = {}) {
+export const encrypt = function encrypt(options = {}) {
   if (this.pdfa_) throw new Error("PDF/A does not allow encryption");
   this.needToEncrypt = true;
   this.encryption_ = this._getEncryptOptions(options);
@@ -117,43 +115,22 @@ exports.encrypt = function encrypt(options = {}) {
 
 // http://pdfhummus.com/post/147451287581/hummus-1058-and-pdf-writer-updates-encryption
 /**
- * Re-encrypt the finished output with the encrypt() options. A path source
- * re-encrypts the output file in place; a Buffer source re-encrypts the
- * collected output bytes, so the callback and an output path receive the
- * encrypted PDF. Nothing happens when encrypt() was given no password, as on
- * Wasm. The finished output is opened with the password the Recipe was
- * created with, or none for an empty user password, so a PDF whose
- * constructor options already encrypted it can still be re-encrypted with new
- * passwords.
+ * Re-encrypt the finished output with the encrypt() options. Nothing happens
+ * when encrypt() was given no password. The finished output is opened with
+ * the password the Recipe was created with, or none for an empty user
+ * password, so a PDF whose constructor options already encrypted it can still
+ * be re-encrypted with new passwords.
  * @private
- * @returns {void}
- * @throws {Error} If the output cannot be renamed, re-encrypted or removed.
+ * @param {Uint8Array} bytes - The finished output.
+ * @returns {Uint8Array} The re-encrypted output.
+ * @throws {Error} If the output cannot be re-encrypted.
  */
-exports._encrypt = function _encrypt() {
+export const _encrypt = function _encrypt(bytes) {
   if (!this.encryption_ || Object.keys(this.encryption_).length === 0) {
-    return;
+    return bytes;
   }
   const recryptOptions = Object.assign({}, this.encryption_, {
     password: this.encryptOptions.password,
   });
-
-  if (this.isBufferSrc) {
-    const encrypted = new PDFWStreamForBuffer();
-    this.muhammara.recrypt(
-      new this.muhammara.PDFRStreamForBuffer(
-        this.outStream.buffer || Buffer.alloc(0),
-      ),
-      encrypted,
-      recryptOptions,
-    );
-    // Replace the collected bytes instead of the stream, so the unencrypted
-    // output is dropped rather than kept alive next to the encrypted one.
-    this.outStream.buffer = encrypted.buffer;
-    return;
-  }
-
-  const tmp = this.output + ".tmp.pdf";
-  fs.renameSync(this.output, tmp);
-  this.muhammara.recrypt(tmp, this.output, recryptOptions);
-  fs.unlinkSync(tmp);
+  return this.platform.recrypt(bytes, recryptOptions);
 };

@@ -1,4 +1,4 @@
-const { xObjectForm } = require("./xObjectForm");
+import { xObjectForm } from "./xObjectForm.js";
 
 /**
  * Overlay a pdf to the current pdf
@@ -18,7 +18,7 @@ const { xObjectForm } = require("./xObjectForm");
  * @throws {TypeError} If no page is active.
  * @throws {Error} If the overlay PDF cannot be read.
  */
-exports.overlay = function overlay(pdfSrc, x = 0, y = 0, options = {}) {
+export const overlay = function overlay(pdfSrc, x = 0, y = 0, options = {}) {
   // allow to have only 2 arguments input
   if (arguments.length == 2) {
     options = x || {};

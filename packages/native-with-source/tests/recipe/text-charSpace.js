@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
 const muhammara = require("@muhammara/native-with-source");
 const Recipe = muhammara.Recipe;
-const { Word } = require("@muhammara/native-core/lib/recipe/text.helper");
+const { Word } = require("@muhammara/shared/recipe/text.helper.js");
 const path = require("path");
 
 describe("Text", () => {

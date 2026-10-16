@@ -1,5 +1,4 @@
-const fs = require("fs");
-const utils = require("./utils");
+import * as utils from "./utils.js";
 /**
  * Insert a page from the other pdf
  * @name insertPage
@@ -16,7 +15,7 @@ const utils = require("./utils");
  * @throws {Error} If afterPageNumber is not a number, or after fillForm().
  * @throws {TypeError} If pdfSrc or srcPageNumber is missing.
  */
-exports.insertPage = function insertPage(
+export const insertPage = function insertPage(
   afterPageNumber,
   pdfSrc,
   srcPageNumber,
@@ -49,34 +48,35 @@ exports.insertPage = function insertPage(
 };
 
 /**
- * Rebuild the output file with the pages queued by insertPage() inserted
- * after their target pages.
+ * Rebuild the output with the pages queued by insertPage() inserted after
+ * their target pages. The pages are counted in the output itself, so pages
+ * that appendPage() added are kept.
  * @private
- * @returns {Recipe} The recipe instance.
- * @throws {Error} If nothing was queued, or a file cannot be read, renamed or written.
+ * @param {Uint8Array} bytes - The finished output.
+ * @returns {Uint8Array} The rebuilt output.
+ * @throws {Error} If nothing was queued, or a source cannot be read.
  */
-exports._insertPages = function _insertPages() {
+export const _insertPages = function _insertPages(bytes) {
   if (!this.insertInformation) {
     throw new Error("No insertInformation");
   }
-  const pagesForInsert = [
-    0,
-    ...Object.keys(this.metadata)
-      .filter((item) => !isNaN(item))
-      .map((item) => parseInt(item)),
-  ];
-  const tmp = this.output + ".tmp.pdf";
-  fs.renameSync(this.output, tmp);
+  const reader = this.muhammara.createReader(this.platform.readerSource(bytes));
+  const pageCount = reader.getPagesCount();
+  reader.end();
+  const pagesForInsert = Array.from({ length: pageCount + 1 }, (_, i) => i);
 
-  const pdfWriter = this.muhammara.createWriter(this.output);
+  const output = this.platform.newWriter({});
+  const pdfWriter = output.writer;
   let lastInsertedOriginal = 0;
   pagesForInsert.forEach((pageNumber) => {
     const toAppendPage = pageNumber - 1;
     if (toAppendPage >= 0) {
       const specificRanges = [[lastInsertedOriginal, toAppendPage]];
-      utils.appendPDFPagesFromPDFWithAnnotations(pdfWriter, tmp, {
-        specificRanges,
-      });
+      utils.appendPDFPagesFromPDFWithAnnotations(
+        pdfWriter,
+        this.platform.readerSource(bytes),
+        { specificRanges },
+      );
     }
     lastInsertedOriginal = pageNumber;
 
@@ -86,13 +86,13 @@ exports._insertPages = function _insertPages() {
         const specificRanges = [
           [info.srcPageNumber - 1, info.srcPageNumber - 1],
         ];
-        utils.appendPDFPagesFromPDFWithAnnotations(pdfWriter, info.pdfSrc, {
-          specificRanges,
-        });
+        utils.appendPDFPagesFromPDFWithAnnotations(
+          pdfWriter,
+          this.platform.readerSource(info.pdfSrc),
+          { specificRanges },
+        );
       });
     }
   });
-  pdfWriter.end();
-  fs.unlinkSync(tmp);
-  return this;
+  return output.finish();
 };

@@ -1,13 +1,13 @@
-var { cloneOptions, resolveFontSize, trimBreakableEnd } = require("./utils");
-var { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
-var {
+import { cloneOptions, resolveFontSize, trimBreakableEnd } from "./utils.js";
+import { HorizontalAlign, VerticalAlign } from "../recipe-constants.js";
+import {
   drawnText,
   drawnGaps,
   drawnLineWidth,
   toVisual,
   spacedGaps,
   spacedCharacters,
-} = require("@muhammara/shared/text-direction.js");
+} from "../text-direction.js";
 
 // A word that starts with a mark or joiner, after any direction marks,
 // continues the cluster of the word before it.
@@ -149,7 +149,6 @@ const Word = class Word {
  * @param {string} word - The word value.
  * @param {Object} pathOptions - The resolved text options.
  */
-exports.Word = Word; // ... now export Word to the rest of the library.
 
 /**
  * A line used by Recipe text layout.
@@ -165,7 +164,7 @@ exports.Word = Word; // ... now export Word to the rest of the library.
 // accepts every word without measuring.
 const UNBOUNDED_LINE_WIDTH = 999999999;
 
-exports.Line = class Line {
+export const Line = class Line {
   /**
    * @param {number} [width] - The available width; unlimited when omitted.
    * @param {number} [height] - A fixed line height.
@@ -406,7 +405,10 @@ exports.Line = class Line {
  *   optionally followed by a space and a `Recipe.VerticalAlign` value.
  * @returns {{offsetX: number, offsetY: number}} The offset from the placement point.
  */
-exports._getTextBoxOffset = function _getTextBoxOffset(textBox, options = {}) {
+export const _getTextBoxOffset = function _getTextBoxOffset(
+  textBox,
+  options = {},
+) {
   let offsetX = 0;
   let offsetY = -textBox.firstLineHeight;
   let { width, height, textHeight } = textBox;
@@ -464,7 +466,7 @@ exports._getTextBoxOffset = function _getTextBoxOffset(textBox, options = {}) {
  * @throws {Error} If the font file cannot be loaded.
  * @throws {TypeError} If `options.direction` is not a `Recipe.TextDirection` value.
  */
-exports.textDimensions = function textDimensions(text, options = {}) {
+export const textDimensions = function textDimensions(text, options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
   // Measured as drawn, in visual order.
@@ -499,7 +501,7 @@ exports.textDimensions = function textDimensions(text, options = {}) {
  * @param {string} [field=''] - The associated data field.
  * @param {Object} [options] - The column options.
  */
-exports.Column = class Column {
+export const Column = class Column {
   /**
    * @param {number} x - The x coordinate.
    * @param {number} y - The y coordinate.
@@ -618,3 +620,5 @@ exports.Column = class Column {
     return this._options;
   }
 };
+
+export { Word };

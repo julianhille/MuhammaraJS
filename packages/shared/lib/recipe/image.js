@@ -1,9 +1,5 @@
-const fs = require("fs");
-const { HorizontalAlign, VerticalAlign } = require("../recipe-constants");
-const {
-  imagePdfaFeatures,
-  requirePdfaAllows,
-} = require("@muhammara/shared/pdfa.js");
+import { HorizontalAlign, VerticalAlign } from "../recipe-constants.js";
+import { imagePdfaFeatures, requirePdfaAllows } from "../pdfa.js";
 
 /**
  * Place images to pdf
@@ -60,13 +56,13 @@ const {
  * @throws {Error} If the PDF/A document does not allow the image.
  * @throws {Error} If the image, or the PDF page `page` selects, cannot be read.
  */
-exports.image = function image(imgSrc, x, y, options = {}) {
+export const image = function image(imgSrc, x, y, options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
   if (this.pdfa_) {
     requirePdfaAllows(
       this.pdfa_,
-      ...imagePdfaFeatures(fs.readFileSync(imgSrc)),
+      ...imagePdfaFeatures(this.platform.readBytes(imgSrc)),
     );
   }
   const index = imageIndex(options);
@@ -206,14 +202,9 @@ function imageSize(options, key) {
  *   page that does not exist.
  */
 function pdfPage(recipe, imgSrc, index) {
-  let key;
-  try {
-    const stat = fs.statSync(imgSrc);
-    key = `${imgSrc}\0${stat.mtimeMs}\0${stat.size}`;
-  } catch {
-    // A missing file measures 0 by 0 and is rejected as an unknown image.
-    return null;
-  }
+  // A missing image measures 0 by 0 and is rejected as an unknown image.
+  const key = recipe.platform.assetVersion(imgSrc);
+  if (key === null) return null;
   recipe._pdfSources = recipe._pdfSources || new Map();
   let source = recipe._pdfSources.get(key);
   if (!source) {
@@ -227,7 +218,7 @@ function pdfPage(recipe, imgSrc, index) {
   }
   if (!source.pdf) return null;
   if (!source.pages.has(index)) {
-    source.pages.set(index, readPdfPage(recipe.muhammara, imgSrc, index));
+    source.pages.set(index, readPdfPage(recipe, imgSrc, index));
   }
   const page = source.pages.get(index);
   if (!page) throw new Error(`Unknown image: ${imgSrc}`);
@@ -237,16 +228,18 @@ function pdfPage(recipe, imgSrc, index) {
 /**
  * Read the media box and rotation of one page of a PDF file.
  * @private
- * @param {Object} muhammara - The addon API the Recipe was created for.
- * @param {string} imgSrc - The PDF path.
+ * @param {Recipe} recipe - The recipe instance.
+ * @param {string} imgSrc - The PDF path, or on Wasm its registered name.
  * @param {number} index - The zero-based page.
  * @returns {?{mediaBox: number[], rotate: number}} The page geometry, or null
  *   when the PDF cannot be read or has no such page.
  */
-function readPdfPage(muhammara, imgSrc, index) {
+function readPdfPage(recipe, imgSrc, index) {
   let reader;
   try {
-    reader = muhammara.createReader(imgSrc);
+    reader = recipe.muhammara.createReader(
+      recipe.platform.readerSource(imgSrc),
+    );
   } catch {
     return null;
   }
@@ -412,7 +405,7 @@ function drawFrame(recipe, nx, ny, width, height, options) {
  *   geometry of a PDF source.
  * @throws {Error} If the image, or the PDF page `page` selects, cannot be read.
  */
-exports._getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
+export const _getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
   // A missing keepAspectRatio keeps it; the caller's options stay untouched.
   const keepAspectRatio = options.keepAspectRatio ?? true;
   const index = imageIndex(options);

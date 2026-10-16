@@ -1,6 +1,5 @@
-const fs = require("fs");
-const { Colorspace, ChromaCommand } = require("../recipe-constants");
-const { PdfAFeature, requirePdfaAllows } = require("@muhammara/shared/pdfa.js");
+import { Colorspace, ChromaCommand } from "../recipe-constants.js";
+import { PdfAFeature, requirePdfaAllows } from "../pdfa.js";
 
 /**
  * Register a color under a name as an own property, so any name, including
@@ -20,7 +19,7 @@ function setKnownColor(colors, name, value) {
   });
 }
 
-this.knownColors = {
+export const knownColors = {
   // knownColors.colorspace.colorName = value
   rgb: {
     red: "ff0000",
@@ -81,10 +80,12 @@ this.knownColors = {
  * @throws {Error} If a color value has an invalid size.
  * @throws {TypeError} If the colorspace is unknown.
  */
-exports.chroma = function chroma(name, value, colorspace = "") {
+export const chroma = function chroma(name, value, colorspace = "") {
   if (name) {
     if (name === ChromaCommand.LOAD) {
-      let newColors = JSON.parse(fs.readFileSync(value));
+      let newColors = JSON.parse(
+        new TextDecoder().decode(this.platform.readBytes(value)),
+      );
       // Add new colors to existing colorspaces
       for (const cs of Object.keys(newColors)) {
         if (!Object.values(Colorspace).includes(cs)) {
@@ -224,7 +225,7 @@ function tintTransform(self, color) {
  *   (CA) and non-stroking (ca) ExtGState dictionaries.
  * @throws {Error} If the PDF/A level of the Recipe does not allow transparency.
  */
-exports._createExtGStates = function _createExtGStates(value) {
+export const _createExtGStates = function _createExtGStates(value) {
   if (value < 1) requirePdfaAllows(this.pdfa_, PdfAFeature.TRANSPARENCY);
   this.extGStates = this.extGStates || {};
   if (this.extGStates[value]) {
@@ -373,7 +374,7 @@ function percentToHex(code) {
  * @throws {TypeError} If `opt.colorspace` is not a `Recipe.Colorspace` value.
  * @throws {Error} If the PDF/A output intent does not allow the color.
  */
-exports._transformColor = function _transformColor(code = "", opt = {}) {
+export const _transformColor = function _transformColor(code = "", opt = {}) {
   this.knownColors = this.knownColors || {};
   if (opt.colorspace && !Object.values(Colorspace).includes(opt.colorspace)) {
     throw new TypeError(`Unknown colorspace: ${opt.colorspace}`);
@@ -501,7 +502,7 @@ function hexToArray(hex) {
  * @returns {{r: number, g: number, b: number}} The components; black for 0 or
  *   a missing value.
  */
-exports._colorNumberToRGB = (bigint) => {
+export const _colorNumberToRGB = (bigint) => {
   if (!bigint) {
     return {
       r: 0,

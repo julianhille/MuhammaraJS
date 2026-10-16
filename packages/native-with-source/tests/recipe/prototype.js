@@ -7,6 +7,7 @@ describe("Recipe prototype", function () {
     assert.deepEqual(Object.getOwnPropertyNames(Recipe.prototype).sort(), [
       "constructor",
       "muhammara",
+      "platform",
     ]);
     assert.equal(Recipe.prototype.muhammara, muhammara);
     assert.equal(Recipe.name, "Recipe");

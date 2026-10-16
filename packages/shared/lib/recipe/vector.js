@@ -12,9 +12,9 @@
 //   DecimalColor component values range from 0 to 255.
 //   PercentColor component values range from 1 to 100.
 
-const { linkPdf } = require("./annotation");
-const { miterLimitOption } = require("../recipe-options");
-const { PdfAFeature, requirePdfaAllows } = require("@muhammara/shared/pdfa.js");
+import { linkPdf } from "./annotation.js";
+import { miterLimitOption } from "../recipe-options.js";
+import { PdfAFeature, requirePdfaAllows } from "../pdfa.js";
 
 /**
  * Draw a circle
@@ -37,7 +37,7 @@ const { PdfAFeature, requirePdfaAllows } = require("@muhammara/shared/pdfa.js");
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
  */
-exports.circle = function circle(x, y, radius, options = {}) {
+export const circle = function circle(x, y, radius, options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
   [x, y] = this._centrify(x, y);
@@ -142,7 +142,7 @@ exports.circle = function circle(x, y, radius, options = {}) {
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
  */
-exports.rectangle = function rectangle(x, y, width, height, options = {}) {
+export const rectangle = function rectangle(x, y, width, height, options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
   const { nx, ny } = options.useGivenCoords
@@ -374,7 +374,7 @@ function drawRoundedRectangle(
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
  */
-exports.ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
+export const ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
   [cx, cy] = this._centrify(cx, cy);
@@ -556,7 +556,7 @@ function drawArc(ctx, x, y, radius, startAngle, endAngle, fromCenter = false) {
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
  */
-exports.arc = function arc(
+export const arc = function arc(
   x,
   y,
   radius,
@@ -659,7 +659,14 @@ exports.arc = function arc(
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
  */
-exports.pie = function pie(x, y, radius, startAngle, endAngle, options = {}) {
+export const pie = function pie(
+  x,
+  y,
+  radius,
+  startAngle,
+  endAngle,
+  options = {},
+) {
   return this.arc(x, y, radius, startAngle, endAngle, {
     ...options,
     sector: true,
@@ -683,7 +690,7 @@ exports.pie = function pie(x, y, radius, startAngle, endAngle, options = {}) {
  * @throws {TypeError} If no page is active.
  * @throws {RangeError} If `miterLimit` is not a number of at least 1.
  */
-exports.lineStyle = function lineStyle(options = {}) {
+export const lineStyle = function lineStyle(options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
   // Validate before anything is written.
@@ -726,7 +733,7 @@ exports.lineStyle = function lineStyle(options = {}) {
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
  */
-exports._setLineStyle = function _setLineStyle(options = {}) {
+export const _setLineStyle = function _setLineStyle(options = {}) {
   if (options.width !== undefined || options.lineWidth !== undefined)
     this.pageContext.w(options.width ?? options.lineWidth);
   if (options.cap !== undefined) this.pageContext.J(options.cap);
@@ -750,7 +757,7 @@ exports._setLineStyle = function _setLineStyle(options = {}) {
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
  */
-exports.lineWidth = function lineWidth(width) {
+export const lineWidth = function lineWidth(width) {
   return this.lineStyle({ width });
 };
 
@@ -765,7 +772,7 @@ exports.lineWidth = function lineWidth(width) {
  * @throws {RangeError} If the value is not a finite number from 0 to 1.
  * @throws {Error} If the PDF/A level of the Recipe does not allow transparency.
  */
-exports.opacity = function opacity(value) {
+export const opacity = function opacity(value) {
   if (!Number.isFinite(value) || value < 0 || value > 1) {
     throw new RangeError("Opacity must be a finite number between 0 and 1");
   }
@@ -784,7 +791,7 @@ exports.opacity = function opacity(value) {
  * @memberof Recipe#
  * @returns {Recipe} The recipe instance.
  */
-exports.fill = function fill() {
+export const fill = function fill() {
   return this;
 };
 
@@ -797,7 +804,7 @@ exports.fill = function fill() {
  * @memberof Recipe#
  * @returns {Recipe} The recipe instance.
  */
-exports.stroke = function stroke() {
+export const stroke = function stroke() {
   return this;
 };
 
@@ -810,6 +817,6 @@ exports.stroke = function stroke() {
  * @memberof Recipe#
  * @returns {Recipe} The recipe instance.
  */
-exports.fillAndStroke = function fillAndStroke() {
+export const fillAndStroke = function fillAndStroke() {
   return this;
 };

@@ -1891,10 +1891,7 @@ describe("Recipe text direction", function () {
   });
 
   it("measures a wrapping line from its words as drawn", function () {
-    const {
-      Word,
-      Line,
-    } = require("@muhammara/native-core/lib/recipe/text.helper");
+    const { Word, Line } = require("@muhammara/shared/recipe/text.helper.js");
     const { drawnText } = require("@muhammara/shared/text-direction.js");
     const font = muhammara
       .createWriter(new muhammara.PDFWStreamForBuffer())

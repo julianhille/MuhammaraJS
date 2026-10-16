@@ -1,5 +1,5 @@
-var contentStream = require("@muhammara/shared/content-stream.js");
-var fontText = require("@muhammara/shared/font-text.js");
+import * as contentStream from "../content-stream.js";
+import * as fontText from "../font-text.js";
 
 var PdfOperator = contentStream.PdfOperator;
 var TokenKind = contentStream.TokenKind;
@@ -259,7 +259,7 @@ function replaceContentStream(recipe, pageIndex, objectId, content) {
   var replacementObjectId = objectsContext.startNewIndirectObject();
   var replacementStream = objectsContext.startUnfilteredPDFStream();
 
-  replacementStream.getWriteStream().write(Buffer.from(content, "latin1"));
+  replacementStream.getWriteStream().write(latin1Bytes(content));
   objectsContext.endPDFStream(replacementStream).endIndirectObject();
   recipe.writer.replaceObject(pageIndex, objectId, replacementObjectId);
 }
@@ -297,7 +297,7 @@ function rewriteStream(recipe, copyingContext, objectId, content) {
   });
 
   var stream = objectsContext.startUnfilteredPDFStream(dictionary);
-  stream.getWriteStream().write(Buffer.from(content, "latin1"));
+  stream.getWriteStream().write(latin1Bytes(content));
   objectsContext.endPDFStream(stream).endIndirectObject();
 }
 
@@ -392,7 +392,7 @@ function assertPageNumber(recipe, pageNumber, methodName) {
  * the matched font cannot be read, has a malformed `/Widths` array, or has
  * no glyph for a replacement character.
  */
-exports.replaceText = function replaceText(text, replacement, pageNumber) {
+export const replaceText = function replaceText(text, replacement, pageNumber) {
   if (typeof text !== "string" || typeof replacement !== "string") {
     throw new TypeError("replaceText expects text and replacement strings");
   }
@@ -450,7 +450,7 @@ exports.replaceText = function replaceText(text, replacement, pageNumber) {
  * @throws {RangeError} If the source document has no such page.
  * @throws {Error} If the page's `Contents` holds a direct stream.
  */
-exports.removeText = function removeText(pageNumber, options) {
+export const removeText = function removeText(pageNumber, options) {
   assertPageNumber(this, pageNumber, "removeText");
   if (
     options !== undefined &&
@@ -498,3 +498,13 @@ exports.removeText = function removeText(pageNumber, options) {
   this.modifiedSourcePages.add(pageNumber);
   return this;
 };
+
+/**
+ * Encode a content stream string whose characters are bytes, as latin1.
+ * @private
+ * @param {string} content - The content stream.
+ * @returns {Uint8Array} The bytes.
+ */
+function latin1Bytes(content) {
+  return Uint8Array.from(content, (character) => character.charCodeAt(0) & 255);
+}

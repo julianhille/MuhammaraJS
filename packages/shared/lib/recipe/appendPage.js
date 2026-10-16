@@ -1,4 +1,4 @@
-const utils = require("./utils");
+import * as utils from "./utils.js";
 
 /**
  * Append pages from the other pdf to the current pdf. An active page is
@@ -16,7 +16,7 @@ const utils = require("./utils");
  * @throws {Error} If pages were deleted with deletePage() on this Recipe.
  * @throws {Error} If the source PDF cannot be read.
  */
-exports.appendPage = function appendPage(pdfSrc, pages = []) {
+export const appendPage = function appendPage(pdfSrc, pages = []) {
   const muhammara = this.muhammara;
   if (this.deletedPages?.size) {
     throw new Error("appendPage cannot be combined with deletePage");

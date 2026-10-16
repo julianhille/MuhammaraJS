@@ -1,4 +1,4 @@
-const DOMParser = require("@xmldom/xmldom").DOMParser;
+import { DOMParser } from "@xmldom/xmldom";
 
 // HTML attribute and inline style names the parser reads.
 const HtmlAttribute = Object.freeze({
@@ -50,7 +50,7 @@ const HtmlTag = Object.freeze({
  * @returns {Object[]} The parsed text layout objects: one per child node,
  *   each with its value, tag, style flags, link, font size ratio and childs.
  */
-exports.htmlToTextObjects = function (htmlCodes, options = {}) {
+export const htmlToTextObjects = function (htmlCodes, options = {}) {
   const nodes = new DOMParser().parseFromString(
     `<html>${htmlCodes}</html>`,
     "text/html",
@@ -280,4 +280,4 @@ function parseNode(node, options) {
 }
 
 // Shared with text layout; non-enumerable so it is not a Recipe method.
-Object.defineProperty(exports, "HtmlTag", { value: HtmlTag });
+export { HtmlTag };

@@ -1,25 +1,21 @@
-const fs = require("fs");
-var {
+import {
   standardInfoKeys,
   pdfInfoNames,
   infoOptionName,
-} = require("@muhammara/shared/recipe-info.js");
-var {
+} from "../recipe-info.js";
+import {
   buildXmpPacket,
   dateToXmp,
   pdfDateToXmp,
   hasPlainMetadata,
-} = require("@muhammara/shared/xmp.js");
-var {
+} from "../xmp.js";
+import {
   PdfAFeature,
   requirePdfaAllows,
   requirePdfaAttachment,
   writeOutputIntents,
-} = require("@muhammara/shared/pdfa.js");
-var {
-  attachment,
-  writeAttachments,
-} = require("@muhammara/shared/attachments.js");
+} from "../pdfa.js";
+import { attachment, writeAttachments } from "../attachments.js";
 
 var PLAIN_METADATA =
   "Recipe cannot read or write the XMP of a PDF whose metadata is not encrypted";
@@ -81,7 +77,7 @@ function trappedValues(muhammara) {
  *   given after endPDF(), or a custom entry is given in a PDF/A-4 document,
  *   which has no Info dictionary.
  */
-exports.info = function info(options) {
+export const info = function info(options) {
   if (!options) {
     const source = this._readInfo();
     // the fields win over source custom entries of the same name
@@ -131,7 +127,7 @@ function setInfoValue(recipe, key, value) {
  * @throws {Error} If the source cannot be read, or keeps its metadata
  *   unencrypted (`/EncryptMetadata false`).
  */
-exports.xmp = function xmp() {
+export const xmp = function xmp() {
   if (this.isNewPDF) return undefined;
   // its own reader, so that the packet can be read after endPDF() too
   const parser = openSourceReader(this);
@@ -146,9 +142,19 @@ exports.xmp = function xmp() {
     // the reader decodes the stream filters
     const input = parser.startReadingFromStream(metadata.toPDFStream());
     const chunks = [];
-    while (input.notEnded()) chunks.push(Buffer.from(input.read(4096)));
-    // without a byte order mark, as Wasm reads it
-    return new TextDecoder().decode(Buffer.concat(chunks));
+    let length = 0;
+    while (input.notEnded()) {
+      const chunk = Uint8Array.from(input.read(4096));
+      chunks.push(chunk);
+      length += chunk.length;
+    }
+    const bytes = new Uint8Array(length);
+    chunks.reduce((offset, chunk) => {
+      bytes.set(chunk, offset);
+      return offset + chunk.length;
+    }, 0);
+    // without a byte order mark
+    return new TextDecoder().decode(bytes);
   } finally {
     parser.end();
   }
@@ -164,7 +170,7 @@ exports.xmp = function xmp() {
  *   and empty for a source without an Info dictionary.
  * @throws {Error} If the source cannot be read.
  */
-exports._readInfo = function _readInfo() {
+export const _readInfo = function _readInfo() {
   if (!this.isNewPDF && !this.infoDictionary) {
     // also cached when the source has no Info dictionary
     this.infoDictionary = {};
@@ -251,9 +257,7 @@ exports._readInfo = function _readInfo() {
  */
 function openSourceReader(recipe) {
   const parser = recipe.muhammara.createReader(
-    recipe.isBufferSrc
-      ? new recipe.muhammara.PDFRStreamForBuffer(recipe.src)
-      : recipe.src,
+    recipe.platform.readerSource(recipe.src),
   );
   if (parser.getPagesCount() > 0) return parser;
   parser.end();
@@ -273,7 +277,7 @@ function openSourceReader(recipe) {
  *   cannot write, and for the `xmp` option on a source that keeps its
  *   metadata unencrypted.
  */
-exports._writeInfo = function _writeInfo() {
+export const _writeInfo = function _writeInfo() {
   const trapped = trappedValues(this.muhammara);
   const oldInfo = this._readInfo();
   // the writer would encrypt the new entries with a key that does not match
@@ -424,7 +428,7 @@ function writeXmp(writer, info, dates, pdfa) {
   dictionary.writeKey("Subtype");
   dictionary.writeNameValue("XML");
   const stream = objects.startUnfilteredPDFStream(dictionary);
-  stream.getWriteStream().write(Array.from(Buffer.from(packet, "utf8")));
+  stream.getWriteStream().write(Array.from(new TextEncoder().encode(packet)));
   objects.endPDFStream(stream);
   setCatalogEntry(writer, "Metadata", id);
 }
@@ -468,14 +472,14 @@ function setCatalogEntry(writer, key, id) {
  * @throws {Error} After endPDF(), for a source PDF, with insertPage(), or
  *   when the PDF/A level does not allow attached files.
  */
-exports.attach = function attach(name, file, options) {
+export const attach = function attach(name, file, options) {
   if (this.ended) throw new Error("PDF writer has ended");
   if (!this.isNewPDF) throw new Error("attach() applies to a new PDF");
   if (this.insertInformation) {
     throw new Error("insertPage() cannot be combined with pdfa or attach()");
   }
   requirePdfaAllows(this.pdfa_, PdfAFeature.ATTACHMENTS);
-  const bytes = typeof file === "string" ? fs.readFileSync(file) : file;
+  const bytes = typeof file === "string" ? this.platform.readBytes(file) : file;
   if (!(bytes instanceof Uint8Array)) {
     throw new TypeError("An attached file needs its bytes");
   }
@@ -499,7 +503,7 @@ exports.attach = function attach(name, file, options) {
  * @throws {Error} After endPDF(), or in a PDF/A-4 document, which has no
  *   Info dictionary.
  */
-exports.custom = function custom(key, value) {
+export const custom = function custom(key, value) {
   if ([key, value].some((part) => part === undefined || part === null)) {
     throw new TypeError("custom() needs a key and a value");
   }
@@ -516,10 +520,9 @@ exports.custom = function custom(key, value) {
  * @throws {Error} If the source reader was released by endPDF(), or the
  *   output file cannot be written.
  */
-exports.structure = function structure(output) {
+export const structure = function structure(output) {
   // PDF file format http://lotabout.me/orgwiki/pdf.html
-  // const outputFileType = path.extname(output);
-  const outputFile = fs.openSync(output, "w");
+  const lines = [];
   const muhammara = this.muhammara;
   const pdfReader = this._getReader();
 
@@ -547,7 +550,7 @@ exports.structure = function structure(output) {
     };
 
     const logToFile = (inString) => {
-      fs.writeSync(outputFile, addTabs() + inString + "\r\n");
+      lines.push(addTabs() + inString + "\r\n");
     };
 
     const iterateObjectTypes = (inObject) => {
@@ -620,6 +623,6 @@ exports.structure = function structure(output) {
       write(item);
     });
 
-  fs.closeSync(outputFile);
+  this.platform.writeStructure(output, lines.join(""));
   return this;
 };

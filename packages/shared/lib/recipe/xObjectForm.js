@@ -1,4 +1,4 @@
-const { Colorspace } = require("../recipe-constants");
+import { Colorspace } from "../recipe-constants.js";
 
 /**
  * Writes device color operators for a color model.
@@ -53,14 +53,12 @@ const Color = class Color {
   }
 };
 
-exports.Color = Color;
-
 /**
  * Creates a writer form XObject extended with Recipe helpers; the
  * constructor returns the form itself.
  * @private
  */
-exports.xObjectForm = class xObjectForm {
+export const xObjectForm = class xObjectForm {
   /**
    * @param {Object} pdfWriter - The PDF writer.
    * @param {number} [width=100] - The form width.
@@ -169,3 +167,5 @@ exports.xObjectForm = class xObjectForm {
     return this;
   }
 };
+
+export { Color };

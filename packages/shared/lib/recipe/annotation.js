@@ -1,12 +1,12 @@
-const {
+import {
   AnnotSubtype,
   AnnotIcon,
   AnnotFlag,
   Colorspace,
   Coordinate,
-} = require("../recipe-constants");
-const { cssColors } = require("@muhammara/shared/css-colors.js");
-const { pdfaAnnotationFlags } = require("@muhammara/shared/pdfa.js");
+} from "../recipe-constants.js";
+import { cssColors } from "../css-colors.js";
+import { pdfaAnnotationFlags } from "../pdfa.js";
 
 /**
  * Encodes annotation text as a PDF text string, so characters outside
@@ -69,7 +69,7 @@ function annotationDate(writer, value) {
  * @throws {Error} If a PDF/A document does not allow the subtype, flags,
  *   opacity or color, or an area without an appearance stream.
  */
-exports.comment = function comment(text = "", x, y, options = {}) {
+export const comment = function comment(text = "", x, y, options = {}) {
   this._validateAnnot(options, AnnotSubtype.TEXT);
   validateAnnotationPosition(x, y, options);
   this.annotationsToWrite.push({
@@ -102,7 +102,7 @@ exports.comment = function comment(text = "", x, y, options = {}) {
  * @throws {TypeError} If no page is active, `url` is not a string, or the
  *   rectangle is not finite.
  */
-exports.link = function link(url, x, y, width, height) {
+export const link = function link(url, x, y, width, height) {
   const { nx, ny } = this._calibrateCoordinate(x, y, 0, -height);
   return linkPdf(this, url, nx, ny, width, height);
 };
@@ -145,7 +145,7 @@ function linkPdf(recipe, url, left, bottom, width, height) {
   return recipe;
 }
 
-Object.defineProperty(exports, "linkPdf", { value: linkPdf });
+export { linkPdf };
 
 /**
  * Create an annotation. It is written when the PDF ends.
@@ -197,7 +197,7 @@ Object.defineProperty(exports, "linkPdf", { value: linkPdf });
  * @throws {Error} If a PDF/A document does not allow the subtype, flags,
  *   opacity or color, or an area without an appearance stream.
  */
-exports.annot = function annot(
+export const annot = function annot(
   x,
   y,
   subtype,
@@ -224,7 +224,7 @@ exports.annot = function annot(
  * @private
  * @returns {void}
  */
-exports._attachNonMarkupAnnot = function _attachNonMarkupAnnot() {};
+export const _attachNonMarkupAnnot = function _attachNonMarkupAnnot() {};
 
 /**
  * Write one queued annotation, or a reply to one, as an indirect object and
@@ -238,7 +238,7 @@ exports._attachNonMarkupAnnot = function _attachNonMarkupAnnot() {};
  * @returns {number} The object ID of the written annotation.
  * @throws {TypeError} If the page number is unknown.
  */
-exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
+export const _annot = function _annot(subtype, args = {}, pageNumber, ref) {
   // Write known subtypes with their PDF casing; the markup check below
   // already matches them case-insensitively.
   subtype =
@@ -456,7 +456,7 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
  * @returns {void}
  * @throws {Error} If an annotation or page cannot be written.
  */
-exports._writeAnnotations = function _writeAnnotations() {
+export const _writeAnnotations = function _writeAnnotations() {
   this.annotationsToWrite.forEach((annot) => {
     const ref = this._annot(annot.subtype, annot.args, annot.pageNumber);
 
@@ -484,7 +484,7 @@ exports._writeAnnotations = function _writeAnnotations() {
  * @returns {void}
  * @throws {Error} If the page cannot be read or rewritten.
  */
-exports._writeAnnotation = function _writeAnnotation(pageIndex) {
+export const _writeAnnotation = function _writeAnnotation(pageIndex) {
   const pdfWriter = this.writer;
   const copyingContext = pdfWriter.createPDFCopyingContextForModifiedFile();
   const pageID = copyingContext
@@ -534,7 +534,7 @@ exports._writeAnnotation = function _writeAnnotation(pageIndex) {
  * @private
  * @returns {void}
  */
-exports._startDictionary = function _startDictionary() {
+export const _startDictionary = function _startDictionary() {
   this.objectsContext = this.writer.getObjectsContext();
   this.dictionaryObject = this.objectsContext.startNewIndirectObject();
   this.dictionaryContext = this.objectsContext.startDictionary();
@@ -547,7 +547,7 @@ exports._startDictionary = function _startDictionary() {
  * @param {number} pageNumber - The one-based page number.
  * @returns {number} The object ID of the annotation.
  */
-exports._endDictionary = function _endDictionary(pageNumber) {
+export const _endDictionary = function _endDictionary(pageNumber) {
   this.objectsContext.endDictionary(this.dictionaryContext).endIndirectObject();
   const pageIndex = pageNumber - 1;
   this.annotations[pageIndex] = this.annotations[pageIndex] || [];
@@ -563,7 +563,7 @@ exports._endDictionary = function _endDictionary(pageNumber) {
  * @returns {string|undefined} The matching `Recipe.AnnotSubtype` markup
  *   value, or undefined when the subtype is not a text markup annotation.
  */
-exports._getTextMarkupAnnotationSubtype =
+export const _getTextMarkupAnnotationSubtype =
   function _getTextMarkupAnnotationSubtype(subtype = "") {
     const matchedSubtype = this.textMarkupAnnotations.find((item) => {
       return item.toLowerCase() == subtype.toLowerCase();
@@ -721,7 +721,7 @@ function validateAnnotationPosition(x, y, options) {
  * @throws {TypeError} If `options.color` is not a known color, or a size,
  *   opacity, border, or `quadPoints` value is invalid.
  */
-exports._validateAnnot = function _validateAnnot(options, subtype) {
+export const _validateAnnot = function _validateAnnot(options, subtype) {
   validateAnnotationFlags(options);
   validateAnnotationValues(options);
   annotationColorComponents(this, (options || {}).color);

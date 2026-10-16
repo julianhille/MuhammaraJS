@@ -1,7 +1,7 @@
-const { xObjectForm } = require("./xObjectForm");
-const { resolveFontSize } = require("./utils");
-const { Colorspace, LineCap, LineJoin } = require("../recipe-constants");
-const { miterLimitOption, rotationOption } = require("../recipe-options");
+import { xObjectForm } from "./xObjectForm.js";
+import { resolveFontSize } from "./utils.js";
+import { Colorspace, LineCap, LineJoin } from "../recipe-constants.js";
+import { miterLimitOption, rotationOption } from "../recipe-options.js";
 
 /**
  * Resolve drawing and text options into path options: font, size, colors
@@ -17,7 +17,7 @@ const { miterLimitOption, rotationOption } = require("../recipe-options");
  * @throws {TypeError} If `rotation` is not a finite number.
  * @throws {Error} If the font cannot be loaded.
  */
-exports._getPathOptions = function _getPathOptions(
+export const _getPathOptions = function _getPathOptions(
   options = {},
   originX,
   originY,
@@ -151,7 +151,7 @@ exports._getPathOptions = function _getPathOptions(
  * @param {number[]} coordB - The second [x, y] point.
  * @returns {number} The distance.
  */
-exports._getDistance = function _getDistance(coordA, coordB) {
+export const _getDistance = function _getDistance(coordA, coordB) {
   const disX = Math.abs(coordB[0] - coordA[0]);
   const disY = Math.abs(coordB[1] - coordA[1]);
   const distance = Math.sqrt(disX * disX + disY * disY);
@@ -159,7 +159,7 @@ exports._getDistance = function _getDistance(coordA, coordB) {
   return distance;
 };
 
-exports._getTransformParams = getTransformParams;
+export const _getTransformParams = getTransformParams;
 
 /**
  * The transformation matrix that rotates content around an origin.
@@ -191,7 +191,7 @@ function getTransformParams(inAngle, x, y, offsetX, offsetY) {
  * @returns {void}
  * @throws {TypeError} If a Recipe rotation origin is converted without an active page.
  */
-exports._setRotationContext = function _setRotationTransform(
+export const _setRotationContext = function _setRotationTransform(
   context,
   x,
   y,
@@ -240,7 +240,7 @@ exports._setRotationContext = function _setRotationTransform(
  *   Recipe coordinates) and the PDF originX and originY used as the default.
  * @returns {number[][]} The turned points.
  */
-exports._rotatePoints = function _rotatePoints(points, options) {
+export const _rotatePoints = function _rotatePoints(points, options) {
   const origin = hasRotation(options)
     ? this._calibrateCoordinate(...options.rotationOrigin)
     : { nx: options.originX, ny: options.originY };
@@ -304,7 +304,7 @@ function getSkewTransform(skewXAngle = 0, skewYAngle = 0) {
  * @param {Object} options - The path options: skewX and skewY.
  * @returns {void}
  */
-exports._setSkewContext = function _setSkewTransform(context, options) {
+export const _setSkewContext = function _setSkewTransform(context, options) {
   if (options.skewX || options.skewY) {
     const sm = getSkewTransform(options.skewX, options.skewY);
 
@@ -319,7 +319,10 @@ exports._setSkewContext = function _setSkewTransform(context, options) {
  * @param {Object} options - The path options: ratio.
  * @returns {void}
  */
-exports._setScalingTransform = function _setScalingTransform(context, options) {
+export const _setScalingTransform = function _setScalingTransform(
+  context,
+  options,
+) {
   if (options.ratio) {
     context.cm(options.ratio[0], 0, 0, options.ratio[1], 0, 0);
   }
@@ -334,7 +337,7 @@ exports._setScalingTransform = function _setScalingTransform(context, options) {
  * @returns {Object} The path options, or a copy without color and colorspace
  *   for a separation color.
  */
-exports._devicePathOptions = function _devicePathOptions(pathOptions) {
+export const _devicePathOptions = function _devicePathOptions(pathOptions) {
   if (pathOptions.colorspace !== Colorspace.SEPARATION) return pathOptions;
   const { color, colorspace, ...deviceOptions } = pathOptions;
   return deviceOptions;
@@ -349,7 +352,7 @@ exports._devicePathOptions = function _devicePathOptions(pathOptions) {
  * @param {boolean} stroke - Select the stroking instead of the fill color.
  * @returns {void}
  */
-exports._setSeparationColor = function _setSeparationColor(
+export const _setSeparationColor = function _setSeparationColor(
   xObject,
   colorModel,
   stroke,
@@ -374,7 +377,7 @@ exports._setSeparationColor = function _setSeparationColor(
  * @returns {void}
  * @throws {Error} If no page content context is active.
  */
-exports._drawObject = function _drawObject(
+export const _drawObject = function _drawObject(
   self,
   x,
   y,
@@ -413,7 +416,7 @@ exports._drawObject = function _drawObject(
  * @param {Recipe.LineCap} [type] - The cap style; round when omitted or unknown.
  * @returns {number} 0 for butt, 1 for round, 2 for square.
  */
-exports._lineCap = function _lineCap(type) {
+export const _lineCap = function _lineCap(type) {
   const round = 1;
   let cap = round;
 
@@ -433,7 +436,7 @@ exports._lineCap = function _lineCap(type) {
  * @param {Recipe.LineJoin} [type] - The join style; round when omitted or unknown.
  * @returns {number} 0 for miter, 1 for round, 2 for bevel.
  */
-exports._lineJoin = function _lineJoin(type) {
+export const _lineJoin = function _lineJoin(type) {
   const round = 1;
   let join = round;
 

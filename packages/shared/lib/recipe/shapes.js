@@ -1,9 +1,9 @@
-const {
+import {
   TriangleTrait,
   TrianglePosition,
   ArrowAt,
   ArrowType,
-} = require("../recipe-constants");
+} from "../recipe-constants.js";
 
 // Corners of an arrow shaft: bottom/top, left/right.
 const ShaftCorner = Object.freeze({
@@ -225,7 +225,7 @@ function _n_gon(sides, cx, cy, radius, options = {}) {
  * @throws {TypeError} If no page is active.
  * @throws {RangeError} If `sides` is not a finite number or exceeds 100000.
  */
-exports.n_gon = function n_gon(cx, cy, radius, sides = 3, options = {}) {
+export const n_gon = function n_gon(cx, cy, radius, sides = 3, options = {}) {
   const MIN_SIDES = 3;
 
   // Handle optional 'sides' event when options present.
@@ -303,7 +303,7 @@ function _oddStar(ngon) {
  * @throws {TypeError} If no page is active.
  * @throws {RangeError} If `points` is not a finite number or exceeds 100000.
  */
-exports.star = function star(cx, cy, radius, points = 5, options = {}) {
+export const star = function star(cx, cy, radius, points = 5, options = {}) {
   let starPath = [];
   let ngon;
 
@@ -519,7 +519,7 @@ function flipY(x, ngon) {
  * @throws {TypeError} If no page is active.
  */
 
-exports.triangle = function triangle(x, y, traits, options = {}) {
+export const triangle = function triangle(x, y, traits, options = {}) {
   let traitID = options.traitID || options.traitsID || TriangleTrait.SSS;
   let position = options.position ? options.position.toLowerCase() : null;
   let triopts = Object.assign({}, options);
@@ -991,7 +991,7 @@ const Triangle = class Triangle {
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
  */
-exports.arrow = function arrow(x, y, options = {}) {
+export const arrow = function arrow(x, y, options = {}) {
   let defaultHeadLength = 10;
   let nock = null;
   let ox = x;

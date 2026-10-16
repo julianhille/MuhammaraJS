@@ -1,4 +1,4 @@
-const { trimBreakableEnd } = require("@muhammara/shared/text-direction.js");
+import { trimBreakableEnd } from "../text-direction.js";
 
 const ANNOTATION_PREFIX = "Annots";
 
@@ -28,10 +28,46 @@ function cloneOptions(value) {
 }
 
 /**
+ * Append one page through an open copying context, with its annotations
+ * where the writer reports page writes (native); without writer events
+ * (Wasm) the page is appended without its /Annots.
+ *
+ * @param {any} pdfWriter - The writer.
+ * @param {any} cpyCxt - The copying context of the source.
+ * @param {number} pageNumber - The zero-based page index.
+ * @private
+ * @returns {void}
+ */
+function appendPageWithAnnotations(pdfWriter, cpyCxt, pageNumber) {
+  const pageDictionary = cpyCxt
+    .getSourceDocumentParser()
+    .parsePageDictionary(pageNumber);
+
+  if (!pageDictionary.exists(ANNOTATION_PREFIX) || !pdfWriter.getEvents) {
+    cpyCxt.appendPDFPageFromPDF(pageNumber);
+    return;
+  }
+  let reffedObjects;
+  pdfWriter.getEvents().once("OnPageWrite", (params) => {
+    params.pageDictionaryContext.writeKey(ANNOTATION_PREFIX);
+    reffedObjects = cpyCxt.copyDirectObjectWithDeepCopy(
+      pageDictionary.queryObject(ANNOTATION_PREFIX),
+    );
+  });
+
+  cpyCxt.appendPDFPageFromPDF(pageNumber);
+
+  if (reffedObjects && reffedObjects.length > 0) {
+    cpyCxt.copyNewObjectsForDirectObject(reffedObjects);
+  }
+}
+
+/**
  * Append PDF Page with annotations.
  *
- * @param {any} pdfWriter - Hummus writer.
- * @param {string|any} sourcePDFPath - The source PDF path or read stream.
+ * @param {any} pdfWriter - The writer.
+ * @param {string|any} sourcePDFPath - The source PDF: what the platform's
+ *   copying context accepts.
  * @param {number} pageNumber - The zero-based page index.
  * @private
  * @returns {void}
@@ -44,36 +80,19 @@ function appendPDFPageFromPDFWithAnnotations(
 ) {
   const cpyCxt = pdfWriter.createPDFCopyingContext(sourcePDFPath);
   try {
-    const cpyCxtParser = cpyCxt.getSourceDocumentParser();
-    const pageDictionary = cpyCxtParser.parsePageDictionary(pageNumber);
-
-    if (!pageDictionary.exists(ANNOTATION_PREFIX)) {
-      cpyCxt.appendPDFPageFromPDF(pageNumber);
-    } else {
-      let reffedObjects;
-      pdfWriter.getEvents().once("OnPageWrite", (params) => {
-        params.pageDictionaryContext.writeKey(ANNOTATION_PREFIX);
-        reffedObjects = cpyCxt.copyDirectObjectWithDeepCopy(
-          pageDictionary.queryObject(ANNOTATION_PREFIX),
-        );
-      });
-
-      cpyCxt.appendPDFPageFromPDF(pageNumber);
-
-      if (reffedObjects && reffedObjects.length > 0) {
-        cpyCxt.copyNewObjectsForDirectObject(reffedObjects);
-      }
-    }
+    appendPageWithAnnotations(pdfWriter, cpyCxt, pageNumber);
   } finally {
     cpyCxt.end();
   }
 }
 
 /**
- * Append PDF Pages with annotations.
+ * Append PDF Pages with annotations, all through one copying context, so a
+ * source that can be read only once (a stream) works like a path.
  *
- * @param {any} pdfWriter - Hummus writer.
- * @param {string|any} sourcePDFPath - The source PDF path or read stream.
+ * @param {any} pdfWriter - The writer.
+ * @param {string|any} sourcePDFPath - The source PDF: what the platform's
+ *   copying context accepts.
  * @param {Object} [options] - The options.
  * @param {number[][]} [options.specificRanges] - Zero-based inclusive
  *   [start, end] page ranges; all pages when omitted.
@@ -93,12 +112,12 @@ function appendPDFPagesFromPDFWithAnnotations(
     if (options.specificRanges && options.specificRanges.length) {
       for (const [start, end] of options.specificRanges) {
         for (let i = start; i <= end; ++i) {
-          appendPDFPageFromPDFWithAnnotations(pdfWriter, sourcePDFPath, i);
+          appendPageWithAnnotations(pdfWriter, cpyCxt, i);
         }
       }
     } else {
       for (let i = 0; i < cpyCxtParser.getPagesCount(); ++i) {
-        appendPDFPageFromPDFWithAnnotations(pdfWriter, sourcePDFPath, i);
+        appendPageWithAnnotations(pdfWriter, cpyCxt, i);
       }
     }
   } finally {
@@ -147,13 +166,13 @@ function clearTextFlow(recipe) {
   recipe._flowWaits = false;
 }
 
-exports.ANNOTATION_PREFIX = ANNOTATION_PREFIX;
-exports.PAGE_CONTEXT_STATE = PAGE_CONTEXT_STATE;
-exports.cloneOptions = cloneOptions;
-exports.resolveFontSize = resolveFontSize;
-exports.trimBreakableEnd = trimBreakableEnd;
-exports.clearTextFlow = clearTextFlow;
-exports.appendPDFPageFromPDFWithAnnotations =
-  appendPDFPageFromPDFWithAnnotations;
-exports.appendPDFPagesFromPDFWithAnnotations =
-  appendPDFPagesFromPDFWithAnnotations;
+export {
+  ANNOTATION_PREFIX,
+  PAGE_CONTEXT_STATE,
+  cloneOptions,
+  resolveFontSize,
+  trimBreakableEnd,
+  clearTextFlow,
+  appendPDFPageFromPDFWithAnnotations,
+  appendPDFPagesFromPDFWithAnnotations,
+};

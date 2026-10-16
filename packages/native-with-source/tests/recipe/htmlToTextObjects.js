@@ -4,7 +4,7 @@ const assert = require("chai").assert;
 const muhammara = require("@muhammara/native-with-source");
 const {
   htmlToTextObjects,
-} = require("@muhammara/native-core/lib/recipe/htmlToTextObjects");
+} = require("@muhammara/shared/recipe/htmlToTextObjects.js");
 const { writeOutput } = require("../helpers/testOutput");
 const htmlCodes = fs.readFileSync(
   path.join(__dirname, "../TestMaterials/recipe/text.html"),
