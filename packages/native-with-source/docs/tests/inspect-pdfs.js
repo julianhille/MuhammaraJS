@@ -143,6 +143,7 @@ describe("Documentation examples for reading pages", function () {
     );
 
     assert.deepEqual(fields[0], {
+      id: 9,
       name: "person.name",
       kind: muhammara.Recipe.FormFieldKind.TEXT,
       value: "Ada Lovelace",
@@ -154,6 +155,7 @@ describe("Documentation examples for reading pages", function () {
         return field.name === "color";
       }),
       {
+        id: 22,
         name: "color",
         kind: muhammara.Recipe.FormFieldKind.RADIO,
         value: "1",

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createMuhammaraWasm } from "../../index.js";
 import { getRecipe, recipeFixture } from "./recipe.mjs";
 
 // Expected fields per fixture, kept identical to the Wasm test.
@@ -7,6 +8,7 @@ var EXPECTED = {
   // the export value.
   AcroFormLibreOffice: [
     {
+      id: 4,
       name: "city",
       kind: "text",
       value: "Zürich",
@@ -14,9 +16,12 @@ var EXPECTED = {
       flags: 0,
       maxLength: 30,
       options: [],
-      widgets: [{ pageNumber: 1, rect: [30.349, 742.901, 168.151, 761.649] }],
+      widgets: [
+        { id: 4, pageNumber: 1, rect: [30.349, 742.901, 168.151, 761.649] },
+      ],
     },
     {
+      id: 7,
       name: "newsletter",
       kind: "checkbox",
       value: "Yes",
@@ -24,9 +29,12 @@ var EXPECTED = {
       flags: 0,
       maxLength: null,
       options: [{ value: "subscribed", label: "subscribed" }],
-      widgets: [{ pageNumber: 1, rect: [29.149, 705.751, 37.201, 713.799] }],
+      widgets: [
+        { id: 7, pageNumber: 1, rect: [29.149, 705.751, 37.201, 713.799] },
+      ],
     },
     {
+      id: 9,
       name: "size",
       kind: "radio",
       value: "large",
@@ -38,11 +46,12 @@ var EXPECTED = {
         { value: "large", label: "large" },
       ],
       widgets: [
-        { pageNumber: 1, rect: [29.149, 663.201, 37.201, 671.249] },
-        { pageNumber: 1, rect: [142.549, 663.201, 150.601, 671.249] },
+        { id: 8, pageNumber: 1, rect: [29.149, 663.201, 37.201, 671.249] },
+        { id: 10, pageNumber: 1, rect: [142.549, 663.201, 150.601, 671.249] },
       ],
     },
     {
+      id: 11,
       name: "fruit",
       kind: "combobox",
       value: "Pear",
@@ -53,9 +62,12 @@ var EXPECTED = {
         { value: "Apple", label: "Apple" },
         { value: "Pear", label: "Pear" },
       ],
-      widgets: [{ pageNumber: 1, rect: [30.349, 615.351, 168.151, 634.099] }],
+      widgets: [
+        { id: 11, pageNumber: 1, rect: [30.349, 615.351, 168.151, 634.099] },
+      ],
     },
     {
+      id: 12,
       name: "pets",
       kind: "listbox",
       value: ["Cat", "Fish"],
@@ -67,9 +79,12 @@ var EXPECTED = {
         { value: "Dog", label: "Dog" },
         { value: "Fish", label: "Fish" },
       ],
-      widgets: [{ pageNumber: 1, rect: [30.349, 538.801, 168.151, 591.549] }],
+      widgets: [
+        { id: 12, pageNumber: 1, rect: [30.349, 538.801, 168.151, 591.549] },
+      ],
     },
     {
+      id: 13,
       name: "comment",
       kind: "text",
       value: "Line one\r\nLine two",
@@ -77,12 +92,15 @@ var EXPECTED = {
       flags: 4096,
       maxLength: null,
       options: [],
-      widgets: [{ pageNumber: 1, rect: [30.349, 467.951, 253.151, 520.699] }],
+      widgets: [
+        { id: 13, pageNumber: 1, rect: [30.349, 467.951, 253.151, 520.699] },
+      ],
     },
   ],
   // Written by pdf-lib: the radio states are indices labelled by /Opt.
   AcroFormPdfLib: [
     {
+      id: 9,
       name: "person.name",
       kind: "text",
       value: "Ada Lovelace",
@@ -90,9 +108,10 @@ var EXPECTED = {
       flags: 0,
       maxLength: 40,
       options: [],
-      widgets: [{ pageNumber: 1, rect: [19.5, 339.5, 220.5, 364.5] }],
+      widgets: [{ id: 10, pageNumber: 1, rect: [19.5, 339.5, 220.5, 364.5] }],
     },
     {
+      id: 13,
       name: "notes",
       kind: "text",
       value: null,
@@ -100,9 +119,10 @@ var EXPECTED = {
       flags: 4098,
       maxLength: null,
       options: [],
-      widgets: [{ pageNumber: 1, rect: [19.5, 259.5, 220.5, 320.5] }],
+      widgets: [{ id: 14, pageNumber: 1, rect: [19.5, 259.5, 220.5, 320.5] }],
     },
     {
+      id: 16,
       name: "agree",
       kind: "checkbox",
       value: "Yes",
@@ -110,9 +130,10 @@ var EXPECTED = {
       flags: 0,
       maxLength: null,
       options: [{ value: "Yes", label: "Yes" }],
-      widgets: [{ pageNumber: 1, rect: [19.5, 219.5, 36.5, 236.5] }],
+      widgets: [{ id: 17, pageNumber: 1, rect: [19.5, 219.5, 36.5, 236.5] }],
     },
     {
+      id: 22,
       name: "color",
       kind: "radio",
       value: "1",
@@ -125,12 +146,13 @@ var EXPECTED = {
         { value: "2", label: "blue" },
       ],
       widgets: [
-        { pageNumber: 1, rect: [19.5, 179.5, 36.5, 196.5] },
-        { pageNumber: 1, rect: [49.5, 179.5, 66.5, 196.5] },
-        { pageNumber: 2, rect: [19.5, 179.5, 36.5, 196.5] },
+        { id: 23, pageNumber: 1, rect: [19.5, 179.5, 36.5, 196.5] },
+        { id: 28, pageNumber: 1, rect: [49.5, 179.5, 66.5, 196.5] },
+        { id: 33, pageNumber: 2, rect: [19.5, 179.5, 36.5, 196.5] },
       ],
     },
     {
+      id: 38,
       name: "country",
       kind: "combobox",
       value: "France",
@@ -142,9 +164,10 @@ var EXPECTED = {
         { value: "France", label: "France" },
         { value: "Spain", label: "Spain" },
       ],
-      widgets: [{ pageNumber: 2, rect: [19.5, 299.5, 140.5, 324.5] }],
+      widgets: [{ id: 39, pageNumber: 2, rect: [19.5, 299.5, 140.5, 324.5] }],
     },
     {
+      id: 41,
       name: "langs",
       kind: "listbox",
       value: ["JS", "Rust"],
@@ -156,9 +179,10 @@ var EXPECTED = {
         { value: "JS", label: "JS" },
         { value: "Rust", label: "Rust" },
       ],
-      widgets: [{ pageNumber: 2, rect: [19.5, 219.5, 140.5, 280.5] }],
+      widgets: [{ id: 42, pageNumber: 2, rect: [19.5, 219.5, 140.5, 280.5] }],
     },
     {
+      id: 44,
       name: "submit",
       kind: "pushbutton",
       value: null,
@@ -166,7 +190,7 @@ var EXPECTED = {
       flags: 65536,
       maxLength: null,
       options: [],
-      widgets: [{ pageNumber: 2, rect: [160, 300, 240, 324] }],
+      widgets: [{ id: 45, pageNumber: 2, rect: [160, 300, 240, 324] }],
     },
   ],
   // Hand-written: inheritance (including /MaxLen), merged field and widget, a
@@ -178,6 +202,7 @@ var EXPECTED = {
   // yields no field.
   AcroFormEdgeCases: [
     {
+      id: 7,
       name: "address.street",
       kind: "text",
       value: "Main St",
@@ -186,11 +211,12 @@ var EXPECTED = {
       maxLength: 40,
       options: [],
       widgets: [
-        { pageNumber: 1, rect: [20, 350, 220, 370] },
-        { pageNumber: 2, rect: [20, 50, 220, 70] },
+        { id: 10, pageNumber: 1, rect: [20, 350, 220, 370] },
+        { id: 12, pageNumber: 2, rect: [20, 50, 220, 70] },
       ],
     },
     {
+      id: 8,
       name: "address.zip",
       kind: "text",
       value: "12345",
@@ -198,9 +224,10 @@ var EXPECTED = {
       flags: 0,
       maxLength: 5,
       options: [],
-      widgets: [{ pageNumber: 1, rect: [20, 300, 120, 320] }],
+      widgets: [{ id: 8, pageNumber: 1, rect: [20, 300, 120, 320] }],
     },
     {
+      id: 20,
       name: "choice",
       kind: "radio",
       value: "Ja",
@@ -212,11 +239,12 @@ var EXPECTED = {
         { value: "Nein", label: "Nein" },
       ],
       widgets: [
-        { pageNumber: 1, rect: [20, 250, 36, 266] },
-        { pageNumber: 1, rect: [50, 250, 66, 266] },
+        { id: 21, pageNumber: 1, rect: [20, 250, 36, 266] },
+        { id: 22, pageNumber: 1, rect: [50, 250, 66, 266] },
       ],
     },
     {
+      id: 15,
       name: "café",
       kind: "checkbox",
       value: "On",
@@ -224,9 +252,10 @@ var EXPECTED = {
       flags: 0,
       maxLength: null,
       options: [{ value: "On", label: "On" }],
-      widgets: [{ pageNumber: null, rect: [20, 200, 36, 216] }],
+      widgets: [{ id: 15, pageNumber: null, rect: [20, 200, 36, 216] }],
     },
     {
+      id: 16,
       name: "tags",
       kind: "listbox",
       value: ["a", "bx"],
@@ -238,9 +267,10 @@ var EXPECTED = {
         { value: "bx", label: "Bée" },
         { value: "c", label: "c" },
       ],
-      widgets: [{ pageNumber: 2, rect: [20, 300, 120, 360] }],
+      widgets: [{ id: 16, pageNumber: 2, rect: [20, 300, 120, 360] }],
     },
     {
+      id: 17,
       name: "sig",
       kind: "signature",
       value: null,
@@ -248,9 +278,10 @@ var EXPECTED = {
       flags: 0,
       maxLength: null,
       options: [],
-      widgets: [{ pageNumber: 2, rect: [150, 50, 250, 90] }],
+      widgets: [{ id: 17, pageNumber: 2, rect: [150, 50, 250, 90] }],
     },
     {
+      id: 18,
       name: "mystery",
       kind: null,
       value: "x",
@@ -258,10 +289,57 @@ var EXPECTED = {
       flags: 4096,
       maxLength: null,
       options: [],
-      widgets: [{ pageNumber: null, rect: null }],
+      widgets: [{ id: 18, pageNumber: null, rect: null }],
     },
   ],
 };
+
+/**
+ * Drop the object IDs, which differ between a fixture and a rewritten copy.
+ * @param {Array<object>} fields - Fields returned by formFields().
+ * @returns {Array<object>} The fields without `id`.
+ */
+function withoutIDs(fields) {
+  return fields.map(({ id, ...field }) => ({
+    ...field,
+    widgets: field.widgets.map(({ id, ...widget }) => widget),
+  }));
+}
+
+/**
+ * Check that each field ID names the field dictionary, and each widget ID a
+ * widget annotation on the page it is reported on.
+ * @param {object} reader - A reader of the same PDF.
+ * @param {Array<object>} fields - Fields returned by formFields().
+ * @returns {void}
+ */
+function assertObjectIDs(reader, fields) {
+  var annots = [];
+  for (var index = 0; index < reader.getPagesCount(); index++) {
+    var array = reader.queryDictionaryObject(
+      reader.parsePageDictionary(index),
+      "Annots",
+    );
+    annots.push(
+      (array ? array.toPDFArray().toJSArray() : []).map((reference) =>
+        reference.toPDFIndirectObjectReference().getObjectID(),
+      ),
+    );
+  }
+  var fieldIDs = fields.map((field) => field.id);
+  assert.equal(new Set(fieldIDs).size, fieldIDs.length);
+  fields.forEach((field) => {
+    var partialName = reader.parseNewObject(field.id).toJSObject().T;
+    assert.equal(partialName.toText(), field.name.split(".").pop());
+    field.widgets.forEach((widget) => {
+      var dictionary = reader.parseNewObject(widget.id).toJSObject();
+      assert.equal(dictionary.Subtype.value, "Widget");
+      if (widget.pageNumber !== null) {
+        assert.ok(annots[widget.pageNumber - 1].includes(widget.id));
+      }
+    });
+  });
+}
 
 describe("formFields", function () {
   Object.keys(EXPECTED).forEach(function (name) {
@@ -280,7 +358,34 @@ describe("formFields", function () {
     var recipe = new Recipe(recipeFixture("AcroFormEncrypted"), {
       password: "user",
     });
-    assert.deepEqual(recipe.formFields(), EXPECTED.AcroFormPdfLib);
+    // Encrypting rewrote the file, so its object IDs differ.
+    assert.deepEqual(
+      withoutIDs(recipe.formFields()),
+      withoutIDs(EXPECTED.AcroFormPdfLib),
+    );
+  });
+
+  it("identifies each field and widget by its object ID", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    ["AcroFormLibreOffice", "AcroFormPdfLib", "AcroFormEdgeCases"].forEach(
+      function (name) {
+        var reader = muhammara.createReader(recipeFixture(name));
+        try {
+          assertObjectIDs(reader, new Recipe(recipeFixture(name)).formFields());
+        } finally {
+          reader.end();
+        }
+      },
+    );
+  });
+
+  it("keeps the object IDs in the PDF a Recipe edit writes", async function () {
+    var Recipe = await getRecipe();
+    var edited = new Recipe(recipeFixture("AcroFormPdfLib"))
+      .info({ title: "Edited" })
+      .endPDF();
+    assert.deepEqual(new Recipe(edited).formFields(), EXPECTED.AcroFormPdfLib);
   });
 
   it("reads a /Kids array shared by many fields once", async function () {

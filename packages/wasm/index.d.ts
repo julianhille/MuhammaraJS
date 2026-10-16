@@ -126,6 +126,11 @@ export type RecipePermissionName =
 /** Known permission names with string compatibility for composed flag lists. */
 export type RecipePermission = RecipePermissionName | (string & {});
 export interface RecipeFormFieldWidget {
+  /**
+   * The object number of the widget annotation; the field's own `id` when
+   * the field and its widget are one object.
+   */
+  id: number;
   /** The one-based page whose `/Annots` lists the widget, or null. */
   pageNumber: number | null;
   /** The widget `/Rect` as [llx, lly, urx, ury] in PDF user space, or null. */
@@ -141,6 +146,12 @@ export interface RecipeFormFieldOption {
 
 /** A terminal AcroForm field returned by `formFields()`. */
 export interface RecipeFormField {
+  /**
+   * The object number of the field dictionary. Unlike `name`, it is unique
+   * within the file. Recipe edits keep it; encrypting, or any tool that
+   * rewrites the whole file, can renumber it.
+   */
+  id: number;
   /** The fully qualified name: the partial names `/T` joined with ".". */
   name: string;
   /** The field kind, or null for an unknown field type `/FT`. */

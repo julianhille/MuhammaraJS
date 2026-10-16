@@ -272,6 +272,7 @@ function readField(parser, node, parent, state) {
   // /Ff is a set of 32 flag bits (ISO 32000-1, 12.7.3.1).
   var flags = decodeNumber(inherited.Ff) >>> 0;
   state.fields.push({
+    id: node.objectID,
     name,
     kind: fieldKind(type, flags),
     value: decodeValue(inherited.V),
@@ -283,6 +284,7 @@ function readField(parser, node, parent, state) {
         ? choiceOptions(parser, field)
         : buttonStates(parser, field, widgets),
     widgets: widgets.map((widget) => ({
+      id: widget.objectID,
       pageNumber: state.pages.get(widget.objectID) ?? null,
       rect: widgetRect(parser, widget.dictionary),
     })),
@@ -299,9 +301,9 @@ export function createFormMethods({ createReader }) {
   return {
     /**
      * List the interactive form (AcroForm) fields of the source document.
-     * Each entry is a terminal field with its fully qualified name, inherited
-     * type, flags and value, and its widgets. Fields added or filled by this
-     * Recipe are not included; a new document has no fields.
+     * Each entry is a terminal field with its object ID, fully qualified
+     * name, inherited type, flags and value, and its widgets. Fields added or
+     * filled by this Recipe are not included; a new document has no fields.
      * @name formFields
      * @function
      * @memberof Recipe#

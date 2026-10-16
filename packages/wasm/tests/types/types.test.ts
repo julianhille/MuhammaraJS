@@ -763,6 +763,8 @@ async function usesLowLevelSurface() {
     formFields[0].flags & Recipe.FormFieldFlag.READ_ONLY,
   );
   var formWidgetPage: number | null = formFields[0].widgets[0].pageNumber;
+  var formFieldID: number = formFields[0].id;
+  var formWidgetID: number = formFields[0].widgets[0].id;
   var formOptionLabel: string = formFields[0].options[0].label;
   pageInfo?.width;
   recipe.getCurrentPageInfo()?.mediaBox[3];

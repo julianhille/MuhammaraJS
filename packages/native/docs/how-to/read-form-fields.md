@@ -9,6 +9,7 @@ var Recipe = require("@muhammara/native").Recipe;
 function readFormFields(inputPath) {
   return new Recipe(inputPath).formFields().map(function (field) {
     return {
+      id: field.id,
       name: field.name,
       kind: field.kind,
       value: field.value,
@@ -32,6 +33,7 @@ Each entry has these properties:
 
 | Property       | Meaning                                                                                                  |
 | -------------- | -------------------------------------------------------------------------------------------------------- |
+| `id`           | The object number of the field dictionary: unique within the file, unlike `name`.                        |
 | `name`         | The fully qualified name: the partial names `/T` of the field and its ancestors joined with `.`.         |
 | `kind`         | A `Recipe.FormFieldKind` value, derived from `/FT` and the flags; `null` for an unknown field type.      |
 | `value`        | `/V`: the text of a text or choice field, an array for a multi-select list, the state name of a button.  |
@@ -39,7 +41,17 @@ Each entry has these properties:
 | `flags`        | `/Ff`; test single bits with `Recipe.FormFieldFlag`, for example `READ_ONLY`, `REQUIRED` or `MULTILINE`. |
 | `maxLength`    | `/MaxLen` of a text field, or `null`.                                                                    |
 | `options`      | `{ value, label }` choices of a choice field, or the on-states of a checkbox or radio.                   |
-| `widgets`      | `{ pageNumber, rect }` for each widget annotation that shows the field.                                  |
+| `widgets`      | `{ id, pageNumber, rect }` for each widget annotation that shows the field.                              |
+
+`id` tells fields apart when `name` does not. A field shown in several places
+is one entry with several widgets, but a PDF can also hold two separate fields
+with the same fully qualified name, for example after documents were merged;
+they are two entries with the same `name` and different `id`s. Recipe edits
+append an incremental update and keep object numbers, so an `id` read from a
+source is still valid in the PDF Recipe writes from it. Encrypting, with
+`encrypt()` or another tool, and any tool that rewrites the whole file can
+renumber the objects. A widget's `id` is the field's `id` when the field and
+its widget are one object.
 
 `kind`, `flags`, `value`, `defaultValue` and `maxLength` are inherited from
 parent fields when a field does not set them itself.

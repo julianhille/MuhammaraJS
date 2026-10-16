@@ -77,8 +77,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Strike out `<s>` and `<strike>` text in Recipe HTML, as `<del>` already does
   [#936](https://github.com/julianhille/MuhammaraJS/issues/936)
 - Add Recipe `formFields()` to list the AcroForm fields of an existing PDF
-  with their fully qualified names, kinds, values, flags, options and
-  widgets, and the `Recipe.FormFieldKind` and `Recipe.FormFieldFlag`
+  with their object IDs, fully qualified names, kinds, values, flags, options
+  and widgets, and the `Recipe.FormFieldKind` and `Recipe.FormFieldFlag`
   constants to compare them against
   [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
 
