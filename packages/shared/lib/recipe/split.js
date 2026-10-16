@@ -1,8 +1,7 @@
 import * as utils from "./utils.js";
 
 /**
- * Split the PDF the Recipe produces into one PDF per page. This finishes the
- * Recipe with `endPDF()`, so the parts hold its edits.
+ * Split the source PDF into one PDF per page.
  * @name split
  * @function
  * @memberof Recipe#
@@ -11,21 +10,16 @@ import * as utils from "./utils.js";
  *   source filename; pass one for a Buffer source, which has no filename.
  * @returns {Recipe} The recipe instance. Each page is saved by the platform
  *   as `<prefix>-<pageNumber>.pdf`; native writes it into `outputDir`.
- * @throws {Error} If the Recipe cannot be finished, or an output file cannot
- *   be written.
+ * @throws {Error} If the source reader was released by endPDF(), or an output
+ *   file cannot be written.
  */
 export const split = function split(outputDir = "", prefix) {
   prefix = prefix || this.filename;
-  this.endPDF();
-  const bytes = this.bytes_;
-  const reader = this.muhammara.createReader(this.platform.readerSource(bytes));
-  const pages = reader.getPagesCount();
-  reader.end();
-  for (let i = 0; i < pages; i++) {
+  for (let i = 0; i < this.metadata.pages; i++) {
     const output = this.platform.newWriter({});
     utils.appendPDFPageFromPDFWithAnnotations(
       output.writer,
-      this.platform.readerSource(bytes),
+      this.platform.readerSource(this.src),
       i,
     );
     this.platform.saveSplit(

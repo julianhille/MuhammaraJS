@@ -129,9 +129,20 @@ function _getFontFile(self, options = {}) {
           ? FontSlot.BOLD
           : FontSlot.REGULAR;
 
-  // The named family, or the platform's default one. An unknown name throws
-  // rather than drawing in another font, and a missing style uses the
-  // family's regular face, so the text keeps its typeface.
+  // Native falls back to its default family's face for an unknown family or
+  // style, as it always has; Wasm throws for an unknown name and uses the
+  // family's regular face for a missing style.
+  if (self.platform.fontFallsBackToDefault) {
+    const fallback = self.fonts[self.platform.defaultFontFamily] || {};
+    const family = options.font
+      ? self.fonts[options.font.toLowerCase()]
+      : undefined;
+    fontFile = family ? family[type] : undefined;
+    if (!fontFile || !self.platform.fontExists(fontFile))
+      fontFile = fallback[type];
+    if (!fontFile) fontFile = fallback[FontSlot.REGULAR];
+    return fontFile;
+  }
   const name = options.font ?? self.platform.defaultFontFamily;
   const family =
     name === undefined ? undefined : self.fonts[String(name).toLowerCase()];

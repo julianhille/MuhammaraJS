@@ -32,16 +32,26 @@ describeEnds("Recipe font", function (end) {
     );
   });
 
-  it("rejects a font name that is not registered", function () {
+  // Meant to differ until a major release: Wasm throws for a font name that
+  // is not registered, native draws in its default family, as each always has.
+  it("handles a font name that is not registered as each end always has", function () {
     var recipe = end.newRecipe().createPage("letter");
-    assert.throws(
-      () => recipe.text("x", 20, 20, { font: "PMingLiU" }),
-      /Unknown font: PMingLiU/,
-    );
-    assert.throws(
-      () => recipe.textDimensions("Hello", { font: "missing" }),
-      /Unknown font: missing/,
-    );
+    if (end.name === "wasm") {
+      assert.throws(
+        () => recipe.text("x", 20, 20, { font: "PMingLiU" }),
+        /Unknown font: PMingLiU/,
+      );
+      assert.throws(
+        () => recipe.textDimensions("Hello", { font: "missing" }),
+        /Unknown font: missing/,
+      );
+    } else {
+      assert.strictEqual(
+        recipe.text("x", 20, 20, { font: "PMingLiU" }),
+        recipe,
+      );
+      assert.ok(recipe.textDimensions("Hello", { font: "missing" }).width > 0);
+    }
   });
 
   it("writes text without registering a font", function () {

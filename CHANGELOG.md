@@ -34,26 +34,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Recipe `info(options)` after `endPDF()` throws `PDF writer has ended`, as
   `@muhammara/wasm` does, instead of ignoring the values; set them before
   `endPDF()` [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
-- Recipe `text()` without an active page throws `TypeError: No page is
-active; call createPage() or editPage() first`, as every drawing method
-  does, instead of drawing nothing; call `createPage()` or `editPage()` first.
-  `@muhammara/native` and `@muhammara/wasm` now run one Recipe implementation.
-- Recipe text with a `font` that is not registered throws `Unknown font:
-<name>` instead of drawing in Helvetica, and a missing bold or italic face
-  draws in the family's regular face instead of in Helvetica; register the
-  font with `registerFont()` or `fontSrcPath`, or use a bundled family.
-- Recipe `split()` finishes the Recipe and splits the PDF it produced, with
-  its edits, instead of the unedited source; call it after drawing.
-- Recipe no longer writes `muhammara-error.log`: the writer `log` option is
-  not passed any more. Use the low-level writer's `log` option to keep it.
-- Recipe replies to a Highlight, Underline, StrikeOut or Squiggly annotation
-  are Text annotations, or the subtype `reply.subtype` names, instead of a
-  second markup over the same text. Pass `reply.subtype` for the old shape.
-- `Recipe.prototype.Column`, `Line` and `Word`, internal text layout classes,
-  are no longer Recipe members.
-- `@muhammara/native-core` is published as one bundle, `dist/index.cjs`;
-  requiring a file under `@muhammara/native-core/lib/` fails with
-  `MODULE_NOT_FOUND`. Use the package entry point.
 
 ### Added
 
@@ -256,14 +236,14 @@ active; call createPage() or editPage() first`, as every drawing method
 - Recipe `replaceText()` on a page without content throws its clear error,
   and `removeText()` with `forms` works for edited sources on both ends.
 - Recipe HTML keeps a list item that holds only a no-break or em space, draws
-  no blank line for whitespace before a block, reads list items without
-  `</li>` and misnested lists as browsers do, and justifies every line of a
-  paragraph but its last.
-- Recipe `editPage()` throws a `RangeError` for a page the source does not
-  have, instead of a low-level error.
-- Recipe `image()` mirrors an image of negative width or height, throws a
-  `TypeError` for the removed zero-based `index` option, and reports
-  `Unknown image` for a page or frame the image does not have.
+  no blank line for whitespace before a block, reads malformed markup such as
+  list items without `</li>` as browsers do instead of throwing, starts a
+  `<div>` on its own line, and justifies every line of a paragraph but its
+  last.
+- Recipe `encrypt()`, and low-level `recrypt()` and `recryptAsync()`, keep the
+  Info entries of the PDF they encrypt.
+- Recipe `image()` reports `Unknown image` for a page or frame the image does
+  not have.
 
 ### Changed
 
@@ -276,7 +256,8 @@ active; call createPage() or editPage() first`, as every drawing method
 - Test the native prebuilds up to Node.js 26.11.1 and Electron 44.7.1
   [#984](https://github.com/julianhille/MuhammaraJS/issues/984)
 - Recipe is one implementation shared with `@muhammara/wasm`, in
-  `packages/shared`, bundled into `@muhammara/native-core`. A path source is
+  `packages/shared`, built into `@muhammara/native-core/lib/shared`; the
+  files under `lib/` keep working when required directly. A path source is
   read into memory and the output written at `endPDF()`.
 - Recipe annotation dates (`/M`) are written in UTC, and link rectangles with
   a negative size in normal order, as in `@muhammara/wasm`.

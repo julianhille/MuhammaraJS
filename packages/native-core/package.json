@@ -10,7 +10,7 @@
     "url": "git+https://github.com/julianhille/MuhammaraJS.git",
     "directory": "packages/native-core"
   },
-  "main": "./dist/index.cjs",
+  "main": "./index.js",
   "types": "./index.d.ts",
   "engines": {
     "node": "20 || 22 || 24 || >=25"
@@ -21,7 +21,8 @@
     "build": "node scripts/build.mjs"
   },
   "files": [
-    "dist",
+    "index.js",
+    "lib",
     "README.md",
     "LICENSE",
     "index.d.ts",

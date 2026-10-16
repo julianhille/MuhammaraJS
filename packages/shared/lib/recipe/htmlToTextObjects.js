@@ -36,6 +36,7 @@ const HtmlTag = Object.freeze({
   S: "s",
   STRIKE: "strike",
   A: "a",
+  DIV: "div",
 });
 
 /**
@@ -84,11 +85,12 @@ function getFontSizeRatio(tagName = "") {
  * Whether an element starts its content on a new line.
  * @private
  * @param {string} [tagName=''] - The element name, matched case-insensitively.
- * @returns {boolean} True for p, li and h1 to h3.
+ * @returns {boolean} True for p, div, li and h1 to h3.
  */
 function needsLineBreaker(tagName = "") {
   const lineBreakers = [
     HtmlTag.P,
+    HtmlTag.DIV,
     HtmlTag.LI,
     HtmlTag.H1,
     HtmlTag.H2,
@@ -286,6 +288,7 @@ function parseNode(node, options) {
 // Elements that start a line of their own.
 const BLOCK_TAGS = new Set([
   HtmlTag.P,
+  HtmlTag.DIV,
   HtmlTag.LI,
   HtmlTag.UL,
   HtmlTag.OL,
@@ -309,14 +312,33 @@ function isBlankInline(item) {
   );
 }
 
+// Elements without an end tag.
+const VOID_ELEMENTS = new Set([
+  "area",
+  "base",
+  "br",
+  "col",
+  "embed",
+  "hr",
+  "img",
+  "input",
+  "link",
+  "meta",
+  "source",
+  "track",
+  "wbr",
+]);
+
 /**
- * Insert the list end tags HTML lets a document leave out, as browsers
- * recover them: an `<li>` ends the open item of its list, a `</ul>` or
- * `</ol>` ends everything up to its list (or the innermost list when no such
- * list is open), and what is still open at the end is ended there.
+ * Balance the tags of HTML as browsers recover them, so the XML parser reads
+ * what a browser shows instead of throwing: an end tag ends everything opened
+ * inside its element, an end tag without an open element is dropped, a `<p>`
+ * or `<li>` ends an open element of its name, a `</ul>` or `</ol>` ends the
+ * innermost list when no list of its name is open, and what is still open at
+ * the end is ended there.
  * @private
  * @param {string} html - The HTML source.
- * @returns {string} The HTML with every list and list item closed.
+ * @returns {string} The HTML with balanced tags.
  */
 function closeOmittedListItems(html) {
   const open = [];
@@ -328,20 +350,21 @@ function closeOmittedListItems(html) {
       .join("");
   const isList = (name) => name === HtmlTag.UL || name === HtmlTag.OL;
   const body = String(html).replace(
-    /<(\/?)(li|ul|ol)\b[^>]*>/gi,
+    /<(\/?)([a-zA-Z][\w-]*)\b(?:[^>"']|"[^"]*"|'[^']*')*>/g,
     (tag, closing, name) => {
       name = name.toLowerCase();
+      if (VOID_ELEMENTS.has(name)) return closing ? "" : tag;
       if (!closing) {
-        const ended = name === HtmlTag.LI && open.at(-1) === HtmlTag.LI;
-        const prefix = ended ? close(open.length - 1) : "";
+        const ends =
+          (name === HtmlTag.LI || name === HtmlTag.P) && open.at(-1) === name;
+        const prefix = ends ? close(open.length - 1) : "";
         if (!tag.endsWith("/>")) open.push(name);
         return prefix + tag;
       }
-      if (name === HtmlTag.LI) {
-        return open.at(-1) === HtmlTag.LI ? close(open.length - 1) : "";
-      }
       let from = open.lastIndexOf(name);
-      if (from < 0) from = open.findLastIndex(isList);
+      // A </li> ends an item of its own list only.
+      if (name === HtmlTag.LI && from < open.findLastIndex(isList)) from = -1;
+      if (from < 0 && isList(name)) from = open.findLastIndex(isList);
       return from < 0 ? "" : close(from);
     },
   );

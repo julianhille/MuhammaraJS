@@ -6,6 +6,7 @@ import { createInspectPdf } from "./recipe/inspection.js";
 import { permission } from "./recipe/security.js";
 import { thirdPartyLicenses } from "./recipe/licenses.js";
 import { unknownAsset } from "./recipe/unknown-asset.js";
+import { htmlToTextObjects } from "./recipe/html-text-runs.js";
 
 // Keys of the per-style font files stored for each family, as in the shared
 // Recipe's font registry.
@@ -119,6 +120,15 @@ export function createRecipeFactory({
     }),
     // What image() takes, for its error messages.
     imageReference: "a registered name",
+    // Wasm's behaviour where the ends differed; kept until a major release
+    // unifies them, see DIFFERENCES.md.
+    fontFallsBackToDefault: false,
+    textWithoutPageThrows: true,
+    rejectsImageIndex: true,
+    unknownPageInfoIsNull: true,
+    pageInfoIsRecord: true,
+    sourceName: "PDF bytes",
+    noPageError: () => new Error("A page is required for coordinates"),
     get defaultFontFamily() {
       return defaultFont?.name.toLowerCase();
     },
@@ -129,23 +139,19 @@ export function createRecipeFactory({
      * @returns {object} The source bytes (null for a new PDF) and the options.
      */
     openArguments([source, options]) {
-      var isOptions =
-        source === undefined ||
-        source === null ||
-        (typeof source === "object" &&
-          !(source instanceof Uint8Array) &&
-          !(source instanceof ArrayBuffer) &&
-          !ArrayBuffer.isView(source));
-      if (isOptions) return { source: null, options: source || {} };
-      if (
-        options !== undefined &&
-        (options === null || typeof options !== "object")
-      ) {
+      var hasSource =
+        source instanceof Uint8Array ||
+        source instanceof ArrayBuffer ||
+        ArrayBuffer.isView(source) ||
+        (typeof Blob !== "undefined" && source instanceof Blob);
+      if (hasSource) options = options || {};
+      else options = source === undefined ? {} : source;
+      if (!options || typeof options !== "object" || Array.isArray(options)) {
         throw new TypeError("Recipe options must be an object");
       }
       return {
-        source: normalizeBytes(source, "PDF bytes"),
-        options: options || {},
+        source: hasSource ? normalizeBytes(source, "PDF bytes") : null,
+        options,
       };
     },
 
@@ -175,12 +181,9 @@ export function createRecipeFactory({
       return assets.images.get(ref) || assets.pdfs.get(ref) || null;
     },
 
-    loadFonts(recipe, options) {
-      if (options.fontSrcPath !== undefined) {
-        throw new TypeError(
-          "fontSrcPath is unavailable in Wasm; register fonts with Recipe.registerFont()",
-        );
-      }
+    loadFonts(recipe) {
+      // fontSrcPath names folders, which Wasm cannot read; it is ignored, as
+      // it always was.
       ensureDefaultFont();
       recipe.fonts = fonts;
     },
@@ -356,6 +359,23 @@ export function createRecipeFactory({
   });
 
   Object.assign(Recipe.prototype, {
+    /**
+     * Converts supported HTML into styled text fragments. Ordered and
+     * unordered list fragments include their visual prefix and native-style
+     * indentation. Unlike native's nested XML-derived layout tree, Wasm
+     * returns flat visual fragments, as it always has. This helper does not
+     * draw content or alter Recipe state.
+     *
+     * @name htmlToTextObjects
+     * @function
+     * @memberof Recipe#
+     * @param {string} html - HTML source to convert.
+     * @param {Partial<RecipeTextOptions>} [options] - Initial text options.
+     * @returns {RecipeHtmlTextObject[]} Styled fragments in source order.
+     */
+    htmlToTextObjects(html, options = {}) {
+      return htmlToTextObjects(html, options);
+    },
     /**
      * Asynchronously reads PDF metadata. Blob and File inputs are accepted in
      * addition to synchronous byte sources.

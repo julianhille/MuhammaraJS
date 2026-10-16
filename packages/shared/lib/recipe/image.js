@@ -66,7 +66,7 @@ export const image = function image(imgSrc, x, y, options = {}) {
       ...imagePdfaFeatures(this.platform.readBytes(imgSrc)),
     );
   }
-  const index = imageIndex(options);
+  const index = imageIndex(this, options);
   const { width, height, offsetX, offsetY, page } = this._getImgOffset(
     imgSrc,
     options,
@@ -168,14 +168,15 @@ export const image = function image(imgSrc, x, y, options = {}) {
  * Read the one-based `page` option as the zero-based index of the PDF page or
  * TIFF image that PDFWriter takes.
  * @private
+ * @param {Recipe} recipe - The recipe instance.
  * @param {Object} options - The image() options.
  * @returns {number} The zero-based index; 0 when `page` is omitted.
  * @throws {RangeError} If `page` is not an integer from 1 to 4294967296.
- * @throws {TypeError} If the removed `index` option is given.
+ * @throws {TypeError} On Wasm, if the removed `index` option is given.
  */
-function imageIndex(options) {
-  // The prerelease zero-based option would silently draw the first page.
-  if (options.index !== undefined) {
+function imageIndex(recipe, options) {
+  // Wasm rejects the prerelease zero-based option, as it always has.
+  if (options.index !== undefined && recipe.platform.rejectsImageIndex) {
     throw new TypeError(
       "image index was replaced by the one-based page option; pass page: index + 1",
     );
@@ -426,7 +427,7 @@ export const _getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
   requireImage(this, imgSrc);
   // A missing keepAspectRatio keeps it; the caller's options stay untouched.
   const keepAspectRatio = options.keepAspectRatio ?? true;
-  const index = imageIndex(options);
+  const index = imageIndex(this, options);
   const page = pdfPage(this, imgSrc, index);
   const dimensions = page
     ? displayedPageSize(page)

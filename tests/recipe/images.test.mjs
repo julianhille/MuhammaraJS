@@ -791,15 +791,17 @@ describeEnds("Recipe images", function (end) {
             message: "image page must be an integer from 1 to 4294967296",
           }),
         );
-        // The Wasm prereleases' zero-based `index` would now place the wrong
-        // page; it is rejected rather than silently ignored.
-        [0, 1].forEach((index) =>
-          assert.throws(() => recipe.image(source, 0, 0, { index }), {
-            name: "TypeError",
-            message:
-              "image index was replaced by the one-based page option; pass page: index + 1",
-          }),
-        );
+        // Wasm rejects its prereleases' zero-based `index`; native ignores
+        // the option, as each always has.
+        if (end.name === "wasm") {
+          [0, 1].forEach((index) =>
+            assert.throws(() => recipe.image(source, 0, 0, { index }), {
+              name: "TypeError",
+              message:
+                "image index was replaced by the one-based page option; pass page: index + 1",
+            }),
+          );
+        }
         assert.throws(
           () =>
             recipe.image(source, 0, 0, {

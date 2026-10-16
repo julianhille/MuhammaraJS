@@ -271,9 +271,7 @@ function isRightToLeftLetter(text, index) {
  * @returns {string|null} "ltr" or "rtl", or null without such a character.
  */
 function firstStrongDirection(text, paragraph) {
-  // bidi-js is loaded only for text beyond ASCII, so plain left-to-right text
-  // needs none.
-  var api = null;
+  var api = getBidi();
   var isolates = 0;
   for (var index = 0; index < text.length; ++index) {
     var code = text.charCodeAt(index);
@@ -293,21 +291,9 @@ function firstStrongDirection(text, paragraph) {
       (code >= 0x1c && code <= 0x1e) ||
       (code >= 0xd800 && code <= 0xdfff && !pair);
     if (!neutral) {
-      var type;
-      if (code < 0x80) {
-        // ASCII's classes: letters are L, LF and CR end a paragraph, and the
-        // rest sets no direction.
-        type = /[A-Za-z]/.test(text[index])
-          ? BIDI_CLASS.L
-          : code === 0x0a || code === 0x0d
-            ? BIDI_CLASS.B
-            : null;
-      } else {
-        api = api || getBidi();
-        type = api.getBidiCharTypeName(
-          String.fromCodePoint(text.codePointAt(index)),
-        );
-      }
+      var type = api.getBidiCharTypeName(
+        String.fromCodePoint(text.codePointAt(index)),
+      );
       if (type === BIDI_CLASS.B && paragraph) return null;
       if (!isolates) {
         if (type === BIDI_CLASS.L) return TextDirection.LTR;

@@ -390,15 +390,21 @@ describeEnds("Graphic Object Positioning", function (end) {
 
   it("reports a missing page instead of failing to read its metadata", function () {
     var recipe = end.newRecipe();
+    // Each end in its own words, as it always was.
     assert.throws(
       () => recipe.link("https://example.test", 0, 0, 10, 10),
-      /No page is active/,
+      end.name === "wasm"
+        ? /A page is required for coordinates/
+        : /No page is active/,
     );
   });
 
   it("reports an unknown page number from pageInfo", function () {
     var recipe = end.newRecipe();
-    assert.throws(() => recipe.pageInfo(3), /Unknown page number: 3/);
+    // Native throws and Wasm returns null for a page it does not have, as
+    // each always has.
+    if (end.name === "wasm") assert.equal(recipe.pageInfo(3), null);
+    else assert.throws(() => recipe.pageInfo(3), /Unknown page number: 3/);
   });
 
   // Merged from the Wasm position-parity spec: `position` is the path

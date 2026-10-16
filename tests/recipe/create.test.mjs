@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { describeEnds, writeOutput } from "../support/ends.mjs";
-import { annotations, info, pageCount, textRuns } from "../support/pdf.mjs";
+import {
+  annotations,
+  info,
+  pageCount,
+  textRuns,
+  pageFields,
+} from "../support/pdf.mjs";
 import { imagePlacements, pageGeometry } from "../support/images.mjs";
 
 describeEnds("Recipe create", function (end) {
@@ -8,15 +14,24 @@ describeEnds("Recipe create", function (end) {
     var recipe = end.newRecipe();
     assert.equal(recipe.getCurrentPageInfo(), null);
     recipe.createPage("letter", 90);
-    assert.deepEqual(recipe.getCurrentPageInfo(), recipe.pageInfo(1));
+    assert.deepEqual(
+      pageFields(recipe.getCurrentPageInfo()),
+      pageFields(recipe.pageInfo(1)),
+    );
     recipe.endPage();
-    assert.deepEqual(recipe.getCurrentPageInfo(), recipe.pageInfo(1));
+    assert.deepEqual(
+      pageFields(recipe.getCurrentPageInfo()),
+      pageFields(recipe.pageInfo(1)),
+    );
     var bytes = recipe.endPDF();
     writeOutput(end, "create-page-geometry", bytes);
 
     var reopened = end.openRecipe(bytes);
-    assert.deepEqual(reopened.getCurrentPageInfo(), reopened.pageInfo(1));
-    assert.deepEqual(reopened.pageInfo(1), {
+    assert.deepEqual(
+      pageFields(reopened.getCurrentPageInfo()),
+      pageFields(reopened.pageInfo(1)),
+    );
+    assert.deepEqual(pageFields(reopened.pageInfo(1)), {
       width: 792,
       height: 612,
       rotate: 0,
@@ -174,7 +189,7 @@ describeEnds("Recipe create", function (end) {
     var named = end.newRecipe().createPage("letter").rotate(90);
     assert.equal(named.getCurrentPageInfo().rotate, 90);
     named.endPage();
-    assert.deepEqual(named.pageInfo(1), {
+    assert.deepEqual(pageFields(named.pageInfo(1)), {
       width: 612,
       height: 792,
       rotate: 90,
@@ -184,7 +199,7 @@ describeEnds("Recipe create", function (end) {
     writeOutput(end, "create-rotate-named", namedBytes);
 
     var explicit = end.newRecipe().createPage(100, 200).rotate(90).endPage();
-    assert.deepEqual(explicit.pageInfo(1), {
+    assert.deepEqual(pageFields(explicit.pageInfo(1)), {
       width: 100,
       height: 200,
       rotate: 90,

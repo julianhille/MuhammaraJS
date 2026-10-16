@@ -37,7 +37,10 @@ for (var file of readdirSync(dist)) {
 
 await build({
   absWorkingDir: new URL(".", packageRoot).pathname,
-  entryPoints: { index: "index.js", "recrypt-worker": "lib/recrypt-worker.js" },
+  entryPoints: {
+    index: "lib/main.js",
+    "recrypt-worker": "lib/recrypt-worker.js",
+  },
   outdir: "dist",
   bundle: true,
   splitting: true,

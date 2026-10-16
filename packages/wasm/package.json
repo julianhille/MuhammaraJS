@@ -17,11 +17,12 @@
   "exports": {
     ".": {
       "types": "./index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./index.js"
     },
     "./THIRD_PARTY_LICENSES.md": "./dist/THIRD_PARTY_LICENSES.md"
   },
   "files": [
+    "index.js",
     "index.d.ts",
     "fonts",
     "dist",
@@ -58,9 +59,6 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
-  },
-  "dependencies": {
-    "bidi-js": "1.1.0"
   },
   "devDependencies": {
     "@muhammara/shared": "0.0.0",

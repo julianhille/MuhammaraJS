@@ -46,6 +46,21 @@ var IMAGE_EXTENSIONS = {
 };
 
 /**
+ * Register Arial for every style on a native Recipe. The fixture has only a
+ * regular face; a missing style falls back to Helvetica on native and to the
+ * family's regular face on Wasm, so registering all four keeps both ends on
+ * Arial.
+ * @param {object} recipe - A native Recipe.
+ * @returns {object} The recipe.
+ */
+function withArial(recipe) {
+  ["regular", "bold", "italic", "bold-italic"].forEach((style) =>
+    recipe.registerFont("arial", ARIAL, style),
+  );
+  return recipe;
+}
+
+/**
  * The native end: the addon from @muhammara/native-with-source.
  * @returns {object} The end.
  */
@@ -59,7 +74,7 @@ function nativeEnd() {
     },
     newRecipe(options = {}) {
       var recipe = new end.Recipe(Buffer.from("new"), undefined, options);
-      recipe.registerFont("arial", ARIAL);
+      withArial(recipe);
       return recipe;
     },
     openRecipe(source, options = {}) {
@@ -68,7 +83,7 @@ function nativeEnd() {
           ? readFileSync(fixture(source))
           : Buffer.from(source);
       var recipe = new end.Recipe(bytes, undefined, options);
-      recipe.registerFont("arial", ARIAL);
+      withArial(recipe);
       return recipe;
     },
     image: (name) => fixture(name),

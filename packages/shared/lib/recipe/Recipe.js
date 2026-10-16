@@ -161,6 +161,7 @@ class Recipe {
         this._output = this.platform.modifyWriter(
           this.src,
           Object.assign(this._openOptions(), this._compression()),
+          this,
         );
       } catch (err) {
         throw new Error(err);
@@ -434,6 +435,7 @@ class Recipe {
         this._output = this.platform.modifyWriter(
           firstPass,
           Object.assign(this._openOptions(), this._compression()),
+          this,
         );
         this.writer = this._output.writer;
 
@@ -599,7 +601,9 @@ const privateExports = new Set([
 function loadPrototypes() {
   for (const [file, module] of Object.entries(recipeModules)) {
     for (let key in module) {
-      if (privateExports.has(key)) continue;
+      // Interop keys a CommonJS build of these modules adds are no members.
+      if (privateExports.has(key) || key === "default" || key === "__esModule")
+        continue;
       if (Recipe.prototype[key]) {
         throw `Found conflict prototypes=${key} in ${file}.`;
       }

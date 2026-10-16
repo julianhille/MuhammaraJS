@@ -788,28 +788,19 @@ export const endPage = function endPage() {
  * @param {number} pageNumber - The one-based page number to be edited.
  * @returns {Recipe} The recipe instance.
  * @throws {Error} If the Recipe was not constructed from an existing PDF.
- * @throws {RangeError} If `pageNumber` is not a page of the source PDF.
  * @throws {Error} If the page does not exist in the source PDF.
  * @throws {Error} If another page is still active; call endPage() first.
  */
 export const editPage = function editPage(pageNumber) {
   if (this.isNewPDF) {
     throw new Error(
-      "editPage requires a Recipe constructed from an existing PDF",
+      `editPage requires a Recipe constructed from ${this.platform.sourceName}`,
     );
   }
   // As in createPage, an active page left unfinished crashes the writer or is
   // silently dropped at endPDF().
   if (this.page) {
     throw new Error("Finish the current page before editing another page");
-  }
-  // Only a page of the source can be edited; say so before the writer does.
-  if (
-    !Number.isInteger(pageNumber) ||
-    pageNumber < 1 ||
-    pageNumber > this.sourcePageCount
-  ) {
-    throw new RangeError("pageNumber must identify an existing page");
   }
   const pdfWriter = this.writer;
   const pageIndex = pageNumber - 1;
@@ -1139,15 +1130,27 @@ export const _resumePageRotation = function _resumePageRotation(
  * @throws {TypeError} If the page is unknown.
  */
 export const pageInfo = function pageInfo(pageNumber) {
-  const pageInfo = this.metadata[pageNumber];
+  const pageInfo = this.metadata?.[pageNumber];
   if (!pageInfo) {
+    // Wasm reports an unknown page as null, as it always has.
+    if (this.platform.unknownPageInfoIsNull) return null;
     throw new TypeError(`Unknown page number: ${pageNumber}`);
   }
+  const { width, height, rotate, mediaBox } = pageInfo;
+  if (!this.platform.pageInfoIsRecord) {
+    return { width, height, rotate, pageNumber };
+  }
+  // Wasm's page record, as it has always returned.
   return {
-    width: pageInfo.width,
-    height: pageInfo.height,
-    rotate: pageInfo.rotate,
+    width,
+    height,
+    rotate,
     pageNumber,
+    mediaBox: mediaBox.slice(),
+    layout: pageInfo.layout,
+    size: [width, height].sort((a, b) => a - b),
+    offsetX: mediaBox[0],
+    offsetY: mediaBox[1],
   };
 };
 

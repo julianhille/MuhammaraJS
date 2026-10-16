@@ -2,9 +2,9 @@
 
 var fs = require("fs");
 var path = require("path");
-var fontText = require("@muhammara/shared/font-text.js");
+var fontText = require("./lib/shared/font-text.js");
 var { createRecipe } = require("./lib/Recipe");
-var textDirection = require("@muhammara/shared/text-direction.js");
+var textDirection = require("./lib/shared/text-direction.js");
 
 textDirection.useBidi(require("bidi-js"));
 

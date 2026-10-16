@@ -11,11 +11,7 @@ import { Coordinate } from "../recipe-constants.js";
  */
 function pageMetadata(recipe, pageNumber) {
   const metadata = recipe.metadata[pageNumber || recipe.pageNumber];
-  if (!metadata) {
-    throw new TypeError(
-      "No page is active; call createPage() or editPage() first",
-    );
-  }
+  if (!metadata) throw recipe.platform.noPageError();
   return metadata;
 }
 

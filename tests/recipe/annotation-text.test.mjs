@@ -437,7 +437,9 @@ describeEnds("Annotation: Text Annotations", function (end) {
     assert.equal(subtypes(annotations).length, marked.length + 6);
   });
 
-  it("writes a reply with the subtype it asks for", function () {
+  // A reply takes the subtype of the annotation it answers, as documented on
+  // both ends; its own subtype option is ignored.
+  it("writes a reply with the subtype of the annotation it answers", function () {
     var bytes = end
       .newRecipe()
       .createPage("letter")
@@ -465,9 +467,9 @@ describeEnds("Annotation: Text Annotations", function (end) {
       ]),
       [
         ["Highlight", "Annotation"],
-        ["Text", "A reply"],
+        ["Highlight", "A reply"],
         ["Underline", "Underlined"],
-        ["Text", "Also a reply"],
+        ["Underline", "Also a reply"],
       ],
     );
   });

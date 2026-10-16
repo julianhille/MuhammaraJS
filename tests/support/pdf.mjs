@@ -234,3 +234,16 @@ export function info(end, bytes) {
     return value ? plain(end, reader, value, 1) : {};
   });
 }
+
+/**
+ * The page fields both ends' `pageInfo()` return. Wasm returns its page
+ * record, which has these and more (media box, layout, size, offsets), as it
+ * always has; native returns only these.
+ * @param {?object} info - A pageInfo() or getCurrentPageInfo() result.
+ * @returns {?object} Its width, height, rotate and pageNumber.
+ */
+export function pageFields(info) {
+  if (!info) return info;
+  var { width, height, rotate, pageNumber } = info;
+  return { width, height, rotate, pageNumber };
+}

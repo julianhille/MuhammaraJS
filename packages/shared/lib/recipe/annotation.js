@@ -483,10 +483,8 @@ export const _writeAnnotations = function _writeAnnotations() {
 
     if (annot.replies) {
       annot.replies.forEach((reply) => {
-        // A reply is a Text annotation unless it asks for another subtype,
-        // so a reply to a highlight does not highlight the text again.
         this._annot(
-          reply?.subtype || AnnotSubtype.TEXT,
+          annot.subtype,
           { ...annot.args, reply },
           annot.pageNumber,
           ref,

@@ -5,7 +5,8 @@ const path = require("path");
 const PDFWStreamForBuffer = require("./PDFWStreamForBuffer");
 const {
   createRecipe: createSharedRecipe,
-} = require("@muhammara/shared/recipe/Recipe.js");
+} = require("./shared/recipe/Recipe.js");
+const { Column, Line, Word } = require("./shared/recipe/text.helper.js");
 
 /**
  * Special Recipe sources.
@@ -18,6 +19,9 @@ const Source = Object.freeze({
 });
 
 const FONT_TYPES = [".ttf", ".ttc", ".otf"];
+// The error log native Recipe has always passed to its writers, except to the
+// writer of a new PDF with an output path.
+const LOG_FILE = "muhammara-error.log";
 const BUNDLED_FONTS = path.join(__dirname, "../fonts");
 
 /**
@@ -59,6 +63,16 @@ function createNativePlatform(muhammara) {
     defaultFontFamily: "helvetica",
     // What image() takes, for its error messages.
     imageReference: "an image path",
+    // Native's behaviour where the ends differed; kept until a major release
+    // unifies them, see packages/wasm/DIFFERENCES.md.
+    fontFallsBackToDefault: true,
+    textWithoutPageThrows: false,
+    rejectsImageIndex: false,
+    unknownPageInfoIsNull: false,
+    pageInfoIsRecord: false,
+    sourceName: "an existing PDF",
+    noPageError: () =>
+      new TypeError("No page is active; call createPage() or editPage() first"),
 
     /**
      * Read the native constructor arguments: `"new"` (or `Buffer.from("new")`)
@@ -79,8 +93,8 @@ function createNativePlatform(muhammara) {
         source,
         // A path source writes its output file, by default the source itself.
         output: isBuffer
-          ? { path: output, buffer: true }
-          : { path: output || src },
+          ? { path: output, buffer: true, log: LOG_FILE }
+          : { path: output || src, log: isNew ? undefined : LOG_FILE },
         options,
         name: isBuffer ? undefined : path.basename(src),
       };
@@ -115,18 +129,20 @@ function createNativePlatform(muhammara) {
         : source;
     },
 
-    newWriter(options) {
+    newWriter(options, recipe) {
+      const log = recipe?.output.log;
       return bufferedWriter((stream) =>
-        muhammara.createWriter(stream, options),
+        muhammara.createWriter(stream, log ? { ...options, log } : options),
       );
     },
 
-    modifyWriter(bytes, options) {
+    modifyWriter(bytes, options, recipe) {
+      const log = recipe?.output.log;
       return bufferedWriter((stream) =>
         muhammara.createWriterToModify(
           new muhammara.PDFRStreamForBuffer(asBuffer(bytes)),
           stream,
-          options,
+          log ? { ...options, log } : options,
         ),
       );
     },
@@ -233,7 +249,12 @@ function createNativePlatform(muhammara) {
  * @returns {Function} The Recipe class bound to that addon.
  */
 function createRecipe(muhammara) {
-  return createSharedRecipe(createNativePlatform(muhammara), { Source });
+  const Recipe = createSharedRecipe(createNativePlatform(muhammara), {
+    Source,
+  });
+  // The text layout classes native Recipe has always exposed.
+  Object.assign(Recipe.prototype, { Column, Line, Word });
+  return Recipe;
 }
 
-module.exports = { createRecipe };
+module.exports = { createRecipe, Source };

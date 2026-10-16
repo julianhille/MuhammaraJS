@@ -188,9 +188,13 @@ describeEnds("Recipe finalization with an active page", function (end) {
 
   it("rejects editPage on a new document", function () {
     var recipe = end.newRecipe();
+    // Each end in its own words, as it always was.
     assert.throws(() => recipe.editPage(1), {
       name: "Error",
-      message: "editPage requires a Recipe constructed from an existing PDF",
+      message:
+        end.name === "wasm"
+          ? "editPage requires a Recipe constructed from PDF bytes"
+          : "editPage requires a Recipe constructed from an existing PDF",
     });
     var bytes = recipe.createPage(600, 800).endPage().endPDF();
     writeOutput(end, "active-page-finalization-edit-new", bytes);

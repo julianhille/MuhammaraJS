@@ -1,3 +1,4 @@
+#include "RecryptKeepingInfo.h"
 #include "RecryptAsync.h"
 
 #include "InputByteArrayStream.h"
@@ -401,14 +402,14 @@ void Execute(napi_env, void *data) {
     InputByteArrayStream input(
         job->input.Data(),
         static_cast<IOBasicTypes::LongFilePositionType>(job->input.Size()));
-    job->status = PDFWriter::RecryptPDF(&input, job->options.password,
+    job->status = RecryptPDFKeepingInfo(&input, job->options.password,
                                         &job->output, log,
                                         job->options.creation,
                                         job->options.version);
     // Only the output is needed from here on.
     job->input.Clear();
   } else {
-    job->status = PDFWriter::RecryptPDF(
+    job->status = RecryptPDFKeepingInfo(
         job->sourcePath, job->options.password, job->targetPath, log,
         job->options.creation, job->options.version);
   }

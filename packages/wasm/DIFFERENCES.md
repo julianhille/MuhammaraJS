@@ -48,27 +48,46 @@ Native and Wasm run one Recipe implementation, `packages/shared`: the same
 input gives the same PDF, return values and errors on both ends. What differs
 is only how each end takes and hands over its input and output.
 
-| Area                     | Native                                                                                                                                                 | WebAssembly                                                                                                                     |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| Constructor              | `new Recipe("new" \| path \| Buffer, outputPath?, options)`                                                                                            | `new Recipe(options)` or `new Recipe(bytes, options)`, from the async `createRecipe()` factory                                  |
-| Finished PDF             | `endPDF()` writes the output path; returns the Buffer, the output path, or nothing for a path source; `endPDF(callback)` returns the callback's result | `endPDF()` returns an owned `Uint8Array`, also from `endPDF(callback)`                                                          |
-| Fonts, images, PDFs      | file paths, the bundled font folder, `fontSrcPath`                                                                                                     | registered bytes: `Recipe.registerFont/Image/Pdf` (and `*Async` for Blob/File), `unregister*`, `disposeAssets()`; a path throws |
-| Default font             | bundled Helvetica Neue LT with bold and italic faces, plus Arial, Courier New, Georgia, Roboto                                                         | bundled Roboto Regular, or the `defaultFont` given to `createRecipe()`; `defaultFont: false` registers none                     |
-| Files read by path       | `chroma("!load", path)`, `attach(name, path)`, `pdfa.iccProfile` path                                                                                  | bytes only; a path throws a `TypeError` naming what reads it                                                                    |
-| `split()`, `structure()` | `split(outputDir, prefix)` writes files; `structure(path)` writes a text file                                                                          | `split(prefix)` returns `[{name, bytes}]`; `structure(format)` returns text or JSON; static `Recipe.splitPdf(name)`             |
-| Reading other PDFs       | `read(path \| Buffer)`                                                                                                                                 | `read(bytes)`, `readAsync(Blob)`, static `Recipe.inspectPdf(name)`                                                              |
-| Lifecycle                | normal native lifetime                                                                                                                                 | `recipe.dispose()` and `Recipe.disposeAssets()` free the Emscripten heap                                                        |
-| Only on one end          | `Recipe.Source`                                                                                                                                        | `Recipe.thirdPartyLicenses()`, `Recipe.StructureFormat`, static `Recipe.permission()`                                           |
+| Area                     | Native                                                                                                                                                 | WebAssembly                                                                                                                                                  |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Constructor              | `new Recipe("new" \| path \| Buffer, outputPath?, options)`                                                                                            | `new Recipe(options)` or `new Recipe(bytes, options)`, from the async `createRecipe()` factory                                                               |
+| Finished PDF             | `endPDF()` writes the output path; returns the Buffer, the output path, or nothing for a path source; `endPDF(callback)` returns the callback's result | `endPDF()` returns an owned `Uint8Array`, also from `endPDF(callback)`                                                                                       |
+| Fonts, images, PDFs      | file paths, the bundled font folder, `fontSrcPath`                                                                                                     | registered bytes: `Recipe.registerFont/Image/Pdf` (and `*Async` for Blob/File), `unregister*`, `disposeAssets()`; a path throws and `fontSrcPath` is ignored |
+| Default font             | bundled Helvetica Neue LT with bold and italic faces, plus Arial, Courier New, Georgia, Roboto                                                         | bundled Roboto Regular, or the `defaultFont` given to `createRecipe()`; `defaultFont: false` registers none                                                  |
+| Files read by path       | `chroma("!load", path)`, `attach(name, path)`, `pdfa.iccProfile` path                                                                                  | bytes only; a path throws a `TypeError` naming what reads it                                                                                                 |
+| `split()`, `structure()` | `split(outputDir, prefix)` writes files; `structure(path)` writes a text file                                                                          | `split(prefix)` returns `[{name, bytes}]`; `structure(format)` returns text or JSON; static `Recipe.splitPdf(name)`                                          |
+| Reading other PDFs       | `read(path \| Buffer)`                                                                                                                                 | `read(bytes)`, `readAsync(Blob)`, static `Recipe.inspectPdf(name)`                                                                                           |
+| Lifecycle                | normal native lifetime                                                                                                                                 | `recipe.dispose()` and `Recipe.disposeAssets()` free the Emscripten heap                                                                                     |
+| Only on one end          | `Recipe.Source`                                                                                                                                        | `Recipe.thirdPartyLicenses()`, `Recipe.StructureFormat`, static `Recipe.permission()`                                                                        |
+
+### Kept for compatibility
+
+Where the two Recipes behaved differently before they became one, each end
+keeps its own behavior until a major release unifies it. Each platform turns
+it on with a flag in `native-core/lib/Recipe.js` or `wasm/lib/recipe.js`.
+
+| Behavior                                  | Native                                                       | WebAssembly                                                                      |
+| ----------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `text()` without an active page           | draws nothing and returns the Recipe                         | throws `Error: A page is required for coordinates`                               |
+| Drawing without an active page            | `TypeError: No page is active; …`                            | `Error: A page is required for coordinates`                                      |
+| A `font` that is not registered           | draws in Helvetica                                           | throws `Unknown font: <name>`                                                    |
+| A missing bold or italic face             | Helvetica's face of that style                               | the family's regular face                                                        |
+| `split()`                                 | splits the source PDF                                        | finishes the Recipe and splits what it produced                                  |
+| `htmlToTextObjects()`                     | the nested layout tree                                       | flat styled runs                                                                 |
+| `pageInfo()`                              | `{ width, height, rotate, pageNumber }`; unknown page throws | the page record with media box, layout, size and offsets; unknown page is `null` |
+| `image()` with `index`                    | ignored                                                      | throws a `TypeError` pointing to `page`                                          |
+| `endPDF(callback)` returns                | the callback's result                                        | the PDF bytes                                                                    |
+| `editPage()` on a new PDF                 | `…constructed from an existing PDF`                          | `…constructed from PDF bytes`                                                    |
+| Writer log                                | writes `muhammara-error.log`, as before                      | none                                                                             |
+| `Recipe.prototype.Column`, `Line`, `Word` | present                                                      | absent                                                                           |
 
 Editing a password-protected source opens it with `password` on native; the
 Wasm modifier cannot open one yet, so decrypt it with
 `recrypt(bytes, { password })` first.
 
-Wasm loads bidi-js, which the `direction` option reorders right-to-left text
-with, by importing `"bidi-js"` when `createMuhammaraWasm()` or
-`createRecipe()` runs, unless given `bidi: false`. The Wasm-only `loadBidi()`
-loads it later. Without it, calls that order text by direction throw. Native
-always has it.
+bidi-js, which the `direction` option reorders right-to-left text with, is
+bundled on both ends. Wasm still accepts its former `loadBidi()` and `bidi`
+option, which change nothing.
 
 `Recipe.thirdPartyLicenses()` reads the notices embedded in
 `muhammara-wasm.wasm`, which bundlers copy without the package's other files.

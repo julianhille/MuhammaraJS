@@ -31,27 +31,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   instead of returning the Recipe; pass `{}` to chain; see
   [Breaking Changes](docs/breaking-changes.md#recipe-information)
   [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
-- `@muhammara/wasm` and the native packages now run one Recipe
-  implementation, so Recipe output follows native where the two differed. The
-  first text baseline sits at the font's ascent, the text cursor after
-  `text()` stays on the last line, a `textBox` without `width` is 100 points
-  wide, and lines wrap by the glyphs' extent; positions computed from the old
-  output move.
-- Recipe `lineTo()` strokes its segment at once, as native does, instead of
-  extending a path that `lineTo(…, options)` painted later; pass the options
-  on each call.
-- Recipe HTML is parsed as native parses it: malformed markup other than list
-  items without `</li>` throws a `ParseError`, `h1`–`h3` and `small` change
-  the size and `div` is inline. Close your tags.
-- `recipe.htmlToTextObjects()` returns native's nested layout tree instead of
-  flat visual runs.
-- Recipe `pageInfo()` returns `{ width, height, rotate, pageNumber }` and
-  throws a `TypeError` for an unknown page instead of returning `null`; read
-  the media box, layout and offsets from `recipe.metadata[pageNumber]`.
-- Recipe `fontSrcPath` throws a `TypeError`; register fonts with
-  `Recipe.registerFont()`.
-- The package publishes its bundle, `dist/index.js`; `lib/` and `index.js` are
-  no longer in the package. Import `@muhammara/wasm`.
 
 ### Added
 
@@ -227,22 +206,25 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Recipe `replaceText()` on a page without content throws its clear error,
   and `removeText()` with `forms` works for edited sources on both ends.
 - Recipe HTML keeps a list item that holds only a no-break or em space, draws
-  no blank line for whitespace before a block, reads list items without
-  `</li>` and misnested lists as browsers do, and justifies every line of a
-  paragraph but its last.
-- Recipe `editPage()` throws a `RangeError` for a page the source does not
-  have, instead of a low-level error.
-- Recipe `image()` mirrors an image of negative width or height, throws a
-  `TypeError` for the removed zero-based `index` option, and reports
+  no blank line for whitespace before a block, sizes `h1`–`h3` and `small`,
+  and justifies every line of a paragraph but its last.
+- Recipe `encrypt()`, and `recrypt()` and `recryptAsync()`, keep the Info
+  entries of the PDF they encrypt.
+- Recipe `image()` mirrors an image of negative width or height, and reports
   `Unknown image` for a page or frame the image does not have.
+- Recipe text lays out as native's: the first baseline sits at the font's
+  ascent, the text cursor after `text()` stays on its last line, and
+  `lineTo()` without options draws its segment instead of nothing.
 - Recipe `createPage()` on a source PDF keeps its size instead of A4.
 
 ### Changed
 
 - Recipe is one implementation shared with the native packages, in
-  `packages/shared`, bundled into `dist/index.js`. Image, PDF and copying
-  low-level calls take registered PDF names, forms take any rectangle and
-  stream `write()` takes byte arrays, as on native.
+  `packages/shared`, bundled into `dist/index.js`, which `index.js` exports.
+  bidi-js is bundled too, so right-to-left text is always reordered;
+  `loadBidi()` and the `bidi` option are still accepted. Image, PDF and
+  copying low-level calls take registered PDF names, forms take any rectangle
+  and stream `write()` takes byte arrays, as on native.
 
 ## [1.2.0] - 2026-10-12
 

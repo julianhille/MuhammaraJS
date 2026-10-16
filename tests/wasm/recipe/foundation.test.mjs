@@ -37,7 +37,7 @@ describeEnd("wasm", "Recipe foundation", function (end) {
     });
     assert.throws(() => new end.Recipe("input.pdf"), {
       name: "TypeError",
-      message: "PDF bytes must be a Uint8Array or ArrayBuffer",
+      message: "Recipe options must be an object",
     });
     assert.throws(
       () => end.Recipe.registerPdf("path", "input.pdf"),
@@ -51,7 +51,7 @@ describeEnd("wasm", "Recipe foundation", function (end) {
     assert.throws(() => recipe.read(new Blob([source])), /Async API/);
     var metadata = await recipe.readAsync(new Blob([source]));
     assert.equal(metadata.pages, 1);
-    assert.throws(() => recipe.editPage(1), /constructed from an existing PDF/);
+    assert.throws(() => recipe.editPage(1), /constructed from PDF bytes/);
     recipe.createPage().endPage().endPDF();
   });
 

@@ -3470,7 +3470,7 @@ declare namespace muhammara {
     }
 
     interface AnnotReply {
-      /** The reply's subtype; a Text annotation by default. */
+      /** Ignored: a reply uses the subtype of the annotation it answers. */
       subtype?: AnnotSubtype;
       text?: string;
       /** The reply content when `text` is empty. */
