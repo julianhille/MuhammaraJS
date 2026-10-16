@@ -30,6 +30,8 @@ describe("Recipe foundation", function () {
       "ChromaCommand",
       "AnnotIcon",
       "StructureFormat",
+      "FormFieldKind",
+      "FormFieldFlag",
     ]) {
       assert.ok(Object.isFrozen(Recipe[name]), name);
     }

@@ -50,6 +50,7 @@ import type {
   RecipeMetadata,
   RecipeNGonOptions,
   RecipePageInfo,
+  RecipeFormField,
   RecipePageSelection,
   RecipePdfInspection,
   RecipePermission,
@@ -755,6 +756,14 @@ async function usesLowLevelSurface() {
   void textWidth;
   recipe.pageInfo(1)?.mediaBox[3];
   var pageInfo: RecipePageInfo | null = recipe.pageInfo(1);
+  var formFields: RecipeFormField[] = recipe.formFields();
+  var formKind: Recipe.FormFieldKind | null = formFields[0].kind;
+  var isTextField: boolean = formKind === Recipe.FormFieldKind.TEXT;
+  var isReadOnly: boolean = Boolean(
+    formFields[0].flags & Recipe.FormFieldFlag.READ_ONLY,
+  );
+  var formWidgetPage: number | null = formFields[0].widgets[0].pageNumber;
+  var formOptionLabel: string = formFields[0].options[0].label;
   pageInfo?.width;
   recipe.getCurrentPageInfo()?.mediaBox[3];
   recipe.endPage().endPDF();

@@ -8,6 +8,7 @@ var detectBlankPages = require("../../../native/docs/examples/detect-blank-pages
 var findTextPositions = require("../../../native/docs/examples/find-text-positions");
 var inspectPageXObjects = require("../../../native/docs/examples/inspect-pdf-objects");
 var readBookmarks = require("../../../native/docs/examples/read-bookmarks");
+var readFormFields = require("../../../native/docs/examples/read-form-fields");
 
 describe("Documentation examples for reading pages", function () {
   var outputDirectory;
@@ -131,5 +132,34 @@ describe("Documentation examples for reading pages", function () {
     assert.deepEqual(readBookmarks(inputPath), [
       { title: "Chapter 1", page: 1, children: [] },
     ]);
+  });
+
+  it("reads form fields with Recipe", function () {
+    var fields = readFormFields(
+      path.join(
+        __dirname,
+        "../../tests/TestMaterials/recipe/AcroFormPdfLib.pdf",
+      ),
+    );
+
+    assert.deepEqual(fields[0], {
+      name: "person.name",
+      kind: muhammara.Recipe.FormFieldKind.TEXT,
+      value: "Ada Lovelace",
+      readOnly: false,
+      pages: [1],
+    });
+    assert.deepEqual(
+      fields.find(function (field) {
+        return field.name === "color";
+      }),
+      {
+        name: "color",
+        kind: muhammara.Recipe.FormFieldKind.RADIO,
+        value: "1",
+        readOnly: false,
+        pages: [1, 1, 2],
+      },
+    );
   });
 });

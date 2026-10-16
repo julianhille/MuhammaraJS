@@ -352,3 +352,48 @@ export var AssetExtension = Object.freeze({
   TIFF: "tiff",
   PDF: "pdf",
 });
+
+/**
+ * Kinds of interactive form fields returned by `formFields()`, derived from
+ * the field type `/FT` and its flags (ISO 32000-1, 12.7.4).
+ * @readonly
+ * @enum {string}
+ */
+export var FormFieldKind = Object.freeze({
+  TEXT: "text",
+  CHECKBOX: "checkbox",
+  RADIO: "radio",
+  PUSH_BUTTON: "pushbutton",
+  COMBO_BOX: "combobox",
+  LIST_BOX: "listbox",
+  SIGNATURE: "signature",
+});
+
+/**
+ * Form field flag bits of `/Ff` (ISO 32000-1, 12.7.3.1 and 12.7.4). Test one
+ * with `field.flags & FormFieldFlag.READ_ONLY`. RICH_TEXT and
+ * RADIOS_IN_UNISON share a bit; it means one or the other by field kind.
+ * @readonly
+ * @enum {number}
+ */
+export var FormFieldFlag = Object.freeze({
+  READ_ONLY: 1,
+  REQUIRED: 2,
+  NO_EXPORT: 4,
+  MULTILINE: 4096,
+  PASSWORD: 8192,
+  NO_TOGGLE_TO_OFF: 16384,
+  RADIO: 32768,
+  PUSHBUTTON: 65536,
+  COMBO: 131072,
+  EDIT: 262144,
+  SORT: 524288,
+  FILE_SELECT: 1048576,
+  MULTI_SELECT: 2097152,
+  DO_NOT_SPELL_CHECK: 4194304,
+  DO_NOT_SCROLL: 8388608,
+  COMB: 16777216,
+  RICH_TEXT: 33554432,
+  RADIOS_IN_UNISON: 33554432,
+  COMMIT_ON_SEL_CHANGE: 67108864,
+});
