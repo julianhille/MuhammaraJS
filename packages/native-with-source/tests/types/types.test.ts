@@ -225,8 +225,12 @@ var info: muhammara.Recipe.InfoOptions = {
   "2.16.76.1.4.2.2.1": "oid-professional",
   Labels: ["one", "two"],
 };
-recipe.info(info).custom("ReportId", "X-456").info({ ReportId: "X-789" });
-var existingInfo: Record<string, string> | undefined = recipe.info();
+recipe
+  .info(info)
+  .custom("ReportId", "X-456")
+  .info({ ReportId: "X-789", Count: 3, Gone: null });
+var existingInfo: Record<string, string> = recipe.info();
+recipe.custom("Count", 3).custom("List", ["a", "b"]);
 void existingInfo;
 // @ts-expect-error info() without options returns the Info record, not the Recipe.
 recipe.info().custom("ReportId", "X-000");
@@ -1063,3 +1067,9 @@ recipe.text("שלום עולם", 10, 10, {
 recipe.text("abc", 10, 10, { direction: recipeDirection });
 // @ts-expect-error direction takes a Recipe.TextDirection value.
 recipe.text("abc", 10, 10, { direction: "up" });
+
+var xmpPacket: string | undefined = new muhammara.Recipe(
+  "source.pdf",
+  "out.pdf",
+  { xmp: true },
+).xmp();

@@ -1,0 +1,29 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] >>
+endobj
+4 0 obj
+<< /Title 5 0 R /Author (Ann) /title (lower) /creator (MyApp) /modDate (m) /trapped (x) /Ref 5 0 R /Creator (OldTool) /Producer (OldProducer) /CreationDate (D:20200102030405Z) >>
+endobj
+5 0 obj
+(Indirect title)
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000186 00000 n 
+0000000380 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R /Info 4 0 R >>
+startxref
+412
+%%EOF

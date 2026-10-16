@@ -449,6 +449,35 @@ for the upgrade steps. Each change below names the step that covers it.
   with `getObjectsCount()`. See [Handle Writer and Reader Errors](getting-started/migrate-from-v6.md#20-handle-writer-and-reader-errors)
   [#581](https://github.com/julianhille/MuhammaraJS/issues/581).
 
+### Recipe Information
+
+These land in a 7.x release to make Recipe `info()` and `custom()` behave as
+they do in `@muhammara/wasm`, and to fix custom Info entries that were lost or
+corrupted [#996](https://github.com/julianhille/MuhammaraJS/issues/996).
+`info()` without arguments returns the Info entries of the source PDF overlaid
+with the values set on the Recipe.
+
+- Custom keys of a source PDF keep their spelling. `info()` used to report them
+  lower-cased, so code that reads `info().reportid` gets `undefined`; read
+  `info().ReportId`, the key as the PDF spells it.
+- A new PDF, and a source without an Info dictionary, return `{}` instead of
+  `undefined`, and the values set with `info(options)` or `custom()` are
+  included. Code that tests `recipe.info() === undefined` should test the
+  fields it needs instead, such as `recipe.info().title === undefined`. The
+  object is a copy: changing it no longer changes what `endPDF()` writes; use
+  `info(options)`.
+- `custom()` with `title`, `author`, `subject` or `keywords` sets that field, as
+  `info()` does, instead of writing a custom `/title` entry. To keep writing a
+  lower-case custom entry, call `addAdditionalInfoEntry("title", value)` on
+  `recipe.writer.getDocumentContext().getInfoDictionary()`, or use another key,
+  such as `DocTitle`.
+- `info()` and `custom()` throw a `TypeError` for `Trapped`, the
+  `source-Creator`, `source-Producer` and `source-ModDate` entries and an empty
+  key, which used to write custom entries. Recipe writes these itself; use
+  another key. `Trapped` is only carried over from a source PDF.
+- `info(options)` after `endPDF()` throws `PDF writer has ended` instead of
+  ignoring the values. Set the information before `endPDF()`.
+
 ## Version 6.x
 
 - Node.js 17 and 18 are no longer supported, and no prebuilds are published for

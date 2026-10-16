@@ -17,8 +17,15 @@ var pdfDoc = new Recipe("new", "output.pdf", {
 pdfDoc.custom("ReportId", "Q1-2026").createPage().endPage().endPDF();
 ```
 
-For an existing document, `info()` without arguments reads current metadata;
-`info(options)` queues updates for finalization. `structure(path)` writes a
+Pass `xmp: true` to also write an XMP metadata packet that mirrors the Info
+values, and use `xmp()` to read the packet of a source PDF.
+
+`info()` without arguments reads the Info entries of the source overlaid with
+the values set on the Recipe, as text, with custom keys in their own spelling.
+`info({ Title: "..." })` sets the title like `title` does. Creator, Producer,
+CreationDate, ModDate, Trapped and the `source-*` entries are written by Recipe,
+and they and an empty key throw a `TypeError`; a source's own `source-*` entries
+are reported by `info()` as custom entries. `info(options)` sets the values that `endPDF()` writes. `structure(path)` writes a
 debugging view of an opened source PDF.
 
 To add metadata to a document that already exists, including dotted OID keys,

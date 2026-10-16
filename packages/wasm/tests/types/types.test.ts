@@ -465,6 +465,8 @@ async function usesLowLevelSurface() {
   void triangleTrait;
   void trianglePosition;
   var recipe = new Recipe({ version: 1.7, compress: false, title: "Byte PDF" });
+  var xmpPacket: string | undefined = new Recipe({ xmp: true }).xmp();
+  var infoValues: Record<string, string> = new Recipe().info();
   recipe
     .createPage()
     .setPageBox(muhammara.ePDFPageBoxCropBox, 18, 18, 594, 774)

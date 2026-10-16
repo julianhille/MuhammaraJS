@@ -760,7 +760,7 @@ export function createWriterFactory({
         withString(key, (keyPointer) =>
           withString(value, (valuePointer) => {
             if (
-              !module._muhammara_wasm_recipe_set_info(
+              !module._muhammara_wasm_recipe_add_info_entry(
                 recipe,
                 keyPointer,
                 valuePointer,

@@ -119,8 +119,11 @@ var info: muhammara.Recipe.InfoOptions = {
   "2.16.76.1.4.2.2.1": "oid-professional",
   Labels: ["one", "two"],
 };
-recipe.info(info).custom("ReportId", "X-456").info({ ReportId: "X-789" });
-var existingInfo: Record<string, string> | undefined = recipe.info();
+recipe
+  .info(info)
+  .custom("ReportId", "X-456")
+  .info({ ReportId: "X-789", Count: 3, Gone: null });
+var existingInfo: Record<string, string> = recipe.info();
 void existingInfo;
 // @ts-expect-error info() without options returns the Info record, not the Recipe.
 recipe.info().custom("ReportId", "X-000");
@@ -1165,3 +1168,10 @@ void muhammara.recryptAsync(
   new muhammara.PDFWStreamForBuffer(),
   null,
 );
+
+var xmpPacket: string | undefined = new muhammara.Recipe(
+  "source.pdf",
+  "out.pdf",
+  { xmp: true },
+).xmp();
+void xmpPacket;

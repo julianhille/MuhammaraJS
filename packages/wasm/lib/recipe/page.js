@@ -1,4 +1,5 @@
-import { standardInfoKeys } from "../recipe-info.js";
+import { pdfInfoNames, standardInfoKeys } from "../recipe-info.js";
+import { hasPlainMetadata } from "../xmp.js";
 import { mediumSizes } from "./parameters.js";
 import { pageRecord } from "./page-record.js";
 import { PAGE_CONTEXT_STATE } from "./context-state.js";
@@ -7,6 +8,16 @@ import {
   pruneDeletedPageReferences,
   setCatalogEntry,
 } from "./page-references.js";
+
+// The source Info entries Recipe writes itself, and the names info() reports
+// them under.
+var sourceInfoNames = Object.freeze({
+  __proto__: null,
+  CreationDate: "creationDate",
+  ModDate: "modDate",
+  Creator: "creator",
+  Producer: "producer",
+});
 
 /**
  * Builds the retained page tree while marking deleted leaf pages.
@@ -831,51 +842,57 @@ export function createPageMethods(
      * Inspects source bytes and closes the temporary reader.
      * @private
      * @param {Uint8Array} bytes - PDF bytes.
-     * @returns {{pages: object[], metadata: object, sourceInfo: object}} Page records, metadata, and Info values.
+     * @returns {{pages: object[], metadata: object, sourceInfo: object, customInfo: object, plainMetadata: boolean}} Page records, metadata, Info values, the custom Info entries in their own spelling (both empty for bytes that need a password to open), and whether the metadata is not encrypted.
      * @throws {Error} If the bytes cannot be parsed or have no readable pages.
      */
     _inspectBytes: function (bytes) {
       // Like Node Recipe.read(), the Recipe password also opens encrypted bytes.
-      var reader = createReader(bytes, {
-        password: this._getEncryptOptions(this.options).password,
-      });
+      var password = this._getEncryptOptions(this.options).password;
+      var reader = createReader(bytes, { password });
+      // The Info only without a password, as on native: that decrypts a source
+      // only an owner password protects with the right key, and the reader
+      // decrypts with the wrong key for an owner password.
+      var infoReader = password ? createReader(bytes) : reader;
       var pages = [];
       var sourceInfo = {};
+      var customInfo = {};
+      var plainMetadata;
       try {
         if (!reader.getPagesCount()) {
           // Broken, or encrypted and opened without the right password.
           throw new Error("Unable to read/edit PDF file (pages=0)");
         }
+        plainMetadata = hasPlainMetadata(reader);
         for (var index = 0; index < reader.getPagesCount(); index += 1) {
           var info = reader.getPageInfo(index);
           pages.push(pageRecord(index + 1, info.mediaBox, info.rotate));
         }
-        var info = reader
-          .queryDictionaryObject(reader.getTrailer(), "Info")
-          ?.toPDFDictionary()
-          ?.toJSObject();
-        if (info) {
-          Object.entries(info).forEach(([key, value]) => {
-            if (key === "Trapped") {
-              if (typeof value.value === "string") {
-                sourceInfo.trapped = value.value;
-              }
-              return;
+        var infoDictionary = infoReader.getPagesCount()
+          ? infoReader
+              .queryDictionaryObject(infoReader.getTrailer(), "Info")
+              ?.toPDFDictionary()
+          : undefined;
+        Object.keys(infoDictionary?.toJSObject() || {}).forEach((key) => {
+          // resolves an indirect value
+          var value = infoReader.queryDictionaryObject(infoDictionary, key);
+          if (key === "Trapped") {
+            if (typeof value?.value === "string") {
+              sourceInfo.trapped = value.value;
             }
-            var text = value.toPDFLiteralString?.()?.toText?.();
-            if (!text) return;
-            sourceInfo[
-              {
-                CreationDate: "creationDate",
-                ModDate: "modDate",
-                Creator: "creator",
-                Producer: "producer",
-              }[key] || key.toLowerCase()
-            ] = text;
-          });
-        }
+            return;
+          }
+          var text = value?.toText?.();
+          // empty values are kept, so an empty custom entry survives edits
+          if (text === undefined) return;
+          // standard fields by their option name, custom entries apart and as
+          // spelled, so that they cannot clash
+          var name = sourceInfoNames[key] || pdfInfoNames[key];
+          if (name) sourceInfo[name] = text;
+          else customInfo[key] = text;
+        });
       } finally {
         reader.end();
+        if (infoReader !== reader) infoReader.end();
       }
       var metadata = { pages: pages.length };
       pages.forEach((page) => {
@@ -885,7 +902,7 @@ export function createPageMethods(
           size: page.size.slice(),
         };
       });
-      return { pages, metadata, sourceInfo };
+      return { pages, metadata, sourceInfo, customInfo, plainMetadata };
     },
 
     /**
@@ -914,7 +931,8 @@ export function createPageMethods(
      * @throws {Error} If the bytes cannot be parsed or opened.
      */
     _openSource: function (bytes) {
-      var { pages, metadata, sourceInfo } = this._inspectBytes(bytes);
+      var { pages, metadata, sourceInfo, customInfo, plainMetadata } =
+        this._inspectBytes(bytes);
       if (this._recipe) {
         module._muhammara_wasm_recipe_destroy(this._recipe);
         this._recipe = 0;
@@ -928,18 +946,26 @@ export function createPageMethods(
       standardInfoKeys.forEach((key) => {
         if (sourceInfo[key]) info[key] = sourceInfo[key];
       });
+      // later info() and custom() calls replace these
+      Object.entries(customInfo).forEach(([key, value]) =>
+        info.addAdditionalInfoEntry(key, value),
+      );
       this._sourceMode = true;
       this._isNewPDF = false;
       this._pages = pages;
       this._sourceBytes = bytes;
-      this._sourceInfo = sourceInfo;
       // The modifier opens without a password, so it cannot read a source
       // that needs one; an owner-password-only source stays editable.
       var parser = this.writer.getModifiedFileParser();
       this._sourceNeedsPassword = !parser.getPagesCount();
       parser.end();
+      this._sourceInfo = sourceInfo;
       this._sourcePageCount = pages.length;
+      // apart, so that the fields and the XMP packet are not replaced by
+      // source custom entries of the same name
       this._info = { ...sourceInfo };
+      this._customInfo = customInfo;
+      this._plainMetadata = plainMetadata;
       this.metadata = metadata;
       return metadata;
     },

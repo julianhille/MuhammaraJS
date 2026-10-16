@@ -47,6 +47,7 @@ describe("SharedModulesParity", function () {
     "font-text.js",
     "glyph-list.js",
     "text-direction.js",
+    "xmp.js",
   ]) {
     it(`keeps ${name} identical on native and Wasm`, function () {
       assert.equal(

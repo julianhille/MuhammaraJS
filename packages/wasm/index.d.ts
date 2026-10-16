@@ -136,6 +136,11 @@ export interface RecipeOptions {
   version?: RecipePDFVersion;
   /** Enables stream compression. Defaults to true. */
   compress?: boolean;
+  /**
+   * Write XMP metadata that mirrors the Info values of the PDF, in place of
+   * the packet of an edited one. Everything else in an old packet is lost.
+   */
+  xmp?: boolean;
   author?: string;
   title?: string;
   subject?: string;
@@ -868,8 +873,41 @@ export interface Recipe {
     subtype: Recipe.AnnotSubtype,
     options?: RecipeAnnotationOptions,
   ): this;
-  info(): Record<string, unknown>;
+  /**
+   * Read the Info entries of the source PDF, overlaid with the values set
+   * on this Recipe, as text: the standard fields by their option names
+   * (`title`, `author`, `subject`, `keywords`), the source's own
+   * `creationDate`, `modDate`, `creator`, `producer` and `trapped`, and
+   * custom entries as spelled; a field wins over a source custom entry
+   * of the same name, and a value set on this Recipe over both. The Creator, Producer, ModDate and `source-*` entries Recipe
+   * writes at endPDF() are not included.
+   * A source's own `source-*` entries are
+   * reported as custom entries. Empty for a new PDF without values and for a
+   * source that needs a password to open.
+   */
+  info(): Record<string, string>;
+  /**
+   * Set standard and custom information entries. A standard field set to an empty array is cleared; one without a value (such as `""`), and a custom one that is null or undefined, is left as it is. The
+   * Info name of a standard field, such as `Title`, sets that field.
+   * @throws {TypeError} For an empty key, or Creator, Producer, CreationDate,
+   *   ModDate, Trapped and the `source-*` entries, which Recipe writes itself.
+   * @throws {Error} After endPDF().
+   */
   info(options: Record<string, unknown>): this;
+  /**
+   * Read the XMP metadata packet of the source PDF.
+   * @returns The packet as text, or undefined for a new PDF, a source
+   *   without one, or a source that needs a password to open.
+   * @throws {Error} If the source cannot be read, or keeps its metadata
+   *   unencrypted (`/EncryptMetadata false`).
+   */
+  xmp(): string | undefined;
+  /**
+   * Set a custom information entry; arrays are joined with a comma and space.
+   * @throws {TypeError} If the key or value is null or undefined, or the key
+   *   is one `info()` rejects.
+   * @throws {Error} After endPDF().
+   */
   custom(key: string, value: unknown): this;
   insertPage(
     afterPageNumber: number,

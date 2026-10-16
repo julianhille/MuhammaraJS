@@ -868,7 +868,7 @@ export function createRecipeFactory({
     createShapeMethods(),
     createImageMethods(runtime),
     createAnnotationMethods({ module, withString, withDoubles }),
-    createInfoMethods({ call, withString }),
+    createInfoMethods({ call, withString, createReader }),
     createSecurityMethods(),
     createReplaceTextMethods(),
   );

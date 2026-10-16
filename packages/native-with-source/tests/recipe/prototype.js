@@ -50,7 +50,6 @@ describe("Recipe prototype", function () {
       "_makeTextBox",
       "_makeTextObject",
       "_merge",
-      "_parseObjectByType",
       "_readInfo",
       "_registerFont",
       "_releaseReader",
@@ -132,6 +131,7 @@ describe("Recipe prototype", function () {
       "text",
       "textDimensions",
       "triangle",
+      "xmp",
     ]);
   });
 });

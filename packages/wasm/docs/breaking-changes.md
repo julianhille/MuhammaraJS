@@ -40,3 +40,27 @@ which Wasm follows
   `rotation: 30`. Pass `rotationOrigin` to turn text around another point.
   `rotateContent()` is unchanged and still turns counter-clockwise
   [#916](https://github.com/julianhille/MuhammaraJS/issues/916)
+
+### Recipe Information
+
+These land in a 1.x release to fix custom Info entries that were lost or
+corrupted on edit, and they bring `info()` and `custom()` in line with native
+Recipe [#996](https://github.com/julianhille/MuhammaraJS/issues/996).
+
+- `info()` reports the custom keys of a source PDF in their own spelling instead
+  of lower-cased. Read `info().ReportId`, the key as the PDF spells it, instead
+  of `info().reportid`.
+- `info()` returns its values as text, as they are written to the PDF. A
+  `keywords` array set with `info()` reads back as `"a, b"` instead of
+  `["a", "b"]`, and a number as a string. Use `split(", ")` where an array is
+  needed.
+- `info()` and `custom()` throw a `TypeError` for `Trapped`, the
+  `source-Creator`, `source-Producer` and `source-ModDate` entries and an empty
+  key, which used to write custom entries. Recipe writes these itself; use
+  another key. `Trapped` is only carried over from a source PDF.
+- `custom()` throws a `TypeError` for a `null` or `undefined` key or value
+  instead of writing the text `null` or `undefined`. Pass the text to write.
+- `info({ title: "" })`, and `""` for the other standard fields, leaves the
+  field as it is instead of clearing it. Pass `[]` to clear a field.
+- `info(undefined)` reads the information instead of returning the Recipe.
+  Pass `{}` where a call must chain.
