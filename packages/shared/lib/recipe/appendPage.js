@@ -22,20 +22,14 @@ export const appendPage = function appendPage(pdfSrc, pages = []) {
     throw new Error("appendPage cannot be combined with deletePage");
   }
   if (!Array.isArray(pages)) pages = [pages];
-  // Using stream so it can be closed to release reader resource (Issue #61)
-  const instream = new muhammara.PDFRStreamForFile(pdfSrc);
   let pageCount;
+  const pdfReader = muhammara.createReader(this.platform.readerSource(pdfSrc));
   try {
-    const pdfReader = muhammara.createReader(instream);
-    try {
-      pageCount = pdfReader.getPagesCount();
-    } finally {
-      pdfReader.end();
-    }
+    pageCount = pdfReader.getPagesCount();
   } finally {
-    // An unreadable source must not leave the file open, which would keep it
+    // An unreadable source must not stay open, which would keep a file
     // locked on Windows for the life of the process.
-    instream.close();
+    pdfReader.end();
   }
 
   // Preserve the established upper-bound clamping after validating that the

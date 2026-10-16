@@ -59,6 +59,7 @@ import { imagePdfaFeatures, requirePdfaAllows } from "../pdfa.js";
 export const image = function image(imgSrc, x, y, options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
+  requireImage(this, imgSrc);
   if (this.pdfa_) {
     requirePdfaAllows(
       this.pdfa_,
@@ -406,6 +407,7 @@ function drawFrame(recipe, nx, ny, width, height, options) {
  * @throws {Error} If the image, or the PDF page `page` selects, cannot be read.
  */
 export const _getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
+  requireImage(this, imgSrc);
   // A missing keepAspectRatio keeps it; the caller's options stay untouched.
   const keepAspectRatio = options.keepAspectRatio ?? true;
   const index = imageIndex(options);
@@ -481,3 +483,18 @@ export const _getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
   }
   return { width, height, offsetX, offsetY, page };
 };
+
+/**
+ * Reject an image the platform cannot find (a missing file on native, a name
+ * that is not registered on Wasm) before anything is drawn.
+ * @private
+ * @param {Recipe} recipe - The recipe instance.
+ * @param {*} imgSrc - The image.
+ * @returns {void}
+ * @throws {Error} If the image cannot be found.
+ */
+function requireImage(recipe, imgSrc) {
+  if (recipe.platform.assetVersion(imgSrc) === null) {
+    throw new Error(`Unknown image: ${imgSrc}`);
+  }
+}

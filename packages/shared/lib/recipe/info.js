@@ -16,6 +16,7 @@ import {
   writeOutputIntents,
 } from "../pdfa.js";
 import { attachment, writeAttachments } from "../attachments.js";
+import { setCatalogEntry } from "./page-references.js";
 
 var PLAIN_METADATA =
   "Recipe cannot read or write the XMP of a PDF whose metadata is not encrypted";
@@ -434,23 +435,6 @@ function writeXmp(writer, info, dates, pdfa) {
 }
 
 /**
- * Point a catalog entry at an object when the catalog is written, in place of
- * the entry of a source PDF.
- * @private
- * @param {Object} writer - The writer.
- * @param {string} key - The catalog key.
- * @param {number} id - The object ID.
- * @returns {void}
- */
-function setCatalogEntry(writer, key, id) {
-  writer.requireCatalogUpdate();
-  writer.getEvents().on("OnCatalogWrite", (event) => {
-    event.catalogDictionaryContext.writeKey(key);
-    event.catalogDictionaryContext.writeObjectReferenceValue(id);
-  });
-}
-
-/**
  * @name attach
  * @desc Attach a file to a new PDF, as an embedded file that the document
  *   lists as associated with it. A file attached again under the same name
@@ -479,7 +463,7 @@ export const attach = function attach(name, file, options) {
     throw new Error("insertPage() cannot be combined with pdfa or attach()");
   }
   requirePdfaAllows(this.pdfa_, PdfAFeature.ATTACHMENTS);
-  const bytes = typeof file === "string" ? this.platform.readBytes(file) : file;
+  const bytes = this.platform.readBytes(file);
   if (!(bytes instanceof Uint8Array)) {
     throw new TypeError("An attached file needs its bytes");
   }

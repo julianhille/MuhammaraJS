@@ -43,6 +43,8 @@ export function createRawObjectsContext({
      * @throws {Error} If the writer is no longer active.
      */
     function writeBytes(writer, bytes) {
+      // An array of byte values, as native write() accepts.
+      if (Array.isArray(bytes)) bytes = Uint8Array.from(bytes);
       bytes = normalizeBytes(bytes, "ByteWriter input");
       return withBytes(bytes, (pointer) => {
         var written = module._muhammara_wasm_byte_writer_write(

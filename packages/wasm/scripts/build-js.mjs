@@ -43,6 +43,10 @@ await build({
   splitting: true,
   format: "esm",
   platform: "neutral",
+  // Bundled dependencies such as linebreak and @xmldom/xmldom: prefer their
+  // browser builds.
+  mainFields: ["browser", "module", "main"],
+  conditions: ["browser", "import", "default"],
   target: "es2022",
   // Chunks sit next to the entries, so their relative URLs resolve alike.
   chunkNames: "[name]-[hash]",

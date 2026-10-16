@@ -3053,6 +3053,9 @@ export function createWriterFactory({
      * @throws {TypeError} If the writer ended, the name is not registered, or the format differs.
      */
     function imagePath(name, expectedType) {
+      // A registered PDF is an image source too, as a PDF path is on native.
+      if (expectedType === undefined && !ended && pdfs.has(name))
+        return pdfs.get(name);
       if (ended || typeof name !== "string" || !images.has(name)) {
         throw new TypeError("A registered image name is required");
       }
@@ -3629,6 +3632,35 @@ export function createWriterFactory({
         requireOpenWriter();
         if (!module._muhammara_wasm_writer_require_catalog_update(recipe)) {
           throw new Error("Unable to require catalog update");
+        }
+      },
+      /**
+       * Sets a catalog entry when the catalog is written, for Recipe metadata,
+       * attachments and output intents.
+       * @private
+       * @param {string} key - Catalog key.
+       * @param {number} objectId - Object ID of the new value, or 0 for null.
+       * @returns {void}
+       * @throws {RangeError} If `key` is empty or `objectId` is not a
+       *   non-negative integer.
+       * @throws {Error} If the writer has ended.
+       */
+      _setCatalogEntry: function (key, objectId) {
+        requireOpenWriter();
+        if (
+          typeof key !== "string" ||
+          key === "" ||
+          !Number.isInteger(objectId) ||
+          objectId < 0 ||
+          !withString(key, (pointer) =>
+            module._muhammara_wasm_recipe_set_catalog_entry(
+              recipe,
+              pointer,
+              objectId,
+            ),
+          )
+        ) {
+          throw new RangeError("Catalog entry must have a key and object ID");
         }
       },
       /**
@@ -4226,6 +4258,9 @@ export function createWriterFactory({
         if (options && typeof options === "object" && "password" in options) {
           throw new TypeError("PDF passwords are not supported in Wasm");
         }
+        // A registered PDF name, as native takes a path.
+        if (typeof sourceBytes === "string" && pdfs.has(sourceBytes))
+          sourceBytes = module.FS.readFile(pdfs.get(sourceBytes));
         sourceBytes = normalizeBytes(sourceBytes, "PDF input");
         var sourcePath = `/pdfs/${state.nextPdf++}.pdf`;
         module.FS.mkdirTree("/pdfs");

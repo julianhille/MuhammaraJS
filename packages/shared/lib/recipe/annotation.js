@@ -25,8 +25,8 @@ function textString(writer, value) {
 /**
  * Formats an annotation's `/M` modification date, as Wasm does: no date
  * writes no `/M`, and text that is not a date is written as given, which the
- * PDF specification allows for `/M`. A date is written in local time with its
- * UTC offset.
+ * PDF specification allows for `/M`. A date is written in UTC, so the output
+ * does not depend on the time zone of the machine that writes it.
  * @private
  * @param {Object} writer - The PDF writer.
  * @param {string|number|Date} [value] - The date.
@@ -36,7 +36,8 @@ function annotationDate(writer, value) {
   if (value === undefined || value === null || value === "") return undefined;
   var date = new Date(value);
   if (Number.isNaN(date.valueOf())) return String(value);
-  return writer.createPDFDate(date).toString();
+  // D:YYYYMMDDHHmmSSZ
+  return `D:${date.toISOString().slice(0, 19).replace(/[-T:]/g, "")}Z`;
 }
 
 /**
@@ -132,12 +133,14 @@ function linkPdf(recipe, url, left, bottom, width, height) {
       )
     )
       throw new TypeError("URL link requires a URL and valid PDF rectangle");
+    // A negative width or height covers the same area; the /Rect is written
+    // with its lower-left corner first.
     recipe.writer.attachURLLinktoCurrentPage(
       url,
-      left,
-      bottom,
-      left + width,
-      bottom + height,
+      Math.min(left, left + width),
+      Math.min(bottom, bottom + height),
+      Math.max(left, left + width),
+      Math.max(bottom, bottom + height),
     );
   } finally {
     recipe.resumeContext();

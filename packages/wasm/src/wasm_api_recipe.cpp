@@ -262,7 +262,8 @@ WASM_EXPORT WasmForm* muhammara_wasm_writer_create_form(WasmRecipe* recipe,
                                                           double left, double bottom,
                                                           double right, double top,
                                                           unsigned long objectId) {
-  if (recipe == nullptr || recipe->finished || right <= left || top <= bottom) {
+  // Any rectangle, empty or inverted too, as the native addon allows.
+  if (recipe == nullptr || recipe->finished) {
     return nullptr;
   }
   PDFFormXObject* form = objectId == 0

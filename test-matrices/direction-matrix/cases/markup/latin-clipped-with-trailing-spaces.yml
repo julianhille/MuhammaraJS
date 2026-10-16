@@ -14,58 +14,34 @@ expected:
       lines:
         - [["Hello world   ", 20], ["Hello world   ", 220]]
       annotations: [[20, 86], [220, 286], [20, 86], [220, 286]]
-    wasm:
-      lines:
-        - [["Hello world   ", 20], ["Hello world   ", 220]]
-      annotations: [[21, 86], [221, 286], [20, 86], [220, 286]]
-    knownDifference: "Wasm starts the link of text drawn as typed at its first glyph, native at its start, as before right-to-left text"
+    wasm: same
   none right:
     native:
       lines:
         - [["Hello world   ", 134.02], ["Hello world   ", 334.02]]
       annotations: [[134, 200], [334, 400], [134, 200], [334, 400]]
-    wasm:
-      lines:
-        - [["Hello world   ", 134.02], ["Hello world   ", 334.02]]
-      annotations: [[135, 200], [335, 400], [134, 200], [334, 400]]
-    knownDifference: "Wasm starts the link of text drawn as typed at its first glyph, native at its start, as before right-to-left text"
+    wasm: same
   auto left:
     native:
       lines:
         - [["Hello world   ", 20], ["Hello world   ", 220]]
       annotations: [[20, 86], [220, 286], [20, 86], [220, 286]]
-    wasm:
-      lines:
-        - [["Hello world   ", 20], ["Hello world   ", 220]]
-      annotations: [[21, 86], [221, 286], [20, 86], [220, 286]]
-    knownDifference: "Wasm starts the link of text drawn as typed at its first glyph, native at its start, as before right-to-left text"
+    wasm: same
   auto right:
     native:
       lines:
         - [["Hello world   ", 134.02], ["Hello world   ", 334.02]]
       annotations: [[134, 200], [334, 400], [134, 200], [334, 400]]
-    wasm:
-      lines:
-        - [["Hello world   ", 134.02], ["Hello world   ", 334.02]]
-      annotations: [[135, 200], [335, 400], [134, 200], [334, 400]]
-    knownDifference: "Wasm starts the link of text drawn as typed at its first glyph, native at its start, as before right-to-left text"
+    wasm: same
   rtl left:
     native:
       lines:
         - [["Hello world   ", 20], ["Hello world   ", 220]]
       annotations: [[20, 86], [220, 286], [20, 86], [220, 286]]
-    wasm:
-      lines:
-        - [["Hello world   ", 20], ["Hello world   ", 220]]
-      annotations: [[21, 86], [220, 286], [20, 86], [220, 286]]
-    knownDifference: "Wasm starts the link of text drawn as typed at its first glyph, native at its start, as before right-to-left text"
+    wasm: same
   rtl right:
     native:
       lines:
         - [["Hello world   ", 134.02], ["Hello world   ", 341.55]]
       annotations: [[134, 200], [341.5, 400], [134, 200], [341.5, 400]]
-    wasm:
-      lines:
-        - [["Hello world   ", 134.02], ["Hello world   ", 341.55]]
-      annotations: [[135, 200], [341.5, 400], [134, 200], [341.5, 400]]
-    knownDifference: "Wasm starts the link of text drawn as typed at its first glyph, native at its start, as before right-to-left text"
+    wasm: same

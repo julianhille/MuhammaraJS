@@ -134,12 +134,12 @@ export const line = function line(coordinates = [], options = {}) {
   if (options === null) options = {};
   if (typeof coordinates === "number") {
     // line(startX, startY, endX, endY, options?), as in Wasm.
-    const [startX, startY, endX, endY, lineOptions = {}] = arguments;
+    const [startX, startY, endX, endY, lineOptions] = arguments;
     coordinates = [
       [startX, startY],
       [endX, endY],
     ];
-    options = lineOptions;
+    options = lineOptions ?? {};
   }
   if (coordinates.length < 2) {
     if (coordinates.length) this.moveTo(coordinates[0][0], coordinates[0][1]);

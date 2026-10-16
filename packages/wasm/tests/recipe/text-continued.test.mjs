@@ -536,12 +536,12 @@ describe("Text - Continued", function () {
       var Recipe = await getRecipe();
       assert.throws(
         () => new Recipe().text("X", 50, 50, flowOptions),
-        /A page is required for coordinates/,
+        /No page is active; call createPage\(\) or editPage\(\) first/,
       );
       var recipe = new Recipe().createPage(200, 200).endPage();
       assert.throws(
         () => recipe.text("X", 50, 50, flowOptions),
-        /A page is required for coordinates/,
+        /No page is active; call createPage\(\) or editPage\(\) first/,
       );
       var bytes = recipe
         .createPage(200, 200)

@@ -108,12 +108,13 @@ export const _registerFont = function _registerFont(
 };
 
 /**
- * Pick the registered font file for the family and bold/italic options,
- * falling back to Helvetica when the family, style or file is unavailable.
+ * Pick the registered font file for the family and bold/italic options:
+ * the family's regular face when the style is unavailable.
  * @private
  * @param {Recipe} self - The recipe instance.
  * @param {Object} [options] - Text options: font, and bold/isBold, italic/isItalic.
  * @returns {*} The platform's font reference.
+ * @throws {Error} If the family is not registered, or there is no default one.
  */
 function _getFontFile(self, options = {}) {
   let fontFile;
@@ -128,21 +129,17 @@ function _getFontFile(self, options = {}) {
           ? FontSlot.BOLD
           : FontSlot.REGULAR;
 
-  if (options.font) {
-    const fontFamily = self.fonts[options.font.toLowerCase()];
-    if (fontFamily) {
-      fontFile = fontFamily[type];
-    }
-  }
-
-  // the platform's default family when the font is unavailable
-  const fallback = self.fonts[self.platform.defaultFontFamily] || {};
-  if (!fontFile || !self.platform.fontExists(fontFile)) {
-    fontFile = fallback[type];
-  }
-
-  if (!fontFile) {
-    fontFile = fallback[FontSlot.REGULAR];
+  // The named family, or the platform's default one. An unknown name throws
+  // rather than drawing in another font, and a missing style uses the
+  // family's regular face, so the text keeps its typeface.
+  const name = options.font ?? self.platform.defaultFontFamily;
+  const family =
+    name === undefined ? undefined : self.fonts[String(name).toLowerCase()];
+  const usable = (file) => file && self.platform.fontExists(file);
+  if (family)
+    fontFile = usable(family[type]) ? family[type] : family[FontSlot.REGULAR];
+  if (!usable(fontFile)) {
+    throw new Error(`Unknown font: ${options.font ?? "(none)"}`);
   }
 
   return fontFile;

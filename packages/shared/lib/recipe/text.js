@@ -415,8 +415,11 @@ export const _makeTextBox = function _makeTextBox(options) {
 export const text = function text(text = "", x, y, options = {}) {
   // null options act like omitted options.
   if (options === null) options = {};
+  // Without a page the text would be lost, so say so.
   if (!this.pageContext) {
-    return this;
+    throw new TypeError(
+      "No page is active; call createPage() or editPage() first",
+    );
   }
   // A call with coordinates starts a new text box, so an open flow is drawn
   // first instead of being discarded.

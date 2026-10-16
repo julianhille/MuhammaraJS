@@ -145,7 +145,12 @@ function createNativePlatform(muhammara) {
      * @returns {Uint8Array} The bytes.
      */
     readBytes(file) {
-      return typeof file === "string" ? fs.readFileSync(file) : file;
+      if (typeof file === "string") return fs.readFileSync(file);
+      if (file instanceof ArrayBuffer) return new Uint8Array(file);
+      if (ArrayBuffer.isView(file) && !(file instanceof Uint8Array)) {
+        return new Uint8Array(file.buffer, file.byteOffset, file.byteLength);
+      }
+      return file;
     },
 
     /**

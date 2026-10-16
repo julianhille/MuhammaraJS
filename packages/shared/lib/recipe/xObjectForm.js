@@ -69,7 +69,8 @@ export const xObjectForm = class xObjectForm {
     xObject.pdfWriter = pdfWriter;
     xObject.getGsName = this.getGsName;
     xObject.getCsName = this.getCsName;
-    xObject.end = this.end;
+    // A Wasm form ends itself; a native form is ended by its writer.
+    if (typeof xObject.end !== "function") xObject.end = this.end;
     xObject.get = this.get;
     xObject.set = this.set;
     xObject.fill = this.fill;

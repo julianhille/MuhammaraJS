@@ -50,7 +50,8 @@ import * as m_vector from "./vector.js";
  *   condition identifier, such as `sRGB IEC61966-2.1`.
  * @param {boolean} [options.xmp] - Write XMP metadata that mirrors the Info values of the PDF, in place of the packet of a source PDF that is edited.
  * @param {number} [options.version] - The PDF version of a new PDF: 1.0 through
- *   1.7 or 2.0. Other values fall back to 1.7.
+ *   1.7 or 2.0, or 10 through 17 or 20. Other values fall back to 1.7.
+ * @param {boolean} [options.compress=true] - Flate-compress the streams.
  * @param {string} [options.author] - The author
  * @param {string} [options.title] - The title
  * @param {string} [options.subject] - The subject
@@ -129,9 +130,9 @@ class Recipe {
     const iccProfile = this.options.pdfa?.iccProfile;
     this.pdfa_ = pdfaOptions(
       this.options,
-      typeof iccProfile === "string"
-        ? this.platform.readBytes(iccProfile)
-        : iccProfile,
+      iccProfile === undefined
+        ? undefined
+        : this.platform.readBytes(iccProfile),
       this.isNewPDF,
       Object.keys(this.encryptOptions || {}).length > 0,
     );
@@ -140,7 +141,12 @@ class Recipe {
     );
     if (this.isNewPDF) {
       this._output = this.platform.newWriter(
-        Object.assign({}, this.encryptOptions, { version }),
+        Object.assign(
+          {},
+          this.encryptOptions,
+          { version },
+          this._compression(),
+        ),
       );
       this.writer = this._output.writer;
     } else {
@@ -148,7 +154,7 @@ class Recipe {
       try {
         this._output = this.platform.modifyWriter(
           this.src,
-          Object.assign({}, this.encryptOptions),
+          Object.assign({}, this.encryptOptions, this._compression()),
         );
       } catch (err) {
         throw new Error(err);
@@ -182,6 +188,8 @@ class Recipe {
    * @returns {number} The matching `ePDFVersion*` constant.
    */
   _getVersion(version) {
+    // 10 through 17 and 20 name the same versions as 1.0 through 2.0.
+    if ([10, 11, 12, 13, 14, 15, 16, 17, 20].includes(version)) version /= 10;
     const supportedVersions = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 2.0];
     if (!supportedVersions.includes(version)) {
       version = 1.7;
@@ -189,6 +197,21 @@ class Recipe {
     version = this.muhammara[`ePDFVersion${version * 10}`];
 
     return version;
+  }
+
+  /**
+   * The writer's stream compression option, when the Recipe was given one.
+   * @private
+   * @returns {{compress?: boolean}} The option to pass to the writer.
+   * @throws {TypeError} If `compress` is given and is not a boolean.
+   */
+  _compression() {
+    const { compress } = this.options;
+    if (compress === undefined) return {};
+    if (typeof compress !== "boolean") {
+      throw new TypeError("compress must be a boolean");
+    }
+    return { compress };
   }
 
   /**
@@ -383,7 +406,7 @@ class Recipe {
         firstPass.set([13, 10], bytes.length);
         this._output = this.platform.modifyWriter(
           firstPass,
-          Object.assign({}, this.encryptOptions),
+          Object.assign({}, this.encryptOptions, this._compression()),
         );
         this.writer = this._output.writer;
 

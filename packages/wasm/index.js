@@ -403,6 +403,16 @@ async function createRuntime(options) {
 
   var api = {
     ...constants,
+    // The value sets native carries on its API object.
+    DeviceColorSpace,
+    DrawingPathType,
+    EEncoding,
+    ETokenSeparator,
+    ImageFit,
+    LineCapStyle,
+    ObjectReplacementScope,
+    PDFImageType,
+    PageBox,
     PDFPage,
     PDFDate,
     PDFTextString,
@@ -675,6 +685,7 @@ async function createRuntime(options) {
     api,
     module,
     helpers,
+    assets: { fonts, images, pdfs },
     normalizeBytes,
     normalizeBytesAsync,
     assertOutputSize,
@@ -731,11 +742,9 @@ export async function createRecipe(options) {
     api: muhammara,
     module,
     helpers,
+    assets,
     normalizeBytes,
     normalizeBytesAsync,
-    assertOutputSize,
-    rawObjectsContext,
-    resourcesDictionary,
   } = await createRuntime(moduleOptions);
   var defaultFont;
   if (fontSource === undefined) {
@@ -752,34 +761,13 @@ export async function createRecipe(options) {
       loadBytes: () => fontBytes,
     };
   }
-  var { removeFile } = helpers;
   return createRecipeFactory({
-    defaultFont,
+    api: muhammara,
     module,
-    encoder,
+    assets,
     normalizeBytes,
     normalizeBytesAsync,
-    createReader: muhammara.createReader,
-    createWriterToModify: muhammara.createWriterToModify,
-    recrypt: muhammara.recrypt,
-    valueTypes: {
-      PDFTextString: muhammara.PDFTextString,
-      PDFDate: muhammara.PDFDate,
-    },
-    pageBoxes: {
-      media: muhammara.ePDFPageBoxMediaBox,
-      crop: muhammara.ePDFPageBoxCropBox,
-      bleed: muhammara.ePDFPageBoxBleedBox,
-      trim: muhammara.ePDFPageBoxTrimBox,
-      art: muhammara.ePDFPageBoxArtBox,
-    },
-    registerWriterFont: muhammara.registerFont.bind(muhammara),
-    unregisterWriterFont: muhammara.unregisterFont.bind(muhammara),
-    removeFile,
     withString: helpers.withString,
-    withDoubles: helpers.withDoubles,
-    rawObjectsContext,
-    resourcesDictionary,
-    assertOutputSize,
+    defaultFont,
   });
 }

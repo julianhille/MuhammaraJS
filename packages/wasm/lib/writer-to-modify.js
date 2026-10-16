@@ -177,6 +177,8 @@ export function createWriterToModifyFactory({
      * @throws {TypeError} If the name is not registered or the format differs.
      */
     function imagePath(name, expectedType) {
+      // A registered PDF is an image source too, as a PDF path is on native.
+      if (expectedType === undefined && pdfs.has(name)) return pdfs.get(name);
       if (typeof name !== "string" || !images.has(name))
         throw new TypeError("A registered image name is required");
       var type = imageTypes.get(name);
@@ -2095,8 +2097,8 @@ export function createWriterToModifyFactory({
        * Starts a form XObject; draw through `getContentContext()`, then call `end()`.
        * @param {number} left - Bounding box left.
        * @param {number} bottom - Bounding box bottom.
-       * @param {number} right - Bounding box right, greater than `left`.
-       * @param {number} top - Bounding box top, greater than `bottom`.
+       * @param {number} right - Bounding box right.
+       * @param {number} top - Bounding box top.
        * @param {number} [objectId] - Reserved object ID.
        * @returns {ModifierFormXObject} The open form.
        * @throws {RangeError} If the rectangle is invalid or `objectId` is invalid.
@@ -2104,11 +2106,7 @@ export function createWriterToModifyFactory({
        */
       createFormXObject: function (left, bottom, right, top, objectId) {
         requireOpen();
-        if (
-          ![left, bottom, right, top].every(Number.isFinite) ||
-          right <= left ||
-          top <= bottom
-        ) {
+        if (![left, bottom, right, top].every(Number.isFinite)) {
           throw new RangeError("A valid form rectangle is required");
         }
         objectId = optionalObjectId(objectId);
@@ -3515,6 +3513,9 @@ export function createWriterToModifyFactory({
         if (options && typeof options === "object" && "password" in options) {
           throw new TypeError("PDF passwords are not supported in Wasm");
         }
+        // A registered PDF name, as native takes a path.
+        if (typeof sourceBytes === "string" && pdfs.has(sourceBytes))
+          sourceBytes = module.FS.readFile(pdfs.get(sourceBytes));
         sourceBytes = normalizeBytes(sourceBytes, "PDF input");
         var sourcePath = `/pdfs/${state.nextPdf++}.pdf`;
         module.FS.writeFile(sourcePath, sourceBytes);

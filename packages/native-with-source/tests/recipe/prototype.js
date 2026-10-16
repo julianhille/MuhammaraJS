@@ -24,6 +24,7 @@ describe("Recipe prototype", function () {
       "_calibrateCoordinate",
       "_calibrateCoordinateForAnnots",
       "_centrify",
+      "_compression",
       "_colorNumberToRGB",
       "_createExtGStates",
       "_createWriter",
