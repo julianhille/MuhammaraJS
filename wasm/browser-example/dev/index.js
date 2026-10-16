@@ -762,6 +762,10 @@ export async function createRecipe(options) {
     createReader: muhammara.createReader,
     createWriterToModify: muhammara.createWriterToModify,
     recrypt: muhammara.recrypt,
+    valueTypes: {
+      PDFTextString: muhammara.PDFTextString,
+      PDFDate: muhammara.PDFDate,
+    },
     pageBoxes: {
       media: muhammara.ePDFPageBoxMediaBox,
       crop: muhammara.ePDFPageBoxCropBox,
