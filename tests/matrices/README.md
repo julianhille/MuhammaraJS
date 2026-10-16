@@ -2,12 +2,12 @@
 
 A test matrix runs the same cases on native and Wasm and checks both against
 one set of expected output, so the two ends keep behaving alike. Behaviour
-that belongs to one end only, or is meant to differ, is tested in that
-package's own tests.
+that belongs to one end only, or is meant to differ, is tested in
+`tests/native/` or `tests/wasm/`.
 
 ## Layout
 
-Each matrix has its own folder, such as `direction-matrix/`:
+Each matrix has its own folder, such as `direction/`:
 
 - `cases/<kind>/<scenario>.yml`: one scenario per file, named after what it
   draws. A file holds the scenario's input and the expected output of every
@@ -16,14 +16,10 @@ Each matrix has its own folder, such as `direction-matrix/`:
   what both ends must agree on, checks the properties, and writes the
   expected output back.
 
-Each package has a thin runner that draws every case with its own API and
-hands the result to `matrix.cjs`:
-
-- native: `packages/native-with-source/tests/recipe/<name>.js`
-- Wasm: `packages/wasm/tests/recipe/<name>.test.mjs`
-
-The runners are part of each package's `npm test`, and both CI workflows run
-when `test-matrices/**` changes.
+One runner per matrix draws every case on each selected end through
+`tests/support/ends.mjs` and hands the result to `matrix.cjs`:
+`tests/matrices/<name>.test.mjs`. It runs with `npm run test:shared`, and
+both CI workflows run when `tests/**` or `packages/shared/**` changes.
 
 ## A scenario file
 
@@ -45,7 +41,7 @@ expected:
   `Two Hebrew words with points: rtl, char space 3, right aligned`.
 - `kind` picks how the scenario is drawn, which variations it is drawn in,
   and which properties those must keep. The kinds are defined in
-  `matrix.cjs`. In `direction-matrix` they are:
+  `matrix.cjs`. In `direction` they are:
   - `single`: one `text()` call. It takes `text` and is drawn in every
     direction, character spacing and alignment.
   - `fit`: one right-aligned `text()` call with `charSpace` in a box of
@@ -96,8 +92,7 @@ When output changes on purpose, write each end's output into the files and
 review the diff:
 
 ```sh
-UPDATE_DIRECTION_MATRIX=1 npm test --workspace=@muhammara/native-with-source
-UPDATE_DIRECTION_MATRIX=1 npm test --workspace=@muhammara/wasm
+UPDATE_DIRECTION_MATRIX=1 npx mocha tests/matrices/text-direction.test.mjs
 ```
 
 Each end writes only its own output, and the input above `expected:` stays as
@@ -106,7 +101,8 @@ written. To add a scenario, add a file with its input and an empty
 
 ## Adding a matrix
 
-Create a folder with a `cases/` folder and a `matrix.cjs`, and add a runner
-to each package; `direction-matrix/matrix.cjs` is the starting point. Once a
+Create a folder with a `cases/` folder and a `matrix.cjs`, and a runner
+`tests/matrices/<name>.test.mjs`; `direction/matrix.cjs` and
+`text-direction.test.mjs` are the starting point. Once a
 second matrix needs the same loading and writing of expected output, move
 that part into a shared helper here.
