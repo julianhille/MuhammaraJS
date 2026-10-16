@@ -51,6 +51,17 @@ muhammara
   .getInfoDictionary()
   // @ts-expect-error getAdditionalInfoEntries() takes no key.
   .getAdditionalInfoEntries("Company");
+// null removes a date
+muhammara
+  .createWriter("info.pdf")
+  .getDocumentContext()
+  .getInfoDictionary()
+  .setModDate(null);
+muhammara
+  .createWriter("info.pdf")
+  .getDocumentContext()
+  .getInfoDictionary()
+  .setCreationDate(null);
 var colorOptions: muhammara.ColorOptions = { colorspace: deviceColorSpace };
 void [pageBoxName, imageKind, textEncoding, colorOptions];
 var computedColorspace: string = "rgb";

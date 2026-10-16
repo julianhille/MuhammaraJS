@@ -31,7 +31,7 @@ names and members: `TextWrap`, `TextAlign`, `HorizontalAlign`, `VerticalAlign`, 
 `LineCap`, `LineJoin`, `ArrowAt`, `ArrowType`, `TriangleTrait`,
 `TrianglePosition`, `PageLayout`, `PageSize`, `FontStyle`, `Permission`,
 `Coordinate`, `Colorspace`, `AnnotSubtype`, `AnnotFlag`, `AnnotIcon`,
-`ChromaCommand`, and `TextDirection`. Wasm also has `Recipe.StructureFormat` for `structure()`; native's
+`ChromaCommand`, `TextDirection`, `PdfA`, and `AFRelationship`. Wasm also has `Recipe.StructureFormat` for `structure()`; native's
 `Recipe.Source` has no Wasm counterpart because Wasm Recipe never writes to a
 path.
 

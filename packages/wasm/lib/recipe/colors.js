@@ -130,13 +130,22 @@ export function colorModel(recipe, value, options = {}) {
     value = known || value;
   }
   var code = hex(value || "");
+  // an unknown name is a missing color, as native
+  if (name && !registered && !/^[0-9a-f]*$/i.test(code)) code = "";
   if (!colorspace)
-    colorspace = deviceColorspaceByLength[code.length] || Colorspace.RGB;
+    colorspace =
+      deviceColorspaceByLength[code.length] ||
+      // a missing color is that of the PDF/A output intent
+      recipe._pdfa?.space.colorspace ||
+      Colorspace.RGB;
   var separationName = registered ? name : options.colorName || "";
   var separation =
     colorspace === Colorspace.SEPARATION && separationName !== "";
   if (colorspace === Colorspace.SEPARATION)
-    colorspace = deviceColorspaceByLength[code.length] || Colorspace.RGB;
+    colorspace =
+      deviceColorspaceByLength[code.length] ||
+      recipe._pdfa?.space.colorspace ||
+      Colorspace.RGB;
   if (
     code.length !== codeLengthByColorspace[colorspace] ||
     !/^[0-9a-f]+$/i.test(code)
@@ -261,6 +270,8 @@ export function createSeparationMethods({
           .writeName(alternateColorspaceNames[model.alternate])
           .writeIndirectObjectReference(tintTransform)
           .endArray();
+        // endobj on its own line, as PDF/A requires
+        objects.endLine();
         objects.endIndirectObject();
       } finally {
         if (active) this.resumeContext();

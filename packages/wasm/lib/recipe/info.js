@@ -155,16 +155,22 @@ export function createInfoMethods({
      * document (an `AFRelationship` value, default `Unspecified`), and its
      * modification date (default now).
      * @returns {Recipe} The Recipe instance.
-     * @throws {TypeError} If the name is empty, the file is no bytes, or the
-     * relationship is unknown.
-     * @throws {Error} After endPDF(), for a source PDF, or when the PDF/A level
-     * does not allow attached files.
+     * @throws {TypeError} If the name is empty, the file is no bytes, the MIME
+     * type is no bare `type/subtype`, the description no string, the
+     * modDate no valid Date, or the relationship is unknown.
+     * @throws {Error} After endPDF(), for a source PDF, with insertPage(), or
+     * when the PDF/A level does not allow attached files.
      */
     attach: function (name, file, options) {
       if (this._endedBytes || this._endError) {
         throw new Error("PDF writer has ended");
       }
       if (this._sourceMode) throw new Error("attach() applies to a new PDF");
+      if (this._insertions) {
+        throw new Error(
+          "insertPage() cannot be combined with pdfa or attach()",
+        );
+      }
       requirePdfaAllows(this._pdfa, PdfAFeature.ATTACHMENTS);
       var bytes = file instanceof ArrayBuffer ? new Uint8Array(file) : file;
       if (!(bytes instanceof Uint8Array)) {
@@ -177,13 +183,15 @@ export function createInfoMethods({
     },
 
     /**
-     * Writes canonical creation and modification information.
+     * Writes canonical creation and modification information, and the XMP
+     * packet, the PDF/A output intent and the attached files.
      *
      * @name _writeCanonicalInfo
      * @function
      * @memberof Recipe#
      * @private
-     * @returns {void}
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If a PDF/A-4f document has no attached file.
      */
     _writeCanonicalInfo: function () {
       var info = this._sourceMode

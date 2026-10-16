@@ -51,7 +51,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   (`Recipe.AFRelationship`) [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
 - Remove the creation or modification date of an Info dictionary with
   `setCreationDate(null)` and `setModDate(null)` [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
-
 - Write XMP metadata that mirrors the Info dictionary with the new `xmp` option
   of Recipe, and read the XMP packet of a source PDF with `recipe.xmp()`. An
   edit keeps the existing packet, or, with `xmp: true`, replaces it with one
@@ -91,8 +90,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `source-Creator`, `source-Producer` and `source-ModDate` of the edited source
   over those it carries from an earlier edit, as `@muhammara/wasm` does
   [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
-- Start the objects that native Recipe appends when it writes annotations on
-  their own line, after the `%%EOF` of the first pass, as PDF/A requires [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
+- Start the objects that native Recipe appends to an output file when it writes
+  annotations on their own line, after the `%%EOF` of the first pass, as PDF/A
+  requires [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
 - Keep the custom text Info entries of a source PDF, empty ones included, in their
   original spelling when Recipe edits it. They used to be dropped by the next
   edit

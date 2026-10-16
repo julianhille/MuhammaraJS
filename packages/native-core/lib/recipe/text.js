@@ -430,9 +430,14 @@ exports.text = function text(text = "", x, y, options = {}) {
   readDirection(rawOptions.direction);
   // Reject invalid markup annotations before any text is drawn.
   for (let key in rawOptions) {
-    if (this._getTextMarkupAnnotationSubtype(key) && rawOptions[key]) {
+    const subtype = this._getTextMarkupAnnotationSubtype(key);
+    if (subtype && rawOptions[key]) {
       const markup = typeof rawOptions[key] === "object" ? rawOptions[key] : {};
-      this._validateAnnot({ ...markup, flag: rawOptions.flag });
+      // the markup covers its text, so it has an area
+      this._validateAnnot(
+        { ...markup, flag: rawOptions.flag, width: 1, height: 1 },
+        subtype,
+      );
     }
   }
   if (typeof x !== "object" && x !== undefined) {
@@ -1760,7 +1765,9 @@ exports._layoutText = function _layoutText(textObjects, textBox, pathOptions) {
     // Want to allow empty string to pass through. Undefined and null elements, stay out!
     if (textObject.value !== undefined && textObject.value !== null) {
       textObject.styles.color = textObject.styles.color
-        ? this._transformColor(textObject.styles.color)
+        ? this._transformColor(textObject.styles.color, {
+            colorspace: this.options.colorspace,
+          })
         : pathOptions.color;
       atEnd = atEnd || textObject === lastText;
       const { toWriteTextObjects: newToWriteObjects, paragraphHeight } =

@@ -5,7 +5,7 @@
 // Uses `verapdf` from PATH, or the command in VERAPDF, and otherwise the
 // verapdf/cli Docker image.
 import { spawnSync } from "node:child_process";
-import { readdirSync, rmSync } from "node:fs";
+import { existsSync, readdirSync, rmSync } from "node:fs";
 import { relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -55,6 +55,7 @@ function run(command, args, cwd) {
  * @returns {string[]} The file names.
  */
 function samples(output) {
+  if (!existsSync(output)) return [];
   return readdirSync(output)
     .filter((file) => SAMPLE.test(file))
     .sort();

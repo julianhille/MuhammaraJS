@@ -138,9 +138,13 @@ export function createRecipeFactory({
      *
      * @param {ByteSource|RecipeOptions} [sourceOrOptions={}] Source PDF bytes or creation options.
      * @param {RecipeOptions} [options={}] Options used when modifying source bytes.
-     * @throws {TypeError} If Recipe options are not an object.
+     * @throws {TypeError} If Recipe options are not an object, or `pdfa` has an
+     * unknown level, an unusable profile or an `outputCondition` that is no
+     * string.
      * @throws {Error} If the source has no readable pages, as with an encrypted
-     *   source opened without its password, or the PDF cannot be created.
+     *   source opened without its password, the PDF cannot be created, or
+     *   `pdfa` is given for a source PDF, with another `version`, or with
+     *   encryption.
      */
     constructor(sourceOrOptions = {}, options = {}) {
       var hasSource =
@@ -547,8 +551,9 @@ export function createRecipeFactory({
       if (!Number.isFinite(value) || value < 0 || value > 1) {
         throw new RangeError("Opacity must be a finite number between 0 and 1");
       }
+      this._setOpacity(value);
       this._opacity = value;
-      return this._setOpacity(value);
+      return this;
     }
 
     /**
@@ -631,7 +636,8 @@ export function createRecipeFactory({
      * @param {object} [options={}] - Font, size, color, spacing, rotation, skew, opacity, and HTML decorations.
      * @returns {Recipe} The Recipe instance.
      * @throws {TypeError} If `charSpace` is not finite or a color is invalid.
-     * @throws {Error} If the font is not registered or the text cannot be drawn.
+     * @throws {Error} If the font is not registered or the text cannot be
+     *   drawn, or the PDF/A level does not allow transparency.
      */
     _drawText(value, x, y, options = {}) {
       var point = this._calibrateCoordinate(x, y);
@@ -656,6 +662,8 @@ export function createRecipeFactory({
         options.skewX ||
         options.skewY ||
         opacity !== undefined;
+      // checked before the q, so a refused run leaves no state behind
+      if (opacity < 1) requirePdfaAllows(this._pdfa, PdfAFeature.TRANSPARENCY);
       if (transformed) {
         this._save();
         if (opacity !== undefined) this._setOpacity(opacity);

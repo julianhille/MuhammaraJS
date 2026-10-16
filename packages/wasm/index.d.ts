@@ -934,10 +934,11 @@ export interface Recipe {
    * Attach a file to a new PDF, as an embedded file that the document lists as
    * associated with it. A file attached again under the same name replaces the
    * earlier one.
-   * @throws {TypeError} If the name is empty, the file is no bytes, or the
-   *   relationship is unknown.
-   * @throws {Error} After endPDF(), for a source PDF, or when the PDF/A level
-   *   does not allow attached files.
+   * @throws {TypeError} If the name is empty, the file is no bytes, the MIME
+   *   type is no bare `type/subtype`, the description no string, the
+   *   modDate no valid Date, or the relationship is unknown.
+   * @throws {Error} After endPDF(), for a source PDF, with insertPage(), or
+   *   when the PDF/A level does not allow attached files.
    */
   attach(
     name: string,

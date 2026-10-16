@@ -51,11 +51,15 @@ not bundle one, so pass the bytes of the profile your organization uses, as a
 The profile's color space decides which colors the document may use:
 
 - an RGB profile allows RGB and gray colors and images;
-- a CMYK profile allows CMYK and gray; pass `colorspace: Recipe.Colorspace.CMYK`
-  so that text and shapes default to CMYK;
+- a CMYK profile allows CMYK and gray;
 - a gray profile allows gray only.
 
-PDF/A-1 needs a profile of ICC version 2 or earlier.
+Text and shapes without a color of their own take the default color of the
+profile's color space. Recipe converts no colors: give the others in that
+color space or in gray.
+
+It must be a monitor or printer (output) profile, of ICC version 2 or earlier
+for PDF/A-1 and 4 or earlier for the other levels.
 
 ## What Recipe Rejects
 
@@ -65,18 +69,35 @@ document that does not conform:
 - **Transparency** in PDF/A-1: an opacity below 1, and PNG images with an alpha
   channel or a transparent color.
 - **Colors and images** the output intent does not describe, such as a CMYK
-  JPEG with an RGB profile. TIFF images are not inspected.
+  JPEG with an RGB profile, and annotation colors in PDF/A-1 without an RGB
+  profile.
 - **Hidden annotations**: annotations are flagged for printing, and the
-  `hidden`, `invisible` and `noview` flags throw.
-- **Annotations without an appearance stream** from PDF/A-2 on: comments and
-  links are allowed; highlights and other annotations with an area are not,
-  because Recipe writes no appearance for them.
+  `hidden`, `invisible`, `noview` and `togglenoview` flags throw.
+- **Annotation subtypes** other than those PDF/A-1 allows: text, link, free
+  text, line, square, circle, text markup, stamp, ink and popup.
+- **Annotations without an appearance stream** from PDF/A-2 on: links, popups
+  and comments without a size are allowed; highlights and other annotations
+  with an area are not, because Recipe writes no appearance for them.
 - **Custom Info entries** in PDF/A-4, which keeps the document information in
   XMP only; Recipe writes no Info dictionary there.
 - **Encryption**, and editing an existing PDF: the option applies to new PDFs.
+- **`insertPage()`**, which copies the pages into a new PDF without the PDF/A
+  settings or attached files.
+
+Recipe does not check:
+
+- TIFF images, and the pages it takes from other PDFs with `image()`,
+  `appendPage()` or `overlay()`.
+- Text the font has no glyph for, which PDF/A-2 and later forbid, and
+  control characters such as tabs and soft hyphens: pick a font that covers
+  the text and pass printable characters only.
+- The implementation limits: page sizes from 3 to 14400 units in PDF/A-2 and
+  3, strings of at most 32767 bytes (65535 in PDF/A-1), and numbers up to
+  32767 in PDF/A-1.
 
 The title, author, subject, keywords and dates are written to XMP metadata
-that identifies the PDF/A level; read it back with `recipe.xmp()`.
+that identifies the PDF/A level; read it back with `xmp()` on a Recipe of
+the written PDF.
 
 ## Attach Files
 

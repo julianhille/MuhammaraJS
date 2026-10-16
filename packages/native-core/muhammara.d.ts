@@ -3473,7 +3473,7 @@ declare namespace muhammara {
        * gray profile. The document's device colors must use its color space;
        * gray is always allowed.
        */
-      iccProfile: Buffer | string;
+      iccProfile: Uint8Array | string;
       /** The output condition identifier, such as `sRGB IEC61966-2.1`. Defaults to `Custom`. */
       outputCondition?: string;
     }
@@ -4412,14 +4412,15 @@ declare namespace muhammara {
      * replaces the earlier one.
      * @param name - The file name.
      * @param file - The file content, or its path.
-     * @throws {TypeError} If the name is empty, the file is no bytes, or the
-     *   relationship is unknown.
-     * @throws {Error} After endPDF(), for a source PDF, or when the PDF/A level
-     *   does not allow attached files.
+     * @throws {TypeError} If the name is empty, the file is no bytes, the MIME
+     *   type is no bare `type/subtype`, the description no string, the
+     *   modDate no valid Date, or the relationship is unknown.
+     * @throws {Error} After endPDF(), for a source PDF, with insertPage(), or
+     *   when the PDF/A level does not allow attached files.
      */
     attach(
       name: string,
-      file: Buffer | string,
+      file: Uint8Array | string,
       options?: Recipe.AttachOptions,
     ): Recipe;
 
@@ -4441,7 +4442,8 @@ declare namespace muhammara {
      * @param srcPageNumber - The one-based page number to be inserted from the other pdf.
      * @returns The recipe instance. Pages are inserted by `endPDF()`;
      *   Buffer sources do not support insertion.
-     * @throws {Error} If pages were deleted with deletePage() on this Recipe.
+     * @throws {Error} If pages were deleted with deletePage() on this Recipe,
+     *   or it writes PDF/A or attached files.
      * @throws {Error} If afterPageNumber is not a number.
      * @throws {TypeError} If pdfSrc or srcPageNumber is missing.
      */

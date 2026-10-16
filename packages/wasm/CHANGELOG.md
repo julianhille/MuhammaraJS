@@ -48,7 +48,6 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   (`Recipe.AFRelationship`) [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
 - Remove the creation or modification date of an Info dictionary with
   `setCreationDate(null)` and `setModDate(null)` [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
-
 - Write XMP metadata that mirrors the Info dictionary with the new `xmp` option
   of Recipe, and read the XMP packet of a source PDF with `recipe.xmp()`. An
   edit keeps the existing packet, or, with `xmp: true`, replaces it with one
@@ -75,6 +74,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Draw an unknown Recipe color name with the default RGB color, as native
+  does, instead of the default gray or CMYK color when the name has two or
+  eight letters [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
 - Open an encrypted Recipe source as native does: `new Recipe(bytes)` without
   the right `password` throws `Unable to read/edit PDF file (pages=0)` instead
   of opening a document with no pages, and `new Recipe(bytes, { password })`

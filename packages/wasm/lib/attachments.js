@@ -34,12 +34,27 @@ var AFRelationship = Object.freeze({
  * @param {Object} [options] - The options of `attach()`.
  * @returns {{name: string, bytes: Uint8Array, mimeType: string, description: (string|undefined), relationship: string, modDate: Date}}
  *   The file to write.
- * @throws {TypeError} If the name is empty or not a string, or the
- *   relationship is not an `AFRelationship` value.
+ * @throws {TypeError} If the name is empty or not a string, the MIME type is
+ *   no bare `type/subtype`, the description no string, the date no valid Date,
+ *   or the relationship is not an `AFRelationship` value.
  */
-function attachment(name, bytes, options = {}) {
+function attachment(name, bytes, options) {
+  // null options act like omitted options
+  options = options ?? {};
   if (typeof name !== "string" || name === "") {
     throw new TypeError("An attached file needs a name");
+  }
+  var mimeType = options.mimeType || "application/octet-stream";
+  // a bare type/subtype, without parameters, as the /Subtype name holds it
+  if (!/^[\w.+-]+\/[\w.+-]+$/.test(mimeType)) {
+    throw new TypeError(`Invalid MIME type ${mimeType}; use type/subtype`);
+  }
+  var { description, modDate = new Date() } = options;
+  if (description !== undefined && typeof description !== "string") {
+    throw new TypeError("An attached file's description must be a string");
+  }
+  if (!(modDate instanceof Date) || Number.isNaN(modDate.getTime())) {
+    throw new TypeError("An attached file's modDate must be a valid Date");
   }
   var relationship = options.relationship ?? AFRelationship.UNSPECIFIED;
   if (!Object.values(AFRelationship).includes(relationship)) {
@@ -50,10 +65,10 @@ function attachment(name, bytes, options = {}) {
   return {
     name,
     bytes,
-    mimeType: options.mimeType || "application/octet-stream",
-    description: options.description,
+    mimeType,
+    description,
     relationship,
-    modDate: options.modDate || new Date(),
+    modDate,
   };
 }
 
@@ -101,10 +116,15 @@ function writeAttachments(objects, files, { PDFTextString, PDFDate }) {
     return id;
   };
 
-  // the keys of a name tree are sorted
+  /**
+   * @param {Object} file - A file, see `attachment()`.
+   * @returns {string} Its name tree key, as one character per byte.
+   */
+  var key = (file) => String.fromCharCode(...text(file.name));
+  // the keys of a name tree are sorted by their bytes
   var specs = files
     .slice()
-    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+    .sort((a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0))
     .map((file) => {
       var params = dictionaryObject((dictionary) => {
         dictionary.writeKey("Size");

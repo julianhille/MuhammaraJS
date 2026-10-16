@@ -10,7 +10,9 @@ const utils = require("./utils");
  * @param {number} srcPageNumber - The one-based page number to be inserted from the other pdf.
  * @returns {Recipe} The recipe instance. Pages are inserted by `endPDF()`;
  *   Buffer sources do not support insertion.
- * @throws {Error} If pages were deleted with deletePage() on this Recipe.
+ * @throws {Error} If pages were deleted with deletePage() on this Recipe, or
+ *   it writes PDF/A or attached files, which the inserted pages' new PDF
+ *   would lose.
  * @throws {Error} If afterPageNumber is not a number.
  * @throws {TypeError} If pdfSrc or srcPageNumber is missing.
  */
@@ -21,6 +23,9 @@ exports.insertPage = function insertPage(
 ) {
   if (this.deletedPages?.size) {
     throw new Error("insertPage cannot be combined with deletePage");
+  }
+  if (this.pdfa_ || this.attachments_) {
+    throw new Error("insertPage() cannot be combined with pdfa or attach()");
   }
   if (isNaN(afterPageNumber)) {
     throw new Error("The afterPageNumber is inValid.");

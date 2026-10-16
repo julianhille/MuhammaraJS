@@ -2,7 +2,8 @@ const path = require("path");
 const fs = require("fs");
 const PDFWStreamForBuffer = require("./PDFWStreamForBuffer");
 var { standardInfoKeys } = require("./recipe-info");
-var { pdfaOptions } = require("./pdfa");
+// PdfA joins the constants here: pdfa.js needs recipe-constants itself
+var { PdfA, pdfaOptions } = require("./pdfa");
 var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
 
 /**
@@ -19,7 +20,7 @@ var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
  * @param {Object} [options.pdfa] - Write a new PDF as PDF/A, with the PDF
  *   version of the level, XMP metadata and an output intent.
  * @param {Recipe.PdfA} options.pdfa.level - The PDF/A level.
- * @param {Buffer|string} options.pdfa.iccProfile - The ICC profile of the
+ * @param {Uint8Array|string} options.pdfa.iccProfile - The ICC profile of the
  *   output intent, or its path: an RGB, CMYK or gray profile, whose color
  *   space the document's colors must use.
  * @param {string} [options.pdfa.outputCondition="Custom"] - The output
@@ -39,6 +40,10 @@ var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
  * @param {number} [options.userProtectionFlag] - Encryption permission flags, see `permission()`.
  * @param {string|string[]} [options.fontSrcPath] - Directory location(s) of additional fonts.
  * @throws {Error} If an existing source PDF cannot be read or opened for editing.
+ * @throws {TypeError} If `pdfa` has an unknown level, an unusable profile or
+ *   an `outputCondition` that is no string.
+ * @throws {Error} If `pdfa` is given for a source PDF, with another
+ *   `version`, or with encryption.
  */
 class Recipe {
   constructor(src, output, options = {}) {
@@ -340,6 +345,7 @@ class Recipe {
    *   argument for a path source.
    * @returns {*} The callback result, or undefined without a callback.
    * @throws {Error} If pages are being deleted while a page is still open.
+   * @throws {Error} If a PDF/A-4f document has no attached file.
    * @throws {Error} If finalization fails; later calls rethrow the same error.
    */
   endPDF(callback) {
@@ -383,16 +389,13 @@ class Recipe {
         (this.annotations && this.annotations.length > 0) ||
         (this.annotationsToWrite && this.annotationsToWrite.length > 0)
       ) {
-        // The first pass ends with %%EOF; the objects the second appends must
-        // start on their own line (PDF/A requires it).
-        const eol = Buffer.from("\r\n");
         if (this.isBufferSrc) {
           const oldStream = this.outStream;
           this.outStream = new PDFWStreamForBuffer();
 
           this.writer = this.muhammara.createWriterToModify(
             new this.muhammara.PDFRStreamForBuffer(
-              Buffer.concat([oldStream.buffer || Buffer.alloc(0), eol]),
+              oldStream.buffer || Buffer.alloc(0),
             ),
             this.outStream,
             Object.assign({}, this.encryptOptions, {
@@ -400,7 +403,9 @@ class Recipe {
             }),
           );
         } else {
-          fs.appendFileSync(this.output, eol);
+          // the first pass ends with %%EOF, and the objects the second
+          // appends to the file must start on their own line (PDF/A)
+          fs.appendFileSync(this.output, "\r\n");
           this.writer = this.muhammara.createWriterToModify(
             this.output,
             Object.assign({}, this.encryptOptions, {
@@ -548,7 +553,7 @@ function loadPrototypes() {
 loadPrototypes();
 
 // Named values for string options, for example Recipe.AnnotSubtype.HIGHLIGHT.
-Object.assign(Recipe, require("./recipe-constants"));
+Object.assign(Recipe, require("./recipe-constants"), { PdfA });
 
 const SharedRecipe = Recipe;
 
@@ -564,7 +569,7 @@ const SharedRecipe = Recipe;
 function createRecipe(muhammara) {
   class Recipe extends SharedRecipe {}
   Recipe.prototype.muhammara = muhammara;
-  Object.assign(Recipe, require("./recipe-constants"));
+  Object.assign(Recipe, require("./recipe-constants"), { PdfA });
   return Recipe;
 }
 

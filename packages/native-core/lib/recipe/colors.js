@@ -381,7 +381,12 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
   let colorspace = opt.colorspace || Colorspace.RGB;
   let wantColorModel = opt.wantColorModel || false;
   let colorName = opt.colorName || "";
-  let defaultColor = _defaultColor(colorspace);
+  // a separation's missing color takes the PDF/A output intent's space
+  let defaultColor = _defaultColor(
+    colorspace === Colorspace.SEPARATION
+      ? this.pdfa_?.space.colorspace
+      : colorspace,
+  );
   let transformation;
 
   if (Array.isArray(code)) {
@@ -396,8 +401,9 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
     const colors = this.knownColors[colorspace];
     let color = Object.hasOwn(colors, code) ? colors[code] : undefined;
     if (!color) {
+      // an unknown name is a missing color, as in Wasm
       color = "";
-      code = defaultColor;
+      code = "";
     } else {
       colorName = code;
 
@@ -419,7 +425,10 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
     colorspace =
       { 2: Colorspace.GRAY, 6: Colorspace.RGB, 8: Colorspace.CMYK }[
         `${code.length}`
-      ] || Colorspace.RGB;
+      ] ||
+      // a missing color is that of the PDF/A output intent
+      this.pdfa_?.space.colorspace ||
+      Colorspace.RGB;
     defaultColor = _defaultColor(colorspace);
   }
 

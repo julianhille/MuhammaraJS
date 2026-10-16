@@ -2,6 +2,9 @@
 // writes for them. Mirrored in packages/wasm/lib/pdfa.js; keep both files
 // identical apart from the module syntax.
 
+var AnnotSubtype = require("./recipe-constants").AnnotSubtype;
+var Colorspace = require("./recipe-constants").Colorspace;
+
 /**
  * The PDF/A levels (ISO 19005) Recipe writes, the `level` of the `pdfa`
  * Recipe option.
@@ -44,6 +47,11 @@ var PdfAFeature = Object.freeze({
    * stream for them, which PDF/A-2 and later require.
    */
   ANNOTATION_APPEARANCE: "annotations without an appearance stream",
+  /**
+   * Annotation colors, the /C entry: PDF/A-1 allows them only with an RGB
+   * output intent.
+   */
+  ANNOTATION_COLOR: "annotation colors without an RGB output intent",
   /**
    * Custom document information entries: PDF/A-4 keeps the document
    * information in XMP only, which has no place for them.
@@ -133,18 +141,57 @@ var PDFA_LEVELS = Object.freeze({
   }),
 });
 
-// The ICC color spaces an output intent profile may have: the number of
-// components and the device colors the profile does not describe. Gray is
-// allowed with every output intent.
+// The ICC color spaces an output intent profile may have, by their header
+// signature: the Recipe colorspace, the number of components and the device
+// colors the profile does not describe. Gray is allowed with every output
+// intent.
 var PROFILE_SPACES = Object.freeze({
-  "RGB ": { name: "RGB", components: 3, forbids: [PdfAFeature.CMYK] },
-  CMYK: { name: "CMYK", components: 4, forbids: [PdfAFeature.RGB] },
+  "RGB ": {
+    name: "RGB",
+    colorspace: Colorspace.RGB,
+    components: 3,
+    forbids: [PdfAFeature.CMYK],
+  },
+  CMYK: {
+    name: "CMYK",
+    colorspace: Colorspace.CMYK,
+    components: 4,
+    forbids: [PdfAFeature.RGB],
+  },
   GRAY: {
     name: "gray",
+    colorspace: Colorspace.GRAY,
     components: 1,
     forbids: [PdfAFeature.RGB, PdfAFeature.CMYK],
   },
 });
+
+/**
+ * @param {string[]} subtypes - `AnnotSubtype` values.
+ * @returns {string[]} The values in lower case, as subtypes match in any case.
+ */
+var lowerCase = (subtypes) => subtypes.map((one) => one.toLowerCase());
+
+// The annotation subtypes Recipe writes in PDF/A: those of PDF 1.4 that
+// PDF/A-1 allows, which no later level forbids.
+var PDFA_ANNOTATIONS = lowerCase([
+  AnnotSubtype.TEXT,
+  AnnotSubtype.LINK,
+  AnnotSubtype.FREE_TEXT,
+  AnnotSubtype.LINE,
+  AnnotSubtype.SQUARE,
+  AnnotSubtype.CIRCLE,
+  AnnotSubtype.HIGHLIGHT,
+  AnnotSubtype.UNDERLINE,
+  AnnotSubtype.SQUIGGLY,
+  AnnotSubtype.STRIKE_OUT,
+  AnnotSubtype.STAMP,
+  AnnotSubtype.INK,
+  AnnotSubtype.POPUP,
+]);
+
+// The subtypes that need no appearance stream even with an area.
+var WITHOUT_APPEARANCE = lowerCase([AnnotSubtype.LINK, AnnotSubtype.POPUP]);
 
 /**
  * Look up a PDF/A level.
@@ -167,10 +214,10 @@ function pdfaLevel(level) {
  * Read the color space and version of an ICC profile from its header.
  * @param {Uint8Array} profile - The profile.
  * @param {number} part - The PDF/A part the profile is for.
- * @returns {{name: string, components: number, forbids: string[]}} The
+ * @returns {{name: string, colorspace: string, components: number, forbids: string[]}} The
  *   color space.
- * @throws {TypeError} If the bytes are no ICC profile of an RGB, CMYK or gray
- *   color space, or a version the part does not allow.
+ * @throws {TypeError} If the bytes are no monitor or printer ICC profile of
+ *   an RGB, CMYK or gray color space, or of a version the part does not allow.
  */
 function profileSpace(profile, part) {
   /**
@@ -188,9 +235,16 @@ function profileSpace(profile, part) {
   if (!space) {
     throw new TypeError("pdfa.iccProfile must be an RGB, CMYK or gray profile");
   }
-  // PDF 1.4 knows ICC profiles up to version 2
-  if (part === 1 && profile[8] > 2) {
-    throw new TypeError("PDF/A-1 needs an ICC profile of version 2 or earlier");
+  if (!["mntr", "prtr"].includes(tag(12))) {
+    throw new TypeError(
+      "pdfa.iccProfile must be a monitor or printer (output) profile",
+    );
+  }
+  // PDF 1.4 knows ICC profiles up to version 2, later PDF up to version 4
+  if (profile[8] > (part === 1 ? 2 : 4)) {
+    throw new TypeError(
+      `PDF/A-${part} needs an ICC profile of version ${part === 1 ? 2 : 4} or earlier`,
+    );
   }
   return space;
 }
@@ -204,8 +258,8 @@ function profileSpace(profile, part) {
  * @returns {Object|null} The level of `options.pdfa`, see `pdfaLevel()`, with
  *   its `profile`, `space` and `condition`, and in `forbids` also the device
  *   colors the profile does not describe; or null without the option.
- * @throws {TypeError} If `pdfa.level` is not a `PdfA` value or the profile is
- *   unusable.
+ * @throws {TypeError} If `pdfa.level` is not a `PdfA` value, the profile is
+ *   unusable, or `pdfa.outputCondition` is no string.
  * @throws {Error} If the Recipe edits a PDF, asks for another PDF version, or
  *   encrypts.
  */
@@ -213,6 +267,10 @@ function pdfaOptions(options, profile, isNewPDF, encrypted) {
   if (options.pdfa === undefined) return null;
   var level = pdfaLevel(options.pdfa?.level);
   var space = profileSpace(profile, level.part);
+  var condition = options.pdfa.outputCondition || "Custom";
+  if (typeof condition !== "string") {
+    throw new TypeError("pdfa.outputCondition must be a string");
+  }
   if (!isNewPDF) throw new Error("The pdfa option applies to a new PDF");
   if (options.version !== undefined && options.version !== level.version) {
     throw new Error(
@@ -223,8 +281,13 @@ function pdfaOptions(options, profile, isNewPDF, encrypted) {
   return Object.assign({}, level, {
     profile,
     space,
-    condition: options.pdfa.outputCondition || "Custom",
-    forbids: level.forbids.concat(space.forbids),
+    condition,
+    forbids: level.forbids.concat(
+      space.forbids,
+      level.part === 1 && space.colorspace !== Colorspace.RGB
+        ? [PdfAFeature.ANNOTATION_COLOR]
+        : [],
+    ),
   });
 }
 
@@ -269,20 +332,36 @@ function requirePdfaAttachment(pdfa, count) {
  * @param {Object|null} pdfa - The PDF/A settings of the Recipe, see
  *   `pdfaOptions()`, or null when it does not write PDF/A.
  * @param {number} flags - The annotation flag bits.
- * @param {Object} [annotation] - What else the document must allow.
+ * @param {Object} annotation - What else the document must allow.
+ * @param {string} annotation.subtype - The annotation subtype, in any case.
  * @param {number} [annotation.opacity=1] - The annotation opacity.
- * @param {boolean} [annotation.sized=false] - Whether the annotation has an
- *   area and is no link, so that it needs an appearance stream.
+ * @param {number} [annotation.width=0] - The annotation width.
+ * @param {number} [annotation.height=0] - The annotation height.
+ * @param {boolean} [annotation.colored=false] - Whether the annotation has a
+ *   color.
  * @returns {number} The flag bits to write.
  * @throws {Error} If the flags hide the annotation, or the document does not
- *   allow the opacity or an annotation without an appearance stream.
+ *   allow the subtype, the opacity, the color or an annotation without an
+ *   appearance stream.
  */
-function pdfaAnnotationFlags(pdfa, flags, { opacity = 1, sized = false } = {}) {
+function pdfaAnnotationFlags(
+  pdfa,
+  flags,
+  { subtype, opacity = 1, width = 0, height = 0, colored = false },
+) {
   if (!pdfa) return flags;
+  var type = String(subtype).toLowerCase();
+  if (!PDFA_ANNOTATIONS.includes(type)) {
+    throw new Error(`PDF/A does not allow ${type} annotations`);
+  }
   if (opacity < 1) requirePdfaAllows(pdfa, PdfAFeature.TRANSPARENCY);
-  if (sized) requirePdfaAllows(pdfa, PdfAFeature.ANNOTATION_APPEARANCE);
-  // Invisible (1), Hidden (2) and NoView (32)
-  if (flags & 35) throw new Error("PDF/A does not allow hidden annotations");
+  // only an annotation without an area, a link or a popup needs no appearance
+  if ((width > 0 || height > 0) && !WITHOUT_APPEARANCE.includes(type)) {
+    requirePdfaAllows(pdfa, PdfAFeature.ANNOTATION_APPEARANCE);
+  }
+  if (colored) requirePdfaAllows(pdfa, PdfAFeature.ANNOTATION_COLOR);
+  // Invisible (1), Hidden (2), NoView (32) and ToggleNoView (256)
+  if (flags & 291) throw new Error("PDF/A does not allow hidden annotations");
   // Print (4)
   return flags | 4;
 }
@@ -374,7 +453,6 @@ module.exports = {
   PdfAFeature,
   imagePdfaFeatures,
   pdfaAnnotationFlags,
-  pdfaLevel,
   pdfaOptions,
   requirePdfaAllows,
   requirePdfaAttachment,

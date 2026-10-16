@@ -14,6 +14,7 @@
 
 const { linkPdf } = require("./annotation");
 const { miterLimitOption } = require("../recipe-options");
+const { PdfAFeature, requirePdfaAllows } = require("../pdfa");
 
 /**
  * Draw a circle
@@ -762,11 +763,14 @@ exports.lineWidth = function lineWidth(width) {
  * @param {number} value - The requested opacity from 0 (transparent) to 1 (opaque).
  * @returns {Recipe} The recipe instance.
  * @throws {RangeError} If the value is not a finite number from 0 to 1.
+ * @throws {Error} If the PDF/A level of the Recipe does not allow transparency.
  */
 exports.opacity = function opacity(value) {
   if (!Number.isFinite(value) || value < 0 || value > 1) {
     throw new RangeError("Opacity must be a finite number between 0 and 1");
   }
+  // at the call, as Wasm
+  if (value < 1) requirePdfaAllows(this.pdfa_, PdfAFeature.TRANSPARENCY);
   this.current.opacity = value;
   return this;
 };

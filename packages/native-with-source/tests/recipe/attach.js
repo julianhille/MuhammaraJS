@@ -72,7 +72,7 @@ describe("Recipe attach", function () {
     var bytes = create(
       (recipe) =>
         recipe
-          .attach("notes ä.txt", Buffer.from("hello"))
+          .attach("notes ä.txt", Buffer.from("hello"), null)
           .attach("data.xml", Buffer.from("<x>ä</x>"), {
             mimeType: "text/xml",
             description: "Die Daten",
@@ -102,6 +102,21 @@ describe("Recipe attach", function () {
         content: "hello",
       },
     ]);
+  });
+
+  it("sorts the names by their encoded bytes", function () {
+    var bytes = create(
+      (recipe) =>
+        recipe
+          .attach("\u00e4.txt", Buffer.from("a"))
+          .attach("\u20ac.txt", Buffer.from("b")),
+      "sort",
+    );
+    // PDFDocEncoding puts the euro sign (0xA0) before a-umlaut (0xE4)
+    assert.deepEqual(
+      attachments(bytes).files.map((file) => file.key),
+      ["\u20ac.txt", "\u00e4.txt"],
+    );
   });
 
   it("replaces a file attached again under the same name", function () {
@@ -136,6 +151,27 @@ describe("Recipe attach", function () {
     );
   });
 
+  it("cannot be combined with insertPage()", function () {
+    var source = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
+    var message = {
+      message: "insertPage() cannot be combined with pdfa or attach()",
+    };
+    var recipe = new Recipe(Buffer.from("new")).attach("a", Buffer.from("x"));
+    assert.throws(() => recipe.insertPage(0, source, 1), message);
+    recipe = new Recipe(Buffer.from("new")).insertPage(0, source, 1);
+    assert.throws(() => recipe.attach("a", Buffer.from("x")), message);
+    recipe = new Recipe(Buffer.from("new"), undefined, {
+      pdfa: {
+        level: Recipe.PdfA.A3B,
+        iccProfile: path.join(
+          __dirname,
+          "../TestMaterials/icc/sRGB-v2-micro.icc",
+        ),
+      },
+    });
+    assert.throws(() => recipe.insertPage(0, source, 1), message);
+  });
+
   it("rejects what it cannot attach", function () {
     var recipe = new Recipe(Buffer.from("new"));
     assert.throws(() => recipe.attach("", Buffer.from("x")), {
@@ -152,6 +188,29 @@ describe("Recipe attach", function () {
         name: "TypeError",
         message: "Unknown relationship Other; use an AFRelationship value",
       },
+    );
+    assert.throws(
+      () =>
+        recipe.attach("a", Buffer.from("x"), {
+          mimeType: "text/xml; charset=utf-8",
+        }),
+      {
+        name: "TypeError",
+        message: "Invalid MIME type text/xml; charset=utf-8; use type/subtype",
+      },
+    );
+    assert.throws(
+      () => recipe.attach("a", Buffer.from("x"), { description: 42 }),
+      {
+        name: "TypeError",
+        message: "An attached file's description must be a string",
+      },
+    );
+    [new Date("x"), 1234567890000].forEach((modDate) =>
+      assert.throws(() => recipe.attach("a", Buffer.from("x"), { modDate }), {
+        name: "TypeError",
+        message: "An attached file's modDate must be a valid Date",
+      }),
     );
     recipe.createPage(100, 100).endPage();
     var bytes = recipe.endPDF((output) => output);

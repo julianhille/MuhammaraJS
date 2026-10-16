@@ -308,6 +308,8 @@ async function usesLowLevelSurface() {
   syncModifier.end();
   modifier.requireCatalogUpdate();
   modifier.getDocumentContext().getInfoDictionary().title = "modified";
+  // null removes a date
+  modifier.getDocumentContext().getInfoDictionary().setModDate(null);
   modifier.createPDFTextString("text");
   modifier.createPDFDate();
   modifier.createPageModifier();
@@ -1061,6 +1063,7 @@ async function usesNamedValueSets() {
   // @ts-expect-error PDF text rendering modes are 0 to 7.
   context.Tr(8);
   var info = writer.getDocumentContext().getInfoDictionary();
+  info.setCreationDate(null);
   info.trapped = muhammara.EInfoTrappedTrue;
   var trapped: EInfoTrapped = info.trapped;
   void trapped;

@@ -376,7 +376,8 @@ export function createAnnotationMethods({ module, withString, withDoubles }) {
      * `text` argument supplies the contents and the default icon is `Comment`.
      * @returns {Recipe} The Recipe instance.
      * @throws {Error} If there is no active page, a flag is unknown, or a
-     * PDF/A document does not allow the flags or opacity.
+     * PDF/A document does not allow the subtype, flags, opacity or color, or an
+     * area without an appearance stream.
      * @throws {TypeError} If the options cannot form a valid PDF annotation.
      */
     comment: function (text = "", x, y, options = {}) {
@@ -400,7 +401,8 @@ export function createAnnotationMethods({ module, withString, withDoubles }) {
      * contents, replies, dimensions, flags, and rotation handling.
      * @returns {Recipe} The Recipe instance.
      * @throws {Error} If there is no active page, a flag is unknown, or a
-     * PDF/A document does not allow the flags or opacity.
+     * PDF/A document does not allow the subtype, flags, opacity or color, or an
+     * area without an appearance stream.
      * @throws {TypeError} If `subtype` is not a non-empty string or the
      * options cannot form a valid PDF annotation.
      */
@@ -543,11 +545,11 @@ export function createAnnotationMethods({ module, withString, withDoubles }) {
             this._pdfa,
             annotationFlags(source.flag ?? source.flags),
             {
+              subtype: annotation.subtype,
               opacity: source.opacity ?? 1,
-              sized:
-                width > 0 &&
-                height > 0 &&
-                annotation.subtype !== AnnotSubtype.LINK,
+              width,
+              height,
+              colored: color.length > 0,
             },
           );
           if (validateOnly) return 0;

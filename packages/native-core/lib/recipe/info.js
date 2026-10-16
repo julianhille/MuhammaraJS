@@ -74,8 +74,9 @@ function trappedValues(muhammara) {
  *   not included. Otherwise the recipe instance. A standard field set to an empty array is cleared; one without a value (such as `""`), and a custom one that is null or undefined, is left as it is.
  * @throws {TypeError} For an empty key, or Creator, Producer, CreationDate,
  *   ModDate, Trapped and the `source-*` entries, which Recipe writes itself.
- * @throws {Error} If the source information cannot be read, or options are
- *   given after endPDF().
+ * @throws {Error} If the source information cannot be read, options are
+ *   given after endPDF(), or a custom entry is given in a PDF/A-4 document,
+ *   which has no Info dictionary.
  */
 exports.info = function info(options) {
   if (!options) {
@@ -263,7 +264,8 @@ function openSourceReader(recipe) {
  * info(); then the XMP packet when the `xmp` option is set.
  * @private
  * @returns {Recipe} The recipe instance.
- * @throws {Error} If the source information cannot be read.
+ * @throws {Error} If the source information cannot be read, or a PDF/A-4f
+ *   document has no attached file.
  * @throws {Error} For a source that needs its user password, which Recipe
  *   cannot write, and for the `xmp` option on a source that keeps its
  *   metadata unencrypted.
@@ -374,11 +376,11 @@ exports._writeInfo = function _writeInfo() {
     setCatalogEntry(this.writer, "AF", this.attachmentIds_.associated);
   }
   if (this.pdfa_) {
-    setCatalogEntry(
-      this.writer,
-      "OutputIntents",
-      writeOutputIntents(this.writer.getObjectsContext(), this.pdfa_),
-    );
+    // once, as the attached files
+    this.outputIntentsId_ =
+      this.outputIntentsId_ ||
+      writeOutputIntents(this.writer.getObjectsContext(), this.pdfa_);
+    setCatalogEntry(this.writer, "OutputIntents", this.outputIntentsId_);
   }
   return this;
 };
@@ -449,7 +451,7 @@ function setCatalogEntry(writer, key, id) {
  * @memberof Recipe#
  * @function
  * @param {string} name - The file name.
- * @param {Buffer|string} file - The file content, or its path.
+ * @param {Uint8Array|string} file - The file content, or its path.
  * @param {Object} [options] - The options.
  * @param {string} [options.mimeType="application/octet-stream"] - The MIME type.
  * @param {string} [options.description] - A description of the file.
@@ -457,14 +459,18 @@ function setCatalogEntry(writer, key, id) {
  *   file relates to the document.
  * @param {Date} [options.modDate] - The modification date; now by default.
  * @returns {Recipe} The recipe instance.
- * @throws {TypeError} If the name is empty, the file is no bytes, or the
- *   relationship is unknown.
- * @throws {Error} After endPDF(), for a source PDF, or when the PDF/A level
- *   does not allow attached files.
+ * @throws {TypeError} If the name is empty, the file is no bytes, the MIME
+ *   type is no bare `type/subtype`, the description no string, the
+ *   modDate no valid Date, or the relationship is unknown.
+ * @throws {Error} After endPDF(), for a source PDF, with insertPage(), or
+ *   when the PDF/A level does not allow attached files.
  */
 exports.attach = function attach(name, file, options) {
   if (this.ended) throw new Error("PDF writer has ended");
   if (!this.isNewPDF) throw new Error("attach() applies to a new PDF");
+  if (this.insertInformation) {
+    throw new Error("insertPage() cannot be combined with pdfa or attach()");
+  }
   requirePdfaAllows(this.pdfa_, PdfAFeature.ATTACHMENTS);
   const bytes = typeof file === "string" ? fs.readFileSync(file) : file;
   if (!(bytes instanceof Uint8Array)) {

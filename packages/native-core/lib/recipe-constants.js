@@ -346,13 +346,6 @@ var TextAlign = Object.freeze({
 var TextDirection = require("./text-direction").TextDirection;
 
 /**
- * The PDF/A levels (ISO 19005) of the `pdfa` Recipe option.
- * @readonly
- * @enum {string}
- */
-var PdfA = require("./pdfa").PdfA;
-
-/**
  * How an attached file relates to the document, the `relationship` option of
  * `attach()`.
  * @readonly
@@ -375,7 +368,6 @@ module.exports = {
   TextWrap,
   TextAlign,
   TextDirection,
-  PdfA,
   AFRelationship,
   TableRowNth,
   LineCap,

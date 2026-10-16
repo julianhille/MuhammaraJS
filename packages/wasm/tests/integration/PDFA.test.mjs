@@ -9,6 +9,8 @@ var materials = new URL(
   "../../../native-with-source/tests/TestMaterials/",
   import.meta.url,
 );
+// sRGB-v2-micro.icc is the CC0 profile of Compact ICC Profiles
+// (https://github.com/saucecontrol/Compact-ICC-Profiles).
 var PROFILE = new Uint8Array(
   readFileSync(new URL("icc/sRGB-v2-micro.icc", materials)),
 );
@@ -154,6 +156,35 @@ function annotationFlags(bytes) {
   }
 }
 
+/**
+ * Reads the decoded content of the first page of a PDF.
+ * @param {Uint8Array} bytes The PDF.
+ * @returns {string} The content streams, as latin1.
+ */
+function pageContent(bytes) {
+  var reader = muhammara.createReader(bytes);
+  try {
+    var page = reader.parsePage(0).getDictionary();
+    var contents = reader.queryDictionaryObject(page, "Contents");
+    var streams =
+      contents.getType() === muhammara.ePDFObjectArray
+        ? Array.from({ length: contents.getLength() }, (_, i) =>
+            reader.queryArrayObject(contents, i),
+          )
+        : [contents];
+    return streams
+      .map((stream) => {
+        var input = reader.startReadingFromStream(stream);
+        var chunks = [];
+        while (input.notEnded()) chunks.push(...input.read(4096));
+        return new TextDecoder("latin1").decode(Uint8Array.from(chunks));
+      })
+      .join("\n");
+  } finally {
+    reader.end();
+  }
+}
+
 describe("PDF/A", function () {
   before(async function () {
     muhammara = await createMuhammaraWasm();
@@ -261,6 +292,21 @@ describe("PDF/A", function () {
       () => create(pdfa("1B", { iccProfile: changedProfile(8, "\u0004") })),
       { message: "PDF/A-1 needs an ICC profile of version 2 or earlier" },
     );
+    assert.throws(() => create(pdfa("1B", { outputCondition: 42 })), {
+      name: "TypeError",
+      message: "pdfa.outputCondition must be a string",
+    });
+    assert.throws(
+      () => create(pdfa("2B", { iccProfile: changedProfile(8, "\u0005") })),
+      { message: "PDF/A-2 needs an ICC profile of version 4 or earlier" },
+    );
+    assert.throws(
+      () => create(pdfa("1B", { iccProfile: changedProfile(12, "scnr") })),
+      {
+        message:
+          "pdfa.iccProfile must be a monitor or printer (output) profile",
+      },
+    );
     assert.throws(() => create(pdfa("1B"), { version: 1.7 }), {
       message: "PDF/A-1 is written as PDF 1.4",
     });
@@ -286,6 +332,10 @@ describe("PDF/A", function () {
     it("rejects transparency", function () {
       var message = { message: "PDF/A-1 does not allow transparency" };
       assert.throws(
+        () => create(pdfa("1B"), {}, (r) => r.opacity(0.5)),
+        message,
+      );
+      assert.throws(
         () =>
           create(pdfa("1B"), {}, (r) =>
             r.rectangle(10, 10, 50, 50, { opacity: 0.5 }),
@@ -298,6 +348,26 @@ describe("PDF/A", function () {
             r.image(image("png/original.png"), 10, 10),
           ),
         message,
+      );
+    });
+
+    it("leaves the page as it was after a refused call", function () {
+      var cmyk = pdfa("1B", { iccProfile: changedProfile(16, "CMYK") });
+      var drawn = (refused) =>
+        pageContent(
+          create(cmyk, {}, (r) => {
+            refused(r);
+            r.rectangle(10, 10, 50, 50, { color: "#ff00ff00" });
+          }),
+        );
+      assert.equal(
+        drawn((r) => {
+          assert.throws(() => r.opacity(0.5));
+          assert.throws(() => r.rectangle(10, 10, 50, 50, { opacity: 0.5 }));
+          assert.throws(() => r.text("x", 10, 10, { opacity: 0.5 }));
+          assert.throws(() => r.text("x", 10, 10, { highlight: true }));
+        }),
+        drawn(() => {}),
       );
     });
 
@@ -324,8 +394,14 @@ describe("PDF/A", function () {
         (r) =>
           r
             .rectangle(10, 10, 50, 50, { color: "#ff0000", opacity: 0.5 })
+            .rectangle(70, 10, 50, 50, {
+              color: "#ff0000",
+              colorspace: Recipe.Colorspace.SEPARATION,
+              colorName: "Spot",
+            })
             .image(image("png/original.png"), 10, 100, { width: 50 })
-            .comment("note", 50, 300, { opacity: 0.5 }),
+            .comment("note", 50, 300, { opacity: 0.5 })
+            .annot(50, 350, "Popup", { width: 100, height: 20 }),
         "2B-transparency",
       );
     });
@@ -335,6 +411,16 @@ describe("PDF/A", function () {
         () =>
           create(pdfa("2U"), {}, (r) =>
             r.annot(50, 400, "Highlight", { width: 100, height: 20 }),
+          ),
+        {
+          message:
+            "PDF/A-2 does not allow annotations without an appearance stream",
+        },
+      );
+      assert.throws(
+        () =>
+          create(pdfa("2B"), {}, (r) =>
+            r.comment("note", 50, 400, { width: 100 }),
           ),
         {
           message:
@@ -459,12 +545,31 @@ describe("PDF/A", function () {
           ),
         cmykMessage,
       );
-      var bytes = create(cmyk, { colorspace: Recipe.Colorspace.CMYK }, (r) =>
+      // the default colors are the output intent's
+      var bytes = create(cmyk, {}, (r) =>
         r
           .rectangle(10, 10, 50, 50, { color: "#ff00ff00" })
-          .rectangle(10, 100, 50, 50, { color: "#80" }),
+          .rectangle(10, 100, 50, 50, { color: "#80" })
+          .rectangle(10, 200, 50, 50)
+          .rectangle(10, 250, 50, 50, { color: "nonexistent" })
+          .rectangle(10, 275, 50, 50, { color: "absent" })
+          // a spot color without a color of its own has a CMYK alternate
+          .rectangle(10, 325, 50, 50, {
+            colorspace: Recipe.Colorspace.SEPARATION,
+            colorName: "Spot",
+            fill: "#0000ff00",
+          })
+          .text("ink", 10, 350, {
+            colorspace: Recipe.Colorspace.SEPARATION,
+            colorName: "Ink",
+          })
+          .image(image("cmyk.jpg"), 10, 300),
       );
       assert.equal(outputIntent(bytes).n, 4);
+      // html style colors take the Recipe colorspace too
+      create(cmyk, { colorspace: Recipe.Colorspace.CMYK }, (r) =>
+        r.text('<p style="color: red">x</p>', 10, 400, { html: true }),
+      );
 
       var gray = pdfa("1B", { iccProfile: changedProfile(16, "GRAY") });
       assert.throws(
@@ -478,7 +583,13 @@ describe("PDF/A", function () {
         },
       );
       assert.equal(
-        outputIntent(create(gray, { colorspace: Recipe.Colorspace.GRAY })).n,
+        outputIntent(
+          create(gray, {}, (r) =>
+            r.rectangle(10, 10, 50, 50).rectangle(10, 100, 50, 50, {
+              color: "#80",
+            }),
+          ),
+        ).n,
         1,
       );
     });
@@ -499,10 +610,16 @@ describe("PDF/A", function () {
       assert.deepEqual(annotationFlags(bytes), [4, 4, 68]);
       // the objects of each section start on their own line
       assert.doesNotMatch(new TextDecoder("latin1").decode(bytes), /%%EOF\d/);
+      // and the annotation pass writes no second output intent
+      assert.equal(
+        new TextDecoder("latin1").decode(bytes).match(/\/OutputIntent\b/g)
+          .length,
+        1,
+      );
     });
 
     it("rejects hidden and transparent ones", function () {
-      ["hidden", "invisible", "noview"].forEach((flag) =>
+      ["hidden", "invisible", "noview", "togglenoview"].forEach((flag) =>
         assert.throws(
           () =>
             create(pdfa("1B"), {}, (r) => r.comment("note", 50, 50, { flag })),
@@ -516,6 +633,64 @@ describe("PDF/A", function () {
           ),
         { message: "PDF/A-1 does not allow transparency" },
       );
+      assert.throws(
+        () =>
+          create(pdfa("1B"), {}, (r) =>
+            r.comment("note", 50, 50, { replies: [{ opacity: 0.5 }] }),
+          ),
+        { message: "PDF/A-1 does not allow transparency" },
+      );
+      // a reply writes `flags` when `flag` is 0
+      assert.throws(
+        () =>
+          create(pdfa("1B"), {}, (r) =>
+            r.comment("note", 50, 50, {
+              replies: [{ flag: 0, flags: "hidden" }],
+            }),
+          ),
+        { message: "PDF/A does not allow hidden annotations" },
+      );
+      // when it is queued, not only when it is written
+      var queued = new Recipe({ pdfa: pdfa("1B") });
+      queued.createPage("a4");
+      assert.throws(
+        () =>
+          queued.comment("note", 50, 50, {
+            replies: [{ flag: 0, flags: "hidden" }],
+          }),
+        { message: "PDF/A does not allow hidden annotations" },
+      );
+      assert.throws(
+        () => create(pdfa("3B"), {}, (r) => r.annot(50, 50, "Sound")),
+        { message: "PDF/A does not allow sound annotations" },
+      );
+      create(pdfa("1B"), {}, (r) =>
+        r.comment("note", 50, 50, { replies: [null] }),
+      );
+    });
+
+    it("rejects colors in PDF/A-1 without an RGB output intent", function () {
+      var cmyk = pdfa("1B", { iccProfile: changedProfile(16, "CMYK") });
+      var options = { colorspace: Recipe.Colorspace.CMYK };
+      var message = {
+        message:
+          "PDF/A-1 does not allow annotation colors without an RGB output intent",
+      };
+      assert.throws(
+        () =>
+          create(cmyk, options, (r) =>
+            r.comment("note", 50, 50, { color: "red" }),
+          ),
+        message,
+      );
+      assert.throws(
+        () =>
+          create(cmyk, options, (r) =>
+            r.annot(50, 400, "Highlight", { width: 100, height: 20 }),
+          ),
+        message,
+      );
+      create(cmyk, options, (r) => r.comment("note", 50, 50));
     });
   });
 
