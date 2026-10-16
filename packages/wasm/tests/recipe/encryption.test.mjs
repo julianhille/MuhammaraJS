@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import { recipeFixture } from "./recipe.mjs";
 import { writeOutput } from "../testOutput.mjs";
@@ -117,6 +118,52 @@ describe("Recipe encryption", function () {
     reader.end();
     recipe.dispose();
     Recipe.disposeAssets();
+  });
+
+  // Mirrors native "Encrypted Buffer source needs its password" (GH-1003).
+  it("reads an encrypted source only with its password", async function () {
+    var Recipe = await createRecipe();
+    var source = new Uint8Array(
+      readFileSync("tests/TestMaterials/PDFWithPassword.PDF"),
+    );
+    assert.throws(() => new Recipe(source), /pages=0/);
+    assert.throws(() => new Recipe(source, { password: "wrong" }), /pages=0/);
+    var recipe = new Recipe(source, { password: "user" });
+    assert.equal(recipe.pageInfo(1).width, 595);
+    assert.equal(recipe.pageInfo(1).height, 842);
+    recipe.dispose();
+    var aes = new Uint8Array(
+      readFileSync("tests/TestMaterials/ProtectedAES256.pdf"),
+    );
+    var reading = new Recipe();
+    assert.throws(() => reading.read(aes), /pages=0/);
+    reading.dispose();
+    reading = new Recipe({ password: "user" });
+    assert.equal(reading.read(aes)[1].width, 200);
+    reading.dispose();
+    recipe = new Recipe(aes, { password: "user" });
+    assert.equal(recipe.pageInfo(1).height, 300);
+    // Editing stays unsupported, so no output is written over the encryption.
+    assert.throws(
+      () => recipe.info({ title: "T" }).endPDF(),
+      /Editing a password-protected source is unsupported/,
+    );
+    recipe.dispose();
+    // An owner-password-only source opens without a password and stays editable.
+    var ownerOnly = new Recipe({ ownerPassword: "own" })
+      .createPage(100, 100)
+      .endPage()
+      .endPDF();
+    var edited = new Recipe(ownerOnly)
+      .editPage(1)
+      .text("Edited", 10, 10)
+      .endPage()
+      .endPDF();
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(edited);
+    assert.equal(reader.isEncrypted(), true);
+    assert.equal(reader.getPagesCount(), 1);
+    reader.end();
   });
 
   it("queues native Recipe password aliases", async function () {

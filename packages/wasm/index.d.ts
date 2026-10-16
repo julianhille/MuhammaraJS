@@ -141,6 +141,7 @@ export interface RecipeOptions {
   subject?: string;
   keywords?: string | string[];
   colorspace?: RecipeColorSpace;
+  /** Owner password; also opens a protected source PDF. */
   password?: string;
   ownerPassword?: string;
   userPassword?: string;

@@ -259,7 +259,7 @@ describe("Recipe foundation", function () {
     recipe.endPDF();
   });
 
-  it("uses explicit async byte asset APIs and rejects paths and encrypted sources", async function () {
+  it("uses explicit async byte asset APIs and rejects paths", async function () {
     var Recipe = await createRecipe();
     var font = new Uint8Array(
       await readFile("tests/TestMaterials/fonts/arial.ttf"),
@@ -271,10 +271,6 @@ describe("Recipe foundation", function () {
     await Recipe.registerPdfAsync("async-pdf", new Blob([source]));
     assert.throws(() => new Recipe("input.pdf"), /options must be an object/);
     assert.throws(() => Recipe.registerPdf("path", "input.pdf"), /Uint8Array/);
-    assert.throws(
-      () => new Recipe(source, { password: "secret" }),
-      /Password-protected/,
-    );
     assert.equal(new Recipe().encrypt({}).constructor, Recipe);
   });
 

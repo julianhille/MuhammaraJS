@@ -13,4 +13,4 @@ To serve the WebAssembly binary from a CDN or load it from bytes you retrieved
 yourself, see [Load the WebAssembly Binary](load-the-wasm-binary.md).
 
 Review [Differences and Restrictions](../differences.md) before adapting native
-examples, particularly for password-protected Recipe source editing.
+examples.

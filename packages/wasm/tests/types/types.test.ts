@@ -733,7 +733,7 @@ async function usesLowLevelSurface() {
   pageInfo?.width;
   recipe.getCurrentPageInfo()?.mediaBox[3];
   recipe.endPage().endPDF();
-  var byteRecipe = new Recipe(source, { compress: false });
+  var byteRecipe = new Recipe(source, { compress: false, password: "user" });
   byteRecipe.replaceText("Before", "After", 1);
   // Text is matched and written through the page font, so any Unicode string works.
   byteRecipe.replaceText("Größe Ω", "Ω Größe", 1);

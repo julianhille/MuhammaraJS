@@ -29,3 +29,10 @@ pdfDoc.encrypt({ userPassword: "open-password" }).endPDF(function (pdfBuffer) {
 Encryption options can also be supplied while creating a new Recipe document.
 See [Change PDF Passwords](../how-to/change-pdf-passwords.md) for password
 replacement and encryption removal.
+
+To read a source that needs a password to open, pass its `password`:
+`new Recipe(src, output, { password })` then reports page geometry through
+`pageInfo()`. Without the right password the constructor throws
+`Unable to read/edit PDF file (pages=0)`. Such a source cannot be edited;
+decrypt it with `recrypt()` first and edit the plain PDF. A source protected
+only by an owner password opens and edits without one.

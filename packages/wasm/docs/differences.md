@@ -45,8 +45,7 @@ XML-derived layout tree.
 ## Wasm gaps (tracked)
 
 Existing byte-backed PDFs can be read, modified, and copied, but persistent-file
-continuation, password-protected Recipe source editing, and the path-based Recipe
-constructor are unavailable.
+continuation and the path-based Recipe constructor are unavailable.
 
 Appending or rebuilding an existing source page does not deep-copy that page's
 `/Annots` graph, although annotations created in the output are written
