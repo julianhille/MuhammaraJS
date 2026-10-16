@@ -84,7 +84,9 @@ export const chroma = function chroma(name, value, colorspace = "") {
   if (name) {
     if (name === ChromaCommand.LOAD) {
       let newColors = JSON.parse(
-        new TextDecoder().decode(this.platform.readBytes(value)),
+        new TextDecoder().decode(
+          this.platform.readBytes(value, 'chroma("!load")'),
+        ),
       );
       // Add new colors to existing colorspaces
       for (const cs of Object.keys(newColors)) {

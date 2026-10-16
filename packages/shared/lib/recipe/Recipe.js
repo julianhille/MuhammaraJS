@@ -128,8 +128,14 @@ class Recipe {
    */
   _createWriter() {
     const iccProfile = this.options.pdfa?.iccProfile;
+    // 10 through 17 and 20 name 1.0 through 2.0, also for the PDF/A check.
+    const options = [10, 11, 12, 13, 14, 15, 16, 17, 20].includes(
+      this.options.version,
+    )
+      ? { ...this.options, version: this.options.version / 10 }
+      : this.options;
     this.pdfa_ = pdfaOptions(
-      this.options,
+      options,
       iccProfile === undefined
         ? undefined
         : this.platform.readBytes(iccProfile),
@@ -137,7 +143,7 @@ class Recipe {
       Object.keys(this.encryptOptions || {}).length > 0,
     );
     var version = this._getVersion(
-      this.pdfa_ ? this.pdfa_.version : this.options.version,
+      this.pdfa_ ? this.pdfa_.version : options.version,
     );
     if (this.isNewPDF) {
       this._output = this.platform.newWriter(
@@ -154,7 +160,7 @@ class Recipe {
       try {
         this._output = this.platform.modifyWriter(
           this.src,
-          Object.assign({}, this.encryptOptions, this._compression()),
+          Object.assign(this._openOptions(), this._compression()),
         );
       } catch (err) {
         throw new Error(err);
@@ -200,9 +206,20 @@ class Recipe {
   }
 
   /**
+   * The options a writer needs to open the source: its password only. The
+   * encryption options apply to the finished output.
+   * @private
+   * @returns {Object} The options: `password` when the Recipe has one.
+   */
+  _openOptions() {
+    const { password } = this.encryptOptions;
+    return password === undefined ? {} : { password };
+  }
+
+  /**
    * The writer's stream compression option, when the Recipe was given one.
    * @private
-   * @returns {{compress?: boolean}} The option to pass to the writer.
+   * @returns {Object} The option to pass to the writer: `compress` when given.
    * @throws {TypeError} If `compress` is given and is not a boolean.
    */
   _compression() {
@@ -231,10 +248,14 @@ class Recipe {
   }
 
   /**
-   * Read PDF metadata: the page count and, keyed by one-based page number,
+   * @name read
+   * @function
+   * @memberof Recipe#
+   * @desc Read PDF metadata: the page count and, keyed by one-based page number,
    * each page's media box, rotation, layout and size.
-   * @param {string|Buffer} [inSrc] - A PDF path or Buffer to read instead of
-   *   the recipe source. Reading another PDF does not change the recipe state.
+   * @param {string|Uint8Array} [inSrc] - A PDF to read instead of the recipe
+   *   source: a path or Buffer on native, bytes or a registered name on Wasm.
+   *   Reading another PDF does not change the recipe state.
    * @returns {Object} The PDF metadata.
    * @throws {Error} If the PDF cannot be read or has no pages.
    */
@@ -297,6 +318,7 @@ class Recipe {
       }
       if (!isForExternal) {
         this._releaseReader();
+        this.sourceEncrypted_ = pdfReader.isEncrypted();
         this.pdfReader = pdfReader;
         this.metadata = metadata;
         this.sourcePageCount = pages;
@@ -344,18 +366,20 @@ class Recipe {
   }
 
   /**
-   * End the pdfDoc. Finalization happens once; later calls do not rewrite the
+   * @name endPDF
+   * @function
+   * @memberof Recipe#
+   * @desc End the pdfDoc. Finalization happens once; later calls do not rewrite the
    * PDF and invoke the callback with the completed output when applicable.
    * An active page is finished first, so a forgotten endPage() does not cost
    * that page. A failed finalization retires the Recipe and later calls
    * rethrow the original error.
-   * @function
-   * @memberof Recipe
-   * @param {function((Buffer|string)=): *} [callback] - Called when the PDF is
-   *   finished: with the output Buffer for a Buffer source without an output
-   *   path, with the output path for a Buffer source with one, and without an
-   *   argument for a path source.
-   * @returns {*} The callback result, or undefined without a callback.
+   * @param {function(*): *} [callback] - Called when the PDF is finished, with
+   *   what the platform hands over: the PDF bytes (a Uint8Array on Wasm; on
+   *   native the Buffer for a Buffer source, its output path when it has one,
+   *   and nothing for a path source).
+   * @returns {*} Without a callback, what the callback would receive. With
+   *   one, the callback's result on native, and the PDF bytes on Wasm.
    * @throws {Error} If pages are being deleted while a page is still open.
    * @throws {Error} If a PDF/A-4f document has no attached file.
    * @throws {Error} If finalization fails; later calls rethrow the same error.
@@ -365,7 +389,7 @@ class Recipe {
       throw this.endError;
     }
     if (this.ended) {
-      return callback ? callback(this.result_) : this.result_;
+      return this._endPDFResult(callback);
     }
     var deletingPages = Boolean(this.deletedPages?.size);
     var deletionState = deletingPages
@@ -390,7 +414,10 @@ class Recipe {
       // the annotation pass writes a new Info dictionary: carry the fields
       // and custom entries over
       const info = this.writer.getDocumentContext().getInfoDictionary();
-      const fields = standardInfoKeys.map((key) => [key, info[key]]);
+      const fields = [...standardInfoKeys, "creator", "producer"].map((key) => [
+        key,
+        info[key],
+      ]);
       const customInfo = info.getAdditionalInfoEntries();
       let bytes = this._output.finish();
       // Annotations are written in a second pass over the finished output,
@@ -406,7 +433,7 @@ class Recipe {
         firstPass.set([13, 10], bytes.length);
         this._output = this.platform.modifyWriter(
           firstPass,
-          Object.assign({}, this.encryptOptions, this._compression()),
+          Object.assign(this._openOptions(), this._compression()),
         );
         this.writer = this._output.writer;
 
@@ -427,12 +454,23 @@ class Recipe {
       this._releaseReader();
 
       if (this.needToInsertPages) {
-        bytes = this._insertPages(bytes);
+        bytes = this._insertPages(bytes, fields, customInfo);
+      }
+      // An unencrypted source given passwords is encrypted as a new PDF is;
+      // an encrypted source keeps its own encryption.
+      if (
+        !this.isNewPDF &&
+        !this.sourceEncrypted_ &&
+        this.encryptOptions.userPassword !== undefined
+      ) {
+        const { password, ...encryption } = this.encryptOptions;
+        bytes = this.platform.recrypt(bytes, encryption);
       }
       if (this.needToEncrypt) {
         bytes = this._encrypt(bytes);
       }
 
+      this.bytes_ = bytes;
       this.result_ = this.platform.deliver(this, bytes);
       this.ended = true;
     } catch (error) {
@@ -461,13 +499,27 @@ class Recipe {
       throw error;
     }
 
-    return callback ? callback(this.result_) : this.result_;
+    return this._endPDFResult(callback);
+  }
+
+  /**
+   * What endPDF() returns: the callback's result, or the finished result when
+   * there is no callback or the platform returns that (Wasm's typed bytes).
+   * @private
+   * @param {function(*): *} [callback] - The endPDF() callback.
+   * @returns {*} The result.
+   */
+  _endPDFResult(callback) {
+    if (!callback) return this.result_;
+    const out = callback(this.result_);
+    return this.platform.endPDFReturnsResult ? this.result_ : out;
   }
 
   /**
    * Register a callback procedure with MuhammaraJS.
+   * @name register
    * @function
-   * @memberof Recipe
+   * @memberof Recipe#
    * @param {string|Function} key Name assigned to the callback. When a named function is
    * registered, and its given name is what is to be used to access it, the key is unnecessary.
    * @param {Function} [callback] Callback procedure that can be accessed through MuhammaraJS.
@@ -530,7 +582,14 @@ const recipeModules = {
 };
 
 // Helpers the modules share with each other, not Recipe members.
-const privateExports = new Set(["linkPdf", "HtmlTag"]);
+// The text layout classes Column, Line and Word are internal too.
+const privateExports = new Set([
+  "linkPdf",
+  "HtmlTag",
+  "Column",
+  "Line",
+  "Word",
+]);
 
 /**
  * Install every method exported by the Recipe modules on the Recipe prototype.

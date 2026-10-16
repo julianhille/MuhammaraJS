@@ -482,7 +482,9 @@ export const textDimensions = function textDimensions(text, options = {}) {
     }
     const fontSize = resolveFontSize(options, this.current.defaultFontSize);
     dimensions = font.calculateTextDimensions(drawn, fontSize);
+    // The spacing widens the text, so the width says so too.
     dimensions.xMax += charSpaces;
+    dimensions.width += charSpaces;
   }
 
   return dimensions;

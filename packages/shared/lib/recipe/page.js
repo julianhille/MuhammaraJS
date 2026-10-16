@@ -1,4 +1,8 @@
-import { PAGE_CONTEXT_STATE, clearTextFlow } from "./utils.js";
+import {
+  PAGE_CONTEXT_STATE,
+  clearTextFlow,
+  pageRotationMatrix,
+} from "./utils.js";
 import { PageLayout, Colorspace } from "../recipe-constants.js";
 import {
   planDeletedPageReferences,
@@ -595,7 +599,10 @@ export const createPage = function createPage(pageWidth, pageHeight, margins) {
     height: pageHeight,
   };
 
-  const page = this.writer.createPage();
+  // From the origin, (0, 0, width, height) is the same box for native's
+  // createPage(x, y, width, height) and Wasm's (left, bottom, right, top);
+  // a Wasm modifier takes it only here.
+  const page = this.writer.createPage(0, 0, pageWidth, pageHeight);
   page.mediaBox = [0, 0, pageWidth, pageHeight];
 
   this.page = page;
@@ -781,6 +788,7 @@ export const endPage = function endPage() {
  * @param {number} pageNumber - The one-based page number to be edited.
  * @returns {Recipe} The recipe instance.
  * @throws {Error} If the Recipe was not constructed from an existing PDF.
+ * @throws {RangeError} If `pageNumber` is not a page of the source PDF.
  * @throws {Error} If the page does not exist in the source PDF.
  * @throws {Error} If another page is still active; call endPage() first.
  */
@@ -794,6 +802,14 @@ export const editPage = function editPage(pageNumber) {
   // silently dropped at endPDF().
   if (this.page) {
     throw new Error("Finish the current page before editing another page");
+  }
+  // Only a page of the source can be edited; say so before the writer does.
+  if (
+    !Number.isInteger(pageNumber) ||
+    pageNumber < 1 ||
+    pageNumber > this.sourcePageCount
+  ) {
+    throw new RangeError("pageNumber must identify an existing page");
   }
   const pdfWriter = this.writer;
   const pageIndex = pageNumber - 1;
@@ -960,7 +976,11 @@ function planPageDeletion(recipe, copyingContext, deletedPages, prune) {
  */
 export const deletePage = function deletePage(pageNumbers, options) {
   if (this.ended) {
-    throw new Error("Cannot delete a page after endPDF");
+    throw new Error(
+      this.disposed_
+        ? "Cannot delete a page after disposal"
+        : "Cannot delete a page after endPDF",
+    );
   }
   if (this.isNewPDF) {
     throw new Error("deletePage requires an existing PDF");
@@ -1104,22 +1124,8 @@ export const _resumePageRotation = function _resumePageRotation(
   const startY = mediaBox[1];
   this.page.mediaBox = [startX, startY, width, height];
 
-  switch (rotate) {
-    case 90:
-    case -270:
-      context.cm(0, 1, -1, 0, height - startX, startY);
-      break;
-    case 180:
-    case -180:
-      context.cm(-1, 0, 0, -1, width, height);
-      break;
-    case 270:
-    case -90:
-      context.cm(0, -1, 1, 0, startX, width - startY);
-      break;
-
-    default:
-  }
+  const matrix = pageRotationMatrix(this.metadata[pageNumber]);
+  if (matrix) context.cm(...matrix);
   return this;
 };
 

@@ -53,10 +53,17 @@ export const insertPage = function insertPage(
  * that appendPage() added are kept.
  * @private
  * @param {Uint8Array} bytes - The finished output.
+ * @param {Array<Array>} [fields=[]] - The Info fields as [key, value] pairs,
+ *   which the rebuilt PDF keeps.
+ * @param {Object} [customInfo={}] - The custom Info entries it keeps.
  * @returns {Uint8Array} The rebuilt output.
  * @throws {Error} If nothing was queued, or a source cannot be read.
  */
-export const _insertPages = function _insertPages(bytes) {
+export const _insertPages = function _insertPages(
+  bytes,
+  fields = [],
+  customInfo = {},
+) {
   if (!this.insertInformation) {
     throw new Error("No insertInformation");
   }
@@ -65,8 +72,15 @@ export const _insertPages = function _insertPages(bytes) {
   reader.end();
   const pagesForInsert = Array.from({ length: pageCount + 1 }, (_, i) => i);
 
-  const output = this.platform.newWriter({});
+  const output = this.platform.newWriter(this._compression());
   const pdfWriter = output.writer;
+  const info = pdfWriter.getDocumentContext().getInfoDictionary();
+  fields.forEach(([key, value]) => {
+    if (value) info[key] = value;
+  });
+  Object.entries(customInfo).forEach(([key, value]) =>
+    info.addAdditionalInfoEntry(key, value),
+  );
   let lastInsertedOriginal = 0;
   pagesForInsert.forEach((pageNumber) => {
     const toAppendPage = pageNumber - 1;

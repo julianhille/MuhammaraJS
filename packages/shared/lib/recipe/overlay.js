@@ -5,7 +5,8 @@ import { xObjectForm } from "./xObjectForm.js";
  * @name overlay
  * @function
  * @memberof Recipe#
- * @param {string} pdfSrc - The path for the overlay pdf
+ * @param {string|Uint8Array} pdfSrc - The overlay PDF: a path or Buffer on
+ *   native, bytes or a registered PDF name on Wasm.
  * @param {number|Object} [x=0] - The PDF x offset from the left edge, or options when using the two-argument form.
  * @param {number} [y=0] - The offset from the top edge.
  * @param {Object} [options] - The options.
@@ -41,12 +42,22 @@ export const overlay = function overlay(pdfSrc, x = 0, y = 0, options = {}) {
   const { width, height } = inMetadata[page];
 
   this.pauseContext();
+  // The page as a form, through a copying context, which takes whatever the
+  // platform reads a PDF from: a path, a stream over bytes, bytes.
+  const copying = this.writer.createPDFCopyingContext(
+    this.platform.readerSource(pdfSrc),
+  );
+  let pageForm;
+  try {
+    pageForm = copying.createFormXObjectFromPDFPage(page - 1);
+  } finally {
+    copying.end();
+  }
   const xObject = new xObjectForm(this.writer, width, height);
-  xObject
-    .getContentContext()
-    .q()
-    .drawImage(0, 0, pdfSrc, { index: page - 1 })
-    .Q();
+  const pageName = xObject
+    .getResourcesDictionary()
+    .addFormXObjectMapping(pageForm);
+  xObject.getContentContext().q().doXObject(pageName).Q();
   xObject.end();
   this.resumeContext();
 

@@ -159,6 +159,19 @@ export const _getDistance = function _getDistance(coordA, coordB) {
   return distance;
 };
 
+/**
+ * The transformation matrix that rotates content around an origin.
+ * @private
+ * @name _getTransformParams
+ * @function
+ * @memberof Recipe#
+ * @param {number} inAngle - The rotation in degrees.
+ * @param {number} x - The origin x.
+ * @param {number} y - The origin y.
+ * @param {number} offsetX - The content x relative to the origin.
+ * @param {number} offsetY - The content y relative to the origin.
+ * @returns {number[]} The [a, b, c, d, e, f] matrix.
+ */
 export const _getTransformParams = getTransformParams;
 
 /**

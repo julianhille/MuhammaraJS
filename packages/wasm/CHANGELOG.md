@@ -31,6 +31,27 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   instead of returning the Recipe; pass `{}` to chain; see
   [Breaking Changes](docs/breaking-changes.md#recipe-information)
   [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- `@muhammara/wasm` and the native packages now run one Recipe
+  implementation, so Recipe output follows native where the two differed. The
+  first text baseline sits at the font's ascent, the text cursor after
+  `text()` stays on the last line, a `textBox` without `width` is 100 points
+  wide, and lines wrap by the glyphs' extent; positions computed from the old
+  output move.
+- Recipe `lineTo()` strokes its segment at once, as native does, instead of
+  extending a path that `lineTo(…, options)` painted later; pass the options
+  on each call.
+- Recipe HTML is parsed as native parses it: malformed markup other than list
+  items without `</li>` throws a `ParseError`, `h1`–`h3` and `small` change
+  the size and `div` is inline. Close your tags.
+- `recipe.htmlToTextObjects()` returns native's nested layout tree instead of
+  flat visual runs.
+- Recipe `pageInfo()` returns `{ width, height, rotate, pageNumber }` and
+  throws a `TypeError` for an unknown page instead of returning `null`; read
+  the media box, layout and offsets from `recipe.metadata[pageNumber]`.
+- Recipe `fontSrcPath` throws a `TypeError`; register fonts with
+  `Recipe.registerFont()`.
+- The package publishes its bundle, `dist/index.js`; `lib/` and `index.js` are
+  no longer in the package. Import `@muhammara/wasm`.
 
 ### Added
 
@@ -88,6 +109,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Add an AcroForm tab to the browser example that lists the form fields of an
   uploaded PDF, or of a built-in sample form, in a one-page report
   [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
+- Recipe `chroma("!load", bytes)` loads colors from JSON bytes, and the
+  annotations of appended, inserted and split pages are kept.
 
 ### Fixed
 
@@ -181,6 +204,45 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Turn a rotated Recipe `polygon()` without `rotationOrigin` around the center
   of its bounding box, as native does, instead of its first point. Pass
   `rotationOrigin: coordinates[0]` to keep the old pivot [#924](https://github.com/julianhille/MuhammaraJS/issues/924)
+- Recipe `insertPage()` keeps the Info entries of the PDF.
+- Recipe opens an owner-protected source with `password` without losing its
+  Info entries.
+- Recipe `position`, and drawing, annotations and links on a rotated page
+  whose media box does not start at 0, 0, use the page as displayed; the
+  media box offset was ignored or applied twice.
+- Recipe `link()` and text links on an edited rotated page cover their text
+  instead of a rectangle outside the page.
+- Recipe `appendPage()` records the appended pages, so pages created after it
+  are numbered after them and their annotations are written on them.
+- Recipe circles, ellipses, arcs, rectangles and polygons apply `lineCap`,
+  `lineJoin` and `miterLimit`, as lines do; their default join is round.
+- Recipe text with `opacity: 0` and a `hilite` with `opacity: 0` are
+  invisible instead of opaque or half opaque.
+- Recipe stars with a multiple of 4 points reach their radius when only
+  filled.
+- Recipe `textDimensions()` widens `width` by `charSpace`, as it widens
+  `xMax`.
+- Recipe text with a `textBox.style` leaves the caller's style object as it
+  was.
+- Recipe `replaceText()` on a page without content throws its clear error,
+  and `removeText()` with `forms` works for edited sources on both ends.
+- Recipe HTML keeps a list item that holds only a no-break or em space, draws
+  no blank line for whitespace before a block, reads list items without
+  `</li>` and misnested lists as browsers do, and justifies every line of a
+  paragraph but its last.
+- Recipe `editPage()` throws a `RangeError` for a page the source does not
+  have, instead of a low-level error.
+- Recipe `image()` mirrors an image of negative width or height, throws a
+  `TypeError` for the removed zero-based `index` option, and reports
+  `Unknown image` for a page or frame the image does not have.
+- Recipe `createPage()` on a source PDF keeps its size instead of A4.
+
+### Changed
+
+- Recipe is one implementation shared with the native packages, in
+  `packages/shared`, bundled into `dist/index.js`. Image, PDF and copying
+  low-level calls take registered PDF names, forms take any rectangle and
+  stream `write()` takes byte arrays, as on native.
 
 ## [1.2.0] - 2026-10-12
 

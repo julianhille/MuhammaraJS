@@ -17,20 +17,13 @@ import * as utils from "./utils.js";
  * @throws {Error} If the source PDF cannot be read.
  */
 export const appendPage = function appendPage(pdfSrc, pages = []) {
-  const muhammara = this.muhammara;
   if (this.deletedPages?.size) {
     throw new Error("appendPage cannot be combined with deletePage");
   }
   if (!Array.isArray(pages)) pages = [pages];
-  let pageCount;
-  const pdfReader = muhammara.createReader(this.platform.readerSource(pdfSrc));
-  try {
-    pageCount = pdfReader.getPagesCount();
-  } finally {
-    // An unreadable source must not stay open, which would keep a file
-    // locked on Windows for the life of the process.
-    pdfReader.end();
-  }
+  // The source's page geometry, also for the metadata of appended pages.
+  const sourcePages = this.read(pdfSrc);
+  const pageCount = sourcePages.pages;
 
   // Preserve the established upper-bound clamping after validating that the
   // caller supplied meaningful one-based page numbers.
@@ -56,13 +49,28 @@ export const appendPage = function appendPage(pdfSrc, pages = []) {
   // content stream. Close the active page only once the selection is known to
   // be valid, so a rejected selection leaves the page exactly as it was.
   if (this.page) this.endPage();
+  const source = this.platform.readerSource(pdfSrc);
   if (pages.length > 0) {
-    utils.appendPDFPagesFromPDFWithAnnotations(this.writer, pdfSrc, {
+    utils.appendPDFPagesFromPDFWithAnnotations(this.writer, source, {
       specificRanges: pages,
     });
   } else {
-    utils.appendPDFPagesFromPDFWithAnnotations(this.writer, pdfSrc);
+    utils.appendPDFPagesFromPDFWithAnnotations(this.writer, source);
   }
+  // Record the appended pages, so pages created later are numbered after
+  // them and their annotations land on them.
+  const appended = pages.length
+    ? pages.flatMap(([start, end]) =>
+        Array.from({ length: end - start + 1 }, (_, i) => start + i),
+      )
+    : Array.from({ length: pageCount }, (_, i) => i);
+  this.metadata = this.metadata || {};
+  appended.forEach((index) => {
+    const pageNumber =
+      (this.metadata.pageCount ?? this.metadata.pages ?? 0) + 1;
+    this.metadata.pageCount = pageNumber;
+    this.metadata[pageNumber] = { ...sourcePages[index + 1], pageNumber };
+  });
   this.pagesAppended = true;
   return this;
 };

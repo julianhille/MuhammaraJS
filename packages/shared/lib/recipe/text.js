@@ -20,6 +20,8 @@ import {
   toVisual,
   visualRuns,
   visualWords,
+  requireBidiFor,
+  hasBidi,
 } from "../text-direction.js";
 
 // HTML whose text starts with a space, after any tags that open it.
@@ -442,6 +444,19 @@ export const text = function text(text = "", x, y, options = {}) {
         subtype,
       );
     }
+  }
+  // Text that has to be reordered needs bidi-js; without it the call throws
+  // before it draws anything.
+  try {
+    requireBidiBeforeDrawing(this, text, x, rawOptions);
+  } catch (error) {
+    // The open flow cannot be drawn: drop it, so the page stays usable.
+    this.flowBidiLine_ = null;
+    this._flowLines = [];
+    this._previousTextObjects = [];
+    this._flow = false;
+    clearTextFlow(this);
+    throw error;
   }
   if (typeof x !== "object" && x !== undefined) {
     this._flushTextFlow();
@@ -899,7 +914,7 @@ export const text = function text(text = "", x, y, options = {}) {
         // Produce a hilite under words?
         if (options.hilite) {
           const bgColor = options.hilite.color || "#ffff00";
-          const bgOpacity = options.hilite.opacity || 0.5;
+          const bgOpacity = options.hilite.opacity ?? 0.5;
           let bxWidth = wto.lineWidth;
 
           // The hiliting rectangle cannot use the text box line
@@ -2131,7 +2146,8 @@ function drawTextBox(self, nx, ny, textBox, pathOptions) {
     ny - textBox.height + self._firstLineHeight,
     textBoxWidth,
     textBox.height,
-    Object.assign(textBox.style, {
+    // A copy, so the caller's style object stays as given.
+    Object.assign({}, textBox.style, {
       useGivenCoords: true,
       rotation: pathOptions.rotation,
       rotationOrigin: [pathOptions.originX, pathOptions.originY],
@@ -2336,6 +2352,9 @@ function assignParagraphDirections(textObjects, direction, openText, waits) {
  * @returns {string} The text to keep.
  */
 function keptParagraph(paragraph) {
+  // Shortening the paragraph reads its letters' directions; without bidi-js
+  // it is kept whole, and a run that needs its direction asks for bidi-js.
+  if (!hasBidi()) return paragraph;
   if (!hasStrongCharacter(paragraph)) {
     let open = 0;
     for (const character of paragraph) {
@@ -2739,7 +2758,8 @@ function makeTextObjects(
   const writeOptions = Object.assign({}, pathOptions, {
     link: textObject.link || pathOptions.link,
     color: textObject.styles.color,
-    opacity: parseFloat(textObject.styles.opacity || pathOptions.opacity || 1),
+    // 0 is an opacity too: invisible text, not a missing value.
+    opacity: parseFloat(textObject.styles.opacity ?? pathOptions.opacity ?? 1),
     underline: textObject.underline || pathOptions.underline,
     strikeOut: textObject.strikeOut || pathOptions.strikeOut,
     // Text outside any HTML element has no inherited size of its own.
@@ -3128,7 +3148,10 @@ function makeTextObjects(
     }
   }
 
-  let isLastLine = alignHorizontal === TextAlign.JUSTIFY && !self._flow;
+  // Only the call's last run ends the paragraph; the runs of HTML before it
+  // continue its line, which stays justified.
+  let isLastLine =
+    alignHorizontal === TextAlign.JUSTIFY && !self._flow && atEnd;
 
   if (!flushLine) {
     wordCount = bindTextToLine(
@@ -3365,3 +3388,71 @@ export const layout = function layout(id, x, y, width, height, options = {}) {
 
   return this;
 };
+
+// The breaks that end a line of a flow, as text layout breaks lines.
+const FLOW_LINE_BREAK = /\r\n|[\n\v\f\r\u0085\u2028\u2029]/;
+
+/**
+ * Throw before anything is drawn when text has to be reordered and bidi-js
+ * is not loaded, which only Wasm allows. A flow is checked line by line, as
+ * it is laid out: a line is reordered when one of its runs asks for a
+ * direction and it holds right-to-left text, even if each run alone is drawn
+ * as given. Flow lines wait for the flow's end, so nothing is drawn yet.
+ * @private
+ * @param {Recipe} recipe - The recipe instance.
+ * @param {string} text - The text of this call.
+ * @param {*} x - The x coordinate, or the options of a call without one.
+ * @param {Object} options - The call's options.
+ * @returns {void}
+ * @throws {Error} If the text needs bidi-js and it is not loaded.
+ */
+function requireBidiBeforeDrawing(recipe, text, x, options) {
+  const withoutCoordinates = typeof x === "object";
+  const flows = withoutCoordinates
+    ? options.flow !== false || Boolean(recipe.flowBidiLine_)
+    : options.flow === true;
+  if (!withoutCoordinates) recipe.flowBidiLine_ = null;
+  if (!flows) {
+    requireBidiFor(text, options.direction);
+    return;
+  }
+  const direction = readDirection(options.direction);
+  const line = recipe.flowBidiLine_ || { text: "", directions: [] };
+  const parts = String(text).split(FLOW_LINE_BREAK);
+  parts.forEach((part, index) => {
+    line.text += part;
+    // Only a run with text on this line counts for its direction.
+    if (part) line.directions.push(direction);
+    if (index < parts.length - 1) {
+      requireLineBidi(line);
+      line.text = "";
+      line.directions = [];
+    }
+  });
+  if (options.flow === false) {
+    requireLineBidi(line);
+    recipe.flowBidiLine_ = null;
+  } else {
+    recipe.flowBidiLine_ = line;
+  }
+}
+
+/**
+ * Require bidi-js for one line of a flow that is reordered.
+ * @private
+ * @param {{text: string, directions: string[]}} line - The line's text and
+ *   its runs' directions.
+ * @returns {void}
+ * @throws {Error} If the line needs bidi-js and it is not loaded.
+ */
+function requireLineBidi(line) {
+  if (line.directions.every((direction) => direction === TextDirection.NONE)) {
+    return;
+  }
+  requireBidiFor(
+    line.text,
+    line.directions.includes(TextDirection.RTL)
+      ? TextDirection.RTL
+      : TextDirection.AUTO,
+  );
+}

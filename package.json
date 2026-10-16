@@ -35,7 +35,7 @@
     "test:docs": "npm run test:docs --workspace=@muhammara/native-with-source",
     "test:pdfa": "node scripts/validate-pdfa.mjs",
     "build:js": "npm run build --workspace=@muhammara/native-core && npm run build:js --workspace=@muhammara/wasm",
-    "test:shared": "mocha --timeout 15000 \"tests/{recipe,matrices}/**/*.test.mjs\"",
+    "test:shared": "mocha --timeout 30000 \"tests/{recipe,matrices,native,wasm}/**/*.test.mjs\"",
     "pretest:shared": "npm run build:js"
   },
   "overrides": {

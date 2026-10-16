@@ -5,7 +5,7 @@ import { FontStyle, StructureFormat } from "@muhammara/shared/value-sets.js";
 import { createInspectPdf } from "./recipe/inspection.js";
 import { permission } from "./recipe/security.js";
 import { thirdPartyLicenses } from "./recipe/licenses.js";
-import { unknownAsset } from "./recipe/registration.js";
+import { unknownAsset } from "./recipe/unknown-asset.js";
 
 // Keys of the per-style font files stored for each family, as in the shared
 // Recipe's font registry.
@@ -80,15 +80,20 @@ export function createRecipeFactory({
   /**
    * Reads the bytes of a registered image or PDF, or normalizes given bytes.
    * @param {string|Uint8Array} ref - A registered name or bytes.
+   * @param {string} [user] - What reads them, for the error message.
    * @returns {Uint8Array} The bytes.
    * @throws {TypeError} If `ref` is neither bytes nor a registered name.
    */
-  function assetBytes(ref) {
-    if (typeof ref !== "string") return normalizeBytes(ref, "Asset bytes");
+  function assetBytes(ref, user) {
+    if (typeof ref !== "string") {
+      // Bytes are normalized; anything else is left for the caller's check.
+      var isBytes = ref instanceof ArrayBuffer || ArrayBuffer.isView(ref);
+      return isBytes ? normalizeBytes(ref, "Asset bytes") : ref;
+    }
     var path = assets.images.get(ref) || assets.pdfs.get(ref);
     if (!path) {
       throw new TypeError(
-        `Wasm reads registered assets or bytes, not paths: ${ref}`,
+        `${user ? `${user} reads` : "Wasm reads"} registered assets or bytes, not paths: ${ref}`,
       );
     }
     return module.FS.readFile(path);
@@ -112,6 +117,8 @@ export function createRecipeFactory({
         return writer.createPageModifier(pageIndex, ensureContentEncapsulation);
       },
     }),
+    // What image() takes, for its error messages.
+    imageReference: "a registered name",
     get defaultFontFamily() {
       return defaultFont?.name.toLowerCase();
     },
@@ -143,6 +150,8 @@ export function createRecipeFactory({
     },
 
     deliver: (recipe, bytes) => bytes,
+    // endPDF(callback) returns the bytes, as typed since 1.0.
+    endPDFReturnsResult: true,
 
     readerSource(source) {
       return typeof source === "string" ? assetBytes(source) : source;
@@ -154,26 +163,8 @@ export function createRecipeFactory({
     },
 
     modifyWriter(bytes, options) {
-      // The modifier only opens the source; options that encrypt the output
-      // are applied to the finished bytes with recrypt(), as Wasm encrypts an
-      // edited PDF.
-      var { userPassword, ownerPassword, userProtectionFlag, ...open } =
-        options;
-      var writer = api.createWriterToModify(bytes, open);
-      var encrypts = userPassword !== undefined || ownerPassword !== undefined;
-      return {
-        writer,
-        finish() {
-          var output = writer.end();
-          if (!encrypts) return output;
-          return api.recrypt(output, {
-            password: open.password,
-            userPassword,
-            ownerPassword,
-            userProtectionFlag,
-          });
-        },
-      };
+      var writer = api.createWriterToModify(bytes, options);
+      return { writer, finish: () => writer.end() };
     },
 
     recrypt: (bytes, options) => api.recrypt(bytes, options),
@@ -407,6 +398,7 @@ export function createRecipeFactory({
       if (this.writer?.dispose) this.writer.dispose();
       this._releaseReader();
       this.ended = true;
+      this.disposed_ = true;
     },
     /**
      * Finishes this Recipe and splits it into one-page PDF byte arrays.

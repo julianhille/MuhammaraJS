@@ -3639,6 +3639,29 @@ export function createWriterToModifyFactory({
             return objectId;
           },
           /**
+           * Appends a source page with its annotations, which Recipe's page
+           * appends keep, as native does through its OnPageWrite event.
+           * @private
+           * @param {number} index - Zero-based source page index.
+           * @returns {number} The object ID of the appended page.
+           * @throws {RangeError} If `index` is invalid or the page cannot be appended.
+           */
+          _appendPageWithAnnotations: function (index) {
+            requireCopying();
+            if (!Number.isInteger(index) || index < 0) {
+              throw new RangeError("Page index must be a non-negative integer");
+            }
+            var objectId =
+              module._muhammara_wasm_copying_context_append_page_with_annotations(
+                copying,
+                index,
+              );
+            if (!objectId) {
+              throw new RangeError(`Unable to append page ${index}`);
+            }
+            return objectId;
+          },
+          /**
            * Appends an inclusive range of source pages.
            * @param {number} start - First zero-based page index.
            * @param {number} end - Last page index, not less than `start`.
@@ -3900,6 +3923,29 @@ export function createWriterToModifyFactory({
               copying,
               index,
             );
+            if (!objectId) {
+              throw new RangeError(`Unable to append page ${index}`);
+            }
+            return objectId;
+          },
+          /**
+           * Appends a source page with its annotations, which Recipe's page
+           * appends keep, as native does through its OnPageWrite event.
+           * @private
+           * @param {number} index - Zero-based source page index.
+           * @returns {number} The object ID of the appended page.
+           * @throws {RangeError} If `index` is invalid or the page cannot be appended.
+           */
+          _appendPageWithAnnotations: function (index) {
+            requireCopying();
+            if (!Number.isInteger(index) || index < 0) {
+              throw new RangeError("Page index must be a non-negative integer");
+            }
+            var objectId =
+              module._muhammara_wasm_copying_context_append_page_with_annotations(
+                copying,
+                index,
+              );
             if (!objectId) {
               throw new RangeError(`Unable to append page ${index}`);
             }

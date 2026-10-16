@@ -1,4 +1,6 @@
-# WebAssembly Recipe Differences
+# WebAssembly Differences
+
+## Low-level API
 
 Native low-level drawing helpers preserve legacy numeric coercions, while
 Wasm requires numeric values and throws for numeric strings. Both reject
@@ -34,84 +36,46 @@ String writers and `PDFWStreamForBuffer.write()` accept an array of byte
 values on both ends; Wasm throws a `TypeError` for an item that is not an
 integer from 0 to 255, where native coerces it to a byte.
 
-`Recipe.thirdPartyLicenses()` exists only in Wasm. It reads the notices embedded in
-`muhammara-wasm.wasm`, which bundlers copy without the package's other files.
-The native packages keep their notices in `THIRD_PARTY_NOTICES.md` next to the
-`.node` binary, which stays inside the installed package, and have no such
-function.
+Native `writer.getEvents()` exposes `OnPageWrite` and `OnCatalogWrite`
+EventEmitter hooks that can change dictionaries while they are written. Wasm
+has none, since that would need C++-to-JavaScript callbacks with live
+dictionary handles. Recipe does not depend on them: Wasm writes catalog
+entries and copies the annotations of appended pages in its C++ layer.
 
-Recipe value constants are static properties with the native names and members
-(`Recipe.TextWrap`, `Recipe.AnnotFlag`, and so on). Wasm has no `Recipe.Source`,
-because it has no `"new"` output-path sentinel, and adds `Recipe.StructureFormat`
-for its byte-returning `structure()`.
+## Recipe
 
-Wasm glyph text requires every glyph list item to be exactly one
-`[glyphId, unicodeCodePoint]` pair of non-negative integers; native also
-accepts a bare `[glyphId]` or several code points per glyph and coerces the
-values. One Wasm `TJ()` call may mix strings and glyph lists, and an empty
-call throws; native `TJ()` takes either strings or glyph lists and throws a
-`TypeError` for a mix.
+Native and Wasm run one Recipe implementation, `packages/shared`: the same
+input gives the same PDF, return values and errors on both ends. What differs
+is only how each end takes and hands over its input and output.
 
-The WebAssembly Recipe text, HTML, layout, and table APIs are static ESM modules
-with injected in-memory Recipe state. They run in browsers and module Workers;
-they never load Node modules, filesystem paths, or Recipe plugins.
+| Area                     | Native                                                                                                                                                 | WebAssembly                                                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| Constructor              | `new Recipe("new" \| path \| Buffer, outputPath?, options)`                                                                                            | `new Recipe(options)` or `new Recipe(bytes, options)`, from the async `createRecipe()` factory                                  |
+| Finished PDF             | `endPDF()` writes the output path; returns the Buffer, the output path, or nothing for a path source; `endPDF(callback)` returns the callback's result | `endPDF()` returns an owned `Uint8Array`, also from `endPDF(callback)`                                                          |
+| Fonts, images, PDFs      | file paths, the bundled font folder, `fontSrcPath`                                                                                                     | registered bytes: `Recipe.registerFont/Image/Pdf` (and `*Async` for Blob/File), `unregister*`, `disposeAssets()`; a path throws |
+| Default font             | bundled Helvetica Neue LT with bold and italic faces, plus Arial, Courier New, Georgia, Roboto                                                         | bundled Roboto Regular, or the `defaultFont` given to `createRecipe()`; `defaultFont: false` registers none                     |
+| Files read by path       | `chroma("!load", path)`, `attach(name, path)`, `pdfa.iccProfile` path                                                                                  | bytes only; a path throws a `TypeError` naming what reads it                                                                    |
+| `split()`, `structure()` | `split(outputDir, prefix)` writes files; `structure(path)` writes a text file                                                                          | `split(prefix)` returns `[{name, bytes}]`; `structure(format)` returns text or JSON; static `Recipe.splitPdf(name)`             |
+| Reading other PDFs       | `read(path \| Buffer)`                                                                                                                                 | `read(bytes)`, `readAsync(Blob)`, static `Recipe.inspectPdf(name)`                                                              |
+| Lifecycle                | normal native lifetime                                                                                                                                 | `recipe.dispose()` and `Recipe.disposeAssets()` free the Emscripten heap                                                        |
+| Only on one end          | `Recipe.Source`                                                                                                                                        | `Recipe.thirdPartyLicenses()`, `Recipe.StructureFormat`, static `Recipe.permission()`                                           |
 
-| Area                    | WebAssembly behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| HTML                    | A DOM-free subset handles text, entities, `br`/`p`/`div`, bold, italic, underline, strikeout, inline color, `<a href>` URL links, and nested `ul`/`ol` lists with native-style visual prefixes and indentation. The parser is lenient where native's XML parser is strict: an omitted `</li>` ends the item at its next sibling or at its list instead of throwing. Native sizes `h1`–`h3` and `small`, which Wasm does not recognize, and Wasm breaks lines around `div`, which native treats as inline. `recipe.htmlToTextObjects(html, options?)` exposes flat Worker-safe visual runs with prefixes and `indent` values; native returns its nested XML-derived layout tree. Arbitrary DOM, CSS inheritance beyond the supported inline styles, semantic tagged-PDF lists, and plugin HTML handlers are intentionally unavailable. |
-| Fonts                   | Recipe bundles Apache-2.0 Roboto Regular as its zero-setup default, while native defaults to Helvetica and bundles additional faces. Metrics and line wrapping can differ. Only regular is bundled in Wasm; bold/italic fall back to regular unless matching faces are registered. Custom byte fonts and face resolution use static or instance `registerFont(name, bytes, type?)`; `registerFontAsync` accepts Blob/File. Explicit unknown names throw. The low-level writer still requires font registration. Installed-font and path discovery are unavailable.                                                                                                                                                                                                                                                                    |
-| Colors                  | Named gray, RGB, and CMYK colors can be registered individually. Recipe Separation colors match native. Native Recipe's `chroma("!load", path)` color-file loading is unavailable.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Geometry                | `rectangle` accepts native-PDF `useGivenCoords` and one to four corner radii (top-left clockwise). Regular polygons and stars use the native odd/even traversal geometry. `n_gon.rotationVertice` selects its one-based vertex as a temporary rotation origin. Arrows support `at: "head"` or `"tail"` anchoring and native debug markers. Triangles support vertex/center positioning, axis flips, and native diagnostic geometry. Debug text labels use bundled Roboto unless a registered byte font is selected.                                                                                                                                                                                                                                                                                                                   |
-| Tables                  | Column definitions default to 100pt when no width is supplied; numeric layouts divide the available width after gaps. Headers and cells are measured with their actual wrapping, padding, and renderer options before placement. Headers repeat on callback-driven continuations, and each continuation reserves its repeated header before placing the next row.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| Callbacks               | `overflow` and cell `renderer` callbacks are synchronous JavaScript callbacks only. They cannot use Node output, streams, or plugin loading.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Composition             | Registered PDF bytes support append, one-based page selection, selected-page overlay with `scale`, `fitWidth`, `fitHeight`, and proportional-fit control, deferred insert/rebuild, and static or instance byte split. No paths or output directories are accepted. Appending or rebuilding a source page does not retain its existing `/Annots` graph.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Existing PDFs           | Construct with `new Recipe(bytes, options)` to edit in place; `read(bytes)` and `readAsync(blob)` inspect metadata only and do not replace Recipe output state. `editPage(pageNumber)` uses the byte-backed modifier; links, registered images, and text-box clipping use that active modifier context. Polygon-derived shapes are supported while editing. `createPage()` and registered-PDF `appendPage()` continue through that modifier after source construction. Page geometry, including 90/270-degree rotation and non-zero MediaBox origins, uses Recipe coordinates for all high-level drawing and annotations. `pauseContext()`/`resumeContext()` split an edit into appended content contexts. Paths and streams are unavailable.                                                                                         |
-| Metadata and encryption | New and modified PDFs receive canonical Recipe dates and Producer/Creator fields; source modifications retain prior ModDate/Creator/Producer as `source-*` Info entries. `info()` returns the source's Info entries overlaid with the values set on the Recipe, as native does. `getPageInfo()` follows Node Recipe and exposes the writable output Info dictionary during source editing; use `pageInfo(pageNumber)` or `getCurrentPageInfo()` for page geometry. `structure("json")` provides a browser-safe summary and finalizes the Recipe through `endPDF()`. Paths, streams, and log files are unavailable.                                                                                                                                                                                                                    |
-| Writer events           | Native `writer.getEvents()` exposes `OnPageWrite` and `OnCatalogWrite` EventEmitter hooks that can modify dictionaries while they are written. Wasm has no equivalent because it would need C++-to-JavaScript callbacks and live dictionary handles with explicit mid-write lifetime management; Node EventEmitter hooks are intentionally excluded from the browser-safe API.                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-
-Table header styling follows native precedence: column header options (or
-defaults), table header overrides, `alignToData`, then `hcell` box overrides.
-Body text styles do not flow into headers, except `direction`, which a header
-without its own takes from its column, then the table. Default font metrics
-can still produce different wrapping as described above.
-
-The current PDFWriter `AppendPDFPagesFromPDF` byte path does not deep-copy an
-existing page's `/Annots` graph. Recipe-created annotations are preserved in
-their own output, but appended or rebuilt source pages lose existing
-annotations. This is a core copying limitation, not a browser storage issue.
-
-Text-markup rectangles use Wasm's measured ascent-to-descent line box; native
-Recipe uses `1.4 × textHeight`. Both cover the text, but their vertical bounds
-can differ along with the platforms' font metrics.
-
-A negative link width or height is accepted on both ends and covers the same
-area, but Wasm writes the `/Rect` in normalized order where native writes it
-reversed.
-
-Recipe annotation dates (`/M`) name the same instant on both ends, but Wasm
-writes them in UTC (`D:20260102030405Z`) where native writes local time with
-its offset (`D:20260102083405+05'30'`).
-
-Wasm's async `createRecipe()` factory dynamically imports bundled Roboto only
-when its `defaultFont` option is omitted. Pass custom default bytes/Blob/File or
-`false` (named-font registration only) to skip that download. Custom default
-bytes use the family name `default`. The low-level runtime never imports Roboto.
-These initialization options are specific to the byte-first Wasm factory;
-native Recipe loads its bundled fonts synchronously.
+Editing a password-protected source opens it with `password` on native; the
+Wasm modifier cannot open one yet, so decrypt it with
+`recrypt(bytes, { password })` first.
 
 Wasm loads bidi-js, which the `direction` option reorders right-to-left text
 with, by importing `"bidi-js"` when `createMuhammaraWasm()` or
 `createRecipe()` runs, unless given `bidi: false`. The Wasm-only `loadBidi()`
-loads it later, from that import or from a module the caller passes. It is
-loaded once for the page, Worker or process and shared by every instance.
-Without it, calls that have to order text by direction throw. Native always
-has it.
+loads it later. Without it, calls that order text by direction throw. Native
+always has it.
 
-No filesystem PDF output or plugin loader is emulated. Recipe always returns an
-owned `Uint8Array` from `endPDF()` and its optional callback; custom assets must
-be registered from bytes. Integer Recipe version enums (`10` through `17` and
-`20`) and byte/Blob registration APIs are browser byte-first extensions, not
-Node Recipe parity behavior.
+`Recipe.thirdPartyLicenses()` reads the notices embedded in
+`muhammara-wasm.wasm`, which bundlers copy without the package's other files.
+The native packages keep theirs in `THIRD_PARTY_NOTICES.md` next to the
+`.node` binary.
+
+## Lifecycle
 
 Wasm-only `writer.dispose()`, `PDFByteReader.dispose()`, `Recipe.dispose()`, and
 `Recipe.disposeAssets()` release Emscripten heap allocations that JavaScript

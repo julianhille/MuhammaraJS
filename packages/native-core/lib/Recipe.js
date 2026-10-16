@@ -57,6 +57,8 @@ function createNativePlatform(muhammara) {
   return {
     muhammara,
     defaultFontFamily: "helvetica",
+    // What image() takes, for its error messages.
+    imageReference: "an image path",
 
     /**
      * Read the native constructor arguments: `"new"` (or `Buffer.from("new")`)

@@ -276,7 +276,9 @@ function replaceContentStream(recipe, pageIndex, objectId, content) {
  * @returns {void}
  */
 function rewriteStream(recipe, copyingContext, objectId, content) {
-  var source = recipe.pdfReader
+  // Read through the copying context's own parser, whose objects it copies.
+  var source = copyingContext
+    .getSourceDocumentParser()
     .parseNewObject(objectId)
     .toPDFStream()
     .getDictionary()
@@ -399,7 +401,9 @@ export const replaceText = function replaceText(text, replacement, pageNumber) {
   assertPageNumber(this, pageNumber, "replaceText");
   var pageIndex = pageNumber - 1;
   var page = this.pdfReader.parsePage(pageIndex).getDictionary();
-  var contents = page.queryObject(PdfName.CONTENTS);
+  var contents = page.exists(PdfName.CONTENTS)
+    ? page.queryObject(PdfName.CONTENTS)
+    : null;
 
   if (
     !contents ||

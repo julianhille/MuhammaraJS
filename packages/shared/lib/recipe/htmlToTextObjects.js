@@ -52,7 +52,7 @@ const HtmlTag = Object.freeze({
  */
 export const htmlToTextObjects = function (htmlCodes, options = {}) {
   const nodes = new DOMParser().parseFromString(
-    `<html>${htmlCodes}</html>`,
+    `<html>${closeOmittedListItems(htmlCodes)}</html>`,
     "text/html",
   );
   const textObjects = parseNode(nodes, options).childs[0].childs;
@@ -202,8 +202,9 @@ function parseNode(node, options) {
       }
     }
   }
-  let value = node.data ? node.data.replace(/^\s*/gm, "") : null;
-  if (value !== null && /^\s/.test(node.data) && !startsLine(node)) {
+  // HTML whitespace only: a no-break or em space is content.
+  let value = node.data ? node.data.replace(/^[ \t\n\r\f]*/gm, "") : null;
+  if (value !== null && /^[ \t\n\r\f]/.test(node.data) && !startsLine(node)) {
     value = " " + value;
   }
   // Whitespace before a line break would only pad the end of the line.
@@ -270,13 +271,81 @@ function parseNode(node, options) {
     }
   }
   const ignoreValue = ["\n", "\n\n"];
-  parsedData.childs = parsedData.childs.filter((item) => {
+  parsedData.childs = parsedData.childs.filter((item, index, items) => {
+    // Whitespace right before a block draws no line of its own.
+    const next = items[index + 1];
+    if (next && BLOCK_TAGS.has(next.tag) && isBlankInline(item)) return false;
     return (
       item.tag ||
       (item.value && !ignoreValue.includes(item.value.replace(/ /g, "")))
     );
   });
   return parsedData;
+}
+
+// Elements that start a line of their own.
+const BLOCK_TAGS = new Set([
+  HtmlTag.P,
+  HtmlTag.LI,
+  HtmlTag.UL,
+  HtmlTag.OL,
+  HtmlTag.H1,
+  HtmlTag.H2,
+  HtmlTag.H3,
+]);
+
+/**
+ * Whether a parsed object draws nothing but HTML whitespace inline.
+ * @private
+ * @param {Object} item - A parsed text object.
+ * @returns {boolean} True for whitespace text or an inline element of it.
+ */
+function isBlankInline(item) {
+  if (!item.tag) return /^[ \t\n\r\f]*$/.test(item.value || "");
+  return (
+    !BLOCK_TAGS.has(item.tag) &&
+    item.tag !== HtmlTag.BR &&
+    (item.childs || []).every(isBlankInline)
+  );
+}
+
+/**
+ * Insert the list end tags HTML lets a document leave out, as browsers
+ * recover them: an `<li>` ends the open item of its list, a `</ul>` or
+ * `</ol>` ends everything up to its list (or the innermost list when no such
+ * list is open), and what is still open at the end is ended there.
+ * @private
+ * @param {string} html - The HTML source.
+ * @returns {string} The HTML with every list and list item closed.
+ */
+function closeOmittedListItems(html) {
+  const open = [];
+  const close = (from) =>
+    open
+      .splice(from)
+      .reverse()
+      .map((name) => `</${name}>`)
+      .join("");
+  const isList = (name) => name === HtmlTag.UL || name === HtmlTag.OL;
+  const body = String(html).replace(
+    /<(\/?)(li|ul|ol)\b[^>]*>/gi,
+    (tag, closing, name) => {
+      name = name.toLowerCase();
+      if (!closing) {
+        const ended = name === HtmlTag.LI && open.at(-1) === HtmlTag.LI;
+        const prefix = ended ? close(open.length - 1) : "";
+        if (!tag.endsWith("/>")) open.push(name);
+        return prefix + tag;
+      }
+      if (name === HtmlTag.LI) {
+        return open.at(-1) === HtmlTag.LI ? close(open.length - 1) : "";
+      }
+      let from = open.lastIndexOf(name);
+      if (from < 0) from = open.findLastIndex(isList);
+      return from < 0 ? "" : close(from);
+    },
+  );
+  return body + close(0);
 }
 
 // Shared with text layout; non-enumerable so it is not a Recipe method.

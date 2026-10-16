@@ -1,3 +1,4 @@
+import { pageRotationMatrix } from "./utils.js";
 import {
   AnnotSubtype,
   AnnotIcon,
@@ -133,14 +134,31 @@ function linkPdf(recipe, url, left, bottom, width, height) {
       )
     )
       throw new TypeError("URL link requires a URL and valid PDF rectangle");
-    // A negative width or height covers the same area; the /Rect is written
-    // with its lower-left corner first.
+    // The rectangle in user space: a rotated page turns what is drawn on it,
+    // and the link must cover the turned drawing. A negative width or height
+    // covers the same area; the /Rect is written lower-left corner first.
+    // Only an edited page's drawing is turned by its rotation.
+    const page = recipe.editingPage && recipe.metadata?.[recipe.pageNumber];
+    const matrix = page ? pageRotationMatrix(page) : null;
+    const corners = [
+      [left, bottom],
+      [left + width, bottom + height],
+    ].map(([x, y]) =>
+      matrix
+        ? [
+            matrix[0] * x + matrix[2] * y + matrix[4],
+            matrix[1] * x + matrix[3] * y + matrix[5],
+          ]
+        : [x, y],
+    );
+    const xs = corners.map(([x]) => x);
+    const ys = corners.map(([, y]) => y);
     recipe.writer.attachURLLinktoCurrentPage(
       url,
-      Math.min(left, left + width),
-      Math.min(bottom, bottom + height),
-      Math.max(left, left + width),
-      Math.max(bottom, bottom + height),
+      Math.min(...xs),
+      Math.min(...ys),
+      Math.max(...xs),
+      Math.max(...ys),
     );
   } finally {
     recipe.resumeContext();
@@ -465,8 +483,10 @@ export const _writeAnnotations = function _writeAnnotations() {
 
     if (annot.replies) {
       annot.replies.forEach((reply) => {
+        // A reply is a Text annotation unless it asks for another subtype,
+        // so a reply to a highlight does not highlight the text again.
         this._annot(
-          annot.subtype,
+          reply?.subtype || AnnotSubtype.TEXT,
           { ...annot.args, reply },
           annot.pageNumber,
           ref,

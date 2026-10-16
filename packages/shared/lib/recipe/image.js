@@ -114,14 +114,23 @@ export const image = function image(imgSrc, x, y, options = {}) {
 
     this.xObjects.push(xObject);
     ctx.gs(xObject.getGsName(gsId));
+    // A negative size mirrors: flip, then fit to the size itself, which
+    // gives the same placement as fitting to the negative size.
+    const flipX = width < 0 ? -1 : 1;
+    const flipY = height < 0 ? -1 : 1;
+    if (flipX < 0 || flipY < 0) ctx.cm(flipX, 0, 0, flipY, 0, 0);
+    const size = { width: Math.abs(width), height: Math.abs(height) };
     if (page) {
-      const placed = placedPage(page, width, height);
+      const placed = placedPage(page, size.width, size.height);
       ctx.cm(...placed.matrix).drawImage(placed.x, placed.y, imgSrc, {
         index,
         transformation: { ...imgOptions.transformation, ...placed.size },
       });
     } else {
-      ctx.drawImage(0, 0, imgSrc, imgOptions);
+      ctx.drawImage(0, 0, imgSrc, {
+        ...imgOptions,
+        transformation: { ...imgOptions.transformation, ...size },
+      });
     }
   });
 
@@ -162,8 +171,15 @@ export const image = function image(imgSrc, x, y, options = {}) {
  * @param {Object} options - The image() options.
  * @returns {number} The zero-based index; 0 when `page` is omitted.
  * @throws {RangeError} If `page` is not an integer from 1 to 4294967296.
+ * @throws {TypeError} If the removed `index` option is given.
  */
 function imageIndex(options) {
+  // The prerelease zero-based option would silently draw the first page.
+  if (options.index !== undefined) {
+    throw new TypeError(
+      "image index was replaced by the one-based page option; pass page: index + 1",
+    );
+  }
   const page = options.page ?? 1;
   if (!Number.isInteger(page) || page < 1 || page > 0x100000000) {
     throw new RangeError("image page must be an integer from 1 to 4294967296");
@@ -414,7 +430,7 @@ export const _getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
   const page = pdfPage(this, imgSrc, index);
   const dimensions = page
     ? displayedPageSize(page)
-    : this.writer.getImageDimensions(imgSrc, index);
+    : imageDimensions(this, imgSrc, index);
   // An unreadable image measures 0 by 0. Drawing it would leave an image
   // object that is never written, so endPDF() could not finish the PDF.
   if (!(dimensions.width > 0 && dimensions.height > 0)) {
@@ -494,7 +510,29 @@ export const _getImgOffset = function _getImgOffset(imgSrc = "", options = {}) {
  * @throws {Error} If the image cannot be found.
  */
 function requireImage(recipe, imgSrc) {
-  if (recipe.platform.assetVersion(imgSrc) === null) {
-    throw new Error(`Unknown image: ${imgSrc}`);
+  if (recipe.platform.assetVersion(imgSrc) !== null) return;
+  // Bytes in place of a name are described by their type, not their content.
+  if (typeof imgSrc !== "string") {
+    throw new TypeError(
+      `Unknown image: expected ${recipe.platform.imageReference}, received ${imgSrc?.constructor?.name ?? typeof imgSrc}`,
+    );
+  }
+  throw new Error(`Unknown image: ${imgSrc}`);
+}
+
+/**
+ * The size of an image, or 0 by 0 for one that cannot be read, such as a
+ * TIFF frame past its last: native measures that as 0 by 0, Wasm throws.
+ * @private
+ * @param {Recipe} recipe - The recipe instance.
+ * @param {*} imgSrc - The image.
+ * @param {number} index - The zero-based page or frame.
+ * @returns {{width: number, height: number}} The size.
+ */
+function imageDimensions(recipe, imgSrc, index) {
+  try {
+    return recipe.writer.getImageDimensions(imgSrc, index);
+  } catch {
+    return { width: 0, height: 0 };
   }
 }

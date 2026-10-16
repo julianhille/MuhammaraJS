@@ -84,3 +84,4 @@ packages/native/docs/api/type-declarations.md
 
 # Fuzzer output
 packages/native-with-source/fuzz/out/
+tests/output/

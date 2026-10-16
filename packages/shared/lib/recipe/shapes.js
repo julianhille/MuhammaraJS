@@ -324,7 +324,8 @@ export const star = function star(cx, cy, radius, points = 5, options = {}) {
   delete starOptions.link;
 
   if (odd(points)) {
-    starPath = _oddStar(_n_gon(points, cx, cy, radius, options));
+    // The private copy: _n_gon() writes into the options it gets.
+    starPath = _oddStar(_n_gon(points, cx, cy, radius, starOptions));
   } else {
     let offset = -1;
     let halfPoints = points / 2;
@@ -349,7 +350,8 @@ export const star = function star(cx, cy, radius, points = 5, options = {}) {
     } else {
       // Want a point of star to be top-most
       starOptions.rotation = 360 / points / 2 + userRotation;
-      ngon = _n_gon(points, cx, cy, radius);
+      // With the options, so a fill-only star reaches its radius.
+      ngon = _n_gon(points, cx, cy, radius, starOptions);
 
       for (let i = 0; i < points; i++) {
         let j = (i * interval) % points;

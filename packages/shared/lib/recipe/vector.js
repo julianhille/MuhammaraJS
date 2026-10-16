@@ -97,7 +97,11 @@ export const circle = function circle(x, y, radius, options = {}) {
           pathOptions.strokeModel || pathOptions.colorModel,
           true,
         );
+        // The shape's line cap, join and miter limit, as a line gets.
         ctx
+          .J(pathOptions.lineCap)
+          .j(pathOptions.lineJoin)
+          .M(pathOptions.miterLimit)
           .d(pathOptions.dash, pathOptions.dashPhase)
           .drawCircle(
             radius,
@@ -221,7 +225,12 @@ export const rectangle = function rectangle(x, y, width, height, options = {}) {
         xObject.stroke(colorModel);
 
         if (options.borderRadius) {
-          ctx.w(pathOptions.width).d(pathOptions.dash, pathOptions.dashPhase);
+          ctx
+            .w(pathOptions.width)
+            .J(pathOptions.lineCap)
+            .j(pathOptions.lineJoin)
+            .M(pathOptions.miterLimit)
+            .d(pathOptions.dash, pathOptions.dashPhase);
 
           const inset = Math.min(margin / 2, width / 2, height / 2);
           drawRoundedRectangle(
@@ -236,6 +245,9 @@ export const rectangle = function rectangle(x, y, width, height, options = {}) {
           ctx.S();
         } else {
           ctx
+            .J(pathOptions.lineCap)
+            .j(pathOptions.lineJoin)
+            .M(pathOptions.miterLimit)
             .d(pathOptions.dash, pathOptions.dashPhase)
             .drawRectangle(
               Math.min(margin / 2, width / 2),
@@ -444,7 +456,12 @@ export const ellipse = function ellipse(cx, cy, rx, ry, options = {}) {
         ctx.gs(xObject.getGsName(pathOptions.strokeGsId));
         const margin = pathOptions.width / 2;
         xObject.stroke(colorModel);
-        ctx.w(pathOptions.width).d(pathOptions.dash, pathOptions.dashPhase);
+        ctx
+          .w(pathOptions.width)
+          .J(pathOptions.lineCap)
+          .j(pathOptions.lineJoin)
+          .M(pathOptions.miterLimit)
+          .d(pathOptions.dash, pathOptions.dashPhase);
 
         // ... requires adjusting the internal drawing to accomodate line thickness.
         drawEllipse(
@@ -620,7 +637,12 @@ export const arc = function arc(
         ctx.gs(xObject.getGsName(pathOptions.strokeGsId));
         const margin = pathOptions.width / 2;
         xObject.stroke(colorModel);
-        ctx.w(pathOptions.width).d(pathOptions.dash, pathOptions.dashPhase);
+        ctx
+          .w(pathOptions.width)
+          .J(pathOptions.lineCap)
+          .j(pathOptions.lineJoin)
+          .M(pathOptions.miterLimit)
+          .d(pathOptions.dash, pathOptions.dashPhase);
 
         // ... requires adjusting the internal drawing to accomodate line thickness.
         drawArc(

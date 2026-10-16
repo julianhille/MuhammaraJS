@@ -1,3 +1,4 @@
+import { pageRotationMatrix } from "./utils.js";
 import { Coordinate } from "../recipe-constants.js";
 
 /**
@@ -95,36 +96,12 @@ export const _calibrateCoordinateForAnnots =
       offsetY,
       pageNumber,
     );
-    const { width, height, rotate, mediaBox } = pageMetadata(this, pageNumber);
-    const startX = mediaBox[0];
-    const startY = mediaBox[1];
-    let rotateOffsetX = 0,
-      rotateOffsetY = 0;
-    switch (rotate) {
-      case 90:
-        rotateOffsetX = height - startX;
-        rotateOffsetY = startY;
-        break;
-      case 180:
-        rotateOffsetX = width;
-        rotateOffsetY = height;
-        break;
-      case 270:
-        rotateOffsetX = startX;
-        rotateOffsetY = width - startY;
-        break;
-      default:
-    }
-    // return { nx: tx, ny: ty };
-    const { nx, ny } = rotateCoord(
-      0,
-      0,
-      tx,
-      ty,
-      360 - rotate,
-      rotateOffsetX,
-      rotateOffsetY,
-    );
+    // The same transform drawing on a rotated page gets.
+    const matrix = pageRotationMatrix(pageMetadata(this, pageNumber));
+    if (!matrix) return { nx: tx, ny: ty };
+    const [a, b, c, d, e, f] = matrix;
+    const nx = a * tx + c * ty + e;
+    const ny = b * tx + d * ty + f;
     return {
       nx,
       ny,
@@ -149,33 +126,12 @@ export const _reverseCoordinate = function _reverseCoordinate(
   offsetY = 0,
   pageNumber,
 ) {
-  const { height } = pageMetadata(this, pageNumber);
-  const ox = x - offsetX;
-  const oy = height - y - offsetY;
+  // The inverse of _calibrateCoordinate(), media box origin included.
+  const { height, mediaBox } = pageMetadata(this, pageNumber);
+  const ox = x - offsetX - mediaBox[0];
+  const oy = height - (y - mediaBox[1]) - offsetY;
   return {
     ox,
     oy,
   };
 };
-
-/**
- * Rotate a point around a center and translate it.
- * @private
- * @param {number} cx - The center x.
- * @param {number} cy - The center y.
- * @param {number} x - The point x.
- * @param {number} y - The point y.
- * @param {number} angle - The rotation in degrees, clockwise in PDF space.
- * @param {number} [offsetX=0] - Added to the rotated x.
- * @param {number} [offsetY=0] - Added to the rotated y.
- * @returns {{nx: number, ny: number}} The rotated point.
- */
-function rotateCoord(cx, cy, x, y, angle, offsetX = 0, offsetY = 0) {
-  const radians = (Math.PI / 180) * angle,
-    cos = Math.cos(radians),
-    sin = Math.sin(radians),
-    nx = cos * (x - cx) + sin * (y - cy) + cx + offsetX,
-    ny = cos * (y - cy) - sin * (x - cx) + cy + offsetY;
-
-  return { nx, ny };
-}

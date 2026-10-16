@@ -28,9 +28,9 @@ function cloneOptions(value) {
 }
 
 /**
- * Append one page through an open copying context, with its annotations
- * where the writer reports page writes (native); without writer events
- * (Wasm) the page is appended without its /Annots.
+ * Append one page through an open copying context, with its annotations:
+ * through the writer's page write event on native, through the copying
+ * context on Wasm.
  *
  * @param {any} pdfWriter - The writer.
  * @param {any} cpyCxt - The copying context of the source.
@@ -43,8 +43,13 @@ function appendPageWithAnnotations(pdfWriter, cpyCxt, pageNumber) {
     .getSourceDocumentParser()
     .parsePageDictionary(pageNumber);
 
-  if (!pageDictionary.exists(ANNOTATION_PREFIX) || !pdfWriter.getEvents) {
+  if (!pageDictionary.exists(ANNOTATION_PREFIX)) {
     cpyCxt.appendPDFPageFromPDF(pageNumber);
+    return;
+  }
+  // Wasm copies the annotations itself, having no writer events.
+  if (!pdfWriter.getEvents) {
+    cpyCxt._appendPageWithAnnotations(pageNumber);
     return;
   }
   let reffedObjects;
@@ -166,7 +171,32 @@ function clearTextFlow(recipe) {
   recipe._flowWaits = false;
 }
 
+/**
+ * The transformation from a page's upright Recipe frame (its media box, as
+ * displayed, from the media box origin) to its user space, for a page with a
+ * /Rotate: the `cm` drawing uses and the transform annotations get.
+ * @private
+ * @param {{rotate: number, width: number, height: number, mediaBox: number[]}} page
+ *   The page metadata; width and height as displayed.
+ * @returns {?number[]} The matrix [a, b, c, d, e, f], or null for an upright page.
+ */
+function pageRotationMatrix(page) {
+  const { rotate, width, height, mediaBox } = page;
+  const [x0, y0] = mediaBox;
+  switch ((((rotate || 0) % 360) + 360) % 360) {
+    case 90:
+      return [0, 1, -1, 0, height + x0 + y0, y0 - x0];
+    case 180:
+      return [-1, 0, 0, -1, width + 2 * x0, height + 2 * y0];
+    case 270:
+      return [0, -1, 1, 0, x0 - y0, width + x0 + y0];
+    default:
+      return null;
+  }
+}
+
 export {
+  pageRotationMatrix,
   ANNOTATION_PREFIX,
   PAGE_CONTEXT_STATE,
   cloneOptions,
