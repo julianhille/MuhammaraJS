@@ -27,6 +27,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Open an encrypted Recipe source as native does: `new Recipe(bytes)` without
+  the right `password` throws `Unable to read/edit PDF file (pages=0)` instead
+  of opening a document with no pages, and `new Recipe(bytes, { password })`
+  reads its page geometry instead of throwing. `read()` and `readAsync()` also
+  open encrypted bytes with the Recipe `password` and throw for bytes without
+  readable pages. As in native, a source that needs a password to open cannot
+  be edited: `endPDF()` throws instead of writing a corrupt PDF
+  [#1003](https://github.com/julianhille/MuhammaraJS/issues/1003)
 - Keep a word joined by a non-breaking space (U+00A0) together on a
   justified Recipe line instead of widening the gap inside it, as native does
   [#330](https://github.com/julianhille/MuhammaraJS/issues/330)

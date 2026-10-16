@@ -266,11 +266,18 @@ export function createEndPDF({
    * @returns {Uint8Array} Finished PDF bytes.
    * @throws {TypeError} If `callback` is supplied but is not a function.
    * @throws {Error} If a page is still active while pages are marked for
-   * deletion, or a PDF operation fails.
+   * deletion, the source needs a password to open, or a PDF operation
+   * fails.
    */
   return function (callback) {
     if (callback !== undefined && typeof callback !== "function") {
       throw new TypeError("endPDF callback must be a function");
+    }
+    if (this._sourceNeedsPassword) {
+      // As on native, a source that needs a password to open is read-only.
+      throw new Error(
+        "Editing a password-protected source is unsupported; decrypt it with recrypt() first",
+      );
     }
     var bytes = endPDF(this);
     if (!this._insertions || this._rebuiltBytes) {

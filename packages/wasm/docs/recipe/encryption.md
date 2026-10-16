@@ -25,9 +25,14 @@ permission mask. `Recipe.permission()` combines the supported names `print`,
 `modify`, `copy`, `edit`, `fillform`, `extract`, `assemble`, and `printbest`.
 
 Byte-first encryption supports RC4 and AES-128 through PDF 1.7, and AES-256
-for PDF 2.0. Recipe cannot directly open a password-protected
-source; use the low-level `recrypt()` API to decrypt bytes first, modify the
-plain bytes, then configure output encryption.
+for PDF 2.0. Pass the source `password` to read a source that needs a password
+to open: `new Recipe(bytes, { password })` then reports page geometry through
+`pageInfo()`. Without the right password the constructor throws
+`Unable to read/edit PDF file (pages=0)`, as in native. Such a
+source cannot be edited and `endPDF()` throws; use the low-level `recrypt()`
+API to decrypt bytes first, modify the plain bytes, then configure output
+encryption. A source protected only by an owner password opens and edits
+without one.
 
 ```js
 import { createMuhammaraWasm, createRecipe } from "@muhammara/wasm";

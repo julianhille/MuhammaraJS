@@ -300,6 +300,50 @@ describe("Encryption", () => {
     });
   });
 
+  // GH-1003: an encrypted source is read only with its password.
+  const taskESP = "Encrypted Buffer source needs its password";
+  it(taskESP, () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "../TestMaterials/PDFWithPassword.PDF"),
+    );
+    assert.throws(() => new Recipe(src), /pages=0/);
+    assert.throws(
+      () => new Recipe(src, undefined, { password: "wrong" }),
+      /pages=0/,
+    );
+    const recipe = new Recipe(src, undefined, { password: "user" });
+    assert.equal(recipe.pageInfo(1).width, 595);
+    assert.equal(recipe.pageInfo(1).height, 842);
+    const aes = fs.readFileSync(
+      path.join(__dirname, "../TestMaterials/ProtectedAES256.pdf"),
+    );
+    const plain = fs.readFileSync(
+      path.join(__dirname, "../TestMaterials/recipe/test2.pdf"),
+    );
+    assert.throws(() => new Recipe(plain).read(aes), /pages=0/);
+    assert.equal(recipe.read(aes)[1].width, 200);
+    const aesRecipe = new Recipe(aes, undefined, { password: "user" });
+    assert.equal(aesRecipe.pageInfo(1).height, 300);
+    // Editing stays unsupported, so no output is written over the encryption.
+    assert.throws(
+      () => aesRecipe.info({ title: "T" }).endPDF(() => {}),
+      /copying context/,
+    );
+    // An owner-password-only source opens without a password and stays editable.
+    let ownerOnly;
+    new Recipe(Buffer.from("new"), undefined, { ownerPassword: "own" })
+      .createPage(100, 100)
+      .endPage()
+      .endPDF((buffer) => (ownerOnly = buffer));
+    let edited;
+    new Recipe(ownerOnly)
+      .editPage(1)
+      .text("Edited", 10, 10)
+      .endPage()
+      .endPDF((buffer) => (edited = buffer));
+    assertBufferEncryption(edited, undefined, true);
+  });
+
   // TODO: this seems to be broken
   // const taskMPF = 'Modify file with view password';
   // it(taskMPF, (done) => {
