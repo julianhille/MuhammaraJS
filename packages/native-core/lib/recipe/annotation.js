@@ -6,6 +6,7 @@ const {
   Coordinate,
 } = require("../recipe-constants");
 const { cssColors } = require("../css-colors");
+const { pdfaAnnotationFlags } = require("../pdfa");
 
 /**
  * Encodes annotation text as a PDF text string, so characters outside
@@ -65,9 +66,11 @@ function annotationDate(writer, value) {
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If `options.color` is not a known color, or a
  *   position, size, opacity, border, or `quadPoints` value is invalid.
+ * @throws {Error} If a PDF/A document does not allow the subtype, flags,
+ *   opacity or color, or an area without an appearance stream.
  */
 exports.comment = function comment(text = "", x, y, options = {}) {
-  this._validateAnnot(options);
+  this._validateAnnot(options, AnnotSubtype.TEXT);
   validateAnnotationPosition(x, y, options);
   this.annotationsToWrite.push({
     subtype: AnnotSubtype.TEXT,
@@ -191,6 +194,8 @@ Object.defineProperty(exports, "linkPdf", { value: linkPdf });
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If `options.color` is not a known color, or a
  *   position, size, opacity, border, or `quadPoints` value is invalid.
+ * @throws {Error} If a PDF/A document does not allow the subtype, flags,
+ *   opacity or color, or an area without an appearance stream.
  */
 exports.annot = function annot(
   x,
@@ -200,7 +205,7 @@ exports.annot = function annot(
 ) {
   const { width, height, replies } = options;
   const text = options.text || options.contents;
-  this._validateAnnot(options);
+  this._validateAnnot(options, subtype);
   validateAnnotationPosition(x, y, options);
   this.annotationsToWrite.push({
     subtype,
@@ -333,7 +338,11 @@ exports._annot = function _annot(subtype, args = {}, pageNumber, ref) {
     .writeKey("Open")
     .writeBooleanValue(params.open)
     .writeKey("F")
-    .writeNumberValue(getFlagBitNumberByName(params.flag));
+    .writeNumberValue(
+      pdfaAnnotationFlags(this.pdfa_, getFlagBitNumberByName(params.flag), {
+        subtype,
+      }),
+    );
 
   var opacity = (reply || options).opacity ?? 1;
   if (opacity !== 1) {
@@ -563,6 +572,44 @@ exports._getTextMarkupAnnotationSubtype =
   };
 
 /**
+ * Check a queued annotation and its replies against the PDF/A level of the
+ * Recipe, as Wasm does when it queues one.
+ * @private
+ * @param {Recipe} recipe - The recipe.
+ * @param {string} subtype - The annotation subtype.
+ * @param {object} options - Annotation options, with optional `replies`.
+ * @returns {void}
+ * @throws {Error} If the PDF/A document does not allow the subtype, flags,
+ *   opacity or color, or an annotation without an appearance stream.
+ */
+function requirePdfaAnnotation(recipe, subtype, options) {
+  if (!recipe.pdfa_) return;
+  var { width, height } = options;
+  // text markup annotations get a color by default
+  var colored = Boolean(
+    options.color || recipe._getTextMarkupAnnotationSubtype(String(subtype)),
+  );
+  /**
+   * @param {*} flags - The flags of the annotation or a reply.
+   * @param {number} [opacity] - Its opacity.
+   * @returns {number} The flag bits to write.
+   */
+  var check = (flags, opacity) =>
+    pdfaAnnotationFlags(recipe.pdfa_, getFlagBitNumberByName(flags), {
+      subtype,
+      opacity,
+      width,
+      height,
+      colored,
+    });
+  check(options.flag ?? options.flags, options.opacity);
+  // a reply without flags of its own has its parent's, as _annot() writes it
+  (options.replies || []).forEach((reply) =>
+    check(reply?.flag || reply?.flags, reply?.opacity),
+  );
+}
+
+/**
  * Rejects an unknown annotation flag when the annotation is queued, before the
  * page is written.
  * @private
@@ -667,15 +714,18 @@ function validateAnnotationPosition(x, y, options) {
  * annotation is written, so an invalid one is never queued.
  * @private
  * @param {Object} [options] - Annotation options, with optional `replies`.
+ * @param {string} subtype - The annotation subtype.
  * @returns {void}
- * @throws {Error} If a flag is neither a bit mask nor an AnnotFlag value.
+ * @throws {Error} If a flag is neither a bit mask nor an AnnotFlag value, or
+ *   the PDF/A level does not allow the annotation.
  * @throws {TypeError} If `options.color` is not a known color, or a size,
  *   opacity, border, or `quadPoints` value is invalid.
  */
-exports._validateAnnot = function _validateAnnot(options) {
+exports._validateAnnot = function _validateAnnot(options, subtype) {
   validateAnnotationFlags(options);
   validateAnnotationValues(options);
   annotationColorComponents(this, (options || {}).color);
+  requirePdfaAnnotation(this, subtype, options || {});
 };
 
 /**

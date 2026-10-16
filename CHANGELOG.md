@@ -37,6 +37,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Write PDF/A documents with the new `pdfa` Recipe option,
+  `{ level, iccProfile, outputCondition }`: PDF/A-1b, 2b, 2u, 3b, 3u, 4, 4e
+  and 4f (`Recipe.PdfA`), with the PDF version of the level, XMP metadata that
+  identifies it, and an output intent with the caller's ICC profile, given as
+  a Buffer or a path. Recipe throws where the document would not conform:
+  transparency in PDF/A-1, colors the profile does not describe, hidden
+  annotations, annotations without an appearance stream from PDF/A-2 on,
+  custom Info entries in PDF/A-4, and encryption; see
+  [Write PDF/A Documents](packages/native/docs/how-to/write-pdfa-documents.md) [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
+- Attach files to a new PDF with Recipe `attach(name, file, options)`, with a
+  MIME type, a description, and how each file relates to the document
+  (`Recipe.AFRelationship`) [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
+- Remove the creation or modification date of an Info dictionary with
+  `setCreationDate(null)` and `setModDate(null)` [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
 - Write XMP metadata that mirrors the Info dictionary with the new `xmp` option
   of Recipe, and read the XMP packet of a source PDF with `recipe.xmp()`. An
   edit keeps the existing packet, or, with `xmp: true`, replaces it with one
@@ -76,6 +90,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `source-Creator`, `source-Producer` and `source-ModDate` of the edited source
   over those it carries from an earlier edit, as `@muhammara/wasm` does
   [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- Start the objects that native Recipe appends to an output file when it writes
+  annotations on their own line, after the `%%EOF` of the first pass, as PDF/A
+  requires [#1000](https://github.com/julianhille/MuhammaraJS/issues/1000)
 - Keep the custom text Info entries of a source PDF, empty ones included, in their
   original spelling when Recipe edits it. They used to be dropped by the next
   edit

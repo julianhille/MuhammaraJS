@@ -10,6 +10,13 @@ var {
   pdfDateToXmp,
   hasPlainMetadata,
 } = require("../xmp");
+var {
+  PdfAFeature,
+  requirePdfaAllows,
+  requirePdfaAttachment,
+  writeOutputIntents,
+} = require("../pdfa");
+var { attachment, writeAttachments } = require("../attachments");
 
 var PLAIN_METADATA =
   "Recipe cannot read or write the XMP of a PDF whose metadata is not encrypted";
@@ -67,8 +74,9 @@ function trappedValues(muhammara) {
  *   not included. Otherwise the recipe instance. A standard field set to an empty array is cleared; one without a value (such as `""`), and a custom one that is null or undefined, is left as it is.
  * @throws {TypeError} For an empty key, or Creator, Producer, CreationDate,
  *   ModDate, Trapped and the `source-*` entries, which Recipe writes itself.
- * @throws {Error} If the source information cannot be read, or options are
- *   given after endPDF().
+ * @throws {Error} If the source information cannot be read, options are
+ *   given after endPDF(), or a custom entry is given in a PDF/A-4 document,
+ *   which has no Info dictionary.
  */
 exports.info = function info(options) {
   if (!options) {
@@ -85,6 +93,7 @@ exports.info = function info(options) {
       // an empty array clears the field
       if (value) setInfoValue(this, name, value);
     } else if (value !== undefined && value !== null) {
+      requirePdfaAllows(this.pdfa_, PdfAFeature.CUSTOM_INFO);
       // written now, and again by endPDF() over the entries of the source
       this.writer
         .getDocumentContext()
@@ -255,7 +264,8 @@ function openSourceReader(recipe) {
  * info(); then the XMP packet when the `xmp` option is set.
  * @private
  * @returns {Recipe} The recipe instance.
- * @throws {Error} If the source information cannot be read.
+ * @throws {Error} If the source information cannot be read, or a PDF/A-4f
+ *   document has no attached file.
  * @throws {Error} For a source that needs its user password, which Recipe
  *   cannot write, and for the `xmp` option on a source that keeps its
  *   metadata unencrypted.
@@ -280,7 +290,18 @@ exports._writeInfo = function _writeInfo() {
         I have to disable this part before it gets fixed in HummusJS.
     */
 
-  const infoDictionary = this.writer.getDocumentContext().getInfoDictionary();
+  // PDF/A-4 has no Info dictionary: its values only reach the XMP packet, and
+  // the date the writer stamps on an edit, the annotation pass, is removed
+  if (this.pdfa_?.withoutInfo) {
+    this.writer.getDocumentContext().getInfoDictionary().setModDate(null);
+  }
+  const infoDictionary = this.pdfa_?.withoutInfo
+    ? {
+        setCreationDate() {},
+        setModDate() {},
+        addAdditionalInfoEntry() {},
+      }
+    : this.writer.getDocumentContext().getInfoDictionary();
   const xmpDates = {};
   if (oldInfo) {
     Object.getOwnPropertyNames(oldInfo).forEach((key) => {
@@ -337,7 +358,30 @@ exports._writeInfo = function _writeInfo() {
       infoDictionary[key] = this.infoValues_[key];
     }
   });
-  if (this.options.xmp) writeXmp(this.writer, infoDictionary, xmpDates);
+  if (this.options.xmp || this.pdfa_) {
+    writeXmp(this.writer, infoDictionary, xmpDates, this.pdfa_);
+  }
+  const attachments = this.attachments_ ? [...this.attachments_.values()] : [];
+  requirePdfaAttachment(this.pdfa_, attachments.length);
+  if (attachments.length) {
+    // once: the annotation pass appends to the file that has them
+    this.attachmentIds_ =
+      this.attachmentIds_ ||
+      writeAttachments(
+        this.writer.getObjectsContext(),
+        attachments,
+        this.muhammara,
+      );
+    setCatalogEntry(this.writer, "Names", this.attachmentIds_.names);
+    setCatalogEntry(this.writer, "AF", this.attachmentIds_.associated);
+  }
+  if (this.pdfa_) {
+    // once, as the attached files
+    this.outputIntentsId_ =
+      this.outputIntentsId_ ||
+      writeOutputIntents(this.writer.getObjectsContext(), this.pdfa_);
+    setCatalogEntry(this.writer, "OutputIntents", this.outputIntentsId_);
+  }
   return this;
 };
 
@@ -351,9 +395,10 @@ exports._writeInfo = function _writeInfo() {
  * @param {Object} dates - The XMP dates.
  * @param {string} [dates.createDate] - The creation date.
  * @param {string} [dates.modifyDate] - The modification date.
+ * @param {Object} [pdfa] - The PDF/A level to identify the document as.
  * @returns {void}
  */
-function writeXmp(writer, info, dates) {
+function writeXmp(writer, info, dates, pdfa) {
   const packet = buildXmpPacket(
     Object.assign(
       {
@@ -363,6 +408,7 @@ function writeXmp(writer, info, dates) {
         keywords: info.keywords,
         creator: info.creator,
         producer: info.producer,
+        pdfa,
       },
       dates,
     ),
@@ -377,12 +423,64 @@ function writeXmp(writer, info, dates) {
   const stream = objects.startUnfilteredPDFStream(dictionary);
   stream.getWriteStream().write(Array.from(Buffer.from(packet, "utf8")));
   objects.endPDFStream(stream);
+  setCatalogEntry(writer, "Metadata", id);
+}
+
+/**
+ * Point a catalog entry at an object when the catalog is written, in place of
+ * the entry of a source PDF.
+ * @private
+ * @param {Object} writer - The writer.
+ * @param {string} key - The catalog key.
+ * @param {number} id - The object ID.
+ * @returns {void}
+ */
+function setCatalogEntry(writer, key, id) {
   writer.requireCatalogUpdate();
   writer.getEvents().on("OnCatalogWrite", (event) => {
-    event.catalogDictionaryContext.writeKey("Metadata");
+    event.catalogDictionaryContext.writeKey(key);
     event.catalogDictionaryContext.writeObjectReferenceValue(id);
   });
 }
+
+/**
+ * @name attach
+ * @desc Attach a file to a new PDF, as an embedded file that the document
+ *   lists as associated with it. A file attached again under the same name
+ *   replaces the earlier one.
+ * @memberof Recipe#
+ * @function
+ * @param {string} name - The file name.
+ * @param {Uint8Array|string} file - The file content, or its path.
+ * @param {Object} [options] - The options.
+ * @param {string} [options.mimeType="application/octet-stream"] - The MIME type.
+ * @param {string} [options.description] - A description of the file.
+ * @param {Recipe.AFRelationship} [options.relationship="Unspecified"] - How the
+ *   file relates to the document.
+ * @param {Date} [options.modDate] - The modification date; now by default.
+ * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If the name is empty, the file is no bytes, the MIME
+ *   type is no bare `type/subtype`, the description no string, the
+ *   modDate no valid Date, or the relationship is unknown.
+ * @throws {Error} After endPDF(), for a source PDF, with insertPage(), or
+ *   when the PDF/A level does not allow attached files.
+ */
+exports.attach = function attach(name, file, options) {
+  if (this.ended) throw new Error("PDF writer has ended");
+  if (!this.isNewPDF) throw new Error("attach() applies to a new PDF");
+  if (this.insertInformation) {
+    throw new Error("insertPage() cannot be combined with pdfa or attach()");
+  }
+  requirePdfaAllows(this.pdfa_, PdfAFeature.ATTACHMENTS);
+  const bytes = typeof file === "string" ? fs.readFileSync(file) : file;
+  if (!(bytes instanceof Uint8Array)) {
+    throw new TypeError("An attached file needs its bytes");
+  }
+  const entry = attachment(name, bytes, options);
+  this.attachments_ = this.attachments_ || new Map();
+  this.attachments_.set(name, entry);
+  return this;
+};
 
 /**
  * @name custom
@@ -395,7 +493,8 @@ function writeXmp(writer, info, dates) {
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If the key or value is null or undefined, or the key is
  *   an Info entry Recipe writes itself.
- * @throws {Error} After endPDF().
+ * @throws {Error} After endPDF(), or in a PDF/A-4 document, which has no
+ *   Info dictionary.
  */
 exports.custom = function custom(key, value) {
   if ([key, value].some((part) => part === undefined || part === null)) {

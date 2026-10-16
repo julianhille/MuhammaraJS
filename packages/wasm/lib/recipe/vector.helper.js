@@ -5,6 +5,7 @@ import {
   LineJoin,
 } from "../value-sets.js";
 import { colorModel, pathColors } from "./colors.js";
+import { PdfAFeature, requirePdfaAllows } from "../pdfa.js";
 
 /**
  * Reads a `rotation` option in degrees. A numeric string counts as its number.
@@ -109,6 +110,7 @@ export function createVectorHelpers(runtime) {
      * @returns {object} Native style values; -1 leaves a cap or join unchanged.
      * @throws {TypeError} If `rotation` is not a finite number.
      * @throws {RangeError} If `miterLimit` is not a number of at least 1.
+     * @throws {Error} If the PDF/A level does not allow transparency.
      */
     _pathOptions: function (options = {}) {
       // Validate before anything is drawn.
@@ -120,6 +122,7 @@ export function createVectorHelpers(runtime) {
           ? (this._opacity ?? 1)
           : Math.max(0, Math.min(1, Number(options.opacity)));
       if (!Number.isFinite(opacity)) opacity = 1;
+      if (opacity < 1) requirePdfaAllows(this._pdfa, PdfAFeature.TRANSPARENCY);
       var dash = Array.isArray(options.dash)
         ? options.dash
         : lineStyle.dash || [];

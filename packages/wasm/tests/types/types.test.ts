@@ -308,6 +308,8 @@ async function usesLowLevelSurface() {
   syncModifier.end();
   modifier.requireCatalogUpdate();
   modifier.getDocumentContext().getInfoDictionary().title = "modified";
+  // null removes a date
+  modifier.getDocumentContext().getInfoDictionary().setModDate(null);
   modifier.createPDFTextString("text");
   modifier.createPDFDate();
   modifier.createPageModifier();
@@ -467,6 +469,27 @@ async function usesLowLevelSurface() {
   var recipe = new Recipe({ version: 1.7, compress: false, title: "Byte PDF" });
   var xmpPacket: string | undefined = new Recipe({ xmp: true }).xmp();
   var infoValues: Record<string, string> = new Recipe().info();
+  new Recipe({
+    pdfa: {
+      level: Recipe.PdfA.A1B,
+      iccProfile: new Uint8Array(),
+      outputCondition: "sRGB IEC61966-2.1",
+    },
+  });
+  // @ts-expect-error pdfa.level takes a Recipe.PdfA value.
+  new Recipe({ pdfa: { level: "9Z", iccProfile: new ArrayBuffer(0) } });
+  new Recipe()
+    .attach("data.xml", new Uint8Array(), {
+      mimeType: "text/xml",
+      description: "Data",
+      relationship: Recipe.AFRelationship.DATA,
+      modDate: new Date(),
+    })
+    .attach("notes.txt", new ArrayBuffer(0));
+  // @ts-expect-error relationship takes a Recipe.AFRelationship value.
+  new Recipe().attach("a", new Uint8Array(), { relationship: "X" });
+  // @ts-expect-error pdfa needs an ICC profile.
+  new Recipe({ pdfa: { level: "1B" } });
   recipe
     .createPage()
     .setPageBox(muhammara.ePDFPageBoxCropBox, 18, 18, 594, 774)
@@ -1040,6 +1063,7 @@ async function usesNamedValueSets() {
   // @ts-expect-error PDF text rendering modes are 0 to 7.
   context.Tr(8);
   var info = writer.getDocumentContext().getInfoDictionary();
+  info.setCreationDate(null);
   info.trapped = muhammara.EInfoTrappedTrue;
   var trapped: EInfoTrapped = info.trapped;
   void trapped;

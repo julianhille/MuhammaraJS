@@ -320,6 +320,11 @@ describe("Recipe annotation parity", function () {
     assert.equal(annotations[0].dictionary.Name.toString(), "Comment");
     assert.equal(annotations[6].dictionary.Contents.toText(), "No replies.");
     assert.equal(annotations[7].dictionary.Contents.toText(), "Empty replies.");
+    assert.doesNotThrow(() =>
+      new Recipe()
+        .createPage(100, 100)
+        .comment("Null reply.", 10, 10, { replies: [null] }),
+    );
   });
 
   it("inherits parent metadata for replies without their own", function () {

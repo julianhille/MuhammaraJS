@@ -401,6 +401,8 @@ describe("Recipe annotation parity", function () {
     recipe.comment("No replies.", 300, 300);
     recipe.comment("Empty replies.", 300, 400, { replies: [] });
     var annotations = await finish(recipe);
+    // the annotation pass appends its objects to the file on their own line
+    assert.doesNotMatch(fs.readFileSync(output, "latin1"), /%%EOF\d/);
     assert.equal(annotations.length, 8);
     [0, 3].forEach(function (index) {
       var parent = annotations[index];
@@ -426,6 +428,11 @@ describe("Recipe annotation parity", function () {
     assert.equal(annotations[0].dictionary.Name.toString(), "Comment");
     assert.equal(annotations[6].dictionary.Contents.toText(), "No replies.");
     assert.equal(annotations[7].dictionary.Contents.toText(), "Empty replies.");
+    assert.doesNotThrow(() =>
+      new muhammara.Recipe(Buffer.from("new"))
+        .createPage(100, 100)
+        .comment("Null reply.", 10, 10, { replies: [null] }),
+    );
   });
 
   it("writes squiggly text markup options", async function () {

@@ -51,6 +51,17 @@ muhammara
   .getInfoDictionary()
   // @ts-expect-error getAdditionalInfoEntries() takes no key.
   .getAdditionalInfoEntries("Company");
+// null removes a date
+muhammara
+  .createWriter("info.pdf")
+  .getDocumentContext()
+  .getInfoDictionary()
+  .setModDate(null);
+muhammara
+  .createWriter("info.pdf")
+  .getDocumentContext()
+  .getInfoDictionary()
+  .setCreationDate(null);
 var colorOptions: muhammara.ColorOptions = { colorspace: deviceColorSpace };
 void [pageBoxName, imageKind, textEncoding, colorOptions];
 var computedColorspace: string = "rgb";
@@ -1073,3 +1084,29 @@ var xmpPacket: string | undefined = new muhammara.Recipe(
   "out.pdf",
   { xmp: true },
 ).xmp();
+new muhammara.Recipe("new", "out.pdf", {
+  pdfa: {
+    level: muhammara.Recipe.PdfA.A1B,
+    iccProfile: "sRGB.icc",
+    outputCondition: "sRGB IEC61966-2.1",
+  },
+});
+new muhammara.Recipe("new", "out.pdf", {
+  pdfa: { level: "1B", iccProfile: Buffer.alloc(0) },
+});
+// @ts-expect-error pdfa.level takes a Recipe.PdfA value.
+new muhammara.Recipe("new", "out.pdf", {
+  pdfa: { level: "9Z", iccProfile: "" },
+});
+new muhammara.Recipe("new", "out.pdf")
+  .attach("data.xml", Buffer.from("<x/>"), {
+    mimeType: "text/xml",
+    description: "Data",
+    relationship: muhammara.Recipe.AFRelationship.DATA,
+    modDate: new Date(),
+  })
+  .attach("notes.txt", "notes.txt");
+// @ts-expect-error relationship takes a Recipe.AFRelationship value.
+new muhammara.Recipe("new", "out.pdf").attach("a", "a", { relationship: "X" });
+// @ts-expect-error pdfa needs an ICC profile.
+new muhammara.Recipe("new", "out.pdf", { pdfa: { level: "1B" } });

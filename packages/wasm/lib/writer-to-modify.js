@@ -1258,14 +1258,16 @@ export function createWriterToModifyFactory({
       },
       /**
        * Sets `/CreationDate`.
-       * @param {string|Date|PDFDate} value - PDF date string, Date, or PDFDate.
+       * @param {string|Date|PDFDate|null} value - PDF date string, Date, or
+       *   PDFDate; null removes the date.
        * @returns {void}
        * @throws {TypeError} If `value` is not a valid date.
        * @throws {Error} If the modifier has ended or the date cannot be parsed or set.
        */
       setCreationDate: function (value) {
         requireOpen();
-        var date = normalizePDFDate(value);
+        // null removes the date, as native does
+        var date = value === null ? "" : normalizePDFDate(value);
         withString(date, (pointer) => {
           if (
             !module._muhammara_wasm_modifier_set_info_date(modifier, 0, pointer)
@@ -1275,14 +1277,16 @@ export function createWriterToModifyFactory({
       },
       /**
        * Sets `/ModDate`.
-       * @param {string|Date|PDFDate} value - PDF date string, Date, or PDFDate.
+       * @param {string|Date|PDFDate|null} value - PDF date string, Date, or
+       *   PDFDate; null removes the date.
        * @returns {void}
        * @throws {TypeError} If `value` is not a valid date.
        * @throws {Error} If the modifier has ended or the date cannot be parsed or set.
        */
       setModDate: function (value) {
         requireOpen();
-        var date = normalizePDFDate(value);
+        // null removes the date, as native does
+        var date = value === null ? "" : normalizePDFDate(value);
         withString(date, (pointer) => {
           if (
             !module._muhammara_wasm_modifier_set_info_date(modifier, 1, pointer)

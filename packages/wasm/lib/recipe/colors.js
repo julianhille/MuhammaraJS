@@ -1,5 +1,6 @@
 import { Colorspace, ChromaCommand } from "../value-sets.js";
 import { PAGE_CONTEXT_STATE } from "./context-state.js";
+import { PdfAFeature, requirePdfaAllows } from "../pdfa.js";
 
 /** Device color space of a hex color code, keyed by its length. */
 var deviceColorspaceByLength = {
@@ -109,6 +110,7 @@ function hex(value) {
  * @param {object} [options={}] - Options with `colorspace` and `colorName`.
  * @returns {{colorspace: RecipeColorSpace, values: number[], name: string, alternate: (DeviceColorSpace|undefined)}} Components from 0 to 1.
  * @throws {TypeError} If the color space is unknown.
+ * @throws {Error} If the PDF/A output intent does not allow the color.
  */
 export function colorModel(recipe, value, options = {}) {
   var colorspace = options.colorspace || recipe.options.colorspace || "";
@@ -128,19 +130,33 @@ export function colorModel(recipe, value, options = {}) {
     value = known || value;
   }
   var code = hex(value || "");
+  // an unknown name is a missing color, as native
+  if (name && !registered && !/^[0-9a-f]*$/i.test(code)) code = "";
   if (!colorspace)
-    colorspace = deviceColorspaceByLength[code.length] || Colorspace.RGB;
+    colorspace =
+      deviceColorspaceByLength[code.length] ||
+      // a missing color is that of the PDF/A output intent
+      recipe._pdfa?.space.colorspace ||
+      Colorspace.RGB;
   var separationName = registered ? name : options.colorName || "";
   var separation =
     colorspace === Colorspace.SEPARATION && separationName !== "";
   if (colorspace === Colorspace.SEPARATION)
-    colorspace = deviceColorspaceByLength[code.length] || Colorspace.RGB;
+    colorspace =
+      deviceColorspaceByLength[code.length] ||
+      recipe._pdfa?.space.colorspace ||
+      Colorspace.RGB;
   if (
     code.length !== codeLengthByColorspace[colorspace] ||
     !/^[0-9a-f]+$/i.test(code)
   ) {
     code = defaultCodeByColorspace[colorspace];
   }
+  // the device colors, also as a separation's alternate
+  requirePdfaAllows(
+    recipe._pdfa,
+    { 6: PdfAFeature.RGB, 8: PdfAFeature.CMYK }[code.length],
+  );
   var values = code.match(/../g).map((part) => Number.parseInt(part, 16) / 255);
   if (separation) {
     if (
@@ -254,6 +270,8 @@ export function createSeparationMethods({
           .writeName(alternateColorspaceNames[model.alternate])
           .writeIndirectObjectReference(tintTransform)
           .endArray();
+        // endobj on its own line, as PDF/A requires
+        objects.endLine();
         objects.endIndirectObject();
       } finally {
         if (active) this.resumeContext();

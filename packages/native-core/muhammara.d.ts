@@ -2025,18 +2025,20 @@ declare namespace muhammara {
     getAdditionalInfoEntries(): { [key: string]: string };
     /**
      * Sets the creation date.
-     * @param date - The date, a PDF date string, or a PDFDate to copy.
+     * @param date - The date, a PDF date string, or a PDFDate to copy; null
+     *   removes the date.
      * @throws {TypeError} If the dictionary was not obtained from a document
      *   context.
      */
-    setCreationDate(date: string | Date | PDFDate): void;
+    setCreationDate(date: string | Date | PDFDate | null): void;
     /**
      * Sets the modification date.
-     * @param date - The date, a PDF date string, or a PDFDate to copy.
+     * @param date - The date, a PDF date string, or a PDFDate to copy; null
+     *   removes the date.
      * @throws {TypeError} If the dictionary was not obtained from a document
      *   context.
      */
-    setModDate(date: string | Date | PDFDate): void;
+    setModDate(date: string | Date | PDFDate | null): void;
 
     title: string;
     author: string;
@@ -3277,6 +3279,18 @@ declare namespace muhammara {
     type TextAlign = "left" | "center" | "right" | "justify";
     /** A `Recipe.TextDirection` value. */
     type TextDirection = "auto" | "ltr" | "rtl" | "none";
+    /** A `Recipe.PdfA` value. */
+    type PdfA = "1B" | "2B" | "2U" | "3B" | "3U" | "4" | "4E" | "4F";
+    /** A `Recipe.AFRelationship` value. */
+    type AFRelationship =
+      | "Source"
+      | "Data"
+      | "Alternative"
+      | "Supplement"
+      | "EncryptedPayload"
+      | "FormData"
+      | "Schema"
+      | "Unspecified";
     /** Known text-box alignments, with string compatibility for computed values. */
     type TextBoxAlign =
       TextAlign | `${TextAlign} ${VerticalAlign}` | (string & {});
@@ -3290,6 +3304,13 @@ declare namespace muhammara {
     interface RecipeOptions {
       /** PDF version of a new PDF: 1.0 through 1.7 or 2.0; other values use 1.7. */
       version?: number;
+      /**
+       * Write a new PDF as PDF/A (ISO 19005): the PDF version of the level, XMP
+       * metadata with the PDF/A identification, and an output intent with the
+       * given ICC profile. Not with `version` set to another version,
+       * encryption, or a source PDF.
+       */
+      pdfa?: Recipe.PdfAOptions;
       /**
        * Write XMP metadata that mirrors the Info values of the PDF, in place of
        * the packet of an edited one. Everything else in an old packet is lost.
@@ -3431,6 +3452,30 @@ declare namespace muhammara {
       fill?: Color;
       /** Outline the image box in green and mark the placement point in red. */
       debug?: boolean | number;
+    }
+
+    interface AttachOptions {
+      /** The MIME type. Defaults to `application/octet-stream`. */
+      mimeType?: string;
+      /** A description of the file. */
+      description?: string;
+      /** How the file relates to the document. Defaults to `Unspecified`. */
+      relationship?: Recipe.AFRelationship;
+      /** The modification date. Defaults to now. */
+      modDate?: Date;
+    }
+
+    interface PdfAOptions {
+      /** The PDF/A level. */
+      level: Recipe.PdfA;
+      /**
+       * The ICC profile of the output intent, or its path: an RGB, CMYK or
+       * gray profile. The document's device colors must use its color space;
+       * gray is always allowed.
+       */
+      iccProfile: Uint8Array | string;
+      /** The output condition identifier, such as `sRGB IEC61966-2.1`. Defaults to `Custom`. */
+      outputCondition?: string;
     }
 
     interface InfoOptions {
@@ -3887,6 +3932,36 @@ declare namespace muhammara {
       readonly RTL: "rtl";
       readonly NONE: "none";
     };
+    /** The PDF/A levels (ISO 19005) of the `pdfa` option. */
+    static readonly PdfA: {
+      /** PDF/A-1b: PDF 1.4. */
+      readonly A1B: "1B";
+      /** PDF/A-2b: PDF 1.7. */
+      readonly A2B: "2B";
+      /** PDF/A-2u: PDF 1.7, text that maps to Unicode. */
+      readonly A2U: "2U";
+      /** PDF/A-3b: PDF/A-2b that may carry attached files. */
+      readonly A3B: "3B";
+      /** PDF/A-3u: PDF/A-2u that may carry attached files. */
+      readonly A3U: "3U";
+      /** PDF/A-4: PDF 2.0, document information in XMP only. */
+      readonly A4: "4";
+      /** PDF/A-4e: PDF/A-4 that may carry 3D content. */
+      readonly A4E: "4E";
+      /** PDF/A-4f: PDF/A-4 with at least one attached file. */
+      readonly A4F: "4F";
+    };
+    /** How a file passed to `attach()` relates to the document. */
+    static readonly AFRelationship: {
+      readonly SOURCE: "Source";
+      readonly DATA: "Data";
+      readonly ALTERNATIVE: "Alternative";
+      readonly SUPPLEMENT: "Supplement";
+      readonly ENCRYPTED_PAYLOAD: "EncryptedPayload";
+      readonly FORM_DATA: "FormData";
+      readonly SCHEMA: "Schema";
+      readonly UNSPECIFIED: "Unspecified";
+    };
     /** Which table rows the `row` options apply to. */
     static readonly TableRowNth: {
       readonly EVEN: "even";
@@ -4331,6 +4406,23 @@ declare namespace muhammara {
      *   unencrypted (`/EncryptMetadata false`).
      */
     xmp(): string | undefined;
+    /**
+     * Attach a file to a new PDF, as an embedded file that the document lists
+     * as associated with it. A file attached again under the same name
+     * replaces the earlier one.
+     * @param name - The file name.
+     * @param file - The file content, or its path.
+     * @throws {TypeError} If the name is empty, the file is no bytes, the MIME
+     *   type is no bare `type/subtype`, the description no string, the
+     *   modDate no valid Date, or the relationship is unknown.
+     * @throws {Error} After endPDF(), for a source PDF, with insertPage(), or
+     *   when the PDF/A level does not allow attached files.
+     */
+    attach(
+      name: string,
+      file: Uint8Array | string,
+      options?: Recipe.AttachOptions,
+    ): Recipe;
 
     /**
      * @param key - The key
@@ -4350,7 +4442,8 @@ declare namespace muhammara {
      * @param srcPageNumber - The one-based page number to be inserted from the other pdf.
      * @returns The recipe instance. Pages are inserted by `endPDF()`;
      *   Buffer sources do not support insertion.
-     * @throws {Error} If pages were deleted with deletePage() on this Recipe.
+     * @throws {Error} If pages were deleted with deletePage() on this Recipe,
+     *   or it writes PDF/A or attached files.
      * @throws {Error} If afterPageNumber is not a number.
      * @throws {TypeError} If pdfSrc or srcPageNumber is missing.
      */

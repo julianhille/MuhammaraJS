@@ -210,13 +210,20 @@ export function createCompositionMethods({
      * @param {string} name Registered source PDF name.
      * @param {number} sourcePageNumber One-based source page number.
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If `afterPageNumber` is not a non-negative integer.
+     * @throws {Error} If `afterPageNumber` is not a non-negative integer, or
+     * the Recipe writes PDF/A or attached files.
      * @throws {TypeError} If the PDF is not registered or the source page is
      * not a positive integer.
      */
     insertPage: function (afterPageNumber, name, sourcePageNumber) {
       if (this._deletedPages?.size) {
         throw new Error("insertPage cannot be combined with deletePage");
+      }
+      // the inserted pages' new PDF would lose them
+      if (this._pdfa || this._attachments) {
+        throw new Error(
+          "insertPage() cannot be combined with pdfa or attach()",
+        );
       }
       if (!Number.isInteger(afterPageNumber) || afterPageNumber < 0)
         throw new Error("The afterPageNumber is inValid.");
@@ -266,7 +273,8 @@ export function createEndPDF({
    * @returns {Uint8Array} Finished PDF bytes.
    * @throws {TypeError} If `callback` is supplied but is not a function.
    * @throws {Error} If a page is still active while pages are marked for
-   * deletion, the source needs a password to open, or a PDF operation
+   * deletion, the source needs a password to open, a PDF/A-4f document has
+   * no attached file, or a PDF operation
    * fails.
    */
   return function (callback) {

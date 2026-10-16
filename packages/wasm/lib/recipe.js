@@ -44,6 +44,7 @@ import { createSecurityMethods, permission } from "./recipe/security.js";
 import { createReplaceTextMethods } from "./recipe/replace-text.js";
 import { thirdPartyLicenses } from "./recipe/licenses.js";
 import { standardInfoKeys } from "./recipe-info.js";
+import { PdfAFeature, pdfaOptions, requirePdfaAllows } from "./pdfa.js";
 
 /**
  * Packs a Recipe color model for the text export: a color-space index (0 gray,
@@ -81,6 +82,7 @@ export function createRecipeFactory({
   createReader,
   createWriterToModify,
   recrypt,
+  valueTypes,
   pageBoxes,
   registerWriterFont,
   unregisterWriterFont,
@@ -136,9 +138,13 @@ export function createRecipeFactory({
      *
      * @param {ByteSource|RecipeOptions} [sourceOrOptions={}] Source PDF bytes or creation options.
      * @param {RecipeOptions} [options={}] Options used when modifying source bytes.
-     * @throws {TypeError} If Recipe options are not an object.
+     * @throws {TypeError} If Recipe options are not an object, or `pdfa` has an
+     * unknown level, an unusable profile or an `outputCondition` that is no
+     * string.
      * @throws {Error} If the source has no readable pages, as with an encrypted
-     *   source opened without its password, or the PDF cannot be created.
+     *   source opened without its password, the PDF cannot be created, or
+     *   `pdfa` is given for a source PDF, with another `version`, or with
+     *   encryption.
      */
     constructor(sourceOrOptions = {}, options = {}) {
       var hasSource =
@@ -150,9 +156,26 @@ export function createRecipeFactory({
       if (!options || typeof options !== "object" || Array.isArray(options)) {
         throw new TypeError("Recipe options must be an object");
       }
-      var version = recipeVersion(options.version);
       initializeRecipe(this, options);
       this.encryption_ = hasSource ? {} : this._getEncryptOptions(options);
+      var iccProfile = options.pdfa?.iccProfile;
+      this._pdfa = pdfaOptions(
+        {
+          ...options,
+          version:
+            options.version === undefined
+              ? undefined
+              : recipeVersion(options.version) / 10,
+        },
+        iccProfile instanceof ArrayBuffer
+          ? new Uint8Array(iccProfile)
+          : iccProfile,
+        !hasSource,
+        Object.keys(this.encryption_).length > 0,
+      );
+      var version = recipeVersion(
+        this._pdfa ? this._pdfa.version : options.version,
+      );
       this._version = version;
       this._recipe = 0;
       if (!hasSource) {
@@ -528,8 +551,9 @@ export function createRecipeFactory({
       if (!Number.isFinite(value) || value < 0 || value > 1) {
         throw new RangeError("Opacity must be a finite number between 0 and 1");
       }
+      this._setOpacity(value);
       this._opacity = value;
-      return this._setOpacity(value);
+      return this;
     }
 
     /**
@@ -537,9 +561,11 @@ export function createRecipeFactory({
      * @private
      * @param {number} value - Opacity from 0 to 1.
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If the opacity cannot be applied.
+     * @throws {Error} If the opacity cannot be applied, or the PDF/A level does
+     *   not allow transparency.
      */
     _setOpacity(value) {
+      if (value < 1) requirePdfaAllows(this._pdfa, PdfAFeature.TRANSPARENCY);
       if (this._pageContext) this._pageContext.setOpacity(value);
       else call("_muhammara_wasm_recipe_set_opacity", this._recipe, value);
       return this;
@@ -610,7 +636,8 @@ export function createRecipeFactory({
      * @param {object} [options={}] - Font, size, color, spacing, rotation, skew, opacity, and HTML decorations.
      * @returns {Recipe} The Recipe instance.
      * @throws {TypeError} If `charSpace` is not finite or a color is invalid.
-     * @throws {Error} If the font is not registered or the text cannot be drawn.
+     * @throws {Error} If the font is not registered or the text cannot be
+     *   drawn, or the PDF/A level does not allow transparency.
      */
     _drawText(value, x, y, options = {}) {
       var point = this._calibrateCoordinate(x, y);
@@ -635,6 +662,8 @@ export function createRecipeFactory({
         options.skewX ||
         options.skewY ||
         opacity !== undefined;
+      // checked before the q, so a refused run leaves no state behind
+      if (opacity < 1) requirePdfaAllows(this._pdfa, PdfAFeature.TRANSPARENCY);
       if (transformed) {
         this._save();
         if (opacity !== undefined) this._setOpacity(opacity);
@@ -868,7 +897,7 @@ export function createRecipeFactory({
     createShapeMethods(),
     createImageMethods(runtime),
     createAnnotationMethods({ module, withString, withDoubles }),
-    createInfoMethods({ call, withString, createReader }),
+    createInfoMethods({ call, withString, createReader, valueTypes }),
     createSecurityMethods(),
     createReplaceTextMethods(),
   );

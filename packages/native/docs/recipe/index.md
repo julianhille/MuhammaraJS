@@ -21,5 +21,5 @@ names and members: `TextWrap`, `TextAlign`, `HorizontalAlign`, `VerticalAlign`, 
 `LineCap`, `LineJoin`, `ArrowAt`, `ArrowType`, `TriangleTrait`,
 `TrianglePosition`, `PageLayout`, `PageSize`, `FontStyle`, `Permission`,
 `Coordinate`, `Colorspace`, `AnnotSubtype`, `AnnotFlag`, `AnnotIcon`,
-`ChromaCommand`, and `TextDirection`. Native also has `Recipe.Source.NEW`, the sentinel for creating a new PDF;
+`ChromaCommand`, `TextDirection`, `PdfA`, and `AFRelationship`. Native also has `Recipe.Source.NEW`, the sentinel for creating a new PDF;
 Wasm has no such sentinel and adds `Recipe.StructureFormat` instead.

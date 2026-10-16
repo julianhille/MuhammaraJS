@@ -131,11 +131,39 @@ export interface RecipeMargins {
   top?: number;
   bottom?: number;
 }
+export interface RecipeAttachOptions {
+  /** The MIME type. Defaults to `application/octet-stream`. */
+  mimeType?: string;
+  /** A description of the file. */
+  description?: string;
+  /** How the file relates to the document. Defaults to `Unspecified`. */
+  relationship?: Recipe.AFRelationship;
+  /** The modification date. Defaults to now. */
+  modDate?: Date;
+}
+export interface RecipePdfAOptions {
+  /** The PDF/A level. */
+  level: Recipe.PdfA;
+  /**
+   * The ICC profile of the output intent: an RGB, CMYK or gray profile. The
+   * document's device colors must use its color space; gray is always allowed.
+   */
+  iccProfile: Uint8Array | ArrayBuffer;
+  /** The output condition identifier, such as `sRGB IEC61966-2.1`. Defaults to `Custom`. */
+  outputCondition?: string;
+}
 export interface RecipeOptions {
   /** PDF version; canonical decimal levels 1.0 through 1.7 and 2.0, and integer enums 10 through 17 and 20, are accepted. */
   version?: RecipePDFVersion;
   /** Enables stream compression. Defaults to true. */
   compress?: boolean;
+  /**
+   * Write a new PDF as PDF/A (ISO 19005): the PDF version of the level, XMP
+   * metadata with the PDF/A identification, and an output intent with the
+   * given ICC profile. Not with `version` set to another version, encryption,
+   * or a source PDF.
+   */
+  pdfa?: RecipePdfAOptions;
   /**
    * Write XMP metadata that mirrors the Info values of the PDF, in place of
    * the packet of an edited one. Everything else in an old packet is lost.
@@ -903,6 +931,21 @@ export interface Recipe {
    */
   xmp(): string | undefined;
   /**
+   * Attach a file to a new PDF, as an embedded file that the document lists as
+   * associated with it. A file attached again under the same name replaces the
+   * earlier one.
+   * @throws {TypeError} If the name is empty, the file is no bytes, the MIME
+   *   type is no bare `type/subtype`, the description no string, the
+   *   modDate no valid Date, or the relationship is unknown.
+   * @throws {Error} After endPDF(), for a source PDF, with insertPage(), or
+   *   when the PDF/A level does not allow attached files.
+   */
+  attach(
+    name: string,
+    file: Uint8Array | ArrayBuffer,
+    options?: RecipeAttachOptions,
+  ): this;
+  /**
    * Set a custom information entry; arrays are joined with a comma and space.
    * @throws {TypeError} If the key or value is null or undefined, or the key
    *   is one `info()` rejects.
@@ -966,6 +1009,18 @@ export declare namespace Recipe {
   type TextAlign = Recipe.HorizontalAlign | "justify";
   /** How Recipe text() orders right-to-left text before drawing it. */
   type TextDirection = "auto" | "ltr" | "rtl" | "none";
+  /** A `Recipe.PdfA` value: the PDF/A level of the `pdfa` option. */
+  type PdfA = "1B" | "2B" | "2U" | "3B" | "3U" | "4" | "4E" | "4F";
+  /** A `Recipe.AFRelationship` value: how an attached file relates to the document. */
+  type AFRelationship =
+    | "Source"
+    | "Data"
+    | "Alternative"
+    | "Supplement"
+    | "EncryptedPayload"
+    | "FormData"
+    | "Schema"
+    | "Unspecified";
   /** Horizontal placement keyword for Recipe text and images. */
   type HorizontalAlign = "left" | "center" | "right";
   /** Vertical placement keyword for Recipe text, images, and text boxes. */
@@ -1210,6 +1265,36 @@ export interface RecipeConstructor {
     readonly LTR: "ltr";
     readonly RTL: "rtl";
     readonly NONE: "none";
+  };
+  /** The PDF/A levels (ISO 19005) of the `pdfa` option. */
+  readonly PdfA: {
+    /** PDF/A-1b: PDF 1.4. */
+    readonly A1B: "1B";
+    /** PDF/A-2b: PDF 1.7. */
+    readonly A2B: "2B";
+    /** PDF/A-2u: PDF 1.7, text that maps to Unicode. */
+    readonly A2U: "2U";
+    /** PDF/A-3b: PDF/A-2b that may carry attached files. */
+    readonly A3B: "3B";
+    /** PDF/A-3u: PDF/A-2u that may carry attached files. */
+    readonly A3U: "3U";
+    /** PDF/A-4: PDF 2.0, document information in XMP only. */
+    readonly A4: "4";
+    /** PDF/A-4e: PDF/A-4 that may carry 3D content. */
+    readonly A4E: "4E";
+    /** PDF/A-4f: PDF/A-4 with at least one attached file. */
+    readonly A4F: "4F";
+  };
+  /** How a file passed to `attach()` relates to the document. */
+  readonly AFRelationship: {
+    readonly SOURCE: "Source";
+    readonly DATA: "Data";
+    readonly ALTERNATIVE: "Alternative";
+    readonly SUPPLEMENT: "Supplement";
+    readonly ENCRYPTED_PAYLOAD: "EncryptedPayload";
+    readonly FORM_DATA: "FormData";
+    readonly SCHEMA: "Schema";
+    readonly UNSPECIFIED: "Unspecified";
   };
   /** Which table rows the `row` options apply to. */
   readonly TableRowNth: {
@@ -1939,8 +2024,10 @@ export interface InfoDictionary {
   clearAdditionalInfoEntries(): void;
   getAdditionalInfoEntry(key: string): string;
   getAdditionalInfoEntries(): Record<string, string>;
-  setCreationDate(value: string | Date | PDFDate): void;
-  setModDate(value: string | Date | PDFDate): void;
+  /** Sets `/CreationDate`; null removes the date. */
+  setCreationDate(value: string | Date | PDFDate | null): void;
+  /** Sets `/ModDate`; null removes the date. */
+  setModDate(value: string | Date | PDFDate | null): void;
 }
 
 export interface PDFByteReader {

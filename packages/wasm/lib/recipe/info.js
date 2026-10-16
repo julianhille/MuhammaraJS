@@ -6,6 +6,13 @@ import {
   pdfDateToXmp,
   hasPlainMetadata,
 } from "../xmp.js";
+import {
+  PdfAFeature,
+  requirePdfaAllows,
+  requirePdfaAttachment,
+  writeOutputIntents,
+} from "../pdfa.js";
+import { attachment, writeAttachments } from "../attachments.js";
 
 var trappedValues = {
   True: constants.EInfoTrappedTrue,
@@ -20,10 +27,16 @@ var PLAIN_METADATA =
 
 /**
  * Creates Recipe document-information methods.
- * @param {{call: Function, withString: Function, createReader: Function}} dependencies - Export helpers and the reader factory.
+ * @param {{call: Function, withString: Function, createReader: Function, valueTypes: {PDFTextString: Function, PDFDate: Function}}} dependencies -
+ *   Export helpers, the reader factory and the value types.
  * @returns {object} Methods mixed into Recipe.prototype.
  */
-export function createInfoMethods({ call, withString, createReader }) {
+export function createInfoMethods({
+  call,
+  withString,
+  createReader,
+  valueTypes,
+}) {
   /**
    * Formats a Date as a local-time PDF date.
    * @param {Date} date - Date.
@@ -61,7 +74,8 @@ export function createInfoMethods({ call, withString, createReader }) {
      * @throws {TypeError} For an empty key, or Creator, Producer,
      * CreationDate, ModDate, Trapped and the `source-*` entries, which Recipe
      * writes itself.
-     * @throws {Error} If entries are set after endPDF().
+     * @throws {Error} If entries are set after endPDF(), or custom entries
+     * in a PDF/A-4 document, which has no Info dictionary.
      */
     info: function (options) {
       // the fields win over source custom entries of the same name
@@ -78,8 +92,11 @@ export function createInfoMethods({ call, withString, createReader }) {
         if (standard ? !value : value === undefined || value === null) {
           return;
         }
+        if (!standard) requirePdfaAllows(this._pdfa, PdfAFeature.CUSTOM_INFO);
         var text = Array.isArray(value) ? value.join(", ") : String(value);
         this._info[name] = text;
+        // PDF/A-4 has no Info dictionary: the values only reach XMP
+        if (this._pdfa?.withoutInfo) return;
         if (this._sourceMode) {
           var info = this.writer.getDocumentContext().getInfoDictionary();
           if (standard) info[name] = text;
@@ -124,20 +141,81 @@ export function createInfoMethods({ call, withString, createReader }) {
     },
 
     /**
-     * Writes canonical creation and modification information.
+     * Attaches a file to a new PDF, as an embedded file that the document
+     * lists as associated with it. A file attached again under the same name
+     * replaces the earlier one.
+     *
+     * @name attach
+     * @function
+     * @memberof Recipe#
+     * @param {string} name - The file name.
+     * @param {Uint8Array|ArrayBuffer} file - The file content.
+     * @param {RecipeAttachOptions} [options] - The MIME type (default
+     * `application/octet-stream`), a description, how the file relates to the
+     * document (an `AFRelationship` value, default `Unspecified`), and its
+     * modification date (default now).
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If the name is empty, the file is no bytes, the MIME
+     * type is no bare `type/subtype`, the description no string, the
+     * modDate no valid Date, or the relationship is unknown.
+     * @throws {Error} After endPDF(), for a source PDF, with insertPage(), or
+     * when the PDF/A level does not allow attached files.
+     */
+    attach: function (name, file, options) {
+      if (this._endedBytes || this._endError) {
+        throw new Error("PDF writer has ended");
+      }
+      if (this._sourceMode) throw new Error("attach() applies to a new PDF");
+      if (this._insertions) {
+        throw new Error(
+          "insertPage() cannot be combined with pdfa or attach()",
+        );
+      }
+      requirePdfaAllows(this._pdfa, PdfAFeature.ATTACHMENTS);
+      var bytes = file instanceof ArrayBuffer ? new Uint8Array(file) : file;
+      if (!(bytes instanceof Uint8Array)) {
+        throw new TypeError("An attached file needs its bytes");
+      }
+      var entry = attachment(name, bytes, options);
+      this._attachments = this._attachments || new Map();
+      this._attachments.set(name, entry);
+      return this;
+    },
+
+    /**
+     * Writes canonical creation and modification information, and the XMP
+     * packet, the PDF/A output intent and the attached files.
      *
      * @name _writeCanonicalInfo
      * @function
      * @memberof Recipe#
      * @private
-     * @returns {void}
+     * @returns {Recipe} The Recipe instance.
+     * @throws {Error} If a PDF/A-4f document has no attached file.
      */
     _writeCanonicalInfo: function () {
       var info = this._sourceMode
         ? this.writer.getDocumentContext().getInfoDictionary()
         : null;
       var now = new Date();
-      if (this.options.xmp) this._writeXmp(now);
+      if (this.options.xmp || this._pdfa) this._writeXmp(now);
+      if (this._pdfa) {
+        this._setCatalogReference(
+          "OutputIntents",
+          writeOutputIntents(this._objectsContext(), this._pdfa),
+        );
+      }
+      requirePdfaAttachment(this._pdfa, this._attachments?.size ?? 0);
+      if (this._attachments) {
+        var ids = writeAttachments(
+          this._objectsContext(),
+          [...this._attachments.values()],
+          valueTypes,
+        );
+        this._setCatalogReference("Names", ids.names);
+        this._setCatalogReference("AF", ids.associated);
+      }
+      if (this._pdfa?.withoutInfo) return this;
       if (info) {
         [
           ["modDate", "source-ModDate"],
@@ -224,6 +302,7 @@ export function createInfoMethods({ call, withString, createReader }) {
           ? dateToXmp(now)
           : pdfDateToXmp(this._sourceInfo?.creationDate),
         modifyDate: dateToXmp(now),
+        pdfa: this._pdfa,
       });
       var objects = this._objectsContext();
       var id = objects.startNewIndirectObject();
@@ -235,18 +314,34 @@ export function createInfoMethods({ call, withString, createReader }) {
       var stream = objects.startUnfilteredPDFStream(dictionary);
       stream.getWriteStream().write(new TextEncoder().encode(packet));
       objects.endPDFStream(stream);
+      this._setCatalogReference("Metadata", id);
+    },
+
+    /**
+     * Points a catalog entry at an object when the catalog is written, in
+     * place of the entry of a source PDF.
+     *
+     * @name _setCatalogReference
+     * @function
+     * @memberof Recipe#
+     * @private
+     * @param {string} key - The catalog key.
+     * @param {number} id - The object ID.
+     * @returns {void}
+     */
+    _setCatalogReference: function (key, id) {
       if (this._sourceMode) {
-        this.writer._setCatalogEntry("Metadata", id);
-      } else {
-        withString("Metadata", (keyPointer) =>
-          call(
-            "_muhammara_wasm_recipe_set_catalog_entry",
-            this._recipe,
-            keyPointer,
-            id,
-          ),
-        );
+        this.writer._setCatalogEntry(key, id);
+        return;
       }
+      withString(key, (keyPointer) =>
+        call(
+          "_muhammara_wasm_recipe_set_catalog_entry",
+          this._recipe,
+          keyPointer,
+          id,
+        ),
+      );
     },
 
     /**

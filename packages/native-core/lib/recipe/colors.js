@@ -1,5 +1,6 @@
 const fs = require("fs");
 const { Colorspace, ChromaCommand } = require("../recipe-constants");
+const { PdfAFeature, requirePdfaAllows } = require("../pdfa");
 
 /**
  * Register a color under a name as an own property, so any name, including
@@ -221,8 +222,10 @@ function tintTransform(self, color) {
  * @param {number} value - The opacity, from 0 to 1.
  * @returns {{stroke: number, fill: number}} The object IDs of the stroking
  *   (CA) and non-stroking (ca) ExtGState dictionaries.
+ * @throws {Error} If the PDF/A level of the Recipe does not allow transparency.
  */
 exports._createExtGStates = function _createExtGStates(value) {
+  if (value < 1) requirePdfaAllows(this.pdfa_, PdfAFeature.TRANSPARENCY);
   this.extGStates = this.extGStates || {};
   if (this.extGStates[value]) {
     return this.extGStates[value];
@@ -368,6 +371,7 @@ function percentToHex(code) {
  * @returns {number|Object} The color as a number, or the color model when
  *   `opt.wantColorModel` is set. Invalid values fall back to the default color.
  * @throws {TypeError} If `opt.colorspace` is not a `Recipe.Colorspace` value.
+ * @throws {Error} If the PDF/A output intent does not allow the color.
  */
 exports._transformColor = function _transformColor(code = "", opt = {}) {
   this.knownColors = this.knownColors || {};
@@ -377,7 +381,12 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
   let colorspace = opt.colorspace || Colorspace.RGB;
   let wantColorModel = opt.wantColorModel || false;
   let colorName = opt.colorName || "";
-  let defaultColor = _defaultColor(colorspace);
+  // a separation's missing color takes the PDF/A output intent's space
+  let defaultColor = _defaultColor(
+    colorspace === Colorspace.SEPARATION
+      ? this.pdfa_?.space.colorspace
+      : colorspace,
+  );
   let transformation;
 
   if (Array.isArray(code)) {
@@ -392,8 +401,9 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
     const colors = this.knownColors[colorspace];
     let color = Object.hasOwn(colors, code) ? colors[code] : undefined;
     if (!color) {
+      // an unknown name is a missing color, as in Wasm
       color = "";
-      code = defaultColor;
+      code = "";
     } else {
       colorName = code;
 
@@ -415,7 +425,10 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
     colorspace =
       { 2: Colorspace.GRAY, 6: Colorspace.RGB, 8: Colorspace.CMYK }[
         `${code.length}`
-      ] || Colorspace.RGB;
+      ] ||
+      // a missing color is that of the PDF/A output intent
+      this.pdfa_?.space.colorspace ||
+      Colorspace.RGB;
     defaultColor = _defaultColor(colorspace);
   }
 
@@ -429,6 +442,11 @@ exports._transformColor = function _transformColor(code = "", opt = {}) {
   ) {
     code = defaultColor;
   }
+  // the device colors, also as a separation's alternate
+  requirePdfaAllows(
+    this.pdfa_,
+    { 6: PdfAFeature.RGB, 8: PdfAFeature.CMYK }[code.length],
+  );
 
   if (wantColorModel) {
     transformation = toColorModel(this, code, colorspace, colorName);

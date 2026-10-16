@@ -2,6 +2,8 @@ const path = require("path");
 const fs = require("fs");
 const PDFWStreamForBuffer = require("./PDFWStreamForBuffer");
 var { standardInfoKeys } = require("./recipe-info");
+// PdfA joins the constants here: pdfa.js needs recipe-constants itself
+var { PdfA, pdfaOptions } = require("./pdfa");
 var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
 
 /**
@@ -15,6 +17,14 @@ var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
  *   the source path; for a Buffer source the result is only returned by
  *   `endPDF()` unless an output path is given.
  * @param {Object} [options] - The options for pdfDoc
+ * @param {Object} [options.pdfa] - Write a new PDF as PDF/A, with the PDF
+ *   version of the level, XMP metadata and an output intent.
+ * @param {Recipe.PdfA} options.pdfa.level - The PDF/A level.
+ * @param {Uint8Array|string} options.pdfa.iccProfile - The ICC profile of the
+ *   output intent, or its path: an RGB, CMYK or gray profile, whose color
+ *   space the document's colors must use.
+ * @param {string} [options.pdfa.outputCondition="Custom"] - The output
+ *   condition identifier, such as `sRGB IEC61966-2.1`.
  * @param {boolean} [options.xmp] - Write XMP metadata that mirrors the Info values of the PDF, in place of the packet of a source PDF that is edited.
  * @param {number} [options.version] - The PDF version of a new PDF: 1.0 through
  *   1.7 or 2.0. Other values fall back to 1.7.
@@ -30,6 +40,10 @@ var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
  * @param {number} [options.userProtectionFlag] - Encryption permission flags, see `permission()`.
  * @param {string|string[]} [options.fontSrcPath] - Directory location(s) of additional fonts.
  * @throws {Error} If an existing source PDF cannot be read or opened for editing.
+ * @throws {TypeError} If `pdfa` has an unknown level, an unusable profile or
+ *   an `outputCondition` that is no string.
+ * @throws {Error} If `pdfa` is given for a source PDF, with another
+ *   `version`, or with encryption.
  */
 class Recipe {
   constructor(src, output, options = {}) {
@@ -98,19 +112,29 @@ class Recipe {
    * @throws {Error} If the source PDF cannot be read or opened for editing.
    */
   _createWriter() {
+    const iccProfile = this.options.pdfa?.iccProfile;
+    this.pdfa_ = pdfaOptions(
+      this.options,
+      typeof iccProfile === "string" ? fs.readFileSync(iccProfile) : iccProfile,
+      this.isNewPDF,
+      Object.keys(this.encryptOptions || {}).length > 0,
+    );
+    var version = this._getVersion(
+      this.pdfa_ ? this.pdfa_.version : this.options.version,
+    );
     if (this.isNewPDF) {
       if (!this.isBufferSrc) {
         this.writer = this.muhammara.createWriter(
           this.output,
           Object.assign({}, this.encryptOptions, {
-            version: this._getVersion(this.options.version),
+            version,
           }),
         );
       } else {
         this.writer = this.muhammara.createWriter(
           this.outStream,
           Object.assign({}, this.encryptOptions, {
-            version: this._getVersion(this.options.version),
+            version,
             log: this.logFile,
           }),
         );
@@ -321,6 +345,7 @@ class Recipe {
    *   argument for a path source.
    * @returns {*} The callback result, or undefined without a callback.
    * @throws {Error} If pages are being deleted while a page is still open.
+   * @throws {Error} If a PDF/A-4f document has no attached file.
    * @throws {Error} If finalization fails; later calls rethrow the same error.
    */
   endPDF(callback) {
@@ -378,6 +403,9 @@ class Recipe {
             }),
           );
         } else {
+          // the first pass ends with %%EOF, and the objects the second
+          // appends to the file must start on their own line (PDF/A)
+          fs.appendFileSync(this.output, "\r\n");
           this.writer = this.muhammara.createWriterToModify(
             this.output,
             Object.assign({}, this.encryptOptions, {
@@ -525,7 +553,7 @@ function loadPrototypes() {
 loadPrototypes();
 
 // Named values for string options, for example Recipe.AnnotSubtype.HIGHLIGHT.
-Object.assign(Recipe, require("./recipe-constants"));
+Object.assign(Recipe, require("./recipe-constants"), { PdfA });
 
 const SharedRecipe = Recipe;
 
@@ -541,7 +569,7 @@ const SharedRecipe = Recipe;
 function createRecipe(muhammara) {
   class Recipe extends SharedRecipe {}
   Recipe.prototype.muhammara = muhammara;
-  Object.assign(Recipe, require("./recipe-constants"));
+  Object.assign(Recipe, require("./recipe-constants"), { PdfA });
   return Recipe;
 }
 

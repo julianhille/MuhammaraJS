@@ -98,7 +98,8 @@ export function createSecurityMethods() {
      * printing by default.
      * @returns {Recipe} The Recipe instance.
      * @throws {TypeError} If `options` is not a non-array object.
-     * @throws {Error} If the Recipe has already been finished.
+     * @throws {Error} If the Recipe has already been finished, or writes PDF/A,
+     * which does not allow encryption.
      */
     encrypt: function (options = {}) {
       if (!options || typeof options !== "object" || Array.isArray(options)) {
@@ -107,6 +108,7 @@ export function createSecurityMethods() {
       if (this._endedBytes || this._rebuiltBytes) {
         throw new Error("Cannot encrypt a finished Recipe");
       }
+      if (this._pdfa) throw new Error("PDF/A does not allow encryption");
       this.encryption_ = getEncryptOptions(options);
       return this;
     },
