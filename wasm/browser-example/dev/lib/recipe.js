@@ -137,7 +137,8 @@ export function createRecipeFactory({
      * @param {ByteSource|RecipeOptions} [sourceOrOptions={}] Source PDF bytes or creation options.
      * @param {RecipeOptions} [options={}] Options used when modifying source bytes.
      * @throws {TypeError} If Recipe options are not an object.
-     * @throws {Error} If password-protected input is requested or the PDF cannot be created.
+     * @throws {Error} If the source has no readable pages, as with an encrypted
+     *   source opened without its password, or the PDF cannot be created.
      */
     constructor(sourceOrOptions = {}, options = {}) {
       var hasSource =
@@ -148,16 +149,6 @@ export function createRecipeFactory({
       else options = sourceOrOptions;
       if (!options || typeof options !== "object" || Array.isArray(options)) {
         throw new TypeError("Recipe options must be an object");
-      }
-      if (
-        hasSource &&
-        ["password", "userPassword", "ownerPassword"].some(
-          (key) => options[key] !== undefined,
-        )
-      ) {
-        throw new Error(
-          "Password-protected PDF input is unavailable in WebAssembly Recipe",
-        );
       }
       var version = recipeVersion(options.version);
       initializeRecipe(this, options);
@@ -203,7 +194,8 @@ export function createRecipeFactory({
      * @param {AsyncByteSource} bytes - PDF bytes or a blob-like source.
      * @returns {Promise<RecipeMetadata>} One-based page geometry and the page count.
      * @throws {TypeError} If the source cannot be normalized to bytes.
-     * @throws {Error} If the bytes cannot be opened as a PDF.
+     * @throws {Error} If the bytes cannot be opened as a PDF or have no
+     *   readable pages; the Recipe `password` opens encrypted bytes.
      */
     async readAsync(bytes) {
       return this.read(await normalizeBytesAsync(bytes, "PDF input"));

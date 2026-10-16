@@ -832,13 +832,20 @@ export function createPageMethods(
      * @private
      * @param {Uint8Array} bytes - PDF bytes.
      * @returns {{pages: object[], metadata: object, sourceInfo: object}} Page records, metadata, and Info values.
-     * @throws {Error} If the bytes cannot be parsed.
+     * @throws {Error} If the bytes cannot be parsed or have no readable pages.
      */
     _inspectBytes: function (bytes) {
-      var reader = createReader(bytes);
+      // Like Node Recipe.read(), the Recipe password also opens encrypted bytes.
+      var reader = createReader(bytes, {
+        password: this._getEncryptOptions(this.options).password,
+      });
       var pages = [];
       var sourceInfo = {};
       try {
+        if (!reader.getPagesCount()) {
+          // Broken, or encrypted and opened without the right password.
+          throw new Error("Unable to read/edit PDF file (pages=0)");
+        }
         for (var index = 0; index < reader.getPagesCount(); index += 1) {
           var info = reader.getPageInfo(index);
           pages.push(pageRecord(index + 1, info.mediaBox, info.rotate));
@@ -891,7 +898,8 @@ export function createPageMethods(
      * @memberof Recipe#
      * @param {ByteSource} bytes - PDF bytes to inspect synchronously.
      * @returns {RecipeMetadata} Page count and one-based page geometry records.
-     * @throws {Error} If the bytes cannot be opened as a PDF.
+     * @throws {Error} If the bytes cannot be opened as a PDF or have no
+     *   readable pages; the Recipe `password` opens encrypted bytes.
      */
     read: function (bytes) {
       // Like Node Recipe.read(externalSource), inspection must not replace output state.
@@ -925,6 +933,11 @@ export function createPageMethods(
       this._pages = pages;
       this._sourceBytes = bytes;
       this._sourceInfo = sourceInfo;
+      // The modifier opens without a password, so it cannot read a source
+      // that needs one; an owner-password-only source stays editable.
+      var parser = this.writer.getModifiedFileParser();
+      this._sourceNeedsPassword = !parser.getPagesCount();
+      parser.end();
       this._sourcePageCount = pages.length;
       this._info = { ...sourceInfo };
       this.metadata = metadata;
