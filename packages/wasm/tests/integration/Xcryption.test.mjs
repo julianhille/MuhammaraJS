@@ -197,6 +197,52 @@ describe("Xcryption", function () {
     }
   });
 
+  it("decrypts strings and streams with the owner password, as with the user password", async function () {
+    // #1002: revisions 2 to 4 derived the key from the owner password itself.
+    var muhammara = await createMuhammaraWasm();
+    var readPageContent = function (reader) {
+      var contents = reader.queryDictionaryObject(
+        reader.parsePageDictionary(0),
+        "Contents",
+      );
+      var stream = reader.startReadingFromStream(contents.toPDFStream());
+      var bytes = [];
+      while (stream.notEnded()) bytes.push(...stream.read(4096));
+      return new TextDecoder("latin1").decode(new Uint8Array(bytes));
+    };
+    for (var version of [13, 14, 17, 20]) {
+      var writer = muhammara.createWriter({
+        version,
+        userPassword: "user",
+        ownerPassword: "owner",
+      });
+      writer.getDocumentContext().getInfoDictionary().title = "Encrypted";
+      var page = writer.createPage(0, 0, 100, 100);
+      writer.startPageContentContext(page).re(0, 0, 10, 10).f();
+      writer.writePage(page);
+      var encrypted = writer.end();
+      writeOutput("Xcryption-owner-password-" + version, encrypted);
+      for (var password of ["user", "owner"]) {
+        var label = version + " " + password;
+        var reader = muhammara.createReader(encrypted, { password });
+        var info = reader.queryDictionaryObject(reader.getTrailer(), "Info");
+        assert.equal(
+          reader.queryDictionaryObject(info, "Title").toText(),
+          "Encrypted",
+          label,
+        );
+        assert.match(readPageContent(reader), /0 0 10 10 re/, label);
+        reader.end();
+        var plainReader = muhammara.createReader(
+          muhammara.recrypt(encrypted, { password }),
+        );
+        assert.equal(plainReader.isEncrypted(), false, label);
+        assert.match(readPageContent(plainReader), /0 0 10 10 re/, label);
+        plainReader.end();
+      }
+    }
+  });
+
   it("encrypts and decrypts PDF 2.0 with AES-256", async function () {
     var muhammara = await createMuhammaraWasm();
     var source = muhammara.createBlankPdf(100, 100);
