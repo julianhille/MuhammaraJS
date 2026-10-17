@@ -32,4 +32,8 @@ describeEnd("wasm", "Recipe info", function (end) {
     assert.ok(structure.objects > 0);
     assert.match(recipe.structure(), /^Info\nRoot\nSize: \d+\nPages: 3$/);
   });
+
+  it("reports the structure of a PDF without /Info", function () {
+    assert.match(end.openRecipe("FontDifferences.pdf").structure(), /^Root$/m);
+  });
 });

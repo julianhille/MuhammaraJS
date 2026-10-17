@@ -10,6 +10,7 @@ import * as m_colors from "./colors.js";
 import * as m_coordinate from "./coordinate.js";
 import * as m_encrypt from "./encrypt.js";
 import * as m_font from "./font.js";
+import * as m_form from "./form.js";
 import * as m_graphics_state from "./graphics-state.js";
 import * as m_htmlToTextObjects from "./htmlToTextObjects.js";
 import * as m_image from "./image.js";
@@ -254,18 +255,19 @@ class Recipe {
    * @memberof Recipe#
    * @desc Read PDF metadata: the page count and, keyed by one-based page number,
    * each page's media box, rotation, layout and size.
-   * @param {string|Uint8Array} [inSrc] - A PDF to read instead of the recipe
-   *   source: a path or Buffer on native, bytes or a registered name on Wasm.
-   *   Reading another PDF does not change the recipe state.
+   * @param {string|Uint8Array|ArrayBuffer} [inSrc] - A PDF to read instead of
+   *   the recipe source: a path or bytes on native, bytes or a registered name
+   *   on Wasm. Reading another PDF does not change the recipe state.
    * @returns {Object} The PDF metadata.
+   * @throws {TypeError} If `inSrc` is not a path or bytes, on native.
    * @throws {Error} If the PDF cannot be read or has no pages.
    */
   read(inSrc) {
     const isForExternal = inSrc ? true : false;
+    const src = this.platform.readerSource(isForExternal ? inSrc : this.src);
     let pdfReader = null;
     let isAdopted = false;
     try {
-      const src = this.platform.readerSource(isForExternal ? inSrc : this.src);
       pdfReader = this.muhammara.createReader(src, this.encryptOptions);
       const pages = pdfReader.getPagesCount();
       if (pages == 0) {
@@ -412,6 +414,7 @@ class Recipe {
     try {
       this._deletePages();
       this._writeInfo();
+      this._writeFormFills();
       // the annotation pass writes a new Info dictionary: carry the fields
       // and custom entries over
       const info = this.writer.getDocumentContext().getInfoDictionary();
@@ -563,6 +566,7 @@ const recipeModules = {
   "coordinate.js": m_coordinate,
   "encrypt.js": m_encrypt,
   "font.js": m_font,
+  "form.js": m_form,
   "graphics-state.js": m_graphics_state,
   "htmlToTextObjects.js": m_htmlToTextObjects,
   "image.js": m_image,

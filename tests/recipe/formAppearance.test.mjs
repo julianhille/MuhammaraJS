@@ -1,15 +1,12 @@
-var assert = require("chai").assert;
-var {
+import assert from "node:assert/strict";
+import {
   appearanceBox,
   buildButtonAppearances,
   buildTextAppearance,
   parseDefaultAppearance,
   wrapLines,
-} = require("../../../native-core/lib/recipe/form-appearance");
-var {
-  FormFieldFlag,
-  FormFieldKind,
-} = require("../../../native-core/lib/recipe-constants");
+} from "@muhammara/shared/recipe/form-appearance.js";
+import { FormFieldFlag, FormFieldKind } from "@muhammara/shared/value-sets.js";
 
 /**
  * Measure text in a test font: every character is half the font size wide,
@@ -31,9 +28,9 @@ function measure(text, size) {
 var WIDGET = { rect: [10, 20, 110, 40] };
 
 /**
- * @param {Object} field - Field properties over a single-line text field.
- * @param {Object} [widget] - Widget properties over WIDGET.
- * @returns {Object} The built appearance.
+ * @param {object} field - Field properties over a single-line text field.
+ * @param {object} [widget] - Widget properties over WIDGET.
+ * @returns {object} The built appearance.
  */
 function build(field, widget) {
   return buildTextAppearance(
@@ -109,8 +106,8 @@ describe("form appearances", function () {
     ]);
     var measured = 0;
     var counted = (text) => ((measured += text.length), text.length);
-    assert.lengthOf(wrapLines("x".repeat(4000), 10, counted), 400);
-    assert.isBelow(measured, 60000);
+    assert.equal(wrapLines("x".repeat(4000), 10, counted).length, 400);
+    assert.ok(measured < 60000);
   });
 
   it("clips the text to the box inside marked content", function () {
@@ -137,7 +134,7 @@ describe("form appearances", function () {
     assert.equal(x(1), 3 + (94 - 10) / 2);
     assert.equal(x(2), 3 + 94 - 10);
     var y = only(build({ text: "Hi" }).operations, "Td")[0][2];
-    assert.closeTo(y, 2 + (16 - 9) / 2 + 2, 1e-9);
+    assert.ok(Math.abs(y - (2 + (16 - 9) / 2 + 2)) < 1e-9);
   });
 
   it("fits an automatic size to the height and the width", function () {
@@ -145,7 +142,7 @@ describe("form appearances", function () {
       only(build({ text, da: "/Helv 0 Tf 0 g" }).operations, "font")[0][1];
     assert.equal(size("Hi"), 12);
     // 40 characters at 12 are 240 wide; the text has 94 of the 96 inside.
-    assert.closeTo(size("x".repeat(40)), 4.7, 1e-9);
+    assert.ok(Math.abs(size("x".repeat(40)) - 4.7) < 1e-9);
     assert.equal(size("x".repeat(400)), 4);
     // The fitted line keeps 1pt inside the clip at 2, also right-aligned.
     var right = build({
@@ -153,7 +150,7 @@ describe("form appearances", function () {
       da: "/Helv 0 Tf 0 g",
       quadding: 2,
     }).operations;
-    assert.closeTo(only(right, "Td")[0][1], 3, 1e-9);
+    assert.ok(Math.abs(only(right, "Td")[0][1] - 3) < 1e-9);
   });
 
   it("draws the colour, background and border of the widget", function () {
@@ -214,7 +211,7 @@ describe("form appearances", function () {
       ["Tj", "three"],
     ]);
     var moves = only(operations, "Td");
-    assert.closeTo(moves[0][2], 100 - 2 - 7 - 0.75, 1e-9);
+    assert.ok(Math.abs(moves[0][2] - (100 - 2 - 7 - 0.75)) < 1e-9);
     assert.deepEqual(moves[1], ["Td", 0, -11.5]);
     // Right-aligned lines end at the same x: "one two" at 6, "three" at 16.
     moves = only(
@@ -279,6 +276,6 @@ describe("form appearances", function () {
       ["S"],
     ]);
     assert.deepEqual(checkbox.on.slice(0, 4), checkbox.off);
-    assert.lengthOf(only(checkbox.on, "l"), 2);
+    assert.equal(only(checkbox.on, "l").length, 2);
   });
 });

@@ -36,6 +36,21 @@ function asBuffer(bytes) {
 }
 
 /**
+ * Wrap a byte source in a Buffer that shares its memory.
+ * @param {string|Buffer|Uint8Array|ArrayBuffer} src - A PDF path or bytes.
+ * @returns {string|Buffer} The path, or the bytes as a Buffer.
+ * @throws {TypeError} If `src` is not a string, Buffer, Uint8Array or ArrayBuffer.
+ */
+function toRecipeSource(src) {
+  if (src instanceof ArrayBuffer) return Buffer.from(src);
+  if (src instanceof Uint8Array) return asBuffer(src);
+  if (typeof src === "string") return src;
+  throw new TypeError(
+    "Recipe source must be a path string, Buffer, Uint8Array or ArrayBuffer",
+  );
+}
+
+/**
  * Create the I/O of the shared Recipe for one loaded addon.
  * @param {Object} muhammara - The public API built by createMuhammara().
  * @returns {Object} The platform the shared Recipe runs on.
@@ -76,13 +91,17 @@ function createNativePlatform(muhammara) {
 
     /**
      * Read the native constructor arguments: `"new"` (or `Buffer.from("new")`)
-     * for a new PDF, otherwise the path or Buffer of the PDF to edit, then an
-     * optional output path and the options.
+     * for a new PDF, otherwise the path or bytes of the PDF to edit, then an
+     * optional output path and the options. A `Uint8Array` or `ArrayBuffer`
+     * is wrapped in a Buffer without copying.
      * @param {Array} args - The constructor arguments.
      * @returns {Object} The source bytes (null for a new PDF), the output, the
      *   options and the source file name.
+     * @throws {TypeError} If the source is not a string, Buffer, Uint8Array or
+     *   ArrayBuffer.
      */
     openArguments([src, output, options = {}]) {
+      src = toRecipeSource(src);
       const isBuffer = Buffer.isBuffer(src);
       const isNew = isBuffer
         ? src.equals(Buffer.from(Source.NEW))
@@ -120,13 +139,16 @@ function createNativePlatform(muhammara) {
     /**
      * What the reader and copying APIs accept for a PDF: a stream over bytes,
      * or a path as given.
-     * @param {Uint8Array|string|Object} source - Bytes, a path or a stream.
+     * @param {string|Uint8Array|ArrayBuffer} source - A path or bytes.
      * @returns {string|Object} The path or stream.
+     * @throws {TypeError} If `source` is not a string, Buffer, Uint8Array or
+     *   ArrayBuffer.
      */
     readerSource(source) {
-      return source instanceof Uint8Array
-        ? new muhammara.PDFRStreamForBuffer(asBuffer(source))
-        : source;
+      source = toRecipeSource(source);
+      return typeof source === "string"
+        ? source
+        : new muhammara.PDFRStreamForBuffer(source);
     },
 
     newWriter(options, recipe) {

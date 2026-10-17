@@ -35,6 +35,9 @@ describeEnds("Recipe foundation", function (end) {
       "AnnotFlag",
       "ChromaCommand",
       "AnnotIcon",
+      "FormFieldKind",
+      "FormFieldFlag",
+      "FormAppearances",
       "PdfA",
     ]) {
       assert.ok(Object.isFrozen(Recipe[name]), name);

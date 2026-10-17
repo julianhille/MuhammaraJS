@@ -2,7 +2,7 @@
 // operations, without touching a writer. The Wasm Recipe keeps a copy of this
 // file that differs only in its module syntax and JSDoc type casing.
 
-var { FormFieldFlag, FormFieldKind } = require("../recipe-constants");
+import { FormFieldFlag, FormFieldKind } from "../value-sets.js";
 
 // The default font size of multi-line text and list boxes, and the largest
 // automatic size of a single line (ISO 32000-1, 12.7.3.3, size 0 is auto).
@@ -292,7 +292,7 @@ function buildButtonAppearances(widget) {
   };
 }
 
-module.exports = {
+export {
   parseDefaultAppearance,
   appearanceBox,
   wrapLines,

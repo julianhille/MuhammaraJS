@@ -1,9 +1,17 @@
-var path = require("path");
-var assert = require("chai").assert;
-var muhammara = require("@muhammara/native-with-source");
-var Recipe = muhammara.Recipe;
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { describeEnds, fixture } from "../support/ends.mjs";
 
-// Expected fields per fixture, kept identical to the Wasm test.
+/**
+ * The path of a form fixture below TestMaterials/recipe.
+ * @param {string} name - The fixture name without extension.
+ * @returns {string} The path.
+ */
+function form(name) {
+  return fixture(`recipe/${name}.pdf`);
+}
+
+// Expected fields per fixture, the same on both ends.
 var EXPECTED = {
   // Written by LibreOffice Writer: its checkbox /V is Yes, the on-state is
   // the export value.
@@ -336,38 +344,24 @@ function assertObjectIDs(reader, fields) {
       var dictionary = reader.parseNewObject(widget.id).toJSObject();
       assert.equal(dictionary.Subtype.value, "Widget");
       if (widget.pageNumber !== null) {
-        assert.include(annots[widget.pageNumber - 1], widget.id);
+        assert.ok(annots[widget.pageNumber - 1].includes(widget.id));
       }
     });
   });
 }
 
-/**
- * Open a form fixture from TestMaterials/recipe.
- * @param {string} name - The fixture name without extension.
- * @returns {Recipe} The Recipe editing the fixture.
- */
-function openFixture(name) {
-  return new Recipe(
-    path.join(__dirname, "../TestMaterials/recipe/" + name + ".pdf"),
-    path.join(__dirname, "../output/formFields " + name + ".pdf"),
-  );
-}
-
-describe("formFields", function () {
+describeEnds("formFields", function (end) {
   Object.keys(EXPECTED).forEach(function (name) {
     it("reads the fields of " + name, function () {
-      assert.deepEqual(openFixture(name).formFields(), EXPECTED[name]);
+      assert.deepEqual(end.openRecipe(form(name)).formFields(), EXPECTED[name]);
     });
   });
 
   it("reads the fields of an encrypted source opened with its password", function () {
     // AcroFormPdfLib encrypted with AES-256, user password "user".
-    var recipe = new Recipe(
-      path.join(__dirname, "../TestMaterials/recipe/AcroFormEncrypted.pdf"),
-      path.join(__dirname, "../output/formFields AcroFormEncrypted.pdf"),
-      { password: "user" },
-    );
+    var recipe = end.openRecipe(form("AcroFormEncrypted"), {
+      password: "user",
+    });
     // Encrypting rewrote the file, so its object IDs differ.
     assert.deepEqual(
       withoutIDs(recipe.formFields()),
@@ -378,32 +372,31 @@ describe("formFields", function () {
   it("identifies each field and widget by its object ID", function () {
     ["AcroFormLibreOffice", "AcroFormPdfLib", "AcroFormEdgeCases"].forEach(
       function (name) {
-        var file = path.join(
-          __dirname,
-          "../TestMaterials/recipe/" + name + ".pdf",
-        );
-        assertObjectIDs(
-          muhammara.createReader(file),
-          openFixture(name).formFields(),
-        );
+        var reader = end.reader(readFileSync(form(name)));
+        try {
+          assertObjectIDs(reader, end.openRecipe(form(name)).formFields());
+        } finally {
+          reader.end();
+        }
       },
     );
   });
 
   it("keeps the object IDs in the PDF a Recipe edit writes", function () {
-    var output = path.join(__dirname, "../output/formFields edited.pdf");
-    var recipe = new Recipe(
-      path.join(__dirname, "../TestMaterials/recipe/AcroFormPdfLib.pdf"),
-      output,
+    var edited = end
+      .openRecipe(form("AcroFormPdfLib"))
+      .info({ title: "Edited" })
+      .endPDF();
+    assert.deepEqual(
+      end.openRecipe(edited).formFields(),
+      EXPECTED.AcroFormPdfLib,
     );
-    recipe.info({ title: "Edited" }).endPDF();
-    assert.deepEqual(new Recipe(output).formFields(), EXPECTED.AcroFormPdfLib);
   });
 
   it("reads a /Kids array shared by many fields once", function () {
     // 200 fields share one indirect /Kids array of 200 widgets; reading it
     // for every field would return 40000 widgets.
-    var fields = openFixture("AcroFormSharedKids").formFields();
+    var fields = end.openRecipe(form("AcroFormSharedKids")).formFields();
     assert.equal(fields.length, 200);
     assert.equal(
       fields.reduce((count, field) => count + field.widgets.length, 0),
@@ -412,38 +405,26 @@ describe("formFields", function () {
   });
 
   it("derives kinds that compare against FormFieldKind and FormFieldFlag", function () {
-    var fields = openFixture("AcroFormLibreOffice").formFields();
+    var fields = end.openRecipe(form("AcroFormLibreOffice")).formFields();
     var comment = fields.find((field) => field.name === "comment");
-    assert.equal(comment.kind, Recipe.FormFieldKind.TEXT);
-    assert.ok(comment.flags & Recipe.FormFieldFlag.MULTILINE);
+    assert.equal(comment.kind, end.Recipe.FormFieldKind.TEXT);
+    assert.ok(comment.flags & end.Recipe.FormFieldFlag.MULTILINE);
     var fruit = fields.find((field) => field.name === "fruit");
-    assert.equal(fruit.kind, Recipe.FormFieldKind.COMBO_BOX);
-    assert.ok(fruit.flags & Recipe.FormFieldFlag.EDIT);
+    assert.equal(fruit.kind, end.Recipe.FormFieldKind.COMBO_BOX);
+    assert.ok(fruit.flags & end.Recipe.FormFieldFlag.EDIT);
   });
 
   it("returns no fields for a new document or a source without a form", function () {
-    assert.deepEqual(
-      new Recipe(
-        "new",
-        path.join(__dirname, "../output/formFields new.pdf"),
-      ).formFields(),
-      [],
-    );
-    assert.deepEqual(
-      new Recipe(
-        path.join(__dirname, "../TestMaterials/recipe/blank.pdf"),
-        path.join(__dirname, "../output/formFields blank.pdf"),
-      ).formFields(),
-      [],
-    );
+    assert.deepEqual(end.newRecipe().formFields(), []);
+    assert.deepEqual(end.openRecipe(form("blank")).formFields(), []);
   });
 
   it("throws after endPDF() released the source", function () {
-    var recipe = openFixture("AcroFormPdfLib");
+    var recipe = end.openRecipe(form("AcroFormPdfLib"));
     recipe.endPDF();
-    assert.throws(
-      () => recipe.formFields(),
-      "The source PDF reader has been released by endPDF(). Read the source before ending the document.",
-    );
+    assert.throws(() => recipe.formFields(), {
+      message:
+        "The source PDF reader has been released by endPDF(). Read the source before ending the document.",
+    });
   });
 });

@@ -33,4 +33,13 @@ describeEnd("native", "Recipe info", function (end) {
       assert.match(structure, new RegExp(`^${entry}\\r$`, "m")),
     );
   });
+
+  it("prints the structure of a PDF without /Info", function () {
+    var text = outputPath(end, "info-structure-no-info.txt");
+    rmSync(text, { force: true });
+    end.openRecipe("FontDifferences.pdf").structure(text).endPDF();
+    var structure = readFileSync(text, "latin1");
+    assert.doesNotMatch(structure, /^Info\r$/m);
+    assert.match(structure, /^Root\r$/m);
+  });
 });

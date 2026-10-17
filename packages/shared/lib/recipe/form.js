@@ -1,21 +1,21 @@
 // Reads and fills the interactive form (AcroForm) fields of the source
 // document.
 
-var {
+import {
   AnnotSubtype,
   FormAppearances,
   FormFieldFlag,
   FormFieldKind,
-} = require("../recipe-constants");
-var {
+} from "../value-sets.js";
+import {
   buildButtonAppearances,
   buildTextAppearance,
-} = require("./form-appearance");
-var {
+} from "./form-appearance.js";
+import {
   planPrunedValue,
   setCatalogEntry,
   writePrunedPlan,
-} = require("./page-references");
+} from "./page-references.js";
 
 /**
  * Field types of `/FT` (ISO 32000-1, 12.7.3.1).
@@ -426,7 +426,7 @@ function readForm(parser, forFill = false) {
  *   console.log(field.name, field.kind, field.value);
  * }
  */
-exports.formFields = function formFields() {
+export const formFields = function formFields() {
   if (this.isNewPDF) return [];
   return readForm(this._getReader()).map((record) => record.field);
 };
@@ -657,7 +657,7 @@ function queueFormFills(recipe, records, values, options = {}) {
  *   .fillForm({ "person.name": "Ada Lovelace", agree: true })
  *   .endPDF();
  */
-exports.fillForm = function fillForm(values, options) {
+export const fillForm = function fillForm(values, options) {
   if (this.isNewPDF) {
     throw new Error("fillForm() needs a source PDF with a form");
   }
@@ -669,6 +669,12 @@ exports.fillForm = function fillForm(values, options) {
   }
   if (this.needToInsertPages)
     throw new Error("insertPage() cannot be combined with fillForm()");
+  // Where an unknown font throws, it throws here rather than in endPDF().
+  if (
+    typeof options?.font === "string" &&
+    !this.platform.fontFallsBackToDefault
+  )
+    this._getFont({ font: options.font });
   // The source does not change before endPDF(): read its form once.
   this._formRecords = this._formRecords || readForm(this._getReader(), true);
   queueFormFills(this, this._formRecords, values, options);
@@ -973,6 +979,6 @@ function writeFormFills(recipe, fontFor) {
  * @private
  * @returns {void}
  */
-exports._writeFormFills = function _writeFormFills() {
+export const _writeFormFills = function _writeFormFills() {
   writeFormFills(this, (family) => this._getFont({ font: family }));
 };

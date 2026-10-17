@@ -1,19 +1,18 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createMuhammaraWasm } from "../../index.js";
-import { getRecipe, recipeFixture } from "./recipe.mjs";
+import { describeEnds, fixture } from "../support/ends.mjs";
 
-// Mirrors the native fillForm tests.
+/**
+ * The bytes of a form fixture below TestMaterials/recipe.
+ * @param {string} name - The fixture name without extension.
+ * @returns {Uint8Array} The PDF bytes.
+ */
+function form(name) {
+  return new Uint8Array(readFileSync(fixture(`recipe/${name}.pdf`)));
+}
 
-describe("fillForm", function () {
-  var Recipe;
-  var muhammara;
+describeEnds("fillForm", function (end) {
   var readers = [];
-
-  before(async function () {
-    Recipe = await getRecipe();
-    muhammara = await createMuhammaraWasm();
-  });
 
   afterEach(function () {
     readers.splice(0).forEach((reader) => reader.end());
@@ -28,7 +27,7 @@ describe("fillForm", function () {
    * @returns {Uint8Array} The filled PDF.
    */
   function fill(name, values, options, prepare) {
-    var recipe = new Recipe(recipeFixture(name));
+    var recipe = end.openRecipe(form(name));
     if (prepare) prepare(recipe);
     return recipe.fillForm(values, options).endPDF();
   }
@@ -39,7 +38,10 @@ describe("fillForm", function () {
    */
   function valuesOf(bytes) {
     return Object.fromEntries(
-      new Recipe(bytes).formFields().map((field) => [field.name, field.value]),
+      end
+        .openRecipe(bytes)
+        .formFields()
+        .map((field) => [field.name, field.value]),
     );
   }
 
@@ -48,7 +50,7 @@ describe("fillForm", function () {
    * @returns {object} A reader of the PDF, ended after the test.
    */
   function readerOf(bytes) {
-    var reader = muhammara.createReader(bytes);
+    var reader = end.reader(bytes);
     readers.push(reader);
     return reader;
   }
@@ -137,7 +139,7 @@ describe("fillForm", function () {
     );
     // The field's /DA is left as it is.
     var da = (pdf) => pdf.parseNewObject(9).toJSObject().DA.toText();
-    assert.equal(da(reader), da(readerOf(recipeFixture("AcroFormPdfLib"))));
+    assert.equal(da(reader), da(readerOf(form("AcroFormPdfLib"))));
   });
 
   it("fills AcroFormLibreOffice by on-state, label and export value", function () {
@@ -192,7 +194,7 @@ describe("fillForm", function () {
   });
 
   it("draws a new appearance stream for each changed text and choice widget", function () {
-    var source = readerOf(recipeFixture("AcroFormPdfLib"));
+    var source = readerOf(form("AcroFormPdfLib"));
     var output = fill("AcroFormPdfLib", {
       "person.name": "Ada",
       country: "Spain",
@@ -215,16 +217,7 @@ describe("fillForm", function () {
       appearanceOf(source, 14).normal.getObjectID(),
     );
     assert.equal(needAppearances(reader), null);
-    // The font option draws with that font.
-    Recipe.registerFont(
-      "arial",
-      readFileSync(
-        new URL(
-          "../../../native-with-source/tests/TestMaterials/fonts/arial.ttf",
-          import.meta.url,
-        ),
-      ),
-    );
+    // The font option draws with that font, which both ends register.
     output = fill(
       "AcroFormPdfLib",
       { "person.name": "Ada" },
@@ -281,7 +274,7 @@ describe("fillForm", function () {
 
   it("fills fields that share a name by id, and rejects the name", function () {
     var output = fill("AcroFormFillCases", { 5: "one", 6: "two" });
-    var fields = new Recipe(output).formFields();
+    var fields = end.openRecipe(output).formFields();
     assert.deepEqual(
       fields
         .filter((field) => field.name === "dup")
@@ -292,8 +285,7 @@ describe("fillForm", function () {
       ],
     );
     assert.throws(
-      () =>
-        new Recipe(recipeFixture("AcroFormFillCases")).fillForm({ dup: "x" }),
+      () => end.openRecipe(form("AcroFormFillCases")).fillForm({ dup: "x" }),
       {
         message:
           'Form field name "dup" is ambiguous; fill it by one of its ids: 5, 6',
@@ -345,7 +337,8 @@ describe("fillForm", function () {
   });
 
   it("merges the values of several fillForm() calls", function () {
-    var output = new Recipe(recipeFixture("AcroFormPdfLib"))
+    var output = end
+      .openRecipe(form("AcroFormPdfLib"))
       .fillForm({ "person.name": "First", notes: "Kept" })
       .fillForm({ "person.name": "Second" })
       .endPDF();
@@ -360,9 +353,9 @@ describe("fillForm", function () {
       // Its /AcroForm has generation 1.
       ["AcroFormFillCases", { code: "AB" }, 9],
     ].forEach(([name, values, widgetID]) => {
-      var source = readerOf(recipeFixture(name));
+      var source = readerOf(form(name));
       var output = fill(name, values, {
-        appearances: Recipe.FormAppearances.VIEWER,
+        appearances: end.Recipe.FormAppearances.VIEWER,
       });
       var reader = readerOf(output);
       assert.equal(needAppearances(reader), true);
@@ -375,9 +368,7 @@ describe("fillForm", function () {
   });
 
   it("removes the XFA of a hybrid form", function () {
-    assert.ok(
-      acroFormEntry(readerOf(recipeFixture("AcroFormFillCases")), "XFA"),
-    );
+    assert.ok(acroFormEntry(readerOf(form("AcroFormFillCases")), "XFA"));
     var output = fill("AcroFormFillCases", { code: "AB" });
     assert.equal(acroFormEntry(readerOf(output), "XFA"), undefined);
     assert.equal(valuesOf(output).code, "AB");
@@ -423,7 +414,7 @@ describe("fillForm", function () {
   });
 
   it("rejects values a field does not take", function () {
-    var recipe = new Recipe(recipeFixture("AcroFormPdfLib"));
+    var recipe = end.openRecipe(form("AcroFormPdfLib"));
     [
       [{ missing: "x" }, 'No form field "missing"'],
       [
@@ -462,7 +453,7 @@ describe("fillForm", function () {
     ].forEach(([values, message]) =>
       assert.throws(() => recipe.fillForm(values), { message }),
     );
-    var fillCases = new Recipe(recipeFixture("AcroFormFillCases"));
+    var fillCases = end.openRecipe(form("AcroFormFillCases"));
     [
       [
         { multi: true },
@@ -479,7 +470,7 @@ describe("fillForm", function () {
     ].forEach(([values, message]) =>
       assert.throws(() => fillCases.fillForm(values), { message }),
     );
-    var edgeCases = new Recipe(recipeFixture("AcroFormEdgeCases"));
+    var edgeCases = end.openRecipe(form("AcroFormEdgeCases"));
     [
       [
         { "address.zip": "123456" },
@@ -501,7 +492,7 @@ describe("fillForm", function () {
   });
 
   it("rejects invalid arguments", function () {
-    var recipe = new Recipe(recipeFixture("AcroFormPdfLib"));
+    var recipe = end.openRecipe(form("AcroFormPdfLib"));
     assert.throws(() => recipe.fillForm(null), TypeError);
     assert.throws(() => recipe.fillForm([]), TypeError);
     assert.throws(() => recipe.fillForm({}, { appearances: "auto" }), {
@@ -509,42 +500,45 @@ describe("fillForm", function () {
       message: "fillForm appearances must be one of: generate, viewer",
     });
     assert.throws(() => recipe.fillForm({}, { font: 1 }), TypeError);
-    assert.throws(() => recipe.fillForm({}, { font: "nope" }), {
-      message: "Unknown font: nope",
-    });
+    // Native draws an unknown font as Helvetica, as its text does.
+    if (end.name === "wasm") {
+      assert.throws(() => recipe.fillForm({}, { font: "nope" }), {
+        message: "Unknown font: nope",
+      });
+    }
   });
 
   it("cannot be combined with insertPage()", function () {
-    Recipe.registerPdf("fill-insert-source", recipeFixture("AcroFormPdfLib"));
+    var insertSource = end.pdf("recipe/AcroFormPdfLib.pdf");
     var message = {
       message: "insertPage() cannot be combined with fillForm()",
     };
-    var recipe = new Recipe(recipeFixture("AcroFormPdfLib")).fillForm({
+    var recipe = end.openRecipe(form("AcroFormPdfLib")).fillForm({
       agree: true,
     });
-    assert.throws(() => recipe.insertPage(1, "fill-insert-source", 1), message);
-    recipe = new Recipe(recipeFixture("AcroFormPdfLib")).insertPage(
-      1,
-      "fill-insert-source",
-      1,
-    );
+    assert.throws(() => recipe.insertPage(1, insertSource, 1), message);
+    recipe = end
+      .openRecipe(form("AcroFormPdfLib"))
+      .insertPage(1, insertSource, 1);
     assert.throws(() => recipe.fillForm({ agree: true }), message);
   });
 
   it("does not fill a new document, an ended Recipe or a protected source", function () {
-    assert.throws(() => new Recipe().fillForm({}), {
+    assert.throws(() => end.newRecipe().fillForm({}), {
       message: "fillForm() needs a source PDF with a form",
     });
-    var ended = new Recipe(recipeFixture("AcroFormPdfLib"));
+    var ended = end.openRecipe(form("AcroFormPdfLib"));
     ended.endPDF();
     assert.throws(() => ended.fillForm({}), {
       message: "Cannot fill a form after endPDF",
     });
     assert.throws(
       () =>
-        new Recipe(recipeFixture("AcroFormEncrypted"), {
-          password: "user",
-        }).fillForm({ "person.name": "x" }),
+        end
+          .openRecipe(form("AcroFormEncrypted"), {
+            password: "user",
+          })
+          .fillForm({ "person.name": "x" }),
       {
         message:
           "Editing a password-protected source is unsupported; decrypt it with recrypt() first",
@@ -553,7 +547,7 @@ describe("fillForm", function () {
   });
 
   it("does not rewrite objects with a nonzero generation or keys that are not UTF-8", function () {
-    var recipe = new Recipe(recipeFixture("AcroFormFillCases"));
+    var recipe = end.openRecipe(form("AcroFormFillCases"));
     // A nonzero generation, then a lossy key in a merged field and widget, a
     // parent field and a kid widget.
     ["old", "keys", "lossyParent", "lossyKid"].forEach((name) =>
