@@ -18,7 +18,8 @@
   "scripts": {
     "test:codestyle": "npx prettier -c ./",
     "recipe-jsdoc": "jsdoc -c jsdoc.conf",
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "prepack": "npm run build"
   },
   "files": [
     "index.js",

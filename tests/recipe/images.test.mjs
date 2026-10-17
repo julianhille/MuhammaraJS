@@ -768,23 +768,23 @@ describeEnds("Recipe images", function (end) {
         end.name === "native" ? end.image("missing.pdf") : "missing";
       var bytes = recipeBytes((recipe) => {
         recipe.createPage(400, 500);
-        assert.throws(
-          () => recipe.image(source, 0, 0, { page: 6 }),
-          new RegExp(`^Error: Unknown image: ${RegExp.escape(source)}$`),
-        );
-        assert.throws(
-          () => recipe.image(missing, 0, 0),
-          new RegExp(`^Error: Unknown image: ${RegExp.escape(missing)}$`),
-        );
+        assert.throws(() => recipe.image(source, 0, 0, { page: 6 }), {
+          name: "Error",
+          message: `Unknown image: ${source}`,
+        });
+        assert.throws(() => recipe.image(missing, 0, 0), {
+          name: "Error",
+          message: `Unknown image: ${missing}`,
+        });
         // Bytes are no image name or path.
         assert.throws(
           () => recipe.image(new Uint8Array([255, 216]), 0, 0),
           /Unknown image/,
         );
-        assert.throws(
-          () => recipe.image(twoImages, 0, 0, { page: 3 }),
-          new RegExp(`^Error: Unknown image: ${RegExp.escape(twoImages)}$`),
-        );
+        assert.throws(() => recipe.image(twoImages, 0, 0, { page: 3 }), {
+          name: "Error",
+          message: `Unknown image: ${twoImages}`,
+        });
         [0, -1, 1.5, "1", NaN, 2 ** 32 + 1].forEach((page) =>
           assert.throws(() => recipe.image(source, 0, 0, { page }), {
             name: "RangeError",
@@ -830,10 +830,10 @@ describeEnds("Recipe images", function (end) {
       );
       // An edited page reports an unreadable image the same way.
       var edited = end.openRecipe(base).editPage(1);
-      assert.throws(
-        () => edited.image(twoImages, 0, 0, { page: 3 }),
-        new RegExp(`^Error: Unknown image: ${RegExp.escape(twoImages)}$`),
-      );
+      assert.throws(() => edited.image(twoImages, 0, 0, { page: 3 }), {
+        name: "Error",
+        message: `Unknown image: ${twoImages}`,
+      });
       edited.endPage().endPDF();
     });
 

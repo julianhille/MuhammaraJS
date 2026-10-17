@@ -58,7 +58,7 @@ jobs:
         run: if readelf -d packages/native-with-source/binding/napi-v${{ env.NAPI_VERSION }}/muhammara.node | grep -Eiq 'lib(crypto|ssl)'; then exit 1; fi
       - run: mkdir -p packages && npm pack --workspace=@muhammara/native-core --pack-destination packages && npm pack --workspace=@muhammara/native-with-source --pack-destination packages && npm pack --workspace=@muhammara/native --pack-destination packages
       - name: Verify native package contents
-        run: tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/src/ && tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/lib/ && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md && tar -tzf packages/muhammara-native-[0-9]*.tgz | grep -q package/THIRD_PARTY_NOTICES.md
+        run: tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/src/ && tar -tzf packages/muhammara-native-with-source-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/lib/shared/recipe/Recipe.js && tar -tzf packages/muhammara-native-core-*.tgz | grep -q package/THIRD_PARTY_NOTICES.md && tar -tzf packages/muhammara-native-[0-9]*.tgz | grep -q package/THIRD_PARTY_NOTICES.md
       - name: Install packed package without prebuilds
         run: mkdir -p /tmp/muhammara-source-fallback && npm install --build-from-source --prefix /tmp/muhammara-source-fallback ./packages/muhammara-native-core-*.tgz ./packages/muhammara-native-with-source-*.tgz
       - run: node -e "require('/tmp/muhammara-source-fallback/node_modules/@muhammara/native-with-source')"
@@ -120,6 +120,7 @@ jobs:
           restore-keys: native-sanitizer-
       - run: sudo apt-get update && sudo apt-get install -y perl
       - run: npm ci --ignore-scripts
+      - run: npm run build --workspace=@muhammara/native-core
       - name: Build with sanitizers
         run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
         env:
@@ -571,6 +572,8 @@ jobs:
         run: docker exec riscv64-tests sh -c "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs npm && node --version && test \"\$(node -p 'process.versions.node.split(\".\")[0]')\" = '${{ matrix.node }}'"
       - name: Install test dependencies without rebuilding
         run: docker exec riscv64-tests npm ci --ignore-scripts
+      - name: Generate the shared JavaScript of native-core
+        run: docker exec riscv64-tests npm run build --workspace=@muhammara/native-core
       - name: Install the canonical RISC-V prebuild
         run: docker exec riscv64-tests node .github/scripts/prepare-native-prebuild.mjs canonical-prebuild/napi-v${{ env.NAPI_VERSION }}-linux-riscv64-glibc.tar.gz napi-v${{ env.NAPI_VERSION }}-linux-riscv64-glibc.tar.gz
       # Emulation is far slower than hardware, so the per-test timeout is longer
@@ -656,6 +659,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: npm ci --ignore-scripts
+      - run: npm run build --workspace=@muhammara/native-core
       - run: python -m pip install -r packages/native/docs/requirements.txt
       - uses: actions/download-artifact@v8
         with:
