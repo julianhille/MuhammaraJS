@@ -221,8 +221,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 - Recipe is one implementation shared with the native packages, in
   `packages/shared`, bundled into `dist/index.js`, which `index.js` exports.
-  bidi-js is bundled too, so right-to-left text is always reordered;
-  `loadBidi()` and the `bidi` option are still accepted. Image, PDF and
+  bidi-js, linebreak and @xmldom/xmldom are bundled too, with their MIT
+  notices in `THIRD_PARTY_LICENSES.md`, so right-to-left text is always
+  reordered; `loadBidi()` and the `bidi` option are still accepted. Image, PDF and
   copying low-level calls take registered PDF names, forms take any rectangle
   and stream `write()` takes byte arrays, as on native.
 
