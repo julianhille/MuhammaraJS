@@ -194,6 +194,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Measure the line height of a Recipe font once for each size instead of for
   every `text()` call, which took about a millisecond each
   [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Write the Recipe `structure()` of a PDF without an Info dictionary, such as
+  one written by pdf-lib, instead of throwing
+  `Cannot read properties of undefined (reading 'getType')`; trailer entries
+  the PDF lacks are skipped
+  [#1008](https://github.com/julianhille/MuhammaraJS/issues/1008)
 
 ### Changed
 
