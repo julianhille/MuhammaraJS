@@ -1136,6 +1136,7 @@ export function createPageMethods(
           deletion.plan,
           deletion.deletedPageIDs,
         );
+        this._deletedPageIDs = deletion.deletedPageIDs;
       } finally {
         copyingContext.end();
       }

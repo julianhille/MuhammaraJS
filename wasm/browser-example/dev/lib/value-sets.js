@@ -354,6 +354,18 @@ export var AssetExtension = Object.freeze({
 });
 
 /**
+ * How `fillForm()` shows the values it writes.
+ * @readonly
+ * @enum {string}
+ */
+export var FormAppearances = Object.freeze({
+  /** Draw a new appearance stream for each changed widget. */
+  GENERATE: "generate",
+  /** Set `/NeedAppearances` and let the viewer draw the appearances. */
+  VIEWER: "viewer",
+});
+
+/**
  * Kinds of interactive form fields returned by `formFields()`, derived from
  * the field type `/FT` and its flags (ISO 32000-1, 12.7.4).
  * @readonly

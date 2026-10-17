@@ -268,7 +268,7 @@ function containsPrunedValue(value, deletedPageIDs) {
  * @param {boolean} [nested=false] - Whether the value is inside another.
  * @returns {object} The write plan: copy, null, ref, array or dict.
  */
-function planPrunedValue(
+export function planPrunedValue(
   objectsContext,
   copyingContext,
   value,
@@ -324,7 +324,7 @@ function planPrunedValue(
  * @param {object} plan - The write plan.
  * @returns {void}
  */
-function writePrunedPlan(objectsContext, copyingContext, plan) {
+export function writePrunedPlan(objectsContext, copyingContext, plan) {
   if (plan.kind === "copy") {
     copyingContext.copyDirectObjectAsIs(plan.value);
   } else if (plan.kind === "null") {
