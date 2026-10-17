@@ -42,6 +42,7 @@ import { createInspectPdf } from "./recipe/inspection.js";
 import { createRegistrationMethods } from "./recipe/registration.js";
 import { createSecurityMethods, permission } from "./recipe/security.js";
 import { createReplaceTextMethods } from "./recipe/replace-text.js";
+import { createFormMethods } from "./recipe/form.js";
 import { thirdPartyLicenses } from "./recipe/licenses.js";
 import { standardInfoKeys } from "./recipe-info.js";
 import { PdfAFeature, pdfaOptions, requirePdfaAllows } from "./pdfa.js";
@@ -900,6 +901,7 @@ export function createRecipeFactory({
     createInfoMethods({ call, withString, createReader, valueTypes }),
     createSecurityMethods(),
     createReplaceTextMethods(),
+    createFormMethods({ createReader }),
   );
 
   // Composition modules receive closures rather than reaching into Recipe state.

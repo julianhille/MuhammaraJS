@@ -8,6 +8,8 @@ import {
   Colorspace,
   Coordinate,
   FontStyle,
+  FormFieldFlag,
+  FormFieldKind,
   HorizontalAlign,
   LineCap,
   LineJoin,
@@ -57,4 +59,6 @@ export var recipeConstants = Object.freeze({
   ChromaCommand,
   AnnotIcon,
   StructureFormat,
+  FormFieldKind,
+  FormFieldFlag,
 });

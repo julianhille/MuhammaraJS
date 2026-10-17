@@ -142,6 +142,14 @@ export var HOW_TO_EXAMPLES = [
       "Read the version, metadata, page geometry, resources, and bookmarks of your PDF, or of a built-in sample, into a one-page report.",
     assets: ["pdf"],
   },
+  {
+    id: "acroform",
+    label: "AcroForm",
+    title: "Read AcroForm fields",
+    description:
+      "List the fields of your fillable PDF, or of a built-in sample form, with their kinds, values, and pages in a one-page report.",
+    assets: ["pdf"],
+  },
 ];
 
 var SAMPLE_BOOKMARKS = ["Service agreement", "Pricing appendix"];
@@ -1282,6 +1290,7 @@ var REPORT_INFO_ROWS = 8;
 var REPORT_PAGE_ROWS = 6;
 var REPORT_BOOKMARK_ROWS = 6;
 var REPORT_VALUE_LENGTH = 70;
+var REPORT_FIELD_ROWS = 30;
 
 var XObjectSubtype = Object.freeze({ IMAGE: "Image", FORM: "Form" });
 
@@ -1641,6 +1650,112 @@ async function inspectPdfExample(assets) {
   }
 }
 
+/**
+ * Writes a small fillable form as raw PDF text: a text field, a checkbox, a
+ * two-option radio group, and a dropdown. Recipe reads form fields but does
+ * not create them yet, so the sample is written object by object.
+ * @returns {Uint8Array} The sample form PDF.
+ */
+function sampleFormPdf() {
+  var objects = [
+    "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [4 0 R 5 0 R 6 0 R 9 0 R] >> >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Annots [4 0 R 5 0 R 7 0 R 8 0 R 9 0 R] >>",
+    "<< /Type /Annot /Subtype /Widget /FT /Tx /T (name) /V (Ada Lovelace) /MaxLen 40 /Rect [48 760 300 784] /P 3 0 R >>",
+    "<< /Type /Annot /Subtype /Widget /FT /Btn /T (newsletter) /V /Yes /AS /Yes /AP << /N << /Yes 10 0 R /Off 10 0 R >> >> /Rect [48 720 64 736] /P 3 0 R >>",
+    "<< /FT /Btn /Ff 49152 /T (plan) /V /pro /Kids [7 0 R 8 0 R] >>",
+    "<< /Type /Annot /Subtype /Widget /Parent 6 0 R /AS /Off /AP << /N << /basic 10 0 R /Off 10 0 R >> >> /Rect [48 680 64 696] /P 3 0 R >>",
+    "<< /Type /Annot /Subtype /Widget /Parent 6 0 R /AS /pro /AP << /N << /pro 10 0 R /Off 10 0 R >> >> /Rect [120 680 136 696] /P 3 0 R >>",
+    "<< /Type /Annot /Subtype /Widget /FT /Ch /Ff 131072 /T (country) /Opt [(Germany) (France) (Spain)] /V (France) /Rect [48 630 200 654] /P 3 0 R >>",
+    "<< /Length 0 >>\nstream\n\nendstream",
+  ];
+  var pdf = "%PDF-1.7\n";
+  var offsets = objects.map((object, index) => {
+    var offset = pdf.length;
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+    return offset;
+  });
+  var xref = pdf.length;
+  pdf +=
+    `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n` +
+    offsets
+      .map((offset) => `${String(offset).padStart(10, "0")} 00000 n \n`)
+      .join("") +
+    `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\n` +
+    `startxref\n${xref}\n%%EOF\n`;
+  // The text is ASCII, so its offsets are byte offsets.
+  return new TextEncoder().encode(pdf);
+}
+
+/**
+ * Builds the browser example that reads the AcroForm fields of a PDF and
+ * renders them as a report.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional byte assets.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The report PDF and the fields.
+ */
+async function acroFormExample(assets) {
+  var source = assets.pdf
+    ? { bytes: assets.pdf, origin: "Uploaded PDF" }
+    : { bytes: sampleFormPdf(), origin: "Built-in sample form" };
+  var Recipe = await createRecipe();
+  var form = new Recipe(source.bytes);
+  var fields;
+  try {
+    fields = form.formFields().map((field) => ({
+      name: field.name,
+      kind: field.kind,
+      value: field.value,
+      pages: field.widgets.map((widget) => widget.pageNumber),
+    }));
+  } finally {
+    form.dispose();
+  }
+  var recipe = new Recipe({ compress: false });
+  try {
+    recipe
+      .createPage(595, 842)
+      .text("AcroForm fields", 48, 48, { size: 24, color: "#102a43" })
+      .text(`${source.origin}: ${fields.length} fields`, 48, 84, {
+        size: 11,
+        color: "#486581",
+      })
+      .table(
+        48,
+        112,
+        reportRows(
+          fields.map((field) => ({
+            Field: cellText(field.name),
+            Kind: field.kind ?? "unknown",
+            Value: cellText([].concat(field.value ?? "-").join(", ")),
+            Pages: field.pages.map((page) => page ?? "-").join(", ") || "-",
+          })),
+          "Field",
+          REPORT_FIELD_ROWS,
+        ),
+        reportTable([
+          ["Field", 170],
+          ["Kind", 80],
+          ["Value", 179],
+          ["Pages", 70],
+        ]),
+      )
+      .endPage();
+    var bytes = recipe.endPDF();
+    return {
+      bytes,
+      filename: "muhammara-acroform-fields.pdf",
+      summary: await summarize(bytes, {
+        howTo: "Read AcroForm fields",
+        source: source.origin,
+        fields,
+      }),
+    };
+  } finally {
+    recipe.dispose();
+    Recipe.disposeAssets();
+  }
+}
+
 var runners = {
   annotations: annotationsExample,
   links: linksExample,
@@ -1658,6 +1773,7 @@ var runners = {
   watermark: watermarkExample,
   "find-text": findTextExample,
   "inspect-pdf": inspectPdfExample,
+  acroform: acroFormExample,
 };
 
 /**
