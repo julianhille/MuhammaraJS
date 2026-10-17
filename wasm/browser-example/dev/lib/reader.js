@@ -121,12 +121,13 @@ export function createReaderFactory({
     }
 
     /**
-     * Lists a parsed dictionary's keys.
+     * Lists a parsed dictionary's keys as their name bytes. A name need not be
+     * valid UTF-8, so only these bytes find its value again.
      * @param {number} handle - Native dictionary handle.
-     * @returns {string[]} Keys without leading slashes.
+     * @returns {Uint8Array[]} Key bytes without leading slashes.
      * @throws {Error} If the reader has ended or the dictionary cannot be read.
      */
-    function objectKeys(handle) {
+    function objectKeyBytes(handle) {
       requireReader();
       var lengthPointer = module._malloc(4);
       try {
@@ -138,16 +139,50 @@ export function createReaderFactory({
         if (!pointer && length)
           throw new Error("Unable to read PDF dictionary");
         try {
-          return pointer
-            ? objectStringBytes(module.HEAPU8.slice(pointer, pointer + length))
-                .split("\0")
-                .filter(Boolean)
-            : [];
+          var bytes = pointer
+            ? module.HEAPU8.slice(pointer, pointer + length)
+            : new Uint8Array();
+          var keys = [];
+          var start = 0;
+          bytes.forEach((byte, index) => {
+            if (byte !== 0) return;
+            if (index > start) keys.push(bytes.subarray(start, index));
+            start = index + 1;
+          });
+          return keys;
         } finally {
           if (pointer) module._muhammara_wasm_free(pointer);
         }
       } finally {
         module._free(lengthPointer);
+      }
+    }
+
+    /**
+     * Lists a parsed dictionary's keys, decoded as UTF-8.
+     * @param {number} handle - Native dictionary handle.
+     * @returns {string[]} Keys without leading slashes.
+     * @throws {Error} If the reader has ended or the dictionary cannot be read.
+     */
+    function objectKeys(handle) {
+      return objectKeyBytes(handle).map(objectStringBytes);
+    }
+
+    /**
+     * Runs a callback with a NUL-terminated copy of raw key bytes in Wasm
+     * memory.
+     * @param {Uint8Array} bytes - Key bytes without the terminator.
+     * @param {function(number): *} callback - Receives the pointer.
+     * @returns {*} The callback result; the copy is freed afterwards.
+     */
+    function withKeyBytes(bytes, callback) {
+      var pointer = module._malloc(bytes.length + 1);
+      module.HEAPU8.set(bytes, pointer);
+      module.HEAPU8[pointer + bytes.length] = 0;
+      try {
+        return callback(pointer);
+      } finally {
+        module._free(pointer);
       }
     }
 
@@ -366,22 +401,27 @@ export function createReaderFactory({
           object.getType();
           if (typeof key !== "string")
             throw new TypeError("Dictionary key must be a string");
-          var result = withString(key, (pointer) =>
-            parser
-              ? module._muhammara_wasm_object_dictionary_query(
-                  parser.handle,
-                  handle,
-                  pointer,
-                )
-              : module._muhammara_wasm_reader_object_dictionary_query(
-                  reader,
-                  handle,
-                  pointer,
-                ),
-          );
+          var result = withString(key, queryKey);
           if (!result) throw new Error("key not found");
           return wrapObject(result, parser);
         };
+        /**
+         * Looks a value up by a NUL-terminated key in Wasm memory.
+         * @param {number} pointer - The key.
+         * @returns {number} The native object handle, or 0 if missing.
+         */
+        var queryKey = (pointer) =>
+          parser
+            ? module._muhammara_wasm_object_dictionary_query(
+                parser.handle,
+                handle,
+                pointer,
+              )
+            : module._muhammara_wasm_reader_object_dictionary_query(
+                reader,
+                handle,
+                pointer,
+              );
         /**
          * Reads every dictionary value, resolving indirect references.
          * @returns {Record<string, PDFObject>} Values keyed by key name.
@@ -389,8 +429,13 @@ export function createReaderFactory({
          */
         object.toJSObject = function () {
           object.getType();
+          // Look values up by the key bytes: a key that is not valid UTF-8
+          // does not survive decoding and encoding again.
           return Object.fromEntries(
-            objectKeys(handle).map((key) => [key, object.queryObject(key)]),
+            objectKeyBytes(handle).map((bytes) => [
+              objectStringBytes(bytes),
+              wrapObject(withKeyBytes(bytes, queryKey), parser),
+            ]),
           );
         };
       }
