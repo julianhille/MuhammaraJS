@@ -27,6 +27,67 @@ function equalBytes(actual, expected, message) {
   }
 }
 
+/**
+ * Checks that the published bundle reorders right-to-left text with the
+ * bidi-js it carries, wherever it runs.
+ * @returns {Promise<{assertions: number}>} The number of checks made.
+ */
+export async function rtlValidation() {
+  var fontBytes = new Uint8Array(
+    await (
+      await fetch(
+        "/packages/native-with-source/tests/TestMaterials/fonts/arial.ttf",
+      )
+    ).arrayBuffer(),
+  );
+  var muhammara = await createMuhammaraWasm();
+  var Recipe = await createRecipe({ recryptWorker: false });
+  Recipe.registerFont("rtl-arial", fontBytes);
+  /**
+   * The glyphs a line of mixed text is drawn with, in drawing order.
+   * @param {string} direction - A TextDirection value.
+   * @returns {string} The extracted glyph codes.
+   */
+  function drawn(direction) {
+    var recipe = new Recipe();
+    try {
+      var bytes = recipe
+        .createPage(300, 300)
+        .text("\u05e9\u05dc\u05d5\u05dd abc", 50, 50, {
+          direction,
+          font: "rtl-arial",
+        })
+        .endPage()
+        .endPDF();
+      var reader = muhammara.createReader(bytes);
+      try {
+        return reader
+          .extractPageText(0)
+          .map((run) => run.content)
+          .join("");
+      } finally {
+        reader.end();
+      }
+    } finally {
+      recipe.dispose();
+    }
+  }
+  try {
+    // Two-byte glyph codes: as given, "abc" comes last; reordered for a
+    // right-to-left paragraph, it comes first.
+    var given = drawn("none");
+    var visual = drawn("auto");
+    assert(
+      visual !== given && visual.startsWith(given.slice(-6)),
+      "right-to-left text reorders",
+    );
+  } finally {
+    Recipe.disposeAssets();
+    muhammara.disposeAssets();
+  }
+  return { assertions: 1 };
+}
+
 /** Runs browser-safe byte, writer, reader, and modifier assertions. */
 export async function runValidation() {
   var assertions = 0;
