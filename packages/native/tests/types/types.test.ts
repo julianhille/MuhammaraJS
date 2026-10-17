@@ -1102,6 +1102,14 @@ const fillPath: muhammara.DrawingPathType = muhammara.DrawingPathType.FILL;
 void fillPath;
 
 new muhammara.Recipe(muhammara.Recipe.Source.NEW, "from-source.pdf");
+new muhammara.Recipe(new Uint8Array(0));
+new muhammara.Recipe(new ArrayBuffer(0), "from-bytes.pdf");
+// @ts-expect-error a Recipe source is a path or bytes.
+new muhammara.Recipe(42);
+new muhammara.Recipe("new").read(new Uint8Array(0)).pages;
+new muhammara.Recipe("new").read(new ArrayBuffer(0)).pages;
+// @ts-expect-error read() takes a path or bytes.
+new muhammara.Recipe("new").read(42);
 
 // Extracted text elements carry decoded Unicode text next to the raw codes.
 const decodingReader = muhammara.createReader("source.pdf");

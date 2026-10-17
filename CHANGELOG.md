@@ -79,6 +79,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Open a Recipe from a `Uint8Array` or an `ArrayBuffer` source, and `read()`
+  one, as `@muhammara/wasm` does, instead of throwing
+  `src.toLowerCase is not a function` or `Unable to start parsing PDF file`;
+  another non-string source throws a `TypeError` that names the accepted types
+  [#1009](https://github.com/julianhille/MuhammaraJS/issues/1009)
 - Set the field when Recipe `info()` or `custom()` gets the Info name of a
   standard field, such as `Title`, instead of writing a value without a key,
   which broke or overrode the Info dictionary. Creator, Producer, CreationDate
