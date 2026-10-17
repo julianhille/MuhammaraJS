@@ -313,10 +313,11 @@ export async function runValidation() {
     rotatedRecipe.endPage().endPDF(),
   );
   assert(
-    /0 1 -1 0 190 20 cm/.test(rotatedOutput) &&
+    // A displayed point (x, y) is the media box point (10 + y, 20 + x).
+    /0 1 -1 0 230 10 cm/.test(rotatedOutput) &&
       /60 160 m\s+80 140 l/.test(rotatedOutput) &&
       // annot() takes the top-left corner; the height runs along +x here.
-      /\/Rect \[ 90 140 130 170 \]/.test(rotatedOutput),
+      /\/Rect \[ 130 130 170 160 \]/.test(rotatedOutput),
     "browser and Worker rotated Recipe output",
   );
   assertions += 6;
@@ -518,7 +519,13 @@ export async function runValidation() {
     /\/URI \(https:\/\/example\.test\)/.test(sourceOutput),
     "source Recipe link",
   );
-  assert(/30 [\d.]+ re\r?\nW\r?\nn/.test(sourceOutput), "source Recipe clip");
+  // The text box, x 10 to 40, as a closed clipping path.
+  assert(
+    /10 [\d.]+ m\r?\n40 [\d.]+ l\r?\n40 [\d.]+ l\r?\n10 [\d.]+ l\r?\nh\r?\nW\r?\nn/.test(
+      sourceOutput,
+    ),
+    "source Recipe clip",
+  );
   assertions += 2;
 
   var annotationRecipe = new Recipe({ compress: false })
