@@ -1079,6 +1079,15 @@ recipe.text("abc", 10, 10, { direction: recipeDirection });
 // @ts-expect-error direction takes a Recipe.TextDirection value.
 recipe.text("abc", 10, 10, { direction: "up" });
 
+new muhammara.Recipe(new Uint8Array(0));
+new muhammara.Recipe(new ArrayBuffer(0), "from-bytes.pdf");
+// @ts-expect-error a Recipe source is a path or bytes.
+new muhammara.Recipe(42);
+new muhammara.Recipe("new").read(new Uint8Array(0)).pages;
+new muhammara.Recipe("new").read(new ArrayBuffer(0)).pages;
+// @ts-expect-error read() takes a path or bytes.
+new muhammara.Recipe("new").read(42);
+
 var xmpPacket: string | undefined = new muhammara.Recipe(
   "source.pdf",
   "out.pdf",

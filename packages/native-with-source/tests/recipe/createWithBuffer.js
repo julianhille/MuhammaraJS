@@ -95,6 +95,39 @@ describe("Modify", () => {
     assert.equal(outBuffer.subarray(0, 8).toString(), "%PDF-1.4");
   });
 
+  it("opens the same PDF from a path, Buffer, Uint8Array and ArrayBuffer", () => {
+    const src = path.join(__dirname, "../TestMaterials/Original.pdf");
+    const buffer = fs.readFileSync(src);
+    // An offset view checks that only the viewed bytes are read
+    const padded = new Uint8Array(buffer.length + 8);
+    padded.set(buffer, 4);
+    const sources = [
+      buffer,
+      padded.subarray(4, 4 + buffer.length),
+      new Uint8Array(buffer).buffer,
+    ];
+    const pages = new Recipe(src).read().pages;
+    sources.forEach((source) => {
+      const recipe = new Recipe(source);
+      assert.deepEqual(recipe.read().pages, pages);
+      let outBuffer;
+      recipe.endPDF((result) => {
+        outBuffer = result;
+      });
+      assert.equal(outBuffer.subarray(0, 5).toString(), "%PDF-");
+    });
+  });
+
+  it("rejects a source that is neither a path nor bytes", () => {
+    [undefined, 42, {}].forEach((source) => {
+      assert.throws(
+        () => new Recipe(source),
+        TypeError,
+        "Recipe source must be a path string, Buffer, Uint8Array or ArrayBuffer",
+      );
+    });
+  });
+
   it("reads another PDF instead of the Buffer source", () => {
     const other = path.join(
       __dirname,
@@ -105,9 +138,18 @@ describe("Modify", () => {
     );
     const ownPages = recipe.read().pages;
     assert.notEqual(recipe.read(other).pages, ownPages);
-    assert.equal(
-      recipe.read(fs.readFileSync(other)).pages,
-      recipe.read(other).pages,
+    const otherBuffer = fs.readFileSync(other);
+    [
+      otherBuffer,
+      new Uint8Array(otherBuffer),
+      new Uint8Array(otherBuffer).buffer,
+    ].forEach((source) => {
+      assert.equal(recipe.read(source).pages, recipe.read(other).pages);
+    });
+    assert.throws(
+      () => recipe.read(42),
+      TypeError,
+      "Recipe source must be a path string, Buffer, Uint8Array or ArrayBuffer",
     );
     assert.equal(recipe.metadata.pages, ownPages);
   });

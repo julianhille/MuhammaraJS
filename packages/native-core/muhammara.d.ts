@@ -3881,7 +3881,8 @@ declare namespace muhammara {
   export class Recipe {
     /**
      * @param src - `Recipe.Source.NEW` ("new", or `Buffer.from("new")`) for a new PDF,
-     *   otherwise the path or Buffer of the PDF to edit.
+     *   otherwise the path or bytes of the PDF to edit. A `Uint8Array` or
+     *   `ArrayBuffer` is wrapped in a Buffer without copying.
      * @param output - The output path. For a path source it defaults to
      *   the source path; for a Buffer source the result is only returned by
      *   `endPDF()` unless an output path is given.
@@ -3899,10 +3900,11 @@ declare namespace muhammara {
      * @param options.ownerPassword - The 'edit' password.
      * @param options.userProtectionFlag - Encryption permission flags, see `permission()`.
      * @param options.fontSrcPath - Directory location(s) of additional fonts.
+     * @throws {TypeError} If `src` is not a string, Buffer, Uint8Array or ArrayBuffer.
      * @throws {Error} If an existing source PDF cannot be read or opened for editing.
      */
     constructor(
-      src: string,
+      src: string | Uint8Array | ArrayBuffer,
       output?: string | null,
       options?: Recipe.RecipeOptions,
     );
@@ -4169,12 +4171,13 @@ declare namespace muhammara {
     /**
      * Read PDF metadata: the page count and, keyed by one-based page number,
      * each page's media box, rotation, layout and size.
-     * @param inSrc - A PDF path or Buffer to read instead of
+     * @param inSrc - A PDF path or bytes to read instead of
      *   the recipe source. Reading another PDF does not change the recipe state.
      * @returns The PDF metadata.
+     * @throws {TypeError} If `inSrc` is not a string, Buffer, Uint8Array or ArrayBuffer.
      * @throws {Error} If the PDF cannot be read or has no pages.
      */
-    read(inSrc?: string | Buffer): Recipe.ReadMetadata;
+    read(inSrc?: string | Uint8Array | ArrayBuffer): Recipe.ReadMetadata;
     /**
      * Register a callback procedure with MuhammaraJS.
      * @param key - Name assigned to the callback. When a named function is

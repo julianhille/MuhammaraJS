@@ -7,12 +7,30 @@ var { PdfA, pdfaOptions } = require("./pdfa");
 var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
 
 /**
+ * Wrap a byte source in a Buffer that shares its memory.
+ * @param {string|Buffer|Uint8Array|ArrayBuffer} src - A PDF path or bytes.
+ * @returns {string|Buffer} The path, or the bytes as a Buffer.
+ * @throws {TypeError} If `src` is not a string, Buffer, Uint8Array or ArrayBuffer.
+ */
+function toRecipeSource(src) {
+  if (src instanceof ArrayBuffer) return Buffer.from(src);
+  if (src instanceof Uint8Array) {
+    return Buffer.from(src.buffer, src.byteOffset, src.byteLength);
+  }
+  if (typeof src === "string") return src;
+  throw new TypeError(
+    "Recipe source must be a path string, Buffer, Uint8Array or ArrayBuffer",
+  );
+}
+
+/**
  * @name Recipe
  * @desc Create a new PDF, or open an existing one for editing.
  * @namespace
  * @constructor
- * @param {string|Buffer} src - `Recipe.Source.NEW` ("new", or `Buffer.from("new")`) for a new PDF,
- *   otherwise the path or Buffer of the PDF to edit.
+ * @param {string|Buffer|Uint8Array|ArrayBuffer} src - `Recipe.Source.NEW` ("new", or `Buffer.from("new")`) for a new PDF,
+ *   otherwise the path or bytes of the PDF to edit. A `Uint8Array` or
+ *   `ArrayBuffer` is wrapped in a Buffer without copying.
  * @param {string} [output] - The output path. For a path source it defaults to
  *   the source path; for a Buffer source the result is only returned by
  *   `endPDF()` unless an output path is given.
@@ -39,6 +57,7 @@ var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
  * @param {string} [options.ownerPassword] - The 'edit' password.
  * @param {number} [options.userProtectionFlag] - Encryption permission flags, see `permission()`.
  * @param {string|string[]} [options.fontSrcPath] - Directory location(s) of additional fonts.
+ * @throws {TypeError} If `src` is not a string, Buffer, Uint8Array or ArrayBuffer.
  * @throws {Error} If an existing source PDF cannot be read or opened for editing.
  * @throws {TypeError} If `pdfa` has an unknown level, an unusable profile or
  *   an `outputCondition` that is no string.
@@ -47,6 +66,7 @@ var { AnnotSubtype, PageLayout, Source } = require("./recipe-constants");
  */
 class Recipe {
   constructor(src, output, options = {}) {
+    src = toRecipeSource(src);
     this.src = src;
     // detect the src is Buffer or not
     this.isBufferSrc = this.src instanceof Buffer;
@@ -218,13 +238,16 @@ class Recipe {
   /**
    * Read PDF metadata: the page count and, keyed by one-based page number,
    * each page's media box, rotation, layout and size.
-   * @param {string|Buffer} [inSrc] - A PDF path or Buffer to read instead of
-   *   the recipe source. Reading another PDF does not change the recipe state.
+   * @param {string|Buffer|Uint8Array|ArrayBuffer} [inSrc] - A PDF path or
+   *   bytes to read instead of the recipe source. Reading another PDF does not
+   *   change the recipe state.
    * @returns {Object} The PDF metadata.
+   * @throws {TypeError} If `inSrc` is not a string, Buffer, Uint8Array or ArrayBuffer.
    * @throws {Error} If the PDF cannot be read or has no pages.
    */
   read(inSrc) {
     const isForExternal = inSrc ? true : false;
+    if (isForExternal) inSrc = toRecipeSource(inSrc);
     let pdfReader = null;
     let isAdopted = false;
     try {

@@ -79,6 +79,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Open a Recipe from a `Uint8Array` or an `ArrayBuffer` source, and `read()`
+  one, as `@muhammara/wasm` does, instead of throwing
+  `src.toLowerCase is not a function` or `Unable to start parsing PDF file`;
+  another non-string source throws a `TypeError` that names the accepted types
+  [#1009](https://github.com/julianhille/MuhammaraJS/issues/1009)
 - Decrypt strings and streams correctly when a PDF encrypted with RC4 or
   AES-128 (security handler revision 2 to 4) is opened with its owner password,
   instead of returning garbled text without an error. AES-256 was not affected

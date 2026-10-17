@@ -1,9 +1,10 @@
 # Recipe API Invariants
 
 - Recipe uses a top-left coordinate origin; low-level PDF APIs use bottom-left.
-- `new Recipe(src, output, options)` reads a file path or `Buffer`. Omitting
-  `output` writes back to a file-path `src`; a `Buffer` source without an output
-  path returns bytes only through the `endPDF()` callback.
+- `new Recipe(src, output, options)` reads a file path or bytes: a `Buffer`, a
+  `Uint8Array` or an `ArrayBuffer`. Omitting `output` writes back to a
+  file-path `src`; a byte source without an output path returns bytes only
+  through the `endPDF()` callback.
 - Recipe page numbers are one-based, including `editPage`, `pageInfo`, and
   document composition methods.
 - Call `endPage()` before selecting, creating, or editing another page.
