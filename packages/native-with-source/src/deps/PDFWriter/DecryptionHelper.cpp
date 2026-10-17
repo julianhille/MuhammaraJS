@@ -267,6 +267,15 @@ EStatusCode DecryptionHelper::Setup(PDFParser* inParser, const string& inPasswor
 
 		ByteList password = stringToByteList(inPassword);
 
+		// authenticate password, try to determine if user or owner
+		mDidSucceedOwnerPasswordVerification = AuthenticateOwnerPassword(password);
+		mFailedPasswordVerification = !mDidSucceedOwnerPasswordVerification && !AuthenticateUserPassword(password);
+
+		// MuhammaraJS: below V 5 the file encryption key derives from the user password, so an
+		// owner password derives it from the user password it recovers from /O
+		if (mDidSucceedOwnerPasswordVerification && mV < 5)
+			password = XCryptionCommon().RetrieveUserPassword(password, mRevision, mLength, mO);
+
 		// Setup crypt filters, or a default filter
 		if (mV == 4 || mV == 5) {
 			// multiple xcryptions. read crypt filters, determine which does what
@@ -360,10 +369,6 @@ EStatusCode DecryptionHelper::Setup(PDFParser* inParser, const string& inPasswor
 			mXcryptStreams = defaultEncryption;
 			mXcryptStrings = defaultEncryption;
 		}
-
-		// authenticate password, try to determine if user or owner
-		mDidSucceedOwnerPasswordVerification = AuthenticateOwnerPassword(password);
-		mFailedPasswordVerification = !mDidSucceedOwnerPasswordVerification && !AuthenticateUserPassword(password);
 
 
 		mSupportsDecryption = true;

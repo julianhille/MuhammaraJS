@@ -74,6 +74,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Decrypt strings and streams correctly when a PDF encrypted with RC4 or
+  AES-128 (security handler revision 2 to 4) is opened with its owner password,
+  instead of returning garbled text without an error. AES-256 was not affected
+  [#1002](https://github.com/julianhille/MuhammaraJS/issues/1002)
 - Return every entry from `toJSObject()` on a parsed dictionary whose key is
   not valid UTF-8, such as `/Gr#FCn`, with the key decoded as native decodes
   it, instead of throwing `key not found`

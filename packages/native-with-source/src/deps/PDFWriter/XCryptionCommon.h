@@ -82,6 +82,14 @@ public:
 		const ByteList inU		
 	);
 
+	// MuhammaraJS: decrypts the padded user password from /O with a candidate owner password (algorithm 3.7, steps a and b)
+	ByteList RetrieveUserPassword(
+		const ByteList& inOwnerPassword,
+		unsigned int inRevision,
+		unsigned int inLength,
+		const ByteList& inO
+	);
+
 	ByteList CreateUValue(
 		const ByteList& inFileEncryptionKey,
 		unsigned int inRevision,
