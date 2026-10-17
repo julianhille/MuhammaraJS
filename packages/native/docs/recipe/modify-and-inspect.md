@@ -30,6 +30,12 @@ pdfDoc.structure("pdf-structure.txt").endPDF();
 their fully qualified names, kinds, values, flags, options and widgets. See
 [Read Form Fields](../how-to/read-form-fields.md) for the field properties.
 
+## Fill Form Fields
+
+`fillForm()` fills text, checkbox, radio, combo box and list box fields of the
+source document by name or id, and draws a new appearance for each changed
+widget. See [Fill Form Fields](../how-to/fill-form-fields.md).
+
 ## Delete Pages
 
 `deletePage(pageNumber)` and `deletePage(pageNumbers)` remove one or more

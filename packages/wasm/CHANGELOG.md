@@ -76,6 +76,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   and widgets, and the `Recipe.FormFieldKind` and `Recipe.FormFieldFlag`
   constants to compare them against
   [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
+- Add Recipe `fillForm()` to fill text, checkbox, radio, combo box and list
+  box fields of an existing PDF by name or id, drawing a new appearance
+  stream for each changed widget, or setting `/NeedAppearances` with
+  `appearances: "viewer"`, dropping the `/XFA` of a form that also has
+  fields, and the `Recipe.FormAppearances` constant
+  [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
 - Add an AcroForm tab to the browser example that lists the form fields of an
   uploaded PDF, or of a built-in sample form, in a one-page report
   [#992](https://github.com/julianhille/MuhammaraJS/issues/992)

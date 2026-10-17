@@ -211,7 +211,7 @@ export function createCompositionMethods({
      * @param {number} sourcePageNumber One-based source page number.
      * @returns {Recipe} The Recipe instance.
      * @throws {Error} If `afterPageNumber` is not a non-negative integer, or
-     * the Recipe writes PDF/A or attached files.
+     * the Recipe writes PDF/A, attached files or form fills.
      * @throws {TypeError} If the PDF is not registered or the source page is
      * not a positive integer.
      */
@@ -225,6 +225,8 @@ export function createCompositionMethods({
           "insertPage() cannot be combined with pdfa or attach()",
         );
       }
+      if (this._formFills?.size)
+        throw new Error("insertPage() cannot be combined with fillForm()");
       if (!Number.isInteger(afterPageNumber) || afterPageNumber < 0)
         throw new Error("The afterPageNumber is inValid.");
       if (

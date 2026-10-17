@@ -9,6 +9,7 @@ var deletePages = require("../../../native/docs/examples/delete-pages");
 var replaceTextLayer = require("../../../native/docs/examples/replace-text-layer");
 var annotateExistingText = require("../../../native/docs/examples/annotate-existing-text");
 var replacePageText = require("../../../native/docs/examples/replace-text");
+var fillFormFields = require("../../../native/docs/examples/fill-form-fields");
 
 var fontPath = path.join(
   __dirname,
@@ -372,5 +373,28 @@ describe("Documentation examples", function () {
     } finally {
       reader.end();
     }
+  });
+
+  it("fills form fields", function () {
+    var outputPath = path.join(outputDirectory, "filled-form.pdf");
+
+    fillFormFields(
+      path.join(
+        __dirname,
+        "../../tests/TestMaterials/recipe/AcroFormPdfLib.pdf",
+      ),
+      outputPath,
+      { "person.name": "Grace Hopper", agree: false, color: "green" },
+    );
+
+    var values = Object.fromEntries(
+      new muhammara.Recipe(outputPath)
+        .formFields()
+        .map((field) => [field.name, field.value]),
+    );
+    assert.deepStrictEqual(
+      [values["person.name"], values.agree, values.color],
+      ["Grace Hopper", "Off", "1"],
+    );
   });
 });

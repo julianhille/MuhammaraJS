@@ -144,6 +144,22 @@ export interface RecipeFormFieldOption {
   label: string;
 }
 
+/** Values for `fillForm()`, keyed by field name or id. */
+export type RecipeFormValues = Record<
+  string,
+  string | number | boolean | readonly (string | number)[] | null
+>;
+
+export interface RecipeFillFormOptions {
+  /**
+   * Draw an appearance stream for each changed widget (the default), or
+   * set `/NeedAppearances` and let the viewer draw them.
+   */
+  appearances?: Recipe.FormAppearances;
+  /** The registered font family that draws text; the default font when omitted. */
+  font?: string;
+}
+
 /** A terminal AcroForm field returned by `formFields()`. */
 export interface RecipeFormField {
   /**
@@ -978,6 +994,22 @@ export interface Recipe {
    * @throws {Error} If endPDF() released the source.
    */
   formFields(): RecipeFormField[];
+  /**
+   * Fill interactive form (AcroForm) fields of the source document. The
+   * values are written by endPDF(), each changed widget with a new
+   * appearance stream unless `appearances` is `"viewer"`.
+   * @param values - The values, keyed by fully qualified field name, or by
+   *   field id when a name is not unique: text for text fields, true, false
+   *   or an on-state name for checkboxes, an on-state name or its `/Opt`
+   *   label for radios, an option for combo boxes, and an option or an array
+   *   of options for list boxes; null clears a field.
+   * @param options - How the values are shown.
+   * @throws {TypeError} If the values or options are invalid.
+   * @throws {Error} For a new document, after endPDF() or insertPage(), for a source that
+   *   needs its password, or when a field is missing, ambiguous, cannot be
+   *   filled or does not take the value.
+   */
+  fillForm(values: RecipeFormValues, options?: RecipeFillFormOptions): this;
   info(options: Record<string, unknown>): this;
   /**
    * Read the XMP metadata packet of the source PDF.
@@ -1226,6 +1258,8 @@ export declare namespace Recipe {
     | "combobox"
     | "listbox"
     | "signature";
+  /** A `Recipe.FormAppearances` value. */
+  type FormAppearances = "generate" | "viewer";
   type ChromaCommand = "!load";
   /** Wasm-only: the `Recipe.StructureFormat` values. */
   type StructureFormat = "string" | "json";
@@ -1571,6 +1605,11 @@ export interface RecipeConstructor {
     readonly COMBO_BOX: "combobox";
     readonly LIST_BOX: "listbox";
     readonly SIGNATURE: "signature";
+  };
+  /** How `fillForm()` shows the values it writes. */
+  readonly FormAppearances: {
+    readonly GENERATE: "generate";
+    readonly VIEWER: "viewer";
   };
   /** Form field flag bits of `/Ff`, as in `field.flags & FormFieldFlag.READ_ONLY`. */
   readonly FormFieldFlag: {

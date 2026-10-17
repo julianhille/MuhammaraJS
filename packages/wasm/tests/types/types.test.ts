@@ -50,7 +50,9 @@ import type {
   RecipeMetadata,
   RecipeNGonOptions,
   RecipePageInfo,
+  RecipeFillFormOptions,
   RecipeFormField,
+  RecipeFormValues,
   RecipePageSelection,
   RecipePdfInspection,
   RecipePermission,
@@ -766,6 +768,19 @@ async function usesLowLevelSurface() {
   var formFieldID: number = formFields[0].id;
   var formWidgetID: number = formFields[0].widgets[0].id;
   var formOptionLabel: string = formFields[0].options[0].label;
+  var formValues: RecipeFormValues = {
+    name: "Ada",
+    agree: true,
+    langs: ["C"],
+    codes: [1, "2"] as const,
+    cleared: null,
+    9: 42,
+  };
+  var fillOptions: RecipeFillFormOptions = {
+    appearances: Recipe.FormAppearances.VIEWER,
+    font: "arial",
+  };
+  var filled: Recipe = recipe.fillForm(formValues, fillOptions);
   pageInfo?.width;
   recipe.getCurrentPageInfo()?.mediaBox[3];
   recipe.endPage().endPDF();

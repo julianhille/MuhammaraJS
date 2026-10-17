@@ -431,6 +431,8 @@ function pruneDeletedPageReferences(
 
 module.exports = {
   planDeletedPageReferences,
+  planPrunedValue,
   pruneDeletedPageReferences,
   setCatalogEntry,
+  writePrunedPlan,
 };
