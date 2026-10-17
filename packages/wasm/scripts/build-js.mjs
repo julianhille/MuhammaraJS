@@ -10,7 +10,7 @@
 // - The Emscripten glue stays a separate file: it finds muhammara-wasm.wasm
 //   through its own import.meta.url.
 import { build } from "esbuild";
-import { readdirSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
 
 var packageRoot = new URL("../", import.meta.url);
 var manifest = JSON.parse(readFileSync(new URL("package.json", packageRoot)));
@@ -28,6 +28,7 @@ var emscriptenGlue = {
 // Remove the previous bundle, whose hashed chunk names change between builds,
 // and keep the Emscripten output.
 var dist = new URL("dist/", packageRoot);
+mkdirSync(dist, { recursive: true });
 for (var file of readdirSync(dist)) {
   if (
     /^(index|recrypt-worker|chunk-.+|Roboto-Regular-.+)\.js(\.map)?$/.test(file)

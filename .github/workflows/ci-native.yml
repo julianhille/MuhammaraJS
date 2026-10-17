@@ -50,6 +50,10 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run native:test:types && npm run native-with-source:test:types
       - run: npm exec --workspace=@muhammara/native-with-source -- node-pre-gyp rebuild
+      - name: Run the shared Recipe specs on native
+        run: npm run test:shared
+        env:
+          MUHAMMARA_END: native
       - name: Verify OpenSSL is statically linked
         run: if readelf -d packages/native-with-source/binding/napi-v${{ env.NAPI_VERSION }}/muhammara.node | grep -Eiq 'lib(crypto|ssl)'; then exit 1; fi
       - run: mkdir -p packages && npm pack --workspace=@muhammara/native-core --pack-destination packages && npm pack --workspace=@muhammara/native-with-source --pack-destination packages && npm pack --workspace=@muhammara/native --pack-destination packages

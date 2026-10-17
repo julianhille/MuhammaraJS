@@ -69,6 +69,10 @@ jobs:
           path: packages/wasm/dist
       - run: npm run wasm:verify
       - run: npm run wasm:test
+      - name: Run the shared Recipe specs on Wasm
+        run: npm run test:shared
+        env:
+          MUHAMMARA_END: wasm
       - run: npm run wasm:test:types
       - run: npm run wasm:test:paths
       - run: npm run wasm:test:exports
