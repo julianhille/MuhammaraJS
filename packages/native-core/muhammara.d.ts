@@ -3091,6 +3091,22 @@ declare namespace muhammara {
     label: string;
   }
 
+  /** Values for `fillForm()`, keyed by field name or id. */
+  export type RecipeFormValues = Record<
+    string,
+    string | number | boolean | readonly (string | number)[] | null
+  >;
+
+  export interface RecipeFillFormOptions {
+    /**
+     * Draw an appearance stream for each changed widget (the default), or
+     * set `/NeedAppearances` and let the viewer draw them.
+     */
+    appearances?: Recipe.FormAppearances;
+    /** The registered font family that draws text; the default font when omitted. */
+    font?: string;
+  }
+
   /** A terminal AcroForm field returned by `formFields()`. */
   export interface RecipeFormField {
     /**
@@ -3324,6 +3340,8 @@ declare namespace muhammara {
       | "combobox"
       | "listbox"
       | "signature";
+    /** A `Recipe.FormAppearances` value. */
+    type FormAppearances = "generate" | "viewer";
     /** A `Recipe.ChromaCommand` value. */
     type ChromaCommand = "!load";
     /** A `Recipe.Source` value. */
@@ -4220,6 +4238,11 @@ declare namespace muhammara {
       readonly LIST_BOX: "listbox";
       readonly SIGNATURE: "signature";
     };
+    /** How `fillForm()` shows the values it writes. */
+    static readonly FormAppearances: {
+      readonly GENERATE: "generate";
+      readonly VIEWER: "viewer";
+    };
     /** Form field flag bits of `/Ff`, as in `field.flags & FormFieldFlag.READ_ONLY`. */
     static readonly FormFieldFlag: {
       readonly READ_ONLY: 1;
@@ -4523,6 +4546,22 @@ declare namespace muhammara {
      * @throws {Error} If endPDF() released the source.
      */
     formFields(): RecipeFormField[];
+    /**
+     * Fill interactive form (AcroForm) fields of the source document. The
+     * values are written by endPDF(), each changed widget with a new
+     * appearance stream unless `appearances` is `"viewer"`.
+     * @param values - The values, keyed by fully qualified field name, or by
+     *   field id when a name is not unique: text for text fields, true, false
+     *   or an on-state name for checkboxes, an on-state name or its `/Opt`
+     *   label for radios, an option for combo boxes, and an option or an array
+     *   of options for list boxes; null clears a field.
+     * @param options - How the values are shown.
+     * @throws {TypeError} If the values or options are invalid.
+     * @throws {Error} For a new document, after endPDF() or insertPage(), for a source that
+     *   needs its password, or when a field is missing, ambiguous, cannot be
+     *   filled or does not take the value.
+     */
+    fillForm(values: RecipeFormValues, options?: RecipeFillFormOptions): Recipe;
 
     /**
      * @param key - The key
@@ -4543,7 +4582,7 @@ declare namespace muhammara {
      * @returns The recipe instance. Pages are inserted by `endPDF()`;
      *   Buffer sources do not support insertion.
      * @throws {Error} If pages were deleted with deletePage() on this Recipe,
-     *   or it writes PDF/A or attached files.
+     *   or it writes PDF/A, attached files or form fills.
      * @throws {Error} If afterPageNumber is not a number.
      * @throws {TypeError} If pdfSrc or srcPageNumber is missing.
      */

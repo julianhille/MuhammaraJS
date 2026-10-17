@@ -399,6 +399,18 @@ var FormFieldFlag = Object.freeze({
 });
 
 /**
+ * How `fillForm()` shows the values it writes.
+ * @readonly
+ * @enum {string}
+ */
+var FormAppearances = Object.freeze({
+  /** Draw a new appearance stream for each changed widget. */
+  GENERATE: "generate",
+  /** Set `/NeedAppearances` and let the viewer draw the appearances. */
+  VIEWER: "viewer",
+});
+
+/**
  * Special Recipe sources.
  * @readonly
  * @enum {string}
@@ -434,5 +446,6 @@ module.exports = {
   AnnotIcon,
   FormFieldKind,
   FormFieldFlag,
+  FormAppearances,
   ChromaCommand,
 };

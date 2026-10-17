@@ -901,7 +901,7 @@ export function createRecipeFactory({
     createInfoMethods({ call, withString, createReader, valueTypes }),
     createSecurityMethods(),
     createReplaceTextMethods(),
-    createFormMethods({ createReader }),
+    createFormMethods({ createReader, resolveFont }),
   );
 
   // Composition modules receive closures rather than reaching into Recipe state.
@@ -1010,6 +1010,7 @@ export function createRecipeFactory({
               try {
                 recipe._deletePages();
                 recipe._writeCanonicalInfo();
+                recipe._writeFormFills();
                 recipe._endedBytes = recipe.writer.end();
               } catch (error) {
                 if (!deletingPages) throw error;

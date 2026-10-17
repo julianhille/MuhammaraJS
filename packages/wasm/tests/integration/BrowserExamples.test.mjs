@@ -12,6 +12,27 @@ import { bidiUrl } from "../../examples/browser/module-options.mjs";
 import { writeOutput } from "../testOutput.mjs";
 import { imagePlacements } from "../recipe/image-placement.mjs";
 
+/**
+ * Asserts that the PDF of a fill-form example holds the values its summary
+ * lists.
+ * @param {{bytes: Uint8Array, summary: object}} result - The example result.
+ * @returns {Promise<void>} Resolves when the values match.
+ */
+async function assertFilled(result) {
+  var Recipe = await createRecipe();
+  var recipe = new Recipe(result.bytes);
+  try {
+    var values = Object.fromEntries(
+      recipe.formFields().map((field) => [field.name, field.value]),
+    );
+    result.summary.fields.forEach((field) =>
+      assert.deepEqual(values[field.name], field.value),
+    );
+  } finally {
+    recipe.dispose();
+  }
+}
+
 describe("Browser how-to examples", function () {
   var assets;
 
@@ -57,6 +78,7 @@ describe("Browser how-to examples", function () {
         "find-text",
         "inspect-pdf",
         "acroform",
+        "fill-form",
       ],
     );
   });
@@ -404,6 +426,55 @@ describe("Browser how-to examples", function () {
       result.summary.fields.map((field) => field.name),
       ["person.name", "notes", "agree", "color", "country", "langs", "submit"],
     );
+  });
+
+  it("fills the AcroForm fields of the built-in sample form", async function () {
+    var result = await runHowToExample("fill-form");
+    writeOutput("BrowserExamples-fill-form-sample", result.bytes);
+    assert.equal(result.summary.source, "Built-in sample form");
+    assert.deepEqual(result.summary.fields, [
+      { name: "name", value: "Filled by Muhammara" },
+      { name: "newsletter", value: "Yes" },
+      { name: "plan", value: "pro" },
+      { name: "country", value: "Spain" },
+    ]);
+    await assertFilled(result);
+  });
+
+  it("fills the AcroForm fields of an uploaded PDF", async function () {
+    var pdf = new Uint8Array(
+      await readFile(
+        new URL(
+          "../../../native-with-source/tests/TestMaterials/recipe/AcroFormPdfLib.pdf",
+          import.meta.url,
+        ),
+      ),
+    );
+    var result = await runHowToExample("fill-form", { assets: { pdf } });
+    assert.equal(result.summary.source, "Uploaded PDF");
+    assert.deepEqual(result.summary.fields, [
+      { name: "person.name", value: "Filled by Muhammara" },
+      { name: "notes", value: "Filled by Muhammara" },
+      { name: "agree", value: "Yes" },
+      { name: "color", value: "2" },
+      { name: "country", value: "Spain" },
+      { name: "langs", value: "Rust" },
+    ]);
+    await assertFilled(result);
+    // A field fillForm() refuses is skipped: "old" has generation 1.
+    pdf = new Uint8Array(
+      await readFile(
+        new URL(
+          "../../../native-with-source/tests/TestMaterials/recipe/AcroFormFillCases.pdf",
+          import.meta.url,
+        ),
+      ),
+    );
+    result = await runHowToExample("fill-form", { assets: { pdf } });
+    var names = result.summary.fields.map((field) => field.name);
+    assert.ok(names.includes("code"));
+    assert.ok(!names.includes("old"));
+    await assertFilled(result);
   });
 
   it("counts XObjects in an uploaded PDF", async function () {

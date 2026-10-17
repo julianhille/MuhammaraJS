@@ -400,6 +400,7 @@ class Recipe {
     try {
       this._deletePages();
       this._writeInfo();
+      this._writeFormFills();
       // the annotation pass writes a new Info dictionary: carry the fields
       // and custom entries over
       const info = this.writer.getDocumentContext().getInfoDictionary();
@@ -557,7 +558,12 @@ class Recipe {
  * @throws {string} If two recipe modules export the same member.
  */
 function loadPrototypes() {
-  const ignores = ["utils.js", "xObjectForm.js", "page-references.js"];
+  const ignores = [
+    "utils.js",
+    "xObjectForm.js",
+    "page-references.js",
+    "form-appearance.js",
+  ];
   fs.readdirSync(path.join(__dirname, "recipe"))
     .filter((file) => {
       return file[0] != "." && !ignores.includes(file);

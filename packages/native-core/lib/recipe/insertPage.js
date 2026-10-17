@@ -13,7 +13,7 @@ const utils = require("./utils");
  * @throws {Error} If pages were deleted with deletePage() on this Recipe, or
  *   it writes PDF/A or attached files, which the inserted pages' new PDF
  *   would lose.
- * @throws {Error} If afterPageNumber is not a number.
+ * @throws {Error} If afterPageNumber is not a number, or after fillForm().
  * @throws {TypeError} If pdfSrc or srcPageNumber is missing.
  */
 exports.insertPage = function insertPage(
@@ -27,6 +27,9 @@ exports.insertPage = function insertPage(
   if (this.pdfa_ || this.attachments_) {
     throw new Error("insertPage() cannot be combined with pdfa or attach()");
   }
+  // the inserted pages' new PDF would lose the form
+  if (this._formFills?.size)
+    throw new Error("insertPage() cannot be combined with fillForm()");
   if (isNaN(afterPageNumber)) {
     throw new Error("The afterPageNumber is inValid.");
   }

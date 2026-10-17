@@ -44,6 +44,8 @@ build the package, run
   built-in sample into a one-page report.
 - [Read Form Fields](how-to/read-form-fields.md) lists the AcroForm fields of
   an uploaded PDF, or of a built-in sample form, in the AcroForm tab.
+- [Fill Form Fields](how-to/fill-form-fields.md) fills the fields of an
+  uploaded PDF, or of the built-in sample form, in the Fill form tab.
 
 See [Browser Setup](browser-setup.md) for loading the package and [Byte Assets,
 Blob, and File Input](byte-assets.md) for browser-safe assets.

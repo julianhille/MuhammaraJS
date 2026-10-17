@@ -77,4 +77,5 @@ the `password` option.
 
 Only the source document is read: XFA forms are not read, and malformed field
 entries, such as references to missing objects or a `/Kids` cycle, are
-skipped. Filling, creating and flattening fields are not supported yet.
+skipped. Fill fields with [`fillForm()`](fill-form-fields.md); creating and
+flattening fields are not supported yet.

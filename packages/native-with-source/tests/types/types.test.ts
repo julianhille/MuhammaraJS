@@ -984,6 +984,19 @@ var formWidgetPage: number | null = formFields[0].widgets[0].pageNumber;
 var formFieldID: number = formFields[0].id;
 var formWidgetID: number = formFields[0].widgets[0].id;
 var formOptionLabel: string = formFields[0].options[0].label;
+var formValues: muhammara.RecipeFormValues = {
+  name: "Ada",
+  agree: true,
+  langs: ["C"],
+  codes: [1, "2"] as const,
+  cleared: null,
+  9: 42,
+};
+var fillOptions: muhammara.RecipeFillFormOptions = {
+  appearances: muhammara.Recipe.FormAppearances.VIEWER,
+  font: "helvetica",
+};
+var filled: muhammara.Recipe = recipe.fillForm(formValues, fillOptions);
 var recipeDeviceColorSpace: muhammara.Recipe.DeviceColorSpace = "cmyk";
 var recipeTextOptions: muhammara.Recipe.TextOptions = {
   align: `${muhammara.Recipe.HorizontalAlign.CENTER} ${muhammara.Recipe.VerticalAlign.TOP}`,

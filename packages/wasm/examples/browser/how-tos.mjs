@@ -150,6 +150,14 @@ export var HOW_TO_EXAMPLES = [
       "List the fields of your fillable PDF, or of a built-in sample form, with their kinds, values, and pages in a one-page report.",
     assets: ["pdf"],
   },
+  {
+    id: "fill-form",
+    label: "Fill form",
+    title: "Fill AcroForm fields",
+    description:
+      "Fill the text, checkbox, radio, and choice fields of your fillable PDF, or of a built-in sample form, and download the filled form.",
+    assets: ["pdf"],
+  },
 ];
 
 var SAMPLE_BOOKMARKS = ["Service agreement", "Pricing appendix"];
@@ -1756,6 +1764,61 @@ async function acroFormExample(assets) {
   }
 }
 
+/**
+ * Picks a demo value for a form field: text cut to the field's length for a
+ * text field, the last option for any other field.
+ * @param {object} Recipe - The Recipe class, for its constants.
+ * @param {object} field - A field from `formFields()`.
+ * @returns {string|undefined} The value, or undefined to leave the field.
+ */
+function demoValue(Recipe, field) {
+  return field.kind === Recipe.FormFieldKind.TEXT
+    ? "Filled by Muhammara".slice(0, field.maxLength ?? undefined)
+    : field.options.at(-1)?.value;
+}
+
+/**
+ * Builds the browser example that fills the AcroForm fields of a PDF and
+ * returns the filled form.
+ * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional byte assets.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The filled PDF and its new values.
+ */
+async function fillFormExample(assets) {
+  var source = assets.pdf
+    ? { bytes: assets.pdf, origin: "Uploaded PDF" }
+    : { bytes: sampleFormPdf(), origin: "Built-in sample form" };
+  var Recipe = await createRecipe();
+  try {
+    var form = new Recipe(source.bytes);
+    var fields = [];
+    form.formFields().forEach((field) => {
+      var value = demoValue(Recipe, field);
+      if (value === undefined) return;
+      try {
+        // By id, which also fills fields that share a name.
+        form.fillForm({ [field.id]: value });
+        fields.push({ name: field.name, value });
+      } catch {
+        // A field fillForm() refuses, such as a push button or one with a
+        // nonzero generation, keeps its value.
+      }
+    });
+    var bytes = form.endPDF();
+    return {
+      bytes,
+      filename: "muhammara-filled-form.pdf",
+      summary: await summarize(bytes, {
+        howTo: "Fill AcroForm fields",
+        source: source.origin,
+        fields,
+      }),
+    };
+  } finally {
+    form?.dispose();
+    Recipe.disposeAssets();
+  }
+}
+
 var runners = {
   annotations: annotationsExample,
   links: linksExample,
@@ -1774,6 +1837,7 @@ var runners = {
   "find-text": findTextExample,
   "inspect-pdf": inspectPdfExample,
   acroform: acroFormExample,
+  "fill-form": fillFormExample,
 };
 
 /**

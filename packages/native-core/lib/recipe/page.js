@@ -1038,6 +1038,7 @@ exports._deletePages = function _deletePages() {
       deletion.plan,
       deletion.deletedPageIDs,
     );
+    this._deletedPageIDs = deletion.deletedPageIDs;
   } finally {
     copyingContext.end();
   }
