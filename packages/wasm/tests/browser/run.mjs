@@ -162,6 +162,7 @@ try {
       "find-text",
       "inspect-pdf",
       "acroform",
+      "fill-form",
     ];
     if (tabIds.join(",") !== expectedTabIds.join(",")) {
       throw new Error(`Unexpected example tabs: ${tabIds.join(", ")}`);
@@ -215,6 +216,7 @@ try {
     await runExample("watermark", "worker");
     await runExample("find-text", "page");
     await runExample("acroform", "worker");
+    await runExample("fill-form", "page");
     // Right-to-left text needs a font with Hebrew glyphs; the example loads
     // bidi-js with loadBidi(), on the page and in a Worker.
     var font = await fetch(

@@ -82,6 +82,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `appearances: "viewer"`, dropping the `/XFA` of a form that also has
   fields, and the `Recipe.FormAppearances` constant
   [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
+- Add a Fill form tab to the browser example that fills the form fields of an
+  uploaded PDF, or of the built-in sample form, and returns the filled form
+  [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
 - Add an AcroForm tab to the browser example that lists the form fields of an
   uploaded PDF, or of a built-in sample form, in a one-page report
   [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
