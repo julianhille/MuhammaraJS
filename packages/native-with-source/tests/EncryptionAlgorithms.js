@@ -12,8 +12,58 @@ function createEncryptedPdf(outputPath, version) {
     ownerPassword: "owner",
   });
 
-  writer.writePage(writer.createPage(0, 0, 100, 100));
+  writer.getDocumentContext().getInfoDictionary().title = "Encrypted";
+  var page = writer.createPage(0, 0, 100, 100);
+  writer.startPageContentContext(page).re(0, 0, 10, 10).f();
+  writer.writePage(page);
   writer.end();
+}
+
+/**
+ * Reads the decoded content of a PDF's first page.
+ * @param {object} reader Reader of the PDF.
+ * @returns {string} The content stream as latin1 text.
+ */
+function readPageContent(reader) {
+  var contents = reader.queryDictionaryObject(
+    reader.parsePage(0).getDictionary(),
+    "Contents",
+  );
+  var stream = reader.startReadingFromStream(contents.toPDFStream());
+  var bytes = [];
+  while (stream.notEnded()) bytes.push(...stream.read(4096));
+  return Buffer.from(bytes).toString("latin1");
+}
+
+/**
+ * Opens an encrypted PDF with a password and reads its decrypted Info title
+ * and first page content, and the page content of the PDF that `recrypt()`
+ * decrypts with that password.
+ * @param {string} filePath Path of the encrypted PDF.
+ * @param {string} password User or owner password.
+ * @returns {{title: string, content: string, recrypted: string}} The
+ *   decrypted string and streams.
+ */
+function readDecrypted(filePath, password) {
+  var plainPath = filePath + "-plain-" + password + ".pdf";
+  muhammara.recrypt(filePath, plainPath, { password: password });
+  var plainReader = muhammara.createReader(plainPath);
+  var reader = muhammara.createReader(filePath, { password: password });
+  try {
+    assert.equal(plainReader.isEncrypted(), false);
+    assert.equal(reader.isEncrypted(), true);
+    assert.equal(reader.getPagesCount(), 1);
+    var info = reader.queryDictionaryObject(reader.getTrailer(), "Info");
+    return {
+      title: reader.queryDictionaryObject(info, "Title").toText(),
+      content: readPageContent(reader),
+      recrypted: readPageContent(plainReader),
+    };
+  } finally {
+    // Windows cannot delete the test directory while the files are open.
+    reader.end();
+    plainReader.end();
+  }
 }
 
 function readStreamIVs(pdf) {
@@ -53,7 +103,8 @@ describe("Encryption algorithms", function () {
 
   /**
    * Encrypts a one-page PDF for the given version, writes it to the test
-   * output, and asserts on its encryption dictionary and readability.
+   * output, and asserts on its encryption dictionary and that both passwords
+   * decrypt it.
    * @param {number} version PDF version constant (`muhammara.ePDFVersion*`).
    * @param {string[]} expectedValues Fragments the encryption dictionary must contain.
    */
@@ -70,10 +121,13 @@ describe("Encryption algorithms", function () {
       assert.include(pdf, value);
     });
 
-    var reader = muhammara.createReader(outputPath, { password: "user" });
-    assert.equal(reader.isEncrypted(), true);
-    assert.equal(reader.getPagesCount(), 1);
-    reader.end();
+    // The owner password decrypts like the user password (#1002).
+    ["user", "owner"].forEach(function (password) {
+      var decrypted = readDecrypted(outputPath, password);
+      assert.equal(decrypted.title, "Encrypted", password);
+      assert.include(decrypted.content, "0 0 10 10 re", password);
+      assert.include(decrypted.recrypted, "0 0 10 10 re", password);
+    });
   }
 
   it("uses 40-bit RC4 for PDF 1.3", function () {

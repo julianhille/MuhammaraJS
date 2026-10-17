@@ -313,23 +313,16 @@ ByteList XCryptionCommon::CreateOValue(
 	return encryptedPassword;
 }
 
-bool XCryptionCommon::AuthenticateOwnerPassword(
-	const ByteList& inMaybeOwnerPassword,
+// MuhammaraJS: Parts 1 and 2 of AuthenticateOwnerPassword, extracted so that DecryptionHelper
+// can derive the file encryption key from the user password that an owner password recovers.
+ByteList XCryptionCommon::RetrieveUserPassword(
+	const ByteList& inOwnerPassword,
 	unsigned int inRevision,
 	unsigned int inLength,
-	const ByteList& inO,
-	long long inP,
-	const ByteList& inFileIDPart1,
-	bool inEncryptMetaData,
-	const ByteList inU) {
-	// algorithm 3.7 is intended to authenticate the owner passowrd.
-	// It converts the owner password to encryption key similarly to algorithm 3.3, and then uses that key to decrypt
-	// a "user password" from the O value. now just authenticate the result algorithm 3.6 as one would with a user.
-	// if that "user password" is authenaticated, this means teh owner password is authenticated as well.
-
+	const ByteList& inO) {
 	// Part 1: Create what is maybe the owner encryption key based on the candidate owner password.
 	ByteList RC4Key = createOwnerEncryptionKey(
-		inMaybeOwnerPassword,
+		inOwnerPassword,
 		inRevision,
 		inLength
 	);
@@ -353,6 +346,29 @@ bool XCryptionCommon::AuthenticateOwnerPassword(
 			decryptedUserPassword = rc4Encode(newEncryptionKey, decryptedUserPassword);
 		}
 	}
+
+	return decryptedUserPassword;
+}
+
+bool XCryptionCommon::AuthenticateOwnerPassword(
+	const ByteList& inMaybeOwnerPassword,
+	unsigned int inRevision,
+	unsigned int inLength,
+	const ByteList& inO,
+	long long inP,
+	const ByteList& inFileIDPart1,
+	bool inEncryptMetaData,
+	const ByteList inU) {
+	// algorithm 3.7 is intended to authenticate the owner passowrd.
+	// It converts the owner password to encryption key similarly to algorithm 3.3, and then uses that key to decrypt
+	// a "user password" from the O value. now just authenticate the result algorithm 3.6 as one would with a user.
+	// if that "user password" is authenaticated, this means teh owner password is authenticated as well.
+	ByteList decryptedUserPassword = RetrieveUserPassword(
+		inMaybeOwnerPassword,
+		inRevision,
+		inLength,
+		inO
+	);
 
 	// Part 3: attempt to authenticate the user password, using the decrypted "user password" as the input password.
 	return AuthenticateUserPassword(
