@@ -212,6 +212,24 @@ describe("PDFParser", function () {
     reader.end();
   });
 
+  it("reads a dictionary key that is not valid UTF-8", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      malformed.pdfWith([
+        "<< /Type /Catalog /Pages 2 0 R >>",
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] >>",
+        // "Gruen" in Latin-1: the byte FC alone is not valid UTF-8.
+        "<< /Gr#FCn 1 /Off 2 >>",
+      ]),
+    );
+    var values = reader.parseNewObject(4).toJSObject();
+    assert.deepEqual(Object.keys(values), ["Gr\ufffdn", "Off"]);
+    assert.equal(values["Gr\ufffdn"].value, 1);
+    assert.equal(values.Off.value, 2);
+    reader.end();
+  });
+
   it("rejects an xref stream field wider than 8 bytes", async function () {
     var muhammara = await createMuhammaraWasm();
     assert.throws(() =>
