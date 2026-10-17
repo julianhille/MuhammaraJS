@@ -34,6 +34,12 @@ into separate appended content contexts. Both return the Recipe for valid
 transitions and throw for unmatched calls. Password-protected source editing
 is not available; decrypt first with the low-level byte-first `recrypt()` API.
 
+## Read Form Fields
+
+`formFields()` lists the interactive form fields of the source document with
+their fully qualified names, kinds, values, flags, options and widgets. See
+[Read Form Fields](../how-to/read-form-fields.md) for the field properties.
+
 ## Delete Source Pages
 
 `deletePage(pageNumber)` and `deletePage([pageNumbers])` remove one or more

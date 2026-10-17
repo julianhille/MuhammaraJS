@@ -24,6 +24,12 @@ textual PDF structure, call `structure` on the Recipe instance:
 pdfDoc.structure("pdf-structure.txt").endPDF();
 ```
 
+## Read Form Fields
+
+`formFields()` lists the interactive form fields of the source document with
+their fully qualified names, kinds, values, flags, options and widgets. See
+[Read Form Fields](../how-to/read-form-fields.md) for the field properties.
+
 ## Delete Pages
 
 `deletePage(pageNumber)` and `deletePage(pageNumbers)` remove one or more

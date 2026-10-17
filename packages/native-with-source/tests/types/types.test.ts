@@ -974,6 +974,16 @@ var recipeIcon: muhammara.Recipe.AnnotIcon = muhammara.Recipe.AnnotIcon.NOTE;
 var recipeChroma: muhammara.Recipe.ChromaCommand =
   muhammara.Recipe.ChromaCommand.LOAD;
 var recipeSource: muhammara.Recipe.Source = muhammara.Recipe.Source.NEW;
+var formFields: muhammara.RecipeFormField[] = recipe.formFields();
+var formKind: muhammara.Recipe.FormFieldKind | null = formFields[0].kind;
+var isTextField: boolean = formKind === muhammara.Recipe.FormFieldKind.TEXT;
+var isReadOnly: boolean = Boolean(
+  formFields[0].flags & muhammara.Recipe.FormFieldFlag.READ_ONLY,
+);
+var formWidgetPage: number | null = formFields[0].widgets[0].pageNumber;
+var formFieldID: number = formFields[0].id;
+var formWidgetID: number = formFields[0].widgets[0].id;
+var formOptionLabel: string = formFields[0].options[0].label;
 var recipeDeviceColorSpace: muhammara.Recipe.DeviceColorSpace = "cmyk";
 var recipeTextOptions: muhammara.Recipe.TextOptions = {
   align: `${muhammara.Recipe.HorizontalAlign.CENTER} ${muhammara.Recipe.VerticalAlign.TOP}`,

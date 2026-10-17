@@ -125,6 +125,54 @@ export type RecipePermissionName =
   | "printbest";
 /** Known permission names with string compatibility for composed flag lists. */
 export type RecipePermission = RecipePermissionName | (string & {});
+export interface RecipeFormFieldWidget {
+  /**
+   * The object number of the widget annotation; the field's own `id` when
+   * the field and its widget are one object.
+   */
+  id: number;
+  /** The one-based page whose `/Annots` lists the widget, or null. */
+  pageNumber: number | null;
+  /** The widget `/Rect` as [llx, lly, urx, ury] in PDF user space, or null. */
+  rect: number[] | null;
+}
+
+export interface RecipeFormFieldOption {
+  /** The export value: the choice text, or the on-state name of a button. */
+  value: string;
+  /** The display text; the value when the field has no separate label. */
+  label: string;
+}
+
+/** A terminal AcroForm field returned by `formFields()`. */
+export interface RecipeFormField {
+  /**
+   * The object number of the field dictionary. Unlike `name`, it is unique
+   * within the file. Recipe edits keep it; encrypting, or any tool that
+   * rewrites the whole file, can renumber it.
+   */
+  id: number;
+  /** The fully qualified name: the partial names `/T` joined with ".". */
+  name: string;
+  /** The field kind, or null for an unknown field type `/FT`. */
+  kind: Recipe.FormFieldKind | null;
+  /**
+   * The value `/V`: text for text and choice fields, an array for a
+   * multi-select list, the state name for checkboxes and radios, or null.
+   */
+  value: string | string[] | null;
+  /** The default value `/DV`, decoded like `value`. */
+  defaultValue: string | string[] | null;
+  /** The field flags `/Ff`; test them with `Recipe.FormFieldFlag` values. */
+  flags: number;
+  /** The maximum text length `/MaxLen`, or null. */
+  maxLength: number | null;
+  /** The choices of a choice field, or the on-states of a checkbox or radio. */
+  options: RecipeFormFieldOption[];
+  /** The widget annotations that show the field. */
+  widgets: RecipeFormFieldWidget[];
+}
+
 export interface RecipeMargins {
   left?: number;
   right?: number;
@@ -921,6 +969,15 @@ export interface Recipe {
    *   ModDate, Trapped and the `source-*` entries, which Recipe writes itself.
    * @throws {Error} After endPDF().
    */
+  /**
+   * List the interactive form (AcroForm) fields of the source document,
+   * as terminal fields with inherited type, flags and value resolved.
+   * Fields added or filled by this Recipe are not included.
+   * @returns The fields in field tree order; empty for a new document or a
+   *   source without a form.
+   * @throws {Error} If endPDF() released the source.
+   */
+  formFields(): RecipeFormField[];
   info(options: Record<string, unknown>): this;
   /**
    * Read the XMP metadata packet of the source PDF.
@@ -1160,6 +1217,15 @@ export declare namespace Recipe {
     | "Paragraph"
     | "Insert";
   type AnnotOptionsIcon = Recipe.AnnotIcon;
+  /** A `Recipe.FormFieldKind` value. */
+  type FormFieldKind =
+    | "text"
+    | "checkbox"
+    | "radio"
+    | "pushbutton"
+    | "combobox"
+    | "listbox"
+    | "signature";
   type ChromaCommand = "!load";
   /** Wasm-only: the `Recipe.StructureFormat` values. */
   type StructureFormat = "string" | "json";
@@ -1495,6 +1561,38 @@ export interface RecipeConstructor {
     readonly NEW_PARAGRAPH: "NewParagraph";
     readonly PARAGRAPH: "Paragraph";
     readonly INSERT: "Insert";
+  };
+  /** Kinds of the fields returned by `formFields()`. */
+  readonly FormFieldKind: {
+    readonly TEXT: "text";
+    readonly CHECKBOX: "checkbox";
+    readonly RADIO: "radio";
+    readonly PUSH_BUTTON: "pushbutton";
+    readonly COMBO_BOX: "combobox";
+    readonly LIST_BOX: "listbox";
+    readonly SIGNATURE: "signature";
+  };
+  /** Form field flag bits of `/Ff`, as in `field.flags & FormFieldFlag.READ_ONLY`. */
+  readonly FormFieldFlag: {
+    readonly READ_ONLY: 1;
+    readonly REQUIRED: 2;
+    readonly NO_EXPORT: 4;
+    readonly MULTILINE: 4096;
+    readonly PASSWORD: 8192;
+    readonly NO_TOGGLE_TO_OFF: 16384;
+    readonly RADIO: 32768;
+    readonly PUSHBUTTON: 65536;
+    readonly COMBO: 131072;
+    readonly EDIT: 262144;
+    readonly SORT: 524288;
+    readonly FILE_SELECT: 1048576;
+    readonly MULTI_SELECT: 2097152;
+    readonly DO_NOT_SPELL_CHECK: 4194304;
+    readonly DO_NOT_SCROLL: 8388608;
+    readonly COMB: 16777216;
+    readonly RICH_TEXT: 33554432;
+    readonly RADIOS_IN_UNISON: 33554432;
+    readonly COMMIT_ON_SEL_CHANGE: 67108864;
   };
   /** Output formats of `structure()`; Wasm-only. */
   readonly StructureFormat: {

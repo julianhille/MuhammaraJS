@@ -71,6 +71,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   column, whose headers take it too. The default, `"none"`, draws text exactly as given,
   as before; see [Write Right-to-Left Text](docs/how-to/write-right-to-left-text.md)
   [#330](https://github.com/julianhille/MuhammaraJS/issues/330)
+- Add Recipe `formFields()` to list the AcroForm fields of an existing PDF
+  with their object IDs, fully qualified names, kinds, values, flags, options
+  and widgets, and the `Recipe.FormFieldKind` and `Recipe.FormFieldFlag`
+  constants to compare them against
+  [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
+- Add an AcroForm tab to the browser example that lists the form fields of an
+  uploaded PDF, or of a built-in sample form, in a one-page report
+  [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
 
 ### Fixed
 

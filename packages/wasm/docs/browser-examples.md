@@ -42,6 +42,8 @@ build the package, run
 - [Inspect PDF Objects](how-to/inspect-pdf-objects.md) and
   [Read PDF Bookmarks](how-to/read-bookmarks.md) read an uploaded PDF or the
   built-in sample into a one-page report.
+- [Read Form Fields](how-to/read-form-fields.md) lists the AcroForm fields of
+  an uploaded PDF, or of a built-in sample form, in the AcroForm tab.
 
 See [Browser Setup](browser-setup.md) for loading the package and [Byte Assets,
 Blob, and File Input](byte-assets.md) for browser-safe assets.

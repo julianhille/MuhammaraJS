@@ -88,6 +88,7 @@ describe("Recipe prototype", function () {
       "endPage",
       "fill",
       "fillAndStroke",
+      "formFields",
       "getCurrentPageInfo",
       "getPageInfo",
       "htmlToTextObjects",
