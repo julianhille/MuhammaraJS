@@ -156,6 +156,7 @@ function isItalicTag(tagName = "") {
 
 /**
  * Layout objects whose text, or whose last child's, ended with a line feed.
+ * @private
  */
 const endsWithLineFeed = new WeakSet();
 

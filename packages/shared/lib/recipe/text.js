@@ -40,16 +40,19 @@ import {
 
 /**
  * Matches HTML that ends with a closed block element, which ends its line.
+ * @private
  */
 const BLOCK_END = /<\/(?:p|div|ul|ol|li|h[1-6]|blockquote|pre)\s*>\s*$/i;
 
 /**
  * Matches HTML that opens with a block element, which starts a new line.
+ * @private
  */
 const BLOCK_START = /^\s*<(?:p|div|ul|ol|li|h[1-6]|blockquote|pre)\b/i;
 
 /**
  * Matches the line break that ends a word at a required break.
+ * @private
  */
 const LINE_BREAK_END = new RegExp(`(?:\\r\\n|[${LINE_BREAKS}])$`);
 // The mandatory breaks inside a text, captured, to split it into paragraphs.
@@ -1279,6 +1282,7 @@ export const text = function text(text = "", x, y, options = {}) {
                * a glyph after it in the same run would leave them; measured
                * only for a piece placed by it.
                * @returns {number} The width in points.
+               * @private
                */
               get advance() {
                 if (advance === undefined) {

@@ -2,7 +2,10 @@ import { trimBreakableEnd } from "../text-direction.js";
 
 const ANNOTATION_PREFIX = "Annots";
 
-/** Recipe page content-stream lifecycle states. */
+/**
+ * Recipe page content-stream lifecycle states.
+ * @private
+ */
 const PAGE_CONTEXT_STATE = Object.freeze({
   IDLE: "idle",
   ACTIVE_NEW: "active-new",
@@ -143,6 +146,7 @@ function appendPDFPagesFromPDFWithAnnotations(
  * @returns {number} The resolved font size in PDF points.
  * @throws {RangeError} If the given size is not a finite number greater than
  *   zero.
+ * @private
  */
 function resolveFontSize(options = {}, fallback) {
   const name = options.size == null ? "fontSize" : "size";
@@ -163,6 +167,7 @@ function resolveFontSize(options = {}, fallback) {
  * a table or a new page starts without them.
  * @param {Object} recipe - The Recipe.
  * @returns {void}
+ * @private
  */
 function clearTextFlow(recipe) {
   recipe._previousTextObjects = [];

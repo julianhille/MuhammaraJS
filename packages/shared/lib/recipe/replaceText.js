@@ -159,6 +159,7 @@ function removeTextShowingOperators(source) {
  * @param {Recipe} recipe Recipe with an open source reader.
  * @param {object} object PDF object or indirect reference.
  * @returns {object} Resolved PDF object.
+ * @private
  */
 function resolve(recipe, object) {
   if (
@@ -179,6 +180,7 @@ function resolve(recipe, object) {
  * @param {object} dictionary PDF dictionary.
  * @param {string} key Entry name.
  * @returns {object|null} Resolved PDF object, or null when missing.
+ * @private
  */
 function lookup(recipe, dictionary, key) {
   return dictionary && dictionary.exists(key)
@@ -236,6 +238,7 @@ function pageContent(recipe, pageIndex) {
  * @param {Recipe} recipe Recipe with an open source reader.
  * @param {number} objectId Stream object ID.
  * @returns {string} Decoded stream bytes, one character per byte.
+ * @private
  */
 function readContentStream(recipe, objectId) {
   return contentStream.readStreamString(

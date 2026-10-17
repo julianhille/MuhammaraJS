@@ -597,6 +597,7 @@ const privateExports = new Set([
  * Install every method exported by the Recipe modules on the Recipe prototype.
  * @returns {void}
  * @throws {string} If two recipe modules export the same member.
+ * @private
  */
 function loadPrototypes() {
   for (const [file, module] of Object.entries(recipeModules)) {
@@ -628,6 +629,7 @@ const SharedRecipe = Recipe;
  *   and the I/O hooks described in platform.js.
  * @param {Object} [constants] - Platform constants added to the class.
  * @returns {Function} The Recipe class bound to that platform.
+ * @private
  */
 function createRecipe(platform, constants = {}) {
   class Recipe extends SharedRecipe {}

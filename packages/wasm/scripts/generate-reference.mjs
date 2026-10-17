@@ -33,13 +33,18 @@ var recipeData = templateData.filter(
     (item.kind === "class" && item.name === "Recipe") ||
     (item.memberof === "Recipe" && item.access !== "private"),
 );
-var recipeReference = await jsdoc2md.render({
-  data: recipeData,
-  template: '{{#class name="Recipe"}}{{>docs}}{{/class}}',
-  "heading-depth": 2,
-  "param-list-format": "list",
-  separators: true,
-});
+var recipeReference = (
+  await jsdoc2md.render({
+    data: recipeData,
+    template: '{{#class name="Recipe"}}{{>docs}}{{/class}}',
+    "heading-depth": 2,
+    "param-list-format": "list",
+    separators: true,
+  })
+)
+  // MkDocs resolves no <a name> anchors, so the member index lists names
+  // instead of links, as native's reference does.
+  .replace(/^([ \t]*[-*] )\[(.+)\]\(#Recipe[+.][^)]+\)/gm, "$1`$2`");
 
 fs.writeFileSync(
   path.join(packageRoot, "docs/reference.md"),

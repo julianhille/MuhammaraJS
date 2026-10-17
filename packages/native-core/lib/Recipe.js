@@ -201,7 +201,7 @@ function createNativePlatform(muhammara) {
      * The font files in the given directories; missing directories are
      * skipped.
      * @param {string[]} directories - The directories.
-     * @returns {{name: string, ref: string}[]} Each file's name without its
+     * @returns {Array<{name: string, ref: string}>} Each file's name without its
      *   extension, and its path.
      */
     fontFiles(directories) {

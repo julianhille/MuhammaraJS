@@ -39,6 +39,7 @@ const charSpacing = function charSpacing(text, charSpace, direction, drawn) {
  * @memberof Recipe#
  * @param {string} word - The word, a single space measured as "o".
  * @param {Object} pathOptions - The resolved text options: font, size and charSpace.
+ * @private
  */
 const Word = class Word {
   constructor(word, pathOptions) {
@@ -148,6 +149,7 @@ const Word = class Word {
  * @memberof Recipe#
  * @param {string} word - The word value.
  * @param {Object} pathOptions - The resolved text options.
+ * @private
  */
 
 /**
@@ -159,6 +161,7 @@ const Word = class Word {
  * @param {number} height - The line height.
  * @param {number} size - The font size.
  * @param {Object} pathOptions - The resolved text options.
+ * @private
  */
 // The width of a line without a text box. No text reaches it, so such a line
 // accepts every word without measuring.
@@ -170,6 +173,7 @@ export const Line = class Line {
    * @param {number} [height] - A fixed line height.
    * @param {number} [size] - The font size; defaults to the text options size.
    * @param {Object} pathOptions - The resolved text options.
+   * @private
    */
   constructor(width, height, size, pathOptions) {
     this._width = width || UNBOUNDED_LINE_WIDTH;
@@ -502,6 +506,7 @@ export const textDimensions = function textDimensions(text, options = {}) {
  * @param {string} [text=''] - The column heading.
  * @param {string} [field=''] - The associated data field.
  * @param {Object} [options] - The column options.
+ * @private
  */
 export const Column = class Column {
   /**
@@ -512,6 +517,7 @@ export const Column = class Column {
    * @param {string} [text=''] - The column heading; defaults to the field.
    * @param {string} [field=''] - The associated data field.
    * @param {Object} [options] - The column options; `cell` becomes the text box.
+   * @private
    */
   constructor(x, y, width, height, text = "", field = "", options = {}) {
     this._x = x;

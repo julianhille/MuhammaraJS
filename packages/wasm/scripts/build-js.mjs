@@ -6,7 +6,8 @@
 //   that lib/recrypt-worker-client.js starts with
 //   `new URL("./recrypt-worker.js", import.meta.url)`, which resolves next to
 //   the bundle exactly as it did next to the source.
-// - The bundled Roboto font stays a separate chunk, loaded only when used.
+// - The bundled Roboto font stays the package's own fonts/Roboto-Regular.js,
+//   imported only when used; dist/ sits next to fonts/ as lib/ does.
 // - The Emscripten glue stays a separate file: it finds muhammara-wasm.wasm
 //   through its own import.meta.url.
 import { build } from "esbuild";
@@ -15,13 +16,23 @@ import { mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
 var packageRoot = new URL("../", import.meta.url);
 var manifest = JSON.parse(readFileSync(new URL("package.json", packageRoot)));
 
-/** Keeps the Emscripten glue external and points imports at its dist/ path. */
-var emscriptenGlue = {
-  name: "emscripten-glue",
+/**
+ * Keeps the Emscripten glue and the bundled font external, and points glue
+ * imports at its dist/ path.
+ */
+var externalFiles = {
+  name: "external-files",
   setup(build) {
     build.onResolve({ filter: /(^|\/)muhammara-wasm\.js$/ }, function () {
       return { path: "./muhammara-wasm.js", external: true };
     });
+    build.onResolve(
+      { filter: /^\.\.\/fonts\/Roboto-Regular\.js$/ },
+      (args) => ({
+        path: args.path,
+        external: true,
+      }),
+    );
   },
 };
 
@@ -55,7 +66,7 @@ await build({
   // Chunks sit next to the entries, so their relative URLs resolve alike.
   chunkNames: "[name]-[hash]",
   external: [...Object.keys(manifest.dependencies || {}), "node:*"],
-  plugins: [emscriptenGlue],
+  plugins: [externalFiles],
   keepNames: true,
   sourcemap: "linked",
   logLevel: "warning",
