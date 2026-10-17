@@ -611,9 +611,11 @@ exports.structure = function structure(output) {
     iterateObjectTypes(itemTrailer);
   };
 
-  structures.forEach((item) => {
-    write(item);
-  });
+  structures
+    .filter((item) => pdfReader.getTrailer().exists(item))
+    .forEach((item) => {
+      write(item);
+    });
 
   fs.closeSync(outputFile);
   return this;

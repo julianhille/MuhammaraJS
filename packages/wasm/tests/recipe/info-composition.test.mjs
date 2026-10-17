@@ -173,6 +173,19 @@ describe("Recipe byte metadata and composition", function () {
     });
   });
 
+  it("reports the structure of a PDF without /Info", async function () {
+    var Recipe = await getRecipe();
+    var source = new Uint8Array(
+      await readFile(
+        new URL(
+          "../../../native-with-source/tests/TestMaterials/FontDifferences.pdf",
+          import.meta.url,
+        ),
+      ),
+    );
+    assert.match(new Recipe(source).structure(), /^Root$/m);
+  });
+
   it("exposes permission bits and queues encryption", async function () {
     var Recipe = await getRecipe();
     assert.equal(Recipe.permission("print, copy"), 20);

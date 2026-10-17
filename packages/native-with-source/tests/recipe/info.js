@@ -1,3 +1,4 @@
+const fs = require("fs");
 const path = require("path");
 const Recipe = require("@muhammara/native-with-source").Recipe;
 const assert = require("chai").assert;
@@ -103,5 +104,15 @@ describe("Modify", () => {
     recipe
       .structure(path.join(__dirname, `../output/${file}.txt`))
       .endPDF(done);
+  });
+  it("prints the structure of a PDF without /Info", () => {
+    const src = path.join(__dirname, "../TestMaterials/FontDifferences.pdf");
+    const output = path.join(__dirname, "../output/structure-no-info.txt");
+    new Recipe(src, path.join(__dirname, "../output/structure-no-info.pdf"))
+      .structure(output)
+      .endPDF();
+    const structure = fs.readFileSync(output, "utf8");
+    assert.notMatch(structure, /^Info\r$/m);
+    assert.match(structure, /^Root\r$/m);
   });
 });
