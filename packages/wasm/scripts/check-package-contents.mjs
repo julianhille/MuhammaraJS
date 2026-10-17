@@ -6,7 +6,8 @@ var required = [
   "fonts/Roboto-Regular.js",
   "index.d.ts",
   "index.js",
-  "lib/recipe.js",
+  "dist/index.js",
+  "dist/recrypt-worker.js",
   "dist/THIRD_PARTY_LICENSES.md",
 ];
 var chunks = [];

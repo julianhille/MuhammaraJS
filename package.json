@@ -33,12 +33,16 @@
     "docs:check": "npm run docs:generate && mkdocs build --strict --config-file packages/native/mkdocs.yml",
     "docs:serve": "npm run docs:generate && mkdocs serve --config-file packages/native/mkdocs.yml",
     "test:docs": "npm run test:docs --workspace=@muhammara/native-with-source",
-    "test:pdfa": "node scripts/validate-pdfa.mjs"
+    "test:pdfa": "node scripts/validate-pdfa.mjs",
+    "build:js": "npm run build --workspace=@muhammara/native-core && npm run build:js --workspace=@muhammara/wasm",
+    "test:shared": "mocha --timeout 30000 \"tests/{recipe,matrices,native,wasm}/**/*.test.mjs\"",
+    "pretest:shared": "npm run build:js"
   },
   "overrides": {
     "serialize-javascript": "^7.0.5"
   },
   "devDependencies": {
+    "esbuild": "^0.25.12",
     "js-yaml": "^5.4.2"
   }
 }

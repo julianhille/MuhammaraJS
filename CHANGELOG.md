@@ -87,6 +87,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `appearances: "viewer"`, dropping the `/XFA` of a form that also has
   fields, and the `Recipe.FormAppearances` constant
   [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
+- Recipe `compress` option, versions `10` through `17` and `20`, and
+  `keywords` as one string, as in `@muhammara/wasm`.
+- Recipe `endPDF()` returns its result, the same value its callback receives,
+  also without a callback.
+- Recipe `appendPage()`, `overlay()` and `insertPage()` take the bytes of a
+  PDF (a Buffer) as their source.
 
 ### Fixed
 
@@ -205,6 +211,39 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `Cannot read properties of undefined (reading 'getType')`; trailer entries
   the PDF lacks are skipped
   [#1008](https://github.com/julianhille/MuhammaraJS/issues/1008)
+- Recipe `insertPage()` keeps pages that `appendPage()` added and the Info
+  entries of the PDF, and works for every source.
+- Recipe `encrypt()` and constructor passwords encrypt the output of every
+  source; an edited unencrypted source given `userPassword` used to be
+  written unprotected.
+- Recipe `position`, and drawing, annotations and links on a rotated page
+  whose media box does not start at 0, 0, use the page as displayed; the
+  media box offset was ignored or applied twice.
+- Recipe `link()` and text links on an edited rotated page cover their text
+  instead of a rectangle outside the page.
+- Recipe `appendPage()` records the appended pages, so pages created after it
+  are numbered after them and their annotations are written on them.
+- Recipe circles, ellipses, arcs, rectangles and polygons apply `lineCap`,
+  `lineJoin` and `miterLimit`, as lines do; their default join is round.
+- Recipe text with `opacity: 0` and a `hilite` with `opacity: 0` are
+  invisible instead of opaque or half opaque.
+- Recipe stars with a multiple of 4 points reach their radius when only
+  filled.
+- Recipe `textDimensions()` widens `width` by `charSpace`, as it widens
+  `xMax`.
+- Recipe text with a `textBox.style` leaves the caller's style object as it
+  was.
+- Recipe `replaceText()` on a page without content throws its clear error,
+  and `removeText()` with `forms` works for edited sources on both ends.
+- Recipe HTML keeps a list item that holds only a no-break or em space, draws
+  no blank line for whitespace before a block, reads malformed markup such as
+  list items without `</li>` as browsers do instead of throwing, starts a
+  `<div>` on its own line, and justifies every line of a paragraph but its
+  last.
+- Recipe `encrypt()`, and low-level `recrypt()` and `recryptAsync()`, keep the
+  Info entries of the PDF they encrypt.
+- Recipe `image()` reports `Unknown image` for a page or frame the image does
+  not have.
 
 ### Changed
 
@@ -216,6 +255,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
 - Test the native prebuilds up to Node.js 26.11.1 and Electron 44.7.1
   [#984](https://github.com/julianhille/MuhammaraJS/issues/984)
+- Recipe is one implementation shared with `@muhammara/wasm`, in
+  `packages/shared`, built into `@muhammara/native-core/lib/shared`; the
+  files under `lib/` keep working when required directly. A path source is
+  read into memory and the output written at `endPDF()`.
+- Recipe annotation dates (`/M`) are written in UTC, and link rectangles with
+  a negative size in normal order, as in `@muhammara/wasm`.
 
 ## [7.2.0] - 2026-10-12
 

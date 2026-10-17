@@ -3376,8 +3376,13 @@ declare namespace muhammara {
       "regular" | "bold" | "italic" | "bold-italic" | "r" | "b" | "i" | "bi";
 
     interface RecipeOptions {
-      /** PDF version of a new PDF: 1.0 through 1.7 or 2.0; other values use 1.7. */
+      /**
+       * PDF version of a new PDF: 1.0 through 1.7 or 2.0, or 10 through 17 or
+       * 20; other values use 1.7.
+       */
       version?: number;
+      /** Flate-compress the streams. Defaults to true. */
+      compress?: boolean;
       /**
        * Write a new PDF as PDF/A (ISO 19005): the PDF version of the level, XMP
        * metadata with the PDF/A identification, and an output intent with the
@@ -3393,7 +3398,8 @@ declare namespace muhammara {
       author?: string;
       title?: string;
       subject?: string;
-      keywords?: string[];
+      /** Keywords; an array is joined with a comma and a space. */
+      keywords?: string | string[];
       /** Default colorspace; see `Recipe.Colorspace`. */
       colorspace?: Colorspace;
       /** Owner password; also opens a protected source PDF. */
@@ -5468,11 +5474,13 @@ declare namespace muhammara {
      *   finished: with the output Buffer for a Buffer source without an output
      *   path, with the output path for a Buffer source with one, and without an
      *   argument for a path source.
-     * @returns The callback result, or undefined without a callback.
+     * @returns The callback result; without a callback, what the callback
+     *   would receive: the Buffer, the output path, or undefined for a path
+     *   source.
      * @throws {Error} If pages are being deleted while a page is still open.
      * @throws {Error} If finalization fails; later calls rethrow the same error.
      */
-    endPDF(): void;
+    endPDF(): Buffer | string | undefined;
     endPDF<T>(callback: (output?: Buffer | string) => T): T;
     /** The 6.x callback shape, also accepted as `Recipe.EndPDFCallback`. */
     endPDF<T>(callback: (buffer: Buffer) => T): T;

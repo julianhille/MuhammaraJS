@@ -88,6 +88,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Add an AcroForm tab to the browser example that lists the form fields of an
   uploaded PDF, or of a built-in sample form, in a one-page report
   [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
+- Recipe `chroma("!load", bytes)` loads colors from JSON bytes, and the
+  annotations of appended, inserted and split pages are kept.
 
 ### Fixed
 
@@ -181,6 +183,48 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Turn a rotated Recipe `polygon()` without `rotationOrigin` around the center
   of its bounding box, as native does, instead of its first point. Pass
   `rotationOrigin: coordinates[0]` to keep the old pivot [#924](https://github.com/julianhille/MuhammaraJS/issues/924)
+- Recipe `insertPage()` keeps the Info entries of the PDF.
+- Recipe opens an owner-protected source with `password` without losing its
+  Info entries.
+- Recipe `position`, and drawing, annotations and links on a rotated page
+  whose media box does not start at 0, 0, use the page as displayed; the
+  media box offset was ignored or applied twice.
+- Recipe `link()` and text links on an edited rotated page cover their text
+  instead of a rectangle outside the page.
+- Recipe `appendPage()` records the appended pages, so pages created after it
+  are numbered after them and their annotations are written on them.
+- Recipe circles, ellipses, arcs, rectangles and polygons apply `lineCap`,
+  `lineJoin` and `miterLimit`, as lines do; their default join is round.
+- Recipe text with `opacity: 0` and a `hilite` with `opacity: 0` are
+  invisible instead of opaque or half opaque.
+- Recipe stars with a multiple of 4 points reach their radius when only
+  filled.
+- Recipe `textDimensions()` widens `width` by `charSpace`, as it widens
+  `xMax`.
+- Recipe text with a `textBox.style` leaves the caller's style object as it
+  was.
+- Recipe `replaceText()` on a page without content throws its clear error,
+  and `removeText()` with `forms` works for edited sources on both ends.
+- Recipe HTML keeps a list item that holds only a no-break or em space, draws
+  no blank line for whitespace before a block, sizes `h1`–`h3` and `small`,
+  and justifies every line of a paragraph but its last.
+- Recipe `encrypt()`, and `recrypt()` and `recryptAsync()`, keep the Info
+  entries of the PDF they encrypt.
+- Recipe `image()` mirrors an image of negative width or height, and reports
+  `Unknown image` for a page or frame the image does not have.
+- Recipe text lays out as native's: the first baseline sits at the font's
+  ascent, the text cursor after `text()` stays on its last line, and
+  `lineTo()` without options draws its segment instead of nothing.
+- Recipe `createPage()` on a source PDF keeps its size instead of A4.
+
+### Changed
+
+- Recipe is one implementation shared with the native packages, in
+  `packages/shared`, bundled into `dist/index.js`, which `index.js` exports.
+  bidi-js is bundled too, so right-to-left text is always reordered;
+  `loadBidi()` and the `bidi` option are still accepted. Image, PDF and
+  copying low-level calls take registered PDF names, forms take any rectangle
+  and stream `write()` takes byte arrays, as on native.
 
 ## [1.2.0] - 2026-10-12
 

@@ -1,6 +1,6 @@
 // The worker side of recryptAsync(): loads its own Wasm instance and recrypts
 // the PDFs the calling thread posts, one at a time.
-import { createMuhammaraWasm } from "../index.js";
+import { createMuhammaraWasm } from "./main.js";
 
 var workerThreads = globalThis.process?.getBuiltinModule?.(
   "node:worker_threads",

@@ -1,5 +1,8 @@
-import { decodeTextElements, decodeTextOption } from "./font-text.js";
-import { PageBox } from "./value-sets.js";
+import {
+  decodeTextElements,
+  decodeTextOption,
+} from "@muhammara/shared/font-text.js";
+import { PageBox } from "@muhammara/shared/value-sets.js";
 /**
  * Rejects page indices and object IDs the native reader would silently wrap.
  * @param {*} value - Candidate index or ID.

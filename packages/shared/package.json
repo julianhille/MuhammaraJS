@@ -1,0 +1,11 @@
+{
+  "name": "@muhammara/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Platform-free JavaScript shared by @muhammara/native-core and @muhammara/wasm; bundled into both, never published",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    "./*": "./lib/*"
+  }
+}

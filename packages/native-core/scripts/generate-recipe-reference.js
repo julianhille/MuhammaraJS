@@ -3,18 +3,18 @@ var fs = require("fs");
 var path = require("path");
 
 var outputPath = path.join(__dirname, "../../native/docs/recipe/reference.md");
-var sourceFiles = [
-  "lib/Recipe.js",
-  ...fs
-    .readdirSync(path.join(__dirname, "../lib/recipe"))
-    .filter(function (file) {
-      return file.endsWith(".js");
-    })
-    .sort()
-    .map(function (file) {
-      return path.join("lib/recipe", file);
-    }),
-];
+// The shared Recipe sources, which carry the JSDoc; lib/recipe only
+// re-exports them.
+var sharedRecipe = path.join(__dirname, "../../shared/lib/recipe");
+var sourceFiles = fs
+  .readdirSync(sharedRecipe)
+  .filter(function (file) {
+    return file.endsWith(".js");
+  })
+  .sort()
+  .map(function (file) {
+    return path.join(sharedRecipe, file);
+  });
 var result = childProcess.spawnSync(
   "jsdoc2md",
   [

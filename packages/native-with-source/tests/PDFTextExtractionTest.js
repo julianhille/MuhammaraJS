@@ -296,15 +296,12 @@ describe("PDFTextExtraction", function () {
     reader.end();
   });
 
-  it("parses the glyph list on first use", function () {
-    var modulePath = path.join(
-      __dirname,
-      "..",
-      "..",
-      "native-core",
-      "lib",
-      "glyph-list.js",
-    );
+  it("parses the glyph list on first use", async function () {
+    // A query makes the ES module load afresh instead of from the cache.
+    var moduleUrl =
+      require("url").pathToFileURL(
+        require.resolve("@muhammara/shared/glyph-list.js"),
+      ).href + "?first-use";
     var normalize = String.prototype.normalize;
     var calls = 0;
     /**
@@ -317,14 +314,12 @@ describe("PDFTextExtraction", function () {
       return normalize.apply(this, arguments);
     };
     try {
-      delete require.cache[modulePath];
-      var glyphList = require(modulePath);
+      var glyphList = await import(moduleUrl);
       assert.equal(calls, 0, "loading the module does not parse the list");
       assert.equal(glyphList.glyphs().aogonek, "ą");
       assert.isAbove(calls, 0);
     } finally {
       String.prototype.normalize = normalize;
-      delete require.cache[modulePath];
     }
   });
 

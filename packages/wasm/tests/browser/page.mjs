@@ -1,5 +1,4 @@
-import { runValidation } from "./validation.mjs";
-import { toVisual } from "../../lib/text-direction.js";
+import { rtlValidation, runValidation } from "./validation.mjs";
 
 var resultElement = document.getElementById("result");
 
@@ -25,19 +24,6 @@ function workerValidation() {
   });
 }
 
-/**
- * Checks that right-to-left text reorders in the page, where runValidation()
- * loaded bidi-js through the page's import map.
- * @returns {{assertions: number}} The number of checks made.
- */
-function rtlValidation() {
-  var visual = toVisual("\u05e9\u05dc\u05d5\u05dd abc", "auto");
-  if (visual !== "abc \u05dd\u05d5\u05dc\u05e9") {
-    throw new Error(`right-to-left text reorders: ${JSON.stringify(visual)}`);
-  }
-  return { assertions: 1 };
-}
-
 async function report(result) {
   resultElement.textContent = JSON.stringify(result);
   await fetch("/__wasm_browser_result__", {
@@ -49,7 +35,7 @@ async function report(result) {
 
 try {
   var page = await runValidation();
-  var rtl = rtlValidation();
+  var rtl = await rtlValidation();
   var worker = await workerValidation();
   await report({ passed: true, page, rtl, worker });
 } catch (error) {

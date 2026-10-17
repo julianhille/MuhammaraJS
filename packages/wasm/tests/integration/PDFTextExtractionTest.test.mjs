@@ -349,7 +349,10 @@ describe("PDFTextExtraction", function () {
     try {
       // A query string loads a fresh module instance.
       var glyphList = await import(
-        new URL(`../../lib/glyph-list.js?fresh=${Date.now()}`, import.meta.url)
+        new URL(
+          `../../../shared/lib/glyph-list.js?fresh=${Date.now()}`,
+          import.meta.url,
+        )
       );
       assert.equal(calls, 0, "loading the module does not parse the list");
       assert.equal(glyphList.glyphs().aogonek, "ą");

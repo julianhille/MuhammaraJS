@@ -11,7 +11,15 @@ var declarations = fs.readFileSync(
   path.join(packageRoot, "index.d.ts"),
   "utf8",
 );
+// The shared Recipe, which both ends run, and the Wasm platform's own
+// methods on top of it.
+var sharedRecipe = path.join(packageRoot, "../shared/lib/recipe");
 var recipeSources = [
+  ...fs
+    .readdirSync(sharedRecipe)
+    .filter((file) => file.endsWith(".js"))
+    .sort()
+    .map((file) => path.join(sharedRecipe, file)),
   path.join(packageRoot, "lib/recipe.js"),
   ...fs
     .readdirSync(path.join(packageRoot, "lib/recipe"))
@@ -25,13 +33,18 @@ var recipeData = templateData.filter(
     (item.kind === "class" && item.name === "Recipe") ||
     (item.memberof === "Recipe" && item.access !== "private"),
 );
-var recipeReference = await jsdoc2md.render({
-  data: recipeData,
-  template: '{{#class name="Recipe"}}{{>docs}}{{/class}}',
-  "heading-depth": 2,
-  "param-list-format": "list",
-  separators: true,
-});
+var recipeReference = (
+  await jsdoc2md.render({
+    data: recipeData,
+    template: '{{#class name="Recipe"}}{{>docs}}{{/class}}',
+    "heading-depth": 2,
+    "param-list-format": "list",
+    separators: true,
+  })
+)
+  // MkDocs resolves no <a name> anchors, so the member index lists names
+  // instead of links, as native's reference does.
+  .replace(/^([ \t]*[-*] )\[(.+)\]\(#Recipe[+.][^)]+\)/gm, "$1`$2`");
 
 fs.writeFileSync(
   path.join(packageRoot, "docs/reference.md"),

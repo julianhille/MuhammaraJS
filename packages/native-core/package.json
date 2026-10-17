@@ -17,14 +17,16 @@
   },
   "scripts": {
     "test:codestyle": "npx prettier -c ./",
-    "recipe-jsdoc": "jsdoc -c jsdoc.conf"
+    "recipe-jsdoc": "jsdoc -c jsdoc.conf",
+    "build": "node scripts/build.mjs",
+    "prepack": "npm run build"
   },
   "files": [
     "index.js",
+    "lib",
     "README.md",
     "LICENSE",
     "index.d.ts",
-    "lib",
     "fonts",
     "licenses",
     "muhammara.d.ts",
@@ -38,5 +40,8 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "@muhammara/shared": "0.0.0"
   }
 }

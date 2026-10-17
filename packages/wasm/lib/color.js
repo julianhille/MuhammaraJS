@@ -1,4 +1,4 @@
-import { cssColors } from "./css-colors.js";
+import { cssColors } from "@muhammara/shared/css-colors.js";
 
 /**
  * Converts a named, hexadecimal, RGB, or numeric color to a 24-bit integer.

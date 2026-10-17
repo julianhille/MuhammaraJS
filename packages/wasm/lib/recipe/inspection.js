@@ -1,4 +1,4 @@
-import { unknownAsset } from "./registration.js";
+import { unknownAsset } from "./unknown-asset.js";
 
 /**
  * Creates a function that inspects a registered PDF's metadata and pages.

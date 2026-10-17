@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -378,27 +378,11 @@ describe("Third-party licenses", function () {
       // binary next to the bundle; the runtime must not look in a dist/ folder.
       var bundle = await mkdtemp(path.join(tmpdir(), "muhammara-wasm-bundle-"));
       try {
-        var packagePath = fileURLToPath(packageRoot);
-        for (var name of ["lib", "fonts"]) {
-          await cp(path.join(packagePath, name), path.join(bundle, name), {
-            recursive: true,
-          });
-        }
-        for (var name of ["muhammara-wasm.js", "muhammara-wasm.wasm"]) {
-          await cp(
-            path.join(packagePath, "dist", name),
-            path.join(bundle, name),
-          );
-        }
-        var index = await readFile(new URL("index.js", packageRoot), "utf8");
-        assert.ok(index.includes('from "./dist/muhammara-wasm.js"'));
-        await writeFile(
-          path.join(bundle, "index.js"),
-          index.replace(
-            'from "./dist/muhammara-wasm.js"',
-            'from "./muhammara-wasm.js"',
-          ),
-        );
+        // The published dist/ is flat: the bundle, its chunks, the glue and
+        // the binary sit side by side, so a bundler may copy it as it is.
+        await cp(fileURLToPath(new URL("dist/", packageRoot)), bundle, {
+          recursive: true,
+        });
         var bundled = await import(
           pathToFileURL(path.join(bundle, "index.js")).href
         );

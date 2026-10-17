@@ -1,4 +1,4 @@
-import { Permission } from "../value-sets.js";
+import { Permission } from "@muhammara/shared/value-sets.js";
 /**
  * Converts comma-separated PDF permission names to a user-protection bitmask.
  *
