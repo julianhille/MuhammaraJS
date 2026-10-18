@@ -39,6 +39,9 @@ Wasm glyph text requires every glyph list item to be exactly one
 `[glyphId, unicodeCodePoint]` pair of non-negative integers; native also
 accepts a bare `[glyphId]` or several code points per glyph and coerces the
 values.
+Wasm `drawCircle`, and so Recipe circles and ellipses, start at the
+right-most point and run counter-clockwise with κ = 0.55228; native starts at
+the left-most point and runs clockwise. The shapes match to about 0.03 pt.
 
 Native `writer.getEvents()` exposes `OnPageWrite` and `OnCatalogWrite`
 EventEmitter hooks that can change dictionaries while they are written. Wasm

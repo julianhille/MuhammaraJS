@@ -180,7 +180,8 @@ describeEnd("wasm", "Recipe JSDoc", function (end) {
       sources
         .filter((file) => !file.startsWith(sharedRecipe))
         .flatMap(blocks)
-        .map((doc) => doc.match(/@name\s+(\w+)/)?.[1]),
+        .map((doc) => doc.match(/@name\s+(\w+)/)?.[1])
+        .filter(Boolean),
     );
     var nativeOnly = sources
       .filter((file) => file.startsWith(sharedRecipe))
