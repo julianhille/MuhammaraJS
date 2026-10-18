@@ -32,8 +32,7 @@ build the package, run
 - [Change PDF Passwords](how-to/change-pdf-passwords.md) encrypts a PDF and
   creates a decrypted verification copy.
 - [Write Right-to-Left Text](how-to/write-right-to-left-text.md) draws Hebrew
-  in visual order with an uploaded TTF or OTF font that has Hebrew glyphs, and
-  loads bidi-js only when it runs, with `loadBidi()`.
+  in visual order with an uploaded TTF or OTF font that has Hebrew glyphs.
 - [Watermark Every Page](how-to/watermark-pdfs.md) stamps diagonal text on an
   uploaded PDF, or on a built-in sample when none is chosen.
 - [Find Text Positions in a PDF](how-to/find-text-positions.md) and

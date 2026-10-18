@@ -216,6 +216,26 @@ export function createRecipeFactory({
     getFont: (writer, ref) => writer.getFontForBytes(ref),
   };
 
+  /**
+   * @name Recipe
+   * @desc Creates a byte-first high-level PDF Recipe. Pass PDF bytes as the
+   * first argument to modify an existing document, or pass only options to
+   * create a new document. For Blob or File input, await `arrayBuffer()` and
+   * pass the resulting bytes to the constructor.
+   * @namespace
+   * @constructor
+   * @param {ByteSource|RecipeOptions} [sourceOrOptions={}] Source PDF bytes or
+   *   creation options.
+   * @param {RecipeOptions} [options={}] Options used when modifying source
+   *   bytes.
+   * @throws {TypeError} If Recipe options are not an object, or `pdfa` has an
+   *   unknown level, an unusable profile or an `outputCondition` that is no
+   *   string.
+   * @throws {Error} If the source has no readable pages, as with an encrypted
+   *   source opened without its password, the PDF cannot be created, or
+   *   `pdfa` is given for a source PDF, with another `version`, or with
+   *   encryption.
+   */
   var Recipe = createSharedRecipe(platform, { StructureFormat });
   var inspectPdf = createInspectPdf({ module, withString, pdfs: assets.pdfs });
 

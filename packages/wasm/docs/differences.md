@@ -71,8 +71,7 @@ rather than throwing.
 Native Recipe HTML sizes `h1`–`h3` and `small` text, which Wasm does not
 recognize, and Wasm breaks lines around `div`, which native treats as inline.
 
-Wasm loads bidi-js, which the `direction` option reorders right-to-left text
-with, when `createMuhammaraWasm()` or `createRecipe()` runs, unless given
-`bidi: false`; the Wasm-only `loadBidi()` loads it later. Without it, calls
-that have to order text by direction throw. Native always has it. See
-[Browser Setup](browser-setup.md) for loading it with or without a bundler.
+bidi-js, which the `direction` option reorders right-to-left text with, is a
+dependency of the native packages and bundled into the Wasm build. Wasm still
+accepts its former `bidi` option, which is ignored, and `loadBidi()`, which
+resolves at once.

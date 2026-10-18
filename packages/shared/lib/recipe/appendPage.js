@@ -6,7 +6,8 @@ import * as utils from "./utils.js";
  * @name appendPage
  * @function
  * @memberof Recipe#
- * @param {string} pdfSrc - The path for the other pdf.
+ * @param {string|Uint8Array} pdfSrc - The other PDF: a path or Buffer on
+ *   native, bytes or a registered PDF name on Wasm.
  * @param {number|Array.<number|Array.<number>>} [pages=[]] - A one-based page
  * number or array of page numbers and inclusive ranges. Omitting it appends all
  * pages; endpoints beyond the source are clamped to its final page.

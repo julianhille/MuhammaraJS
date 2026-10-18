@@ -421,7 +421,8 @@ function readForm(parser, forFill = false) {
  * @returns {RecipeFormField[]} The form fields, in field tree order.
  * @throws {Error} If the source reader was released by endPDF().
  * @example
- * const recipe = new Recipe("form.pdf", "out.pdf");
+ * // formPdf: the PDF bytes, or on native also its path
+ * const recipe = new Recipe(formPdf);
  * for (const field of recipe.formFields()) {
  *   console.log(field.name, field.kind, field.value);
  * }
@@ -653,7 +654,8 @@ function queueFormFills(recipe, records, values, options = {}) {
  *   source that needs its password, or when a field is missing, ambiguous,
  *   cannot be filled or does not take the value.
  * @example
- * new Recipe("form.pdf", "filled.pdf")
+ * // formPdf: the PDF bytes, or on native also its path
+ * const filled = new Recipe(formPdf)
  *   .fillForm({ "person.name": "Ada Lovelace", agree: true })
  *   .endPDF();
  */

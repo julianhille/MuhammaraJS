@@ -6,7 +6,8 @@ import { imagePdfaFeatures, requirePdfaAllows } from "../pdfa.js";
  * @name image
  * @function
  * @memberof Recipe#
- * @param {string} imgSrc - The path for the image. [JPEG, PNG, TIFF, PDF]
+ * @param {string} imgSrc - The JPEG, PNG, TIFF or PDF image: a
+ *   path on native, a registered name on Wasm.
  * @param {number|"center"} x - The coordinate x of the top-left corner
  * @param {number|"center"} y - The coordinate y of the top-left corner
  * @param {Object} [options] - The options

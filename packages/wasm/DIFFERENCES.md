@@ -89,7 +89,8 @@ Wasm modifier cannot open one yet, so decrypt it with
 
 bidi-js, which the `direction` option reorders right-to-left text with, is a
 dependency of the native packages and bundled into the Wasm build. Wasm still
-accepts its former `loadBidi()` and `bidi` option, which change nothing.
+accepts its former `bidi` option, which is ignored, and `loadBidi()`, which
+resolves at once.
 
 `Recipe.thirdPartyLicenses()` reads the notices embedded in
 `muhammara-wasm.wasm`, which bundlers copy without the package's other files.

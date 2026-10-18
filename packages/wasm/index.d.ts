@@ -2959,13 +2959,9 @@ export interface MuhammaraWasmOptions {
    */
   recryptWorker?: boolean;
   /**
-   * Whether to load bidi-js, which the `direction` option reorders
-   * right-to-left text with, with `import("bidi-js")`. Defaults to `true`.
-   * It is loaded once for the page, Worker or process, and every instance
-   * shares it. With `false`, this call does not load it; while nothing has
-   * loaded it, or when it cannot be loaded, everything else works, and every
-   * call that has to order text by direction throws instead of drawing it in
-   * the wrong order.
+   * Ignored. bidi-js, which the `direction` option reorders right-to-left
+   * text with, is bundled; this option is kept for code written when it was
+   * loaded on demand.
    */
   bidi?: boolean;
   [key: string]: unknown;
@@ -2989,12 +2985,10 @@ export function createRecipe(
 ): Promise<RecipeConstructor>;
 
 /**
- * Loads bidi-js, which the `direction` option reorders right-to-left text
- * with, after `createMuhammaraWasm()` or `createRecipe()` skipped it with
- * `bidi: false` or could not import it. Instances already created reorder
- * text once it resolves. Without a source it imports `"bidi-js"`; a page or
- * Worker that cannot resolve that specifier passes the bidi-js module, or
- * its default export, that it imported itself. Rejects with a `TypeError`
- * for any other source, or with the import's error.
+ * Kept for code written when bidi-js, which the `direction` option reorders
+ * right-to-left text with, was loaded on demand. bidi-js is bundled, so
+ * without a source this resolves at once; a given bidi-js module, or its
+ * default export, replaces the bundled one. Rejects with a `TypeError` for
+ * any other source.
  */
 export function loadBidi(source?: object | (() => unknown)): Promise<void>;

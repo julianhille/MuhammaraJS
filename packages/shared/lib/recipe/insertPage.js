@@ -5,10 +5,10 @@ import * as utils from "./utils.js";
  * @function
  * @memberof Recipe#
  * @param {number} afterPageNumber - The one-based page number to insert after; 0 inserts before the first page.
- * @param {string} pdfSrc - The path for the other pdf
+ * @param {string|Uint8Array} pdfSrc - The other PDF: a path or Buffer on
+ *   native, bytes or a registered PDF name on Wasm.
  * @param {number} srcPageNumber - The one-based page number to be inserted from the other pdf.
- * @returns {Recipe} The recipe instance. Pages are inserted by `endPDF()`;
- *   Buffer sources do not support insertion.
+ * @returns {Recipe} The recipe instance. Pages are inserted by `endPDF()`.
  * @throws {Error} If pages were deleted with deletePage() on this Recipe, or
  *   it writes PDF/A or attached files, which the inserted pages' new PDF
  *   would lose.

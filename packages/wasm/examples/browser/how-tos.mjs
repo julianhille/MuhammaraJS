@@ -1,8 +1,4 @@
-import {
-  createMuhammaraWasm,
-  createRecipe,
-  loadBidi,
-} from "./module-options.mjs";
+import { createMuhammaraWasm, createRecipe } from "./module-options.mjs";
 import { throwIfCancelled } from "./lifecycle.mjs";
 import { benchmarkExample } from "./benchmark.mjs";
 
@@ -111,7 +107,7 @@ export var HOW_TO_EXAMPLES = [
     label: "Right to left",
     title: "Write right-to-left Hebrew text",
     description:
-      "Reorder Hebrew with the direction option: numbers and Latin words inside it, points, an HTML paragraph, and a justified box. Its Recipe is created with bidi: false and loads bidi-js with loadBidi() when it runs.",
+      "Reorder Hebrew with the direction option: numbers and Latin words inside it, points, an HTML paragraph, and a justified box.",
     assets: ["font"],
     requirement:
       "Requires a TTF or OTF font with Hebrew and Latin glyphs, such as Arial.",
@@ -815,10 +811,7 @@ async function rightToLeftExample(assets) {
     assets.font,
     "Choose a TTF or OTF font with Hebrew glyphs before running the right-to-left example",
   );
-  // Pages that rarely draw right-to-left text skip bidi-js when they start
-  // and load it once a document needs it.
-  var Recipe = await createRecipe({ bidi: false });
-  await loadBidi();
+  var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });
   try {
     Recipe.registerFont("hebrew", assets.font);
@@ -886,7 +879,6 @@ async function rightToLeftExample(assets) {
       filename: "muhammara-right-to-left.pdf",
       summary: await summarize(bytes, {
         howTo: "Write right-to-left text",
-        bidi: "loaded with loadBidi()",
         drawnHebrew: lines.slice(0, 6),
       }),
     };

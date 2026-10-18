@@ -217,8 +217,7 @@ try {
     await runExample("find-text", "page");
     await runExample("acroform", "worker");
     await runExample("fill-form", "page");
-    // Right-to-left text needs a font with Hebrew glyphs; the example loads
-    // bidi-js with loadBidi(), on the page and in a Worker.
+    // Right-to-left text needs a font with Hebrew glyphs.
     var font = await fetch(
       "/packages/native-with-source/tests/TestMaterials/fonts/arial.ttf",
     );

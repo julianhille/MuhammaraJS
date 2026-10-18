@@ -26,8 +26,10 @@ before opening a pull request. The command generates `docs/reference.md` and
 writes the generated site to `packages/wasm/site/`; both are generated output
 and ignored by Git.
 
-The generated reference combines public Recipe method JSDoc from
-`packages/wasm/lib/recipe.js` and `packages/wasm/lib/recipe/*.js` with the
+The generated reference combines public Recipe method JSDoc from the shared
+Recipe in `packages/shared/lib/recipe/*.js` and from
+`packages/wasm/lib/recipe.js` and `packages/wasm/lib/recipe/*.js`, where the
+Wasm documentation replaces a shared entry of the same name, with the
 package's TypeScript declarations. Public Recipe methods use `@name`,
 `@function`, and `@memberof Recipe#` (or `Recipe` for static methods). Mark
 underscore-prefixed implementation helpers with `@private` so they stay out of
