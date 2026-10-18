@@ -130,6 +130,10 @@ jobs:
       - name: Run tests with the sanitizer runtime preloaded
         working-directory: packages/native-with-source
         run: LD_PRELOAD="$(gcc -print-file-name=libasan.so)" node --expose-gc ../../node_modules/mocha/bin/mocha.js --require ./tests/hooks/sanitizer-gc.js -R tap --recursive ./tests --timeout 15000
+      - name: Run the shared Recipe specs on native with the sanitizer runtime preloaded
+        run: LD_PRELOAD="$(gcc -print-file-name=libasan.so)" node --expose-gc node_modules/mocha/bin/mocha.js --require ./packages/native-with-source/tests/hooks/sanitizer-gc.js -R tap --timeout 60000 "tests/{recipe,native,matrices}/**/*.test.mjs"
+        env:
+          MUHAMMARA_END: native
       # A short, fixed-seed fuzz run for crashes, leaks and hangs.
       - name: Fuzz smoke run
         working-directory: packages/native-with-source
@@ -463,6 +467,10 @@ jobs:
           path: canonical-prebuild
       - run: node .github/scripts/prepare-native-prebuild.mjs canonical-prebuild/napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-glibc.tar.gz napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-glibc.tar.gz
       - run: npm run test
+      - name: Run the shared Recipe specs on native
+        run: npm run test:shared
+        env:
+          MUHAMMARA_END: native
       - name: Load the package in Jest
         run: npm run test:jest
       - run: node .github/scripts/prepare-native-prebuild.mjs verify
@@ -492,6 +500,10 @@ jobs:
           path: canonical-prebuild
       - run: node .github/scripts/prepare-native-prebuild.mjs canonical-prebuild/napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-musl.tar.gz napi-v${{ env.NAPI_VERSION }}-linux-${{ matrix.architecture }}-musl.tar.gz
       - run: npm run test
+      - name: Run the shared Recipe specs on native
+        run: npm run test:shared
+        env:
+          MUHAMMARA_END: native
       - run: node .github/scripts/prepare-native-prebuild.mjs verify
 
   test-node-musl-arm64:
@@ -626,6 +638,10 @@ jobs:
           path: canonical-prebuild
       - run: node .github/scripts/prepare-native-prebuild.mjs canonical-prebuild/napi-v${{ env.NAPI_VERSION }}-${{ matrix.platform }}-${{ matrix.architecture }}-${{ matrix.libc }}.tar.gz napi-v${{ env.NAPI_VERSION }}-${{ matrix.platform }}-${{ matrix.architecture }}-${{ matrix.libc }}.tar.gz
       - run: npm run test
+      - name: Run the shared Recipe specs on native
+        run: npm run test:shared
+        env:
+          MUHAMMARA_END: native
       - run: node .github/scripts/prepare-native-prebuild.mjs verify
   publish:
     needs:

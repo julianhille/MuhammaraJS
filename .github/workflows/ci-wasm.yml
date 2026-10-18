@@ -125,6 +125,10 @@ jobs:
           MUHAMMARA_WASM_SANITIZE: ON
           MUHAMMARA_WASM_BUILD_TESTS: ON
       - run: npm run wasm:test
+      - name: Run the shared Recipe specs on Wasm
+        run: npm run test:shared
+        env:
+          MUHAMMARA_END: wasm
   deploy-development-example:
     needs: [build, test, sanitizer]
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'

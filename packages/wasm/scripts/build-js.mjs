@@ -12,6 +12,7 @@
 //   through its own import.meta.url.
 import { build } from "esbuild";
 import { mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 var packageRoot = new URL("../", import.meta.url);
 var manifest = JSON.parse(readFileSync(new URL("package.json", packageRoot)));
@@ -48,7 +49,7 @@ for (var file of readdirSync(dist)) {
 }
 
 await build({
-  absWorkingDir: new URL(".", packageRoot).pathname,
+  absWorkingDir: fileURLToPath(packageRoot),
   entryPoints: {
     index: "lib/main.js",
     "recrypt-worker": "lib/recrypt-worker.js",
