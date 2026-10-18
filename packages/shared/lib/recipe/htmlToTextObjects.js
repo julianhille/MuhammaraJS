@@ -52,13 +52,35 @@ const HtmlTag = Object.freeze({
  *   each with its value, tag, style flags, link, font size ratio and childs.
  */
 export const htmlToTextObjects = function (htmlCodes, options = {}) {
-  const nodes = new DOMParser().parseFromString(
-    `<html>${closeOmittedListItems(htmlCodes)}</html>`,
-    "text/html",
-  );
+  let nodes;
+  try {
+    nodes = parseHtml(htmlCodes);
+  } catch (error) {
+    // markup the XML parser rejects is read as browsers recover it
+    try {
+      nodes = parseHtml(closeOmittedListItems(htmlCodes));
+    } catch {
+      throw error;
+    }
+  }
   const textObjects = parseNode(nodes, options).childs[0].childs;
   return textObjects;
 };
+
+/**
+ * Parse HTML with the XML parser, without reporting the errors it recovers
+ * from.
+ * @private
+ * @param {string} html - The HTML source.
+ * @returns {Document} The parsed document, with the HTML in an `html` element.
+ * @throws {Error} If the markup is not well-formed.
+ */
+function parseHtml(html) {
+  return new DOMParser({ onError() {} }).parseFromString(
+    `<html>${html}</html>`,
+    "text/html",
+  );
+}
 
 /**
  * The font size multiplier of an element.
@@ -336,7 +358,7 @@ const VOID_ELEMENTS = new Set([
  * inside its element, an end tag without an open element is dropped, a `<p>`
  * or `<li>` ends an open element of its name, a `</ul>` or `</ol>` ends the
  * innermost list when no list of its name is open, and what is still open at
- * the end is ended there.
+ * the end is ended there. It runs only on markup the XML parser rejects.
  * @private
  * @param {string} html - The HTML source.
  * @returns {string} The HTML with balanced tags.
@@ -351,10 +373,10 @@ function closeOmittedListItems(html) {
       .join("");
   const isList = (name) => name === HtmlTag.UL || name === HtmlTag.OL;
   const body = String(html).replace(
-    // comments, CDATA and script or style bodies pass through unbalanced
-    /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<(script|style)\b[\s\S]*?<\/\1\s*>|<(\/?)([a-zA-Z][\w-]*)\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi,
-    (tag, rawText, closing, name) => {
-      if (!name) return tag;
+    /<(\/?)([a-zA-Z][\w:.-]*)\b(?:[^>"']|"[^"]*(?:"|$)|'[^']*(?:'|$))*(?:>|$)/g,
+    (tag, closing, name) => {
+      // an unterminated tag is left for the parser to reject
+      if (!tag.endsWith(">")) return tag;
       name = name.toLowerCase();
       if (VOID_ELEMENTS.has(name)) return closing ? "" : tag;
       if (!closing) {

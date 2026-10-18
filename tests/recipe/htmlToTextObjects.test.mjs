@@ -122,6 +122,51 @@ describe("HTML to TextObjects parser", function () {
       ["p", null, [[undefined, "x", []]]],
     ]);
   });
+
+  it("recovers only markup the XML parser rejects", function () {
+    this.timeout(1000);
+    /**
+     * The tags and values of a parsed tree.
+     * @param {object[]} objects - The text objects.
+     * @returns {Array} [tag, value, children] per object.
+     */
+    var tree = (objects) =>
+      objects.map((object) => [object.tag, object.value, tree(object.childs)]);
+    // well-formed markup is read as it is: namespaced Office tags and
+    // textarea text stay as written
+    assert.deepEqual(
+      tree(
+        htmlToTextObjects(
+          '<div xmlns:o="urn:schemas-microsoft-com:office:office"><p class="MsoNormal">Hello <b>world</b><o:p></o:p></p></div>',
+        ),
+      ),
+      [
+        [
+          "div",
+          null,
+          [
+            [
+              "p",
+              null,
+              [
+                [undefined, "Hello ", []],
+                ["b", null, [[undefined, "world", []]]],
+                ["o:p", null, []],
+              ],
+            ],
+          ],
+        ],
+      ],
+    );
+    assert.equal(
+      htmlToTextObjects("<textarea><b>x</textarea>")[0].childs[0].value,
+      "<b>x",
+    );
+    // an unterminated tag or comment still throws, and quickly
+    assert.throws(() => htmlToTextObjects('<b attr=">x</b>'), /mismatch/);
+    assert.throws(() => htmlToTextObjects("</b".repeat(50000)));
+    assert.throws(() => htmlToTextObjects("<!--".repeat(50000) + "</i>"));
+  });
 });
 
 describeEnds("HTML to TextObjects", function (end) {
