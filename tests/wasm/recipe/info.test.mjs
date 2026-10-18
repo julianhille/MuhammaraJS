@@ -33,6 +33,17 @@ describeEnd("wasm", "Recipe info", function (end) {
     assert.match(recipe.structure(), /^Info\nRoot\nSize: \d+\nPages: 3$/);
   });
 
+  it("reports the pages of a PDF that encrypt() protects", function () {
+    var structure = end
+      .newRecipe()
+      .createPage(100, 100)
+      .endPage()
+      .encrypt({ userPassword: "u" })
+      .structure(end.Recipe.StructureFormat.JSON);
+    assert.equal(structure.pages, 1);
+    assert.equal(structure.encrypted, true);
+  });
+
   it("reports the structure of a PDF without /Info", function () {
     assert.match(end.openRecipe("FontDifferences.pdf").structure(), /^Root$/m);
   });

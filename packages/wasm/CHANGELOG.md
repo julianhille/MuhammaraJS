@@ -216,6 +216,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   ascent, the text cursor after `text()` stays on its last line, and
   `lineTo()` without options draws its segment instead of nothing.
 - Recipe `createPage()` on a source PDF keeps its size instead of A4.
+- Recipe `encrypt({})` keeps the constructor passwords of a new PDF instead
+  of writing it unencrypted, as native does.
 
 ### Changed
 
@@ -226,6 +228,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   reordered; `loadBidi()` and the `bidi` option are still accepted. Image and PDF
   low-level calls take registered PDF names, forms take any rectangle
   and stream `write()` takes byte arrays, as on native.
+- Recipe `insertPage()` keeps the PDF version of an edited source, as native
+  does, instead of writing PDF 1.7; `encrypt()` picks the cipher of that
+  version, RC4-128 for PDF 1.4.
 
 ## [1.2.0] - 2026-10-12
 

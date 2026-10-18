@@ -250,6 +250,15 @@ describeEnds("Recipe encryption", function (end) {
     assert.equal(opens(end, bytes), false);
     assert.equal(opens(end, bytes, "first"), false);
     assertEncrypted(end, bytes, "second", AES_128);
+    // an empty encrypt() keeps the constructor password
+    var kept = end
+      .newRecipe({ userPassword: "first" })
+      .createPage(100, 100)
+      .endPage()
+      .encrypt({})
+      .endPDF();
+    assert.equal(opens(end, kept), false);
+    assertEncrypted(end, kept, "first", AES_128);
   });
 
   // GH-975: a userProtectionFlag alone encrypts a new PDF with an empty user
@@ -293,18 +302,27 @@ describeEnds("Recipe encryption", function (end) {
     });
   });
 
-  it("encrypts an edited source with a constructor view password", function () {
-    // the option documents that it enables encryption; an edit must not
-    // drop it silently
-    var bytes = end
-      .openRecipe("recipe/test2.pdf", { userPassword: "view" })
-      .editPage(1)
-      .text("Edited", 10, 10, { font: "arial" })
-      .endPage()
-      .endPDF();
-    writeOutput(end, "encryption-source-constructor-view-password", bytes);
-    assert.equal(opens(end, bytes), false);
-    assert.equal(opens(end, bytes, "view"), true);
+  it("opens an edited source with the constructor passwords without encrypting it", function () {
+    // as on develop: constructor passwords encrypt a new PDF; a source they
+    // only open
+    [
+      { userPassword: "view" },
+      { password: "x" },
+      { ownerPassword: "o", userProtectionFlag: PRINT | 16 },
+    ].forEach((options, index) => {
+      var bytes = end
+        .openRecipe("recipe/test2.pdf", options)
+        .editPage(1)
+        .text("Edited", 10, 10, { font: "arial" })
+        .endPage()
+        .endPDF();
+      writeOutput(
+        end,
+        `encryption-source-constructor-password-${index}`,
+        bytes,
+      );
+      assert.deepEqual(encryption(end, bytes), { encrypted: false, pages: 2 });
+    });
   });
 
   it("keeps the Info entries when encrypt() encrypts the output", function () {

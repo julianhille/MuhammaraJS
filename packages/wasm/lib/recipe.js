@@ -576,7 +576,12 @@ export function createRecipeFactory({
       var bytes = this.endPDF();
       var text = new TextDecoder("latin1").decode(bytes);
       var objects = (text.match(/\n\d+ \d+ obj\b/g) || []).length;
-      var reader = api.createReader(bytes, this.encryptOptions);
+      var reader = api.createReader(
+        bytes,
+        Object.keys(this.encryption_).length
+          ? this.encryption_
+          : this.encryptOptions,
+      );
       var pages;
       try {
         pages = reader.getPagesCount();

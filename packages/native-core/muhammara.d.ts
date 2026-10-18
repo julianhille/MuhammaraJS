@@ -3404,7 +3404,7 @@ declare namespace muhammara {
       colorspace?: Colorspace;
       /** Owner password; also opens a protected source PDF. */
       password?: string;
-      /** The 'view' password; also enables encryption. */
+      /** The 'view' password; also encrypts a new PDF. */
       userPassword?: string;
       /** The 'edit' password. */
       ownerPassword?: string;
@@ -3976,7 +3976,7 @@ declare namespace muhammara {
      * @param options.colorspace - The default colorspace, one
      *   of the `Recipe.Colorspace` values.
      * @param options.password - Owner password; also opens a protected source.
-     * @param options.userPassword - The 'view' password; also enables encryption.
+     * @param options.userPassword - The 'view' password; also encrypts a new PDF.
      * @param options.ownerPassword - The 'edit' password.
      * @param options.userProtectionFlag - Encryption permission flags, see `permission()`.
      * @param options.fontSrcPath - Directory location(s) of additional fonts.

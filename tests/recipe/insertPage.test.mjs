@@ -8,6 +8,7 @@ import {
   pageWidths,
   pdfSource,
 } from "../support/composition.mjs";
+import { encryption, opens } from "../support/metadata.mjs";
 
 // test.pdf and the long PDF are the same 14 pages, which their content tells
 // apart, so an expected page order is a list of one-based page numbers.
@@ -135,6 +136,31 @@ describeEnds("Recipe insertPage", function (end) {
       ),
       ["%PDF-2.0", "%PDF-1.3"],
     );
+  });
+
+  it("writes an encrypted source unencrypted unless encrypt() is called", function () {
+    // the pages are copied into a new PDF, which cannot reproduce the source's
+    // encryption without its owner password
+    var ownerOnly = end
+      .newRecipe({ ownerPassword: "own" })
+      .createPage(100, 100)
+      .endPage()
+      .endPDF();
+    var plain = end
+      .openRecipe(ownerOnly)
+      .insertPage(1, end.pdf(TEST_PDF), 1)
+      .endPDF();
+    writeOutput(end, "insertPage-encrypted-source", plain);
+    assert.deepEqual(encryption(end, plain), { encrypted: false, pages: 2 });
+    var encrypted = end
+      .openRecipe(ownerOnly)
+      .insertPage(1, end.pdf(TEST_PDF), 1)
+      .encrypt({ userPassword: "u" })
+      .endPDF();
+    writeOutput(end, "insertPage-encrypted-source-encrypt", encrypted);
+    assert.equal(opens(end, encrypted), false);
+    assert.equal(encryption(end, encrypted, "u").encrypted, true);
+    assert.equal(encryption(end, encrypted, "u").pages, 2);
   });
 
   it("rejects incomplete or invalid arguments", function () {

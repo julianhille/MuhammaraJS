@@ -212,10 +212,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   the PDF lacks are skipped
   [#1008](https://github.com/julianhille/MuhammaraJS/issues/1008)
 - Recipe `insertPage()` keeps pages that `appendPage()` added and the Info
-  entries of the PDF, and works for every source.
-- Recipe `encrypt()` and constructor passwords encrypt the output of every
-  source; an edited unencrypted source given `userPassword` used to be
-  written unprotected.
+  entries of the PDF, and works for every source; an encrypted Buffer source
+  is then written unencrypted unless `encrypt()` is called, as a path source
+  already was.
+- Recipe constructor passwords keep a new PDF encrypted when `insertPage()`
+  adds pages; it threw `unable to create copying context` for a user password
+  and was written unencrypted for an owner password.
 - Recipe `position`, and drawing, annotations and links on a rotated page
   whose media box does not start at 0, 0, use the page as displayed; the
   media box offset was ignored or applied twice.

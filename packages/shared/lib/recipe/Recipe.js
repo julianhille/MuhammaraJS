@@ -60,7 +60,7 @@ import * as m_vector from "./vector.js";
  * @param {Recipe.Colorspace} [options.colorspace] - The default colorspace, one
  *   of the `Recipe.Colorspace` values.
  * @param {string} [options.password] - Owner password; also opens a protected source.
- * @param {string} [options.userPassword] - The 'view' password; also enables encryption.
+ * @param {string} [options.userPassword] - The 'view' password; also encrypts a new PDF.
  * @param {string} [options.ownerPassword] - The 'edit' password.
  * @param {number} [options.userProtectionFlag] - Encryption permission flags, see `permission()`.
  * @param {string|string[]} [options.fontSrcPath] - Directory location(s) of additional fonts.
@@ -79,7 +79,9 @@ class Recipe {
     Object.assign(this, state);
     this._source = source;
     this.isNewPDF = source === null;
-    this.encryptOptions = this._getEncryptOptions(options, this.isNewPDF);
+    this.encryptOptions = this._getEncryptOptions(options);
+    // The constructor passwords encrypt a new PDF; for a source they only open it.
+    this.encryption_ = this.isNewPDF ? this.encryptOptions : {};
     this.options = Object.assign({}, options, this.encryptOptions);
     this.current = {};
     this.current.defaultFontSize = 14;
@@ -334,7 +336,6 @@ class Recipe {
       }
       if (!isForExternal) {
         this._releaseReader();
-        this.sourceEncrypted_ = pdfReader.isEncrypted();
         this.pdfReader = pdfReader;
         this._metadata = metadata;
         this.sourcePageCount = pages;

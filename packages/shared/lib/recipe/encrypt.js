@@ -50,13 +50,9 @@ export const permission = function permission(flags = Permission.PRINT) {
  * password is empty and the default permission applies.
  * @private
  * @param {Object} options - The Recipe or encrypt() options.
- * @param {boolean} [addPermissions=true] - Copy `userProtectionFlag` into the result.
  * @returns {Object} The writer encryption options; empty when no password is set.
  */
-export const _getEncryptOptions = function _getEncryptOptions(
-  options,
-  addPermissions = true,
-) {
+export const _getEncryptOptions = function _getEncryptOptions(options) {
   const encryptOptions = {};
 
   const password = options.password || options.ownerPassword;
@@ -72,10 +68,8 @@ export const _getEncryptOptions = function _getEncryptOptions(
     }
   }
 
-  if (addPermissions) {
-    if (options.userProtectionFlag) {
-      encryptOptions.userProtectionFlag = options.userProtectionFlag;
-    }
+  if (options.userProtectionFlag) {
+    encryptOptions.userProtectionFlag = options.userProtectionFlag;
   }
 
   // Only attach encryption mechanism when attributes
@@ -108,17 +102,19 @@ export const _getEncryptOptions = function _getEncryptOptions(
 export const encrypt = function encrypt(options = {}) {
   if (this.pdfa_) throw new Error("PDF/A does not allow encryption");
   this.needToEncrypt = true;
-  this.encryption_ = this._getEncryptOptions(options);
+  const encryption = this._getEncryptOptions(options);
+  // an empty encrypt() keeps the constructor passwords of a new PDF
+  if (Object.keys(encryption).length) this.encryption_ = encryption;
 
   return this;
 };
 
 // http://pdfhummus.com/post/147451287581/hummus-1058-and-pdf-writer-updates-encryption
 /**
- * Encrypt the finished output, once: with the encrypt() options, which
- * replace the constructor ones, or else with the constructor passwords. A
- * source that is already encrypted keeps its own encryption unless encrypt()
- * replaces it, and is opened with the password the Recipe was created with.
+ * Encrypt the finished output, once, with `encryption_`: the constructor
+ * passwords of a new PDF, or the encrypt() options, which replace them. A
+ * source keeps its own encryption unless encrypt() replaces it, and is opened
+ * with the password the Recipe was created with.
  * @private
  * @param {Uint8Array} bytes - The finished output.
  * @returns {Uint8Array} The encrypted output, or the same bytes when there is
@@ -126,13 +122,10 @@ export const encrypt = function encrypt(options = {}) {
  * @throws {Error} If the output cannot be encrypted.
  */
 export const _encrypt = function _encrypt(bytes) {
-  const { password, ...constructorEncryption } = this.encryptOptions;
-  const encryption = Object.keys(this.encryption_ ?? {}).length
-    ? this.encryption_
-    : !this.sourceEncrypted_ && constructorEncryption.userPassword !== undefined
-      ? constructorEncryption
-      : null;
-  return encryption
-    ? this.platform.recrypt(bytes, { ...encryption, password })
+  return Object.keys(this.encryption_).length
+    ? this.platform.recrypt(bytes, {
+        ...this.encryption_,
+        password: this.encryptOptions.password,
+      })
     : bytes;
 };
