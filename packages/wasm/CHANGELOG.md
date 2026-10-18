@@ -269,7 +269,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   it draws in the default color.
 - Recipe `lineWidth(0)` draws the thinnest line, as native does, instead of a
   2-point line, and a negative `lineWidth` option of a shape draws 1 point
-  wide instead of 2.
+  wide instead of 2. A negative width given to `lineWidth()` or `lineStyle()`
+  keeps the width set before instead of drawing 2 points wide.
 
 ## [1.2.0] - 2026-10-12
 

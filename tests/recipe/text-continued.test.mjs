@@ -142,6 +142,17 @@ describeEnds("Text - Continued", function (end) {
       close(runs[1].x - runs[0].x, helloAdvance);
     });
 
+    it("leaves the textBox of a continued run as it was", function () {
+      var textBox = { textAlign: "right" };
+      runsOf("flow-textbox-kept", (recipe) => {
+        recipe
+          .text("Hello ", 20, 20, { flow: true, font: "arial" })
+          .text("world", { textBox })
+          .text("", { flow: false });
+      });
+      assert.deepEqual(textBox, { textAlign: "right" });
+    });
+
     it("puts runs of different sizes on one baseline inside the box", function () {
       var bigAscent;
       var runs = runsOf("flow-sizes", (recipe) => {

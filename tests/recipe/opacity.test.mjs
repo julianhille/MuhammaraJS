@@ -41,6 +41,18 @@ function textAlphas(end, bytes, pageIndex = 0) {
     .map((item) => item.fillAlpha);
 }
 
+/**
+ * Freeze an options object and every object in it.
+ * @param {object} value - The options.
+ * @returns {object} The same options, deeply frozen.
+ */
+function frozen(value) {
+  Object.values(value).forEach((child) => {
+    if (child instanceof Object) frozen(child);
+  });
+  return Object.freeze(value);
+}
+
 describeEnds("Recipe opacity", function (end) {
   it("sets fill and stroke ExtGState alpha", function () {
     var bytes = end
@@ -126,5 +138,73 @@ describeEnds("Recipe opacity", function (end) {
     writeOutput(end, "opacity-numeric-string", bytes);
     assert.equal(painted(end, bytes).find(fills).fillAlpha, 0.5);
     assert.ok(alphaStates(end, bytes).some((state) => state.ca === 0.5));
+  });
+
+  it("takes frozen options", function () {
+    var style = frozen({ stroke: "#000000", fill: "#ff0000", lineWidth: 2 });
+    var recipe = end.newRecipe().createPage(595, 842);
+    recipe
+      .line(
+        [
+          [10, 10],
+          [50, 50],
+        ],
+        style,
+      )
+      .polygon(
+        [
+          [10, 10],
+          [50, 10],
+          [30, 40],
+        ],
+        style,
+      )
+      .rectangle(10, 10, 40, 40, style)
+      .circle(50, 50, 20, style)
+      .ellipse(50, 50, 30, 20, style)
+      .arc(50, 50, 20, 0, 90, style)
+      .n_gon(100, 100, 20, 5, style)
+      .image(end.image("images/png/pnglogo-grr.png"), 100, 200, style)
+      .text(
+        "abc def ghi",
+        10,
+        10,
+        frozen({
+          size: 12,
+          textBox: {
+            width: 40,
+            padding: [1, 2],
+            style: { stroke: "#000000", lineWidth: 1 },
+          },
+        }),
+      )
+      .text(
+        "<b>a</b> c",
+        10,
+        100,
+        frozen({ html: true, size: 12, textBox: { width: 60 } }),
+      )
+      .endPage()
+      .endPDF();
+  });
+
+  it("draws a reused style at the opacity of each call", function () {
+    var style = { stroke: "#000000", fill: "#ff0000", lineWidth: 2 };
+    var bytes = end
+      .newRecipe()
+      .createPage(595, 842)
+      .rectangle(10, 10, 40, 40, style)
+      .opacity(0.3)
+      .rectangle(100, 10, 40, 40, style)
+      .endPage()
+      .endPDF();
+    writeOutput(end, "opacity-reused-style", bytes);
+    assert.deepEqual(
+      painted(end, bytes)
+        .filter(fills)
+        .map((item) => item.fillAlpha),
+      [1, 0.3],
+    );
+    assert.deepEqual(Object.keys(style), ["stroke", "fill", "lineWidth"]);
   });
 });

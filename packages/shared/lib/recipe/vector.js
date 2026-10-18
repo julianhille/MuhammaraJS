@@ -701,7 +701,8 @@ export const pie = function pie(
  * @function
  * @memberof Recipe#
  * @param {Recipe.LineStyleOptions} [options] - The line style options.
- * @param {number} [options.width] - The line width; a negative width is ignored.
+ * @param {number} [options.width] - The line width, a number or numeric string;
+ *   a negative, infinite or non-numeric width is ignored.
  * @param {number} [options.lineWidth] - Alias for width.
  * @param {number} [options.cap] - The PDF line cap style, a `LineCapStyle` value.
  * @param {number} [options.join] - The PDF line join style: 0 miter, 1 round, 2 bevel.
@@ -717,9 +718,15 @@ export const lineStyle = function lineStyle(options = {}) {
   // Validate before anything is written.
   const miterLimit = miterLimitOption(options.miterLimit);
   if (miterLimit !== undefined) options = { ...options, miterLimit };
-  // A negative width is no valid PDF; it is ignored, as Wasm always did.
-  if ((options.width ?? options.lineWidth) < 0)
-    options = { ...options, width: undefined, lineWidth: undefined };
+  // A width is a number or numeric string, as Wasm always took it; anything
+  // else, and a negative or infinite width, is no valid PDF and is ignored.
+  const width = options.width ?? options.lineWidth;
+  if (width !== undefined)
+    options = {
+      ...options,
+      width: isFinite(width) && width >= 0 ? Number(width) : undefined,
+      lineWidth: undefined,
+    };
   this.current = this.current || {};
   const style = (this.current.lineStyle = this.current.lineStyle || {});
 
@@ -764,7 +771,8 @@ export const _setLineStyle = function _setLineStyle(options = {}) {
  * @name lineWidth
  * @function
  * @memberof Recipe#
- * @param {number} width - The line width; a negative width is ignored.
+ * @param {number} width - The line width, a number or numeric string; a
+ *   negative, infinite or non-numeric width is ignored.
  * @returns {Recipe} The recipe instance.
  * @throws {TypeError} If no page is active.
  */

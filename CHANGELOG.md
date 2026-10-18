@@ -278,6 +278,12 @@ undefined`.
   numbers, so `pageInfo()` and the page layout are right.
 - Recipe `lineWidth()` and `lineStyle()` ignore a negative width instead of
   writing it into the PDF, which does not allow one.
+- Recipe `lineWidth()` and `lineStyle()` take a numeric-string width such as
+  `"3"`, as shapes do, instead of throwing `Wrong Argument`; an infinite or
+  non-numeric width is ignored.
+- Recipe shapes, images and text leave the caller's options object as it was,
+  so frozen options work, and a style object reused after `opacity()`, or a
+  text flow continued after it, draws at the new opacity.
 
 ### Changed
 

@@ -130,24 +130,25 @@ function hasLayout(textObject) {
 
 /**
  * Merge text options: arrays and non-object values from `source` replace those
- * in `target`, and nested objects are merged. `source` objects are updated in
- * place; the result is a new object.
+ * in `target`, and nested objects are merged. Neither argument is changed; the
+ * result is a new object.
  * @private
  * @param {Object} target - The base options.
  * @param {Object} source - The overriding options.
  * @returns {Object} The merged options.
  */
 export const _merge = function merge(target, source) {
-  // Iterate through `source` properties and if an `Object` set property to merge of `target` and `source` properties
+  // Copy source, so the caller's options stay as they were. Its nested
+  // objects merge with target's; arrays and other values replace them.
+  source = { ...source };
   for (const key of Object.keys(source)) {
-    if (Array.isArray(source[key])) {
-      target[key] = source[key]; // don't want to merge elements, just accept new values.
-    } else if (
+    if (
+      !Array.isArray(source[key]) &&
       source[key] instanceof Object &&
       target instanceof Object &&
       key in target
     ) {
-      Object.assign(source[key], merge(target[key], source[key]));
+      source[key] = merge(target[key], source[key]);
     }
   }
 

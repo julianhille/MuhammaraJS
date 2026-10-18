@@ -158,7 +158,7 @@ function _checkVertexCount(count, name) {
  * @param {number} cx - The center x.
  * @param {number} cy - The center y.
  * @param {number} radius - The distance from the center to a vertex.
- * @param {Object} [options] - The n_gon() options; updated in place.
+ * @param {Object} [options] - The private options copy; updated in place.
  * @returns {number[][]} The [x, y] vertices.
  */
 function _n_gon(sides, cx, cy, radius, options = {}) {
@@ -239,16 +239,11 @@ export const n_gon = function n_gon(cx, cy, radius, sides = 3, options = {}) {
     sides = MIN_SIDES;
   }
 
-  const ngon = _n_gon(sides, cx, cy, radius, options);
-
   const drawOptions = Object.assign({}, options, { link: undefined });
+  const ngon = _n_gon(sides, cx, cy, radius, drawOptions);
   this.polygon(ngon, drawOptions);
   if (options.link)
     this.link(options.link, cx - radius, cy - radius, radius * 2, radius * 2);
-
-  if (options.rotationVertice) {
-    delete options["rotationOrigin"]; // cleanup n-gon generated point
-  }
 
   if (options.debug) {
     this.circle(cx, cy, radius, { width: 1, stroke: "#00ff00" });

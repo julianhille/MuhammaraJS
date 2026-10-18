@@ -48,12 +48,13 @@ describeEnds("Recipe lineStyle", function (end) {
     assert.doesNotMatch(content, /-1 M|0\.5 M/);
   });
 
-  it("ignores a negative line width", function () {
+  it("ignores a negative or infinite line width", function () {
     var bytes = end
       .newRecipe()
       .createPage(200, 200)
       .lineWidth(3)
       .lineWidth(-1)
+      .lineWidth(Infinity)
       .line([
         [1, 1],
         [50, 50],
@@ -63,6 +64,27 @@ describeEnds("Recipe lineStyle", function (end) {
     var content = drawnContent(end, bytes);
     assert.match(content, /\b3 w\b/);
     assert.doesNotMatch(content, /-1 w/);
+  });
+
+  it("takes a numeric-string width", function () {
+    var bytes = end
+      .newRecipe()
+      .createPage(200, 200)
+      .lineWidth("3")
+      .line([
+        [1, 1],
+        [50, 50],
+      ])
+      .endPage()
+      .endPDF();
+    assert.match(drawnContent(end, bytes), /\b3 w\b/);
+    bytes = end
+      .newRecipe()
+      .createPage(200, 200)
+      .circle(50, 50, 20, { stroke: "#000000", lineWidth: "3" })
+      .endPage()
+      .endPDF();
+    assert.match(drawnContent(end, bytes), /\b3 w\b/);
   });
 
   it("writes every line style operator before the stroke", function () {

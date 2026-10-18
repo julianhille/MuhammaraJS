@@ -6,7 +6,7 @@ import { miterLimitOption, rotationOption } from "../recipe-options.js";
 /**
  * Resolve drawing and text options into path options: font, size, colors
  * and color models, line style, opacity graphics states, rotation, skew and
- * dash. Clamps `options.opacity` to 0..1 in place.
+ * dash. Clamps the opacity to 0..1; `options` is not changed.
  * @private
  * @param {Object} [options] - The drawing or text options.
  * @param {number} originX - The PDF x of the default rotation origin.
@@ -63,22 +63,21 @@ export const _getPathOptions = function _getPathOptions(
   if (pathOptions.dash === undefined) pathOptions.dash = [];
   if (pathOptions.dashPhase === undefined) pathOptions.dashPhase = 0;
 
-  if (options.opacity == void 0 || isNaN(options.opacity)) {
-    options.opacity = this.current.opacity ?? 1;
-  } else {
-    // A numeric string such as "0.5" passes the isNaN check; write it as a
-    // number, as Wasm does.
-    options.opacity = Math.max(0, Math.min(1, Number(options.opacity)));
-  }
-  pathOptions.opacity = options.opacity;
-  const extGStates = this._createExtGStates(options.opacity);
+  // A numeric string such as "0.5" passes the isNaN check; write it as a
+  // number, as Wasm does.
+  const opacity =
+    options.opacity == void 0 || isNaN(options.opacity)
+      ? (this.current.opacity ?? 1)
+      : Math.max(0, Math.min(1, Number(options.opacity)));
+  pathOptions.opacity = opacity;
+  const extGStates = this._createExtGStates(opacity);
   pathOptions.strokeGsId = extGStates.stroke;
   pathOptions.fillGsId = extGStates.fill;
 
   if (options.width || options.lineWidth) {
     const width = options.width || options.lineWidth;
     if (!isNaN(width)) {
-      pathOptions.width = width <= 0 ? 1 : width;
+      pathOptions.width = width <= 0 ? 1 : Number(width);
     }
   }
 
