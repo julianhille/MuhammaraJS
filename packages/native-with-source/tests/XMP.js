@@ -2,7 +2,7 @@ var assert = require("node:assert");
 var fs = require("node:fs");
 var path = require("node:path");
 var muhammara = require("@muhammara/native-with-source");
-var { buildXmpPacket, pdfDateToXmp } = require("@muhammara/shared/xmp.js");
+var { buildXmpPacket, pdfDateToXmp } = require("../../native-core/lib/xmp");
 
 var Recipe = muhammara.Recipe;
 var out = function (name) {

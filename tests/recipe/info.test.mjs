@@ -18,6 +18,15 @@ function pick(object, keys) {
 }
 
 describeEnds("Recipe info", function (end) {
+  it("escapes XML characters in the XMP packet", function () {
+    var recipe = end.newRecipe({ xmp: true, title: "Tom & <Jerry>" });
+    var bytes = recipe.createPage(100, 100).endPage().endPDF();
+    assert.match(
+      Buffer.from(bytes).toString("latin1"),
+      /Tom &amp; &lt;Jerry&gt;/,
+    );
+  });
+
   it("writes the Info of an edited source, which a new Recipe reads back", function () {
     var bytes = end
       .openRecipe("recipe/blank.pdf")
