@@ -189,9 +189,38 @@ describeEnd("wasm", "Recipe foundation", function (end) {
     );
   });
 
+  it("releases the writer of a failed constructor", function () {
+    var platform = end.Recipe.prototype.platform;
+    var modifyWriter = platform.modifyWriter;
+    var writers = [];
+    platform.modifyWriter = function (...args) {
+      var output = modifyWriter.apply(this, args);
+      writers.push(output.writer);
+      return output;
+    };
+    try {
+      // the info options are applied after the writer exists
+      assert.throws(() =>
+        end.openRecipe("recipe/test2.pdf", { title: Object.create(null) }),
+      );
+    } finally {
+      platform.modifyWriter = modifyWriter;
+    }
+    assert.equal(writers.length, 1);
+    assert.throws(
+      () => writers[0].getDocumentContext(),
+      /PDF writer has ended/,
+    );
+  });
+
   it("cannot end the PDF after dispose()", function () {
     var recipe = end.newRecipe().createPage(100, 100).endPage();
     recipe.dispose();
+    // dispose() releases the writer
+    assert.throws(
+      () => recipe.writer.getDocumentContext(),
+      /PDF writer has ended/,
+    );
     assert.throws(() => recipe.endPDF(), {
       message: "Cannot end the PDF after disposal",
     });

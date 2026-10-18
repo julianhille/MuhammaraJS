@@ -114,7 +114,14 @@ class Recipe {
     this._setParameters(options);
 
     this.platform.loadFonts(this, options);
-    this._createWriter();
+    try {
+      this._createWriter();
+    } catch (error) {
+      // a failed constructor returns no Recipe to release them later
+      this._output?.abort();
+      this._releaseReader();
+      throw error;
+    }
   }
 
   /**
