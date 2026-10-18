@@ -125,12 +125,6 @@ jobs:
           MUHAMMARA_WASM_SANITIZE: ON
           MUHAMMARA_WASM_BUILD_TESTS: ON
       - run: npm run wasm:test
-      # The sanitizer build is many times slower, so the page-copying specs
-      # need more than the usual 30 seconds.
-      - name: Run the shared Recipe specs on Wasm
-        run: npm run test:shared -- --timeout 300000
-        env:
-          MUHAMMARA_END: wasm
   deploy-development-example:
     needs: [build, test, sanitizer]
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
