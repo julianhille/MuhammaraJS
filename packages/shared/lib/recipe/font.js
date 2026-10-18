@@ -150,7 +150,7 @@ function _getFontFile(self, options = {}) {
   if (family)
     fontFile = usable(family[type]) ? family[type] : family[FontSlot.REGULAR];
   if (!usable(fontFile)) {
-    throw new Error(`Unknown font: ${options.font ?? "(none)"}`);
+    throw new Error(`Unknown font: ${name ?? "(none)"}`);
   }
 
   return fontFile;

@@ -480,7 +480,6 @@ class Recipe {
       }
       bytes = this._encrypt(bytes);
 
-      this.bytes_ = bytes;
       this.result_ = this.platform.deliver(this, bytes);
       this.ended = true;
     } catch (error) {

@@ -166,6 +166,16 @@ describeEnd("wasm", "Recipe default font", function (end) {
     }
   });
 
+  it("names the default font that disposeAssets() removed from a Recipe", function () {
+    var recipe = new Recipe().createPage("letter");
+    try {
+      Recipe.disposeAssets();
+      assert.throws(() => recipe.text("x", 10, 10), /Unknown font: roboto/);
+    } finally {
+      recipe.dispose();
+    }
+  });
+
   it("takes a custom default font as bytes, an ArrayBuffer or a Blob", async function () {
     for (var [sourceIndex, source] of [
       arial,
