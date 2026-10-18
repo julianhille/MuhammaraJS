@@ -178,8 +178,11 @@ describeEnd("wasm", "Recipe foundation", function (end) {
         .newRecipe()
         .createPage(100, 100)
         .endPage()
-        .insertPage(1, "nope", 1);
-      assert.throws(() => inserting.endPDF(), /Unknown PDF: nope/);
+        .insertPage(1, new Uint8Array([1, 2, 3, 4]), 1);
+      assert.throws(
+        () => inserting.endPDF(),
+        /Unable to create PDF copying context/,
+      );
     } finally {
       platform.newWriter = newWriter;
     }

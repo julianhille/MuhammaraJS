@@ -14,8 +14,11 @@ import * as utils from "./utils.js";
  * @throws {Error} If pages were deleted with deletePage() on this Recipe, or
  *   it writes PDF/A or attached files, which the inserted pages' new PDF
  *   would lose.
- * @throws {Error} If afterPageNumber is not a number, or after fillForm().
- * @throws {TypeError} If pdfSrc or srcPageNumber is missing.
+ * @throws {Error} If afterPageNumber is not a number, or after fillForm(),
+ *   or on Wasm a negative or fractional afterPageNumber.
+ * @throws {TypeError} If pdfSrc or srcPageNumber is missing; on Wasm also a
+ *   name that is not registered or a page that is not a whole number of at
+ *   least 1.
  */
 export const insertPage = function insertPage(
   afterPageNumber,
@@ -31,6 +34,8 @@ export const insertPage = function insertPage(
   // the inserted pages' new PDF would lose the form
   if (this._formFills?.size)
     throw new Error("insertPage() cannot be combined with fillForm()");
+  // Wasm checks its arguments here, as it always has.
+  this.platform.checkInsertPage?.(afterPageNumber, pdfSrc, srcPageNumber);
   if (isNaN(afterPageNumber)) {
     throw new Error("The afterPageNumber is inValid.");
   }

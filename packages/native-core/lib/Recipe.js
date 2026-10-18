@@ -119,11 +119,15 @@ function createNativePlatform(muhammara) {
     /**
      * The error of a PDF source that cannot be read or edited. Native Recipe
      * has always wrapped it in an `Error`; `cause` keeps the reader's own
-     * error, which `appendPage()` throws.
+     * error, which `appendPage()` throws. A reader message (pages=0) becomes
+     * a `TypeError` cause, the type `appendPage()` has always thrown.
      * @param {*} err - The error the reader raised.
      * @returns {Error} The error to throw.
      */
-    sourceError: (err) => new Error(err, { cause: err }),
+    sourceError: (err) =>
+      new Error(err, {
+        cause: typeof err === "string" ? new TypeError(err) : err,
+      }),
 
     /**
      * Read the native constructor arguments: `"new"` (or `Buffer.from("new")`)
@@ -224,6 +228,8 @@ function createNativePlatform(muhammara) {
      * pass for the annotation pass. It returns the handle newWriter() does.
      * @param {Uint8Array} bytes - The PDF to modify.
      * @param {Object} options - The writer options: `password`, `compress`.
+     *   `version` is ignored: native Recipe has always kept the version of a
+     *   PDF it edits.
      * @param {Recipe} recipe - The recipe. Its output path is claimed, and
      *   the writer gets its error log.
      * @returns {{writer: Object, finish: function(): Uint8Array, abort: function(): void}}
@@ -231,7 +237,7 @@ function createNativePlatform(muhammara) {
      * @throws {TypeError} If the output file cannot be written, or the PDF
      *   cannot be modified.
      */
-    modifyWriter(bytes, options, recipe) {
+    modifyWriter(bytes, { version, ...options }, recipe) {
       if (!recipe.isBufferSrc) claimOutput(recipe);
       return bufferedWriter((stream) =>
         muhammara.createWriterToModify(

@@ -164,5 +164,21 @@ describeEnds("Recipe appendPages", function (end) {
         ? { name: "Error", message: "TypeError: " + readerError.message }
         : readerError,
     );
+    // A source that needs a password: the reader's message, which native
+    // throws as the TypeError appendPage() has always thrown.
+    assert.throws(
+      () =>
+        end
+          .newRecipe()
+          .createPage(100, 100)
+          .endPage()
+          .appendPage(end.pdf("PDFWithPassword.PDF")),
+      end.name === "native"
+        ? {
+            name: "TypeError",
+            message: "HummusJS: Unable to read/edit PDF file (pages=0)",
+          }
+        : { name: "Error", message: "Unable to read/edit PDF file (pages=0)" },
+    );
   });
 });

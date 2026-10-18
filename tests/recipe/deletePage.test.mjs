@@ -647,7 +647,10 @@ describeEnds("Recipe deletePage", function (end) {
     // insertPage() call must not block a later deletePage().
     assert.throws(() => insert.insertPage(0), {
       name: "TypeError",
-      message: "insertPage requires pdfSrc and srcPageNumber",
+      message:
+        end.name === "wasm"
+          ? "insertPage requires a registered PDF and one-based source page"
+          : "insertPage requires pdfSrc and srcPageNumber",
     });
     assert.doesNotThrow(() => insert.deletePage(1));
     insert.endPDF();

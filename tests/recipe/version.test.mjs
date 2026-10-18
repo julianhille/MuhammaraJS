@@ -68,4 +68,23 @@ describeEnds("Recipe version", function (end) {
     assert.equal(compressed(draw({ compress: 0 })), true);
     end.openRecipe("Original.pdf", { compress: 0 }).endPDF();
   });
+
+  it("declares the version option for an edited source on Wasm only", function () {
+    /**
+     * The catalog /Version of an edited source.
+     * @param {object} options - The Recipe options.
+     * @returns {string|undefined} The declared version.
+     */
+    function declared(options) {
+      var bytes = end.openRecipe("recipe/test.pdf", options).endPDF();
+      return withReader(end, bytes, (reader) => {
+        var root = reader.queryDictionaryObject(reader.getTrailer(), "Root");
+        return reader.queryDictionaryObject(root, "Version")?.value;
+      });
+    }
+    // Native keeps the source's version; Wasm declares the option.
+    var wasm = end.name === "wasm";
+    assert.equal(declared({}), wasm ? "1.7" : undefined);
+    assert.equal(declared({ version: 2.0 }), wasm ? "2" : undefined);
+  });
 });

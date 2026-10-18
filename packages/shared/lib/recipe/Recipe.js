@@ -164,7 +164,7 @@ class Recipe {
       try {
         this._output = this.platform.modifyWriter(
           this._source,
-          Object.assign(this._openOptions(), this._compression()),
+          Object.assign({ version }, this._openOptions(), this._compression()),
           this,
         );
       } catch (err) {

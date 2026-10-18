@@ -165,14 +165,29 @@ describeEnds("Recipe insertPage", function (end) {
 
   it("rejects incomplete or invalid arguments", function () {
     var recipe = end.openRecipe(numberedPdf(end, 2));
+    var wasm = end.name === "wasm";
+    // Wasm checks a source and page at the call, with its own message.
+    var missing = wasm
+      ? "insertPage requires a registered PDF and one-based source page"
+      : "insertPage requires pdfSrc and srcPageNumber";
     assert.throws(() => recipe.insertPage(0), {
       name: "TypeError",
-      message: "insertPage requires pdfSrc and srcPageNumber",
+      message: missing,
     });
     assert.throws(() => recipe.insertPage("after", end.pdf(TEST_PDF), 1), {
       name: "Error",
       message: "The afterPageNumber is inValid.",
     });
+    if (wasm) {
+      assert.throws(() => recipe.insertPage(1, "nope", 1), {
+        name: "TypeError",
+        message: missing,
+      });
+      assert.throws(() => recipe.insertPage(-1, end.pdf(TEST_PDF), 1), {
+        name: "Error",
+        message: "The afterPageNumber is inValid.",
+      });
+    }
     // Nothing was queued, so the PDF ends unchanged.
     assert.deepEqual(pageWidths(end, recipe.endPDF()), [101, 102]);
   });

@@ -161,6 +161,31 @@ export function createRecipeFactory({
      */
     sourceError: (err) =>
       typeof err === "string" ? new Error(err.replace("HummusJS: ", "")) : err,
+    /**
+     * Checks the insertPage() arguments at the call, as Wasm Recipe always
+     * did.
+     * @param {*} afterPageNumber - The page to insert after.
+     * @param {*} source - A registered name or bytes.
+     * @param {*} pageNumber - The one-based source page.
+     * @returns {void}
+     * @throws {Error} If afterPageNumber is not a whole number of at least 0.
+     * @throws {TypeError} If the source is no registered name or bytes, or the
+     *   page is not a whole number of at least 1.
+     */
+    checkInsertPage(afterPageNumber, source, pageNumber) {
+      if (!Number.isInteger(afterPageNumber) || afterPageNumber < 0) {
+        throw new Error("The afterPageNumber is inValid.");
+      }
+      var isPdf =
+        typeof source === "string"
+          ? assets.pdfs.has(source)
+          : source instanceof ArrayBuffer || ArrayBuffer.isView(source);
+      if (!isPdf || !Number.isInteger(pageNumber) || pageNumber < 1) {
+        throw new TypeError(
+          "insertPage requires a registered PDF and one-based source page",
+        );
+      }
+    },
     get defaultFontFamily() {
       return defaultFont?.name.toLowerCase();
     },
