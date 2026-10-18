@@ -62,9 +62,10 @@ describeEnds("Recipe version", function (end) {
     assert.equal(compressed(draw({})), true);
     assert.equal(compressed(draw({ compress: true })), true);
     assert.equal(compressed(draw({ compress: false })), false);
-    assert.throws(() => end.newRecipe({ compress: "no" }), {
-      name: "TypeError",
-      message: "compress must be a boolean",
-    });
+    // only false turns compression off, as before
+    assert.equal(compressed(draw({ compress: null })), true);
+    assert.equal(compressed(draw({ compress: "false" })), true);
+    assert.equal(compressed(draw({ compress: 0 })), true);
+    end.openRecipe("Original.pdf", { compress: 0 }).endPDF();
   });
 });

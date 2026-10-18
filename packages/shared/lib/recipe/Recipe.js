@@ -220,16 +220,12 @@ class Recipe {
   /**
    * The writer's stream compression option, when the Recipe was given one.
    * @private
-   * @returns {Object} The option to pass to the writer: `compress` when given.
-   * @throws {TypeError} If `compress` is given and is not a boolean.
+   * @returns {Object} The option to pass to the writer: `compress` when given,
+   *   false only for `false`.
    */
   _compression() {
     const { compress } = this.options;
-    if (compress === undefined) return {};
-    if (typeof compress !== "boolean") {
-      throw new TypeError("compress must be a boolean");
-    }
-    return { compress };
+    return compress === undefined ? {} : { compress: compress !== false };
   }
 
   /**
