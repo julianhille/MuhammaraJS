@@ -20,6 +20,7 @@ import { xObjectForm } from "./xObjectForm.js";
  * @throws {Error} If the overlay PDF cannot be read.
  */
 export const overlay = function overlay(pdfSrc, x = 0, y = 0, options = {}) {
+  if (!this.page) throw this.platform.noPageError();
   // allow to have only 2 arguments input
   if (arguments.length == 2) {
     options = x || {};

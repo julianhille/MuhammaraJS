@@ -41,6 +41,7 @@ export const polygon = function polygon(coordinates = [], options = {}) {
   if (!Array.isArray(coordinates) || coordinates.length === 0) {
     throw new TypeError("A polygon needs at least one coordinate pair");
   }
+  if (!this.page) throw this.platform.noPageError();
   // Work on a copy so closing the path leaves the caller's array unchanged.
   coordinates = coordinates.slice();
   // close polygon

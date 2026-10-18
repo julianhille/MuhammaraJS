@@ -391,11 +391,22 @@ describeEnds("Graphic Object Positioning", function (end) {
   it("reports a missing page instead of failing to read its metadata", function () {
     var recipe = end.newRecipe();
     // Each end in its own words, as it always was.
-    assert.throws(
-      () => recipe.link("https://example.test", 0, 0, 10, 10),
+    var noPage =
       end.name === "wasm"
         ? /A page is required for coordinates/
-        : /No page is active/,
+        : /No page is active/;
+    assert.throws(
+      () => recipe.link("https://example.test", 0, 0, 10, 10),
+      noPage,
+    );
+    assert.throws(() => recipe.overlay(end.pdf("recipe/test2.pdf")), noPage);
+    assert.throws(
+      () =>
+        recipe.polygon([
+          [0, 0],
+          [10, 10],
+        ]),
+      noPage,
     );
   });
 
