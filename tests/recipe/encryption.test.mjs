@@ -55,19 +55,23 @@ describeEnds("Recipe encryption", function (end) {
 
   // GH-1003: an encrypted source is read only with its password.
   it("reads an encrypted source only with its password", function () {
-    assert.throws(() => end.openRecipe("PDFWithPassword.PDF"), /pages=0/);
+    // each end words it as it always has
+    var pages0 = {
+      name: "Error",
+      message:
+        (end.name === "native" ? "HummusJS: " : "") +
+        "Unable to read/edit PDF file (pages=0)",
+    };
+    assert.throws(() => end.openRecipe("PDFWithPassword.PDF"), pages0);
     assert.throws(
       () => end.openRecipe("PDFWithPassword.PDF", { password: "wrong" }),
-      /pages=0/,
+      pages0,
     );
     var recipe = end.openRecipe("PDFWithPassword.PDF", { password: "user" });
     assert.equal(recipe.pageInfo(1).width, 595);
     assert.equal(recipe.pageInfo(1).height, 842);
     var aes = new Uint8Array(readFileSync(fixture("ProtectedAES256.pdf")));
-    assert.throws(
-      () => end.openRecipe("recipe/test2.pdf").read(aes),
-      /pages=0/,
-    );
+    assert.throws(() => end.openRecipe("recipe/test2.pdf").read(aes), pages0);
     assert.equal(recipe.read(aes)[1].width, 200);
     var aesRecipe = end.openRecipe(aes, { password: "user" });
     assert.equal(aesRecipe.pageInfo(1).height, 300);

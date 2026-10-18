@@ -23,7 +23,13 @@ export const appendPage = function appendPage(pdfSrc, pages = []) {
   }
   if (!Array.isArray(pages)) pages = [pages];
   // The source's page geometry, also for the metadata of appended pages.
-  const sourcePages = this.read(pdfSrc);
+  let sourcePages;
+  try {
+    sourcePages = this.read(pdfSrc);
+  } catch (err) {
+    // appendPage() throws the reader's own error, as it always has
+    throw err.cause instanceof Error ? err.cause : err;
+  }
   const pageCount = sourcePages.pages;
 
   // Preserve the established upper-bound clamping after validating that the

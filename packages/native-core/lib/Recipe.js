@@ -116,6 +116,14 @@ function createNativePlatform(muhammara) {
      */
     noPageError: () =>
       new TypeError("No page is active; call createPage() or editPage() first"),
+    /**
+     * The error of a PDF source that cannot be read or edited. Native Recipe
+     * has always wrapped it in an `Error`; `cause` keeps the reader's own
+     * error, which `appendPage()` throws.
+     * @param {*} err - The error the reader raised.
+     * @returns {Error} The error to throw.
+     */
+    sourceError: (err) => new Error(err, { cause: err }),
 
     /**
      * Read the native constructor arguments: `"new"` (or `Buffer.from("new")`)

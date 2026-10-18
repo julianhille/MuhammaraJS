@@ -168,7 +168,7 @@ class Recipe {
           this,
         );
       } catch (err) {
-        throw new Error(err);
+        throw this.platform.sourceError(err);
       }
       this.writer = this._output.writer;
       // the fields and custom entries of the source, once, so that low-level
@@ -348,7 +348,7 @@ class Recipe {
       }
       return metadata;
     } catch (err) {
-      throw new Error(err);
+      throw this.platform.sourceError(err);
     } finally {
       // Only the recipe source reader outlives read(); anything else would keep
       // the file open until the process exits.

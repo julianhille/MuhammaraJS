@@ -143,4 +143,26 @@ describeEnds("Recipe appendPages", function (end) {
     writeOutput(end, "appendPages-byte-sources", bytes);
     assert.deepEqual(pageWidths(end, bytes), [300, 400, 300]);
   });
+
+  it("throws each end's reader error for a source that is no PDF", function () {
+    var garbage = pdfSource(
+      end,
+      "appendPages-garbage",
+      new Uint8Array([1, 2, 3, 4]),
+    );
+    var readerError =
+      end.name === "native"
+        ? { name: "TypeError", message: "Unable to start parsing PDF file" }
+        : { name: "Error", message: "Unable to parse PDF" };
+    assert.throws(
+      () => end.newRecipe().createPage(100, 100).appendPage(garbage),
+      readerError,
+    );
+    assert.throws(
+      () => end.newRecipe().read(garbage),
+      end.name === "native"
+        ? { name: "Error", message: "TypeError: " + readerError.message }
+        : readerError,
+    );
+  });
 });

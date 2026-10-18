@@ -152,6 +152,15 @@ export function createRecipeFactory({
     pageInfoIsRecord: true,
     sourceName: "PDF bytes",
     noPageError: () => new Error("A page is required for coordinates"),
+    /**
+     * The error of a PDF source that cannot be read or edited: the error as
+     * raised, as Wasm Recipe has always thrown it, and native's pages=0
+     * message without its brand.
+     * @param {*} err - The error the reader raised.
+     * @returns {Error} The error to throw.
+     */
+    sourceError: (err) =>
+      typeof err === "string" ? new Error(err.replace("HummusJS: ", "")) : err,
     get defaultFontFamily() {
       return defaultFont?.name.toLowerCase();
     },
