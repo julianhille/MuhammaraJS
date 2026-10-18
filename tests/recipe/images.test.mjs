@@ -801,6 +801,13 @@ describeEnds("Recipe images", function (end) {
                 "image index was replaced by the one-based page option; pass page: index + 1",
             }),
           );
+        } else {
+          // on another Recipe: this one asserts that nothing is drawn
+          var other = end.newRecipe().createPage(100, 100);
+          [0, 1].forEach((index) =>
+            assert.strictEqual(other.image(source, 0, 0, { index }), other),
+          );
+          other.endPage().endPDF();
         }
         assert.throws(
           () =>

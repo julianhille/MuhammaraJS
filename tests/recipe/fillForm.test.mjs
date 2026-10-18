@@ -505,6 +505,8 @@ describeEnds("fillForm", function (end) {
       assert.throws(() => recipe.fillForm({}, { font: "nope" }), {
         message: "Unknown font: nope",
       });
+    } else {
+      assert.strictEqual(recipe.fillForm({}, { font: "nope" }), recipe);
     }
   });
 
