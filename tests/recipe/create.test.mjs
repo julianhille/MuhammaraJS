@@ -8,6 +8,7 @@ import {
   pageFields,
 } from "../support/pdf.mjs";
 import { imagePlacements, pageGeometry } from "../support/images.mjs";
+import { mediaBoxes } from "../support/composition.mjs";
 
 describeEnds("Recipe create", function (end) {
   it("reports active page geometry", function () {
@@ -38,6 +39,13 @@ describeEnds("Recipe create", function (end) {
       pageNumber: 1,
     });
     reopened.endPDF();
+  });
+
+  it("takes numeric strings as the page size", function () {
+    var recipe = end.newRecipe().createPage("1000", "200");
+    assert.equal(recipe.pageInfo(1).width, 1000);
+    var bytes = recipe.endPage().endPDF();
+    assert.deepEqual(mediaBoxes(end, bytes), [[0, 0, 1000, 200]]);
   });
 
   it("writes a blank PDF with its info, custom entries and version", function () {

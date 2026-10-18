@@ -811,4 +811,18 @@ describeEnds("Recipe text", function (end) {
     assert.deepEqual(recipe.textDimensions(123), recipe.textDimensions("123"));
     recipe.endPage().endPDF();
   });
+
+  it("draws null as the text textDimensions() measures for it", function () {
+    var draw = (value) =>
+      textRuns(
+        end,
+        end
+          .newRecipe()
+          .createPage(200, 200)
+          .text(value, 10, 10)
+          .endPage()
+          .endPDF(),
+      );
+    assert.deepEqual(draw(null), draw("null"));
+  });
 });

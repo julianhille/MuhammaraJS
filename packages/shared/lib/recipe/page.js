@@ -563,8 +563,8 @@ export const createPage = function createPage(pageWidth, pageHeight, margins) {
     pageHeight &&
     !isNaN(pageHeight)
   ) {
-    pageWidth = pageWidth || this.default.pageSize[0];
-    pageHeight = pageHeight || this.default.pageSize[1];
+    pageWidth = Number(pageWidth);
+    pageHeight = Number(pageHeight);
   } else if (typeof pageWidth === "string") {
     const rotate = pageHeight;
     const pageType = pageWidth.toLowerCase().replace("-size", "");

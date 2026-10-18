@@ -48,6 +48,23 @@ describeEnds("Recipe lineStyle", function (end) {
     assert.doesNotMatch(content, /-1 M|0\.5 M/);
   });
 
+  it("ignores a negative line width", function () {
+    var bytes = end
+      .newRecipe()
+      .createPage(200, 200)
+      .lineWidth(3)
+      .lineWidth(-1)
+      .line([
+        [1, 1],
+        [50, 50],
+      ])
+      .endPage()
+      .endPDF();
+    var content = drawnContent(end, bytes);
+    assert.match(content, /\b3 w\b/);
+    assert.doesNotMatch(content, /-1 w/);
+  });
+
   it("writes every line style operator before the stroke", function () {
     var bytes = end
       .newRecipe()

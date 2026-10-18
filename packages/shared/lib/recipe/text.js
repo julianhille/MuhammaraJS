@@ -346,7 +346,7 @@ export const _makeTextBox = function _makeTextBox(options) {
  * @function
  * @todo support break words
  * @memberof Recipe#
- * @param {string} [text=''] - The text content
+ * @param {string} [text=''] - The text content; other values are drawn as text
  * @param {number|"center"|Object} [x] - The coordinate x, or the options to continue at the current position
  * @param {number|"center"} [y] - The coordinate y
  * @param {Object} [options] - The options
@@ -419,6 +419,8 @@ export const _makeTextBox = function _makeTextBox(options) {
  * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
  */
 export const text = function text(text = "", x, y, options = {}) {
+  // Draw what textDimensions() measures: a value that is no text as a string.
+  if (!Array.isArray(text)) text = String(text);
   // null options act like omitted options.
   if (options === null) options = {};
   // Without a page, native draws nothing, as it always has; Wasm throws.
