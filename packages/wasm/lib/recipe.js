@@ -483,6 +483,35 @@ export function createRecipeFactory({
 
   Object.assign(Recipe.prototype, {
     /**
+     * Adds a named extension method to all Recipe instances.
+     * The callback executes with the Recipe as `this`. Existing Recipe methods
+     * cannot be replaced through this API. Unlike native, which throws
+     * strings, it throws Error objects, as Wasm always has.
+     *
+     * @name register
+     * @function
+     * @memberof Recipe#
+     * @param {string|RecipeExtension} key - Method name, or a named callback.
+     * @param {RecipeExtension} [callback] - Extension implementation when a name is supplied.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If no method name or callback is available.
+     * @throws {Error} If the method name already exists.
+     */
+    register(key, callback) {
+      if (typeof key !== "string") {
+        callback = key;
+        key = callback?.name;
+      }
+      if (!key || typeof callback !== "function") {
+        throw new TypeError("Register requires a named callback function");
+      }
+      if (key in Recipe.prototype) {
+        throw new Error(`Recipe method already exists: ${key}`);
+      }
+      Recipe.prototype[key] = callback;
+      return this;
+    },
+    /**
      * Converts supported HTML into styled text fragments. Ordered and
      * unordered list fragments include their visual prefix and native-style
      * indentation. Unlike native's nested XML-derived layout tree, Wasm

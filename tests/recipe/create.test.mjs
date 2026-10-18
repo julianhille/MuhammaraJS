@@ -263,10 +263,19 @@ describeEnds("Recipe create", function (end) {
       }),
       recipe,
     );
-    assert.throws(
-      () => recipe.register("createDrawNamedSquare", () => {}),
-      /already exists/,
-    );
+    // Wasm keeps 1.2.0's Error objects; native throws strings
+    if (end.name === "wasm") {
+      assert.throws(() => recipe.register("createDrawNamedSquare", () => {}), {
+        name: "Error",
+        message: "Recipe method already exists: createDrawNamedSquare",
+      });
+      assert.throws(() => recipe.register(() => {}), TypeError);
+    } else {
+      assert.throws(
+        () => recipe.register("createDrawNamedSquare", () => {}),
+        (error) => typeof error === "string" && /already exists/.test(error),
+      );
+    }
     var bytes = recipe
       .createPage(100, 100)
       .createDrawSquare(50, 50)

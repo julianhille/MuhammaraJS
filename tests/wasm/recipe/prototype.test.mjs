@@ -13,6 +13,7 @@ describeEnd("wasm", "Recipe prototype", function (end) {
       "muhammara",
       "platform",
       "readAsync",
+      "register",
       "registerFontAsync",
       "split",
       "structure",
