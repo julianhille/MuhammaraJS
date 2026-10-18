@@ -37,8 +37,7 @@ Recipe.disposeAssets();
 
 List markers inherit the formatting and URL of leading item content. Wrapped
 lines use hanging indentation beneath the item text. The DOM-free parser also
-recovers when an HTML `</li>` end tag is omitted, unlike native's XML-strict
-parser.
+recovers when an HTML `</li>` end tag is omitted.
 
 The generated PDF contains visual list text rather than semantic tagged-PDF
 list structure. The browser example's **HTML lists** tab runs this workflow on

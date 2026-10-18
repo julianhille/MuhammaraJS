@@ -35,6 +35,10 @@ low-level RGB `color`, which native does not.
 String writers and `PDFWStreamForBuffer.write()` accept an array of byte
 values on both ends; Wasm throws a `TypeError` for an item that is not an
 integer from 0 to 255, where native coerces it to a byte.
+Wasm glyph text requires every glyph list item to be exactly one
+`[glyphId, unicodeCodePoint]` pair of non-negative integers; native also
+accepts a bare `[glyphId]` or several code points per glyph and coerces the
+values.
 
 Native `writer.getEvents()` exposes `OnPageWrite` and `OnCatalogWrite`
 EventEmitter hooks that can change dictionaries while they are written. Wasm

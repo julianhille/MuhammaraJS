@@ -77,8 +77,7 @@ recipe
 A `separation` color without an ink name, such as `"#0000ff"`, draws in the
 device color space of its value.
 
-Wasm does not support native Recipe's `chroma("!load", path)` filesystem
-loader; register colors individually.
+`chroma("!load", …)` takes the JSON color file as bytes, not a path.
 
 See [Create A Pie Chart](../how-to/create-pie-charts.md) for a complete chart and
 the [API reference](../reference.md) for shape-specific options.

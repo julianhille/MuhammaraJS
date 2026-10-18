@@ -92,7 +92,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Recipe `endPDF()` returns its result, the same value its callback receives,
   also without a callback.
 - Recipe `appendPage()`, `overlay()` and `insertPage()` take the bytes of a
-  PDF (a Buffer) as their source.
+  PDF (a Buffer, Uint8Array or ArrayBuffer) as their source.
 
 ### Fixed
 

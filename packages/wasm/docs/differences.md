@@ -47,10 +47,6 @@ XML-derived layout tree.
 Existing byte-backed PDFs can be read, modified, and copied, but persistent-file
 continuation and the path-based Recipe constructor are unavailable.
 
-Appending or rebuilding an existing source page does not deep-copy that page's
-`/Annots` graph, although annotations created in the output are written
-normally.
-
 Recipe bundles Roboto Regular as its default rather than native Recipe's
 Helvetica family. Bold and italic fall back to regular unless their byte fonts
 are registered, and the different metrics can change wrapping. The low-level
@@ -61,15 +57,7 @@ text styles, except `direction`, which a header without its own takes from its
 column, then the table. See [Create Multi-Page Tables](how-to/create-tables.md) for header
 overrides; font metrics remain the source of typography differences.
 
-Wasm Recipe does not support native `chroma("!load", path)` color-file loading.
-Register named colors individually, including Separation colors.
-
-The Recipe HTML parser is more forgiving than the XML-strict native parser: an
-omitted `</li>` ends that item at its next sibling or at the end of its list
-rather than throwing.
-
-Native Recipe HTML sizes `h1`–`h3` and `small` text, which Wasm does not
-recognize, and Wasm breaks lines around `div`, which native treats as inline.
+`chroma("!load", …)` takes the JSON color file as bytes, not a path.
 
 bidi-js, which the `direction` option reorders right-to-left text with, is a
 dependency of the native packages and bundled into the Wasm build. Wasm still
