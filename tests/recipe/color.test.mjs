@@ -406,4 +406,28 @@ describeEnds("Color", function (end) {
       "__proto__",
     );
   });
+
+  it("draws a color that is not hex in the default color", function () {
+    var bytes = end
+      .newRecipe()
+      .createPage(100, 100)
+      .text("a", 10, 10, { color: "#zzzzzz" })
+      .circle(50, 50, 5, { fill: "#zz" })
+      .endPage()
+      .endPDF();
+    writeOutput(end, "color-not-hex", bytes);
+    var { texts, fills: filled } = split(end, bytes);
+    assertColor(texts[0].fill, "DeviceRGB", DEFAULT_RGB, "text");
+    // two characters pick gray, whose default is black
+    assertColor(filled[0].fill, "DeviceGray", [0], "circle");
+  });
+
+  it("rejects a chroma value of the wrong size", function () {
+    var recipe = end.newRecipe();
+    assert.throws(() => recipe.chroma("x", "notacolor"), {
+      name: "TypeError",
+      message:
+        "Color value has incorrect size for gray, rgb, or cmyk colorspaces",
+    });
+  });
 });

@@ -187,14 +187,17 @@ function _validateCharSpace(options) {
  * @throws {TypeError} If no page is active.
  */
 function _initOptions(self, x = {}, y, options = {}) {
+  // the columns of a known layout; an unknown layout is ignored
+  const layout = (typeof x === "object" ? x : options).layout;
+  const columns = layout ? self._layouts?.[layout] : undefined;
   // This allows user to skip providing x/y coordinates
   if (typeof x === "object") {
     options = x;
     self._textOptions = self._textOptions || { textBox: {} };
     self._flow = options.flow === undefined ? true : options.flow;
 
-    if (options.layout) {
-      self._columns = self._layouts[options.layout];
+    if (columns) {
+      self._columns = columns;
       self.x = self._columns[0].x;
       self.y = self._columns[0].y;
       self.box = { x: self.x, y: self.y };
@@ -204,7 +207,7 @@ function _initOptions(self, x = {}, y, options = {}) {
     // The following only happens when 'text' is called
     // for the first time without any position coordinates.
     if (self.box === undefined) {
-      if (!options.layout) {
+      if (!columns) {
         self.x = self._margin.left;
         self.y = self._margin.top;
       }
@@ -223,8 +226,8 @@ function _initOptions(self, x = {}, y, options = {}) {
     clearTextFlow(self);
     self._flow = options.flow || false;
 
-    if (options.layout) {
-      self._columns = self._layouts[options.layout];
+    if (columns) {
+      self._columns = columns;
 
       // Only tinker with the column coordinates when the incoming
       // [x,y] coordinates differ from the first layout element.
@@ -249,8 +252,8 @@ function _initOptions(self, x = {}, y, options = {}) {
     );
   }
 
-  if (options.layout) {
-    self._columns = self._layouts[options.layout];
+  if (columns) {
+    self._columns = columns;
     mergedOpts.textBox.width = self._columns[0].width;
     mergedOpts.textBox.height = self._columns[0].height;
   }

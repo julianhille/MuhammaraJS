@@ -226,6 +226,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   rest of the attribute is not drawn as text.
 - Recipe text after a flow that ends with a closed HTML block element, such as
   `</p>`, starts on a new line, as native does.
+- Recipe `createPage()`, `setPageBox()`, `rotateContent()`, `rectangle()` and
+  `circle()` throw for missing or non-finite values instead of writing `nan`
+  into the PDF. `insertPage()` throws for a source page that does not exist
+  instead of inserting another, as native does. `createPage()` with a
+  negative size throws a `RangeError` instead of an internal operation error.
 
 ### Changed
 
@@ -243,6 +248,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   markup it cannot recover is drawn as its text.
 - Recipe `textBox.wrap: "trim"` drops a first word wider than the box, as
   native does, instead of drawing it past the box edge.
+- Recipe `insertPage()` of bytes that are no PDF fails at `endPDF()` with
+  `Unable to create PDF copying context`, as native words it, instead of
+  `Unable to parse PDF`.
 
 ## [1.2.0] - 2026-10-12
 

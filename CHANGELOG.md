@@ -267,6 +267,11 @@ undefined`.
   throwing `code.startsWith is not a function`.
 - Recipe `insertPage()` keeps the PDF version of the document instead of
   writing PDF 1.4.
+- Recipe colors that are not hex, such as `#zzzzzz`, draw in the default
+  color, and `text()` ignores an unknown `layout`, instead of throwing a
+  `TypeError`.
+- Recipe `textDimensions()` measures a number or other value as text, as
+  `text()` draws it, instead of throwing a `TypeError`.
 
 ### Changed
 
@@ -284,6 +289,8 @@ undefined`.
   read into memory and the output written at `endPDF()`.
 - Recipe annotation dates (`/M`) are written in UTC, and link rectangles with
   a negative size in normal order, as in `@muhammara/wasm`.
+- Recipe `chroma()` throws a `TypeError`, still an `Error`, for a color value
+  of the wrong length.
 
 ## [7.2.0] - 2026-10-12
 

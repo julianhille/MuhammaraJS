@@ -403,4 +403,24 @@ describeEnds("Recipe layout", function (end) {
     var c = textRuns(end, bytes).find((run) => run.text === "c");
     assert.ok(Math.abs(c.x - 10) < 0.01 && c.y < 300 - 100, JSON.stringify(c));
   });
+
+  it("ignores an unknown layout", function () {
+    /**
+     * Draw "a" at the margins and "b" at 10, 50.
+     * @param {object} [options] - The text options.
+     * @returns {Uint8Array} The PDF.
+     */
+    function draw(options) {
+      return end
+        .newRecipe()
+        .createPage(200, 200)
+        .text("a", options)
+        .text("b", 10, 50, options)
+        .endPage()
+        .endPDF();
+    }
+    var bytes = draw({ layout: "nope" });
+    writeOutput(end, "layout-unknown", bytes);
+    assert.deepEqual(textRuns(end, bytes), textRuns(end, draw({})));
+  });
 });

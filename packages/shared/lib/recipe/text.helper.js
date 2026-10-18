@@ -456,7 +456,7 @@ export const _getTextBoxOffset = function _getTextBoxOffset(
  * @name textDimensions
  * @function
  * @memberof Recipe#
- * @param {string} text - text to be measured
+ * @param {string} text - text to be measured; other values are measured as text, as text() draws them
  * @param {Object} [options] - The options
  * @param {string} [options.font='helvetica'] - name of font from which measurements are to be taken
  * @param {number} [options.size=14] - size of font to be used in taking measurements
@@ -471,6 +471,7 @@ export const _getTextBoxOffset = function _getTextBoxOffset(
  * @throws {TypeError} If `options.direction` is not a `Recipe.TextDirection` value.
  */
 export const textDimensions = function textDimensions(text, options = {}) {
+  if (!Array.isArray(text)) text = String(text);
   // null options act like omitted options.
   if (options === null) options = {};
   // Measured as drawn, in visual order.

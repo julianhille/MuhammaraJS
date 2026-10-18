@@ -805,4 +805,10 @@ describeEnds("Recipe text", function (end) {
     writeOutput(end, "text-string-size", bytes);
     assert.match(drawnContent(end, bytes), /\b12 Tf\b/);
   });
+
+  it("measures a number as the text text() draws for it", function () {
+    var recipe = end.newRecipe().createPage(200, 200);
+    assert.deepEqual(recipe.textDimensions(123), recipe.textDimensions("123"));
+    recipe.endPage().endPDF();
+  });
 });

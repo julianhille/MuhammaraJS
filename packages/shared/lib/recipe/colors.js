@@ -109,7 +109,7 @@ export const chroma = function chroma(name, value, colorspace = "") {
       // Only deal with valid hex codes from the
       // device colorspaces gray, rgb, and cmyk.
       if (![2, 6, 8].includes(value.toString().length)) {
-        throw new Error(
+        throw new TypeError(
           "Color value has incorrect size for gray, rgb, or cmyk colorspaces",
         );
       }
@@ -439,9 +439,11 @@ export const _transformColor = function _transformColor(code = "", opt = {}) {
   }
 
   // Suppply default color:
+  //  when the color code is not hex, or
   //  when colorspace is given and given color code does not have appropriate length, or
   //  when colorspace is missing, verify allowable hex value sizes for rgb, cmyk, or gray.
   if (
+    /[^\da-f]/i.test(code) ||
     ([Colorspace.RGB, Colorspace.CMYK, Colorspace.GRAY].includes(colorspace) &&
       code.length != defaultColor.length) ||
     ![2, 6, 8].includes(code.toString().length)

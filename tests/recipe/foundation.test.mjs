@@ -143,6 +143,22 @@ describeEnds("Recipe foundation", function (end) {
     assert.deepEqual(pageGeometry(end, bytes).crop, [0, 0, 612, 792]);
   });
 
+  // Native writes such values as nan, as it always has; Wasm throws.
+  it("keeps each end's handling of non-finite page values", function () {
+    var recipe = end.newRecipe();
+    if (end.name === "native") {
+      assert.doesNotThrow(() => recipe.createPage(NaN, 10).endPage());
+      assert.doesNotThrow(() =>
+        recipe.createPage(100, 100).rotateContent("x").endPage(),
+      );
+    } else {
+      assert.throws(() => recipe.createPage(NaN, 10), { name: "RangeError" });
+      assert.throws(() => recipe.createPage(100, 100).rotateContent("x"), {
+        name: "TypeError",
+      });
+    }
+  });
+
   it("writes canonical versions and the Recipe producer, and finishes once", function () {
     var recipe = end
       .newRecipe({ version: 2.0, compress: false })
