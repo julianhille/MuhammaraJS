@@ -64,28 +64,27 @@ is only how each end takes and hands over its input and output.
 
 Where the two Recipes behaved differently before they became one, each end
 keeps its own behavior until a major release unifies it. Each platform turns
-it on with a flag in `native-core/lib/Recipe.js` or `wasm/lib/recipe.js`.
+it on with a flag or an override in `native-core/lib/Recipe.js` or
+`wasm/lib/recipe.js`.
 
-| Behavior                                  | Native                                                       | WebAssembly                                                                      |
-| ----------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| `text()` without an active page           | draws nothing and returns the Recipe                         | throws `Error: A page is required for coordinates`                               |
-| Drawing without an active page            | `TypeError: No page is active; …`                            | `Error: A page is required for coordinates`                                      |
-| A `font` that is not registered           | draws in Helvetica                                           | throws `Unknown font: <name>`                                                    |
-| A missing bold or italic face             | Helvetica's face of that style                               | the family's regular face                                                        |
-| `split()`                                 | splits the source PDF                                        | finishes the Recipe and splits what it produced                                  |
-| `htmlToTextObjects()`                     | the nested layout tree                                       | flat styled runs                                                                 |
-| `pageInfo()`                              | `{ width, height, rotate, pageNumber }`; unknown page throws | the page record with media box, layout, size and offsets; unknown page is `null` |
-| `image()` with `index`                    | ignored                                                      | throws a `TypeError` pointing to `page`                                          |
-| `endPDF(callback)` returns                | the callback's result                                        | the PDF bytes                                                                    |
-| `editPage()` on a new PDF                 | `…constructed from an existing PDF`                          | `…constructed from PDF bytes`                                                    |
-| `editPage()` of a missing page            | `TypeError: context not created, …`                          | `RangeError: pageNumber must identify an existing page`                          |
-| `metadata` of a new PDF                   | `{ pageCount }`, counting the pages created                  | `undefined`                                                                      |
-| Writer log                                | writes `muhammara-error.log`, as before                      | none                                                                             |
-| `Recipe.prototype.Column`, `Line`, `Word` | present                                                      | absent                                                                           |
-
-Editing a password-protected source opens it with `password` on native; the
-Wasm modifier cannot open one yet, so decrypt it with
-`recrypt(bytes, { password })` first.
+| Behavior                                  | Native                                                                             | WebAssembly                                                                                             |
+| ----------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `text()` without an active page           | draws nothing and returns the Recipe                                               | throws `Error: A page is required for coordinates`                                                      |
+| Drawing without an active page            | `TypeError: No page is active; …`                                                  | `Error: A page is required for coordinates`                                                             |
+| A `font` that is not registered           | draws in Helvetica                                                                 | throws `Unknown font: <name>`                                                                           |
+| A missing bold or italic face             | Helvetica's face of that style                                                     | the family's regular face                                                                               |
+| `split()`                                 | splits the source PDF                                                              | finishes the Recipe and splits what it produced                                                         |
+| `htmlToTextObjects()`                     | the nested layout tree                                                             | flat styled runs                                                                                        |
+| `pageInfo()`                              | `{ width, height, rotate, pageNumber }`; unknown page throws                       | the page record with media box, layout, size and offsets; unknown page is `null`                        |
+| `image()` with `index`                    | ignored                                                                            | throws a `TypeError` pointing to `page`                                                                 |
+| `endPDF(callback)` returns                | the callback's result                                                              | the PDF bytes                                                                                           |
+| `editPage()` on a new PDF                 | `…constructed from an existing PDF`                                                | `…constructed from PDF bytes`                                                                           |
+| `editPage()` of a missing page            | `TypeError: context not created, …`                                                | `RangeError: pageNumber must identify an existing page`                                                 |
+| `metadata` of a new PDF                   | `{ pageCount }`, counting the pages created                                        | `undefined`                                                                                             |
+| Writer log                                | writes `muhammara-error.log`, as before                                            | none                                                                                                    |
+| `Recipe.prototype.Column`, `Line`, `Word` | present                                                                            | absent                                                                                                  |
+| `image()` of an unknown source            | `Unknown image: expected an image path, …`                                         | `Unknown image: expected a registered name, …`                                                          |
+| `register()` errors                       | throws strings: `Cannot register unnamed…`, `Found conflict in Recipe prototypes…` | `TypeError: Register requires a named callback function`, `Error: Recipe method already exists: <name>` |
 
 bidi-js, which the `direction` option reorders right-to-left text with, is a
 dependency of the native packages and bundled into the Wasm build. Wasm still

@@ -220,6 +220,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Recipe `createPage()` on a source PDF keeps its size instead of A4.
 - Recipe `encrypt({})` keeps the constructor passwords of a new PDF instead
   of writing it unencrypted, as native does.
+- A Recipe link on text starts where the text starts instead of at its first
+  glyph, as native does.
+- A `>` inside a quoted Recipe HTML attribute no longer ends the tag, so the
+  rest of the attribute is not drawn as text.
+- Recipe text after a flow that ends with a closed HTML block element, such as
+  `</p>`, starts on a new line, as native does.
 
 ### Changed
 
@@ -235,6 +241,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   version, RC4-128 for PDF 1.4.
 - Recipe `text()` and `table()` with `html` read HTML with native's parser;
   markup it cannot recover is drawn as its text.
+- Recipe `textBox.wrap: "trim"` drops a first word wider than the box, as
+  native does, instead of drawing it past the box edge.
 
 ## [1.2.0] - 2026-10-12
 
