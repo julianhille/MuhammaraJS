@@ -8,6 +8,7 @@ describeEnd("wasm", "Recipe prototype", function (end) {
     assert.deepEqual(Object.getOwnPropertyNames(end.Recipe.prototype).sort(), [
       "constructor",
       "dispose",
+      "getPageInfo",
       "htmlToTextObjects",
       "metadata",
       "muhammara",

@@ -27,6 +27,18 @@ describeEnds("Recipe info", function (end) {
     );
   });
 
+  // Each end returns for a new PDF what it always has.
+  it("returns the Info of a new PDF from getPageInfo()", function () {
+    var recipe = end.newRecipe({ title: "T" });
+    var info = recipe.getPageInfo();
+    if (end.name === "wasm") {
+      assert.equal(JSON.stringify(info), '{"title":"T"}');
+    } else {
+      assert.equal(typeof info.addAdditionalInfoEntry, "function");
+    }
+    recipe.endPDF();
+  });
+
   it("writes the Info of an edited source, which a new Recipe reads back", function () {
     var bytes = end
       .openRecipe("recipe/blank.pdf")

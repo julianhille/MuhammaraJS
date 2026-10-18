@@ -521,6 +521,22 @@ export function createRecipeFactory({
       return this;
     },
     /**
+     * Returns the document information dictionary without changing page state.
+     * This method reports PDF metadata, not Recipe-coordinate page geometry;
+     * use `pageInfo()` or `getCurrentPageInfo()` for geometry.
+     * For a new PDF it returns the `info()` record, as Wasm always has.
+     *
+     * @name getPageInfo
+     * @function
+     * @memberof Recipe#
+     * @returns {Record<string, unknown>|InfoDictionary} The current document information dictionary.
+     */
+    getPageInfo() {
+      return this.isNewPDF
+        ? this.info()
+        : this.writer.getDocumentContext().getInfoDictionary();
+    },
+    /**
      * Converts supported HTML into styled text fragments. Ordered and
      * unordered list fragments include their visual prefix and native-style
      * indentation. Unlike native's nested XML-derived layout tree, Wasm
