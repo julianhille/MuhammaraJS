@@ -737,8 +737,8 @@ export interface Recipe {
   getPageInfo(): Record<string, unknown> | InfoDictionary;
   /** Returns geometry for the current Recipe page. */
   getCurrentPageInfo(): RecipePageInfo | null;
-  /** Inspects PDF metadata without changing this Recipe's output state. Blob/File input requires readAsync. */
-  read(source: ByteSource): RecipeMetadata;
+  /** Inspects PDF metadata without changing this Recipe's output state: the source, other PDF bytes or a registered PDF name. Blob/File input requires readAsync. */
+  read(source?: ByteSource | string): RecipeMetadata;
   readAsync(source: AsyncByteSource): Promise<RecipeMetadata>;
   /** Starts a prepend-safe editing context for an existing one-based page number. */
   editPage(pageNumber: number): this;

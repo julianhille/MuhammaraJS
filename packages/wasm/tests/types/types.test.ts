@@ -814,6 +814,8 @@ async function usesLowLevelSurface() {
   byteRecipe.deletePage(1, { pruneReferences: "yes" });
   var asyncByteRecipe = new Recipe();
   var metadata: RecipeMetadata = await asyncByteRecipe.readAsync(sourceBlob);
+  var namedMetadata: RecipeMetadata = asyncByteRecipe.read("pdf");
+  namedMetadata.pages;
   metadata[1].width;
   asyncByteRecipe.editPage(1).endPage().endPDF();
   var structure = recipe.structure("json");

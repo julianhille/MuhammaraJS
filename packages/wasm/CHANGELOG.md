@@ -92,6 +92,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   annotations of appended, inserted and split pages are kept.
 - Recipe `appendPage()`, `insertPage()` and `overlay()` take PDF bytes as
   well as a registered name.
+- Recipe `read()` takes a registered PDF name, as `appendPage()` does; a name
+  that is not registered throws `Unknown PDF: <name>`.
 
 ### Fixed
 
@@ -231,6 +233,15 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   into the PDF. `insertPage()` throws for a source page that does not exist
   instead of inserting another, as native does. `createPage()` with a
   negative size throws a `RangeError` instead of an internal operation error.
+- Recipe HTML keeps the text after a `<` that starts no tag, such as
+  `a < b and c`, instead of dropping it.
+- Recipe `createPage()` takes numeric strings such as `"100"`, as native does,
+  instead of drawing a Letter page.
+- Recipe `overlay()` without a page throws
+  `A page is required for coordinates`, and `appendPage()`, `insertPage()`
+  and `overlay()` of a registered PDF that needs a password throw
+  `Unable to read/edit PDF file (pages=0)` or
+  `Unable to create PDF copying context`, instead of an internal error.
 
 ### Changed
 
@@ -245,12 +256,20 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   does, instead of writing PDF 1.7; `encrypt()` picks the cipher of that
   version, RC4-128 for PDF 1.4.
 - Recipe `text()` and `table()` with `html` read HTML with native's parser;
-  markup it cannot recover is drawn as its text.
+  markup it cannot recover is drawn as its text, an unclosed comment runs to
+  the end as in browsers, and `<script>` content is drawn as text.
 - Recipe `textBox.wrap: "trim"` drops a first word wider than the box, as
   native does, instead of drawing it past the box edge.
 - Recipe `insertPage()` of bytes that are no PDF fails at `endPDF()` with
   `Unable to create PDF copying context`, as native words it, instead of
   `Unable to parse PDF`.
+- Recipe `getPageInfo()` of an edited source shows `info()` changes after
+  `endPDF()`, as native does.
+- Recipe `chroma()` accepts a non-hex value of a valid length, as native does;
+  it draws in the default color.
+- Recipe `lineWidth(0)` draws the thinnest line, as native does, instead of a
+  2-point line, and a negative `lineWidth` option of a shape draws 1 point
+  wide instead of 2.
 
 ## [1.2.0] - 2026-10-12
 

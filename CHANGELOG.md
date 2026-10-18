@@ -272,6 +272,12 @@ undefined`.
   `TypeError`.
 - Recipe `textDimensions()` measures a number or other value as text, as
   `text()` draws it, instead of throwing a `TypeError`.
+- Recipe `text(null)` draws `null`, as `textDimensions(null)` measures it,
+  instead of throwing `Cannot read properties of undefined (reading 'lineWidth')`.
+- Recipe `createPage()` with numeric strings records the page size as
+  numbers, so `pageInfo()` and the page layout are right.
+- Recipe `lineWidth()` and `lineStyle()` ignore a negative width instead of
+  writing it into the PDF, which does not allow one.
 
 ### Changed
 
@@ -291,6 +297,9 @@ undefined`.
   a negative size in normal order, as in `@muhammara/wasm`.
 - Recipe `chroma()` throws a `TypeError`, still an `Error`, for a color value
   of the wrong length.
+- Recipe `appendPage()` of a PDF that needs a password throws
+  `TypeError: HummusJS: Unable to read/edit PDF file (pages=0)` instead of
+  `TypeError: unable to create copying context…`.
 
 ## [7.2.0] - 2026-10-12
 
