@@ -624,7 +624,10 @@ describeEnds("Recipe deletePage", function (end) {
     var other = pdfSource(end, "deletePage-composition-source", source);
 
     var missing = end.openRecipe(source);
-    assert.throws(() => missing.appendPage("deletePage-missing.pdf"));
+    assert.throws(
+      () => missing.appendPage("deletePage-missing.pdf"),
+      /Unable to start parsing PDF file|Unknown PDF/,
+    );
     assert.doesNotThrow(() => missing.deletePage(1));
     missing.endPDF();
 

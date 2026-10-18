@@ -200,8 +200,10 @@ describeEnd("wasm", "Recipe foundation", function (end) {
     };
     try {
       // the info options are applied after the writer exists
-      assert.throws(() =>
-        end.openRecipe("recipe/test2.pdf", { title: Object.create(null) }),
+      assert.throws(
+        () =>
+          end.openRecipe("recipe/test2.pdf", { title: Object.create(null) }),
+        TypeError,
       );
     } finally {
       platform.modifyWriter = modifyWriter;

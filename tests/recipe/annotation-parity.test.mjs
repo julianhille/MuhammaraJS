@@ -440,7 +440,7 @@ describeEnds("Recipe annotation parity", function (end) {
     var recipe = end.newRecipe().createPage(595, 842).endPage();
     assert.throws(function () {
       recipe.link("https://invalid.test", 50, 100, 80, 12);
-    });
+    }, /No page is active|A page is required/);
     recipe.createPage(595, 842).link("https://valid.test", 50, 100, 80, 12);
     var { bytes } = finish(this.test, recipe);
     assert.equal(hasAnnots(end, bytes, 0), false);
@@ -783,7 +783,7 @@ describeEnds("Recipe annotation parity", function (end) {
       [42, "https://example.test/✓"].forEach(function (url) {
         assert.throws(function () {
           recipe.link(url, 50, 80, 80, 12);
-        });
+        }, /URL link requires|attach (URL )?link/i);
       });
       recipe.link(encodeURI("https://example.test/✓"), 50, 110, 80, 12);
       var { bytes, annotations } = finish(this.test, recipe);
