@@ -993,4 +993,15 @@ describeEnds("Recipe table", function (end) {
     // [3] pads every side by 3; merging entries would keep the 10pt bottom.
     assert.deepEqual(cursor, [20, 36]);
   });
+
+  it("throws the end's no-page error without an active page", function () {
+    var recipe = end.newRecipe();
+    assert.throws(
+      () => recipe.table(10, 10, [{ name: "a" }]),
+      end.name === "wasm"
+        ? { name: "Error", message: "A page is required for coordinates" }
+        : { name: "TypeError", message: /No page is active/ },
+    );
+    recipe.endPDF();
+  });
 });

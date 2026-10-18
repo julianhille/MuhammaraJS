@@ -15,11 +15,11 @@ import * as utils from "./utils.js";
  */
 export const split = function split(outputDir = "", prefix) {
   prefix = prefix || this.filename;
-  for (let i = 0; i < this.metadata.pages; i++) {
+  for (let i = 0; i < this._metadata.pages; i++) {
     const output = this.platform.newWriter({});
     utils.appendPDFPageFromPDFWithAnnotations(
       output.writer,
-      this.platform.readerSource(this.src),
+      this.platform.readerSource(this._source),
       i,
     );
     this.platform.saveSplit(

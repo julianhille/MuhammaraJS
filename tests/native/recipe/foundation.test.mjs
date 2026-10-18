@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describeEnd } from "../../support/ends.mjs";
+import { describeEnd, fixture } from "../../support/ends.mjs";
 
 describeEnd("native", "Recipe foundation", function (end) {
   it("returns the callback result from endPDF()", function () {
@@ -16,5 +16,27 @@ describeEnd("native", "Recipe foundation", function (end) {
       recipe.endPDF((bytes) => bytes),
       callbackBytes,
     );
+  });
+
+  it("keeps the instance state of path and Buffer sources", function () {
+    var source = fixture("Original.pdf");
+    var output = fixture(
+      "../../../../tests/output/native/foundation-state.pdf",
+    );
+    var recipe = new end.Recipe(source, output);
+    assert.equal(recipe.src, source);
+    assert.equal(recipe.output, output);
+    assert.equal(recipe.isBufferSrc, false);
+    assert.equal(recipe.outStream, undefined);
+    assert.equal(recipe.logFile, "muhammara-error.log");
+    recipe.endPDF();
+    var buffer = Buffer.from("new");
+    recipe = new end.Recipe(buffer);
+    assert.strictEqual(recipe.src, buffer);
+    assert.equal(recipe.output, undefined);
+    assert.equal(recipe.isBufferSrc, true);
+    var bytes = recipe.createPage(100, 100).endPage().endPDF();
+    assert.strictEqual(recipe.outStream.buffer, bytes);
+    assert.equal(recipe.metadata.pageCount, 1);
   });
 });

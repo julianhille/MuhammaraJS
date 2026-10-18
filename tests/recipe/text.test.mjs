@@ -794,4 +794,15 @@ describeEnds("Recipe text", function (end) {
       .text("boxed", 10, 20, { textBox: { width: 100, style: caller } });
     assert.equal(caller.borderRadius, true, "the caller's style is unchanged");
   });
+
+  it("takes a numeric string as the font size", function () {
+    var bytes = end
+      .newRecipe({ compress: false })
+      .createPage(200, 200)
+      .text("a", 10, 10, { size: "12" })
+      .endPage()
+      .endPDF();
+    writeOutput(end, "text-string-size", bytes);
+    assert.match(drawnContent(end, bytes), /\b12 Tf\b/);
+  });
 });

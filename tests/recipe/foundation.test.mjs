@@ -260,7 +260,15 @@ describeEnds("Recipe foundation", function (end) {
     writeOutput(end, "foundation-edit-lifecycle-source", source);
     recipe = end.openRecipe(source);
     // A page the source does not have throws, in each end's own words.
-    assert.throws(() => recipe.editPage(2));
+    assert.throws(
+      () => recipe.editPage(2),
+      end.name === "wasm"
+        ? {
+            name: "RangeError",
+            message: /pageNumber must identify an existing page/,
+          }
+        : { name: "TypeError", message: /context not created/ },
+    );
     recipe = end.openRecipe(source);
     recipe.editPage(1);
     assert.throws(() => recipe.editPage(1), {

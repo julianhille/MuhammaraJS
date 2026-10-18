@@ -475,4 +475,17 @@ describeEnds("Coloring", function (end) {
       );
     });
   });
+
+  it("draws a numeric color in the default color", function () {
+    var draw = (options) =>
+      end
+        .newRecipe()
+        .createPage(200, 200)
+        .text("a", 10, 10, options)
+        .endPage()
+        .endPDF();
+    var bytes = draw({ color: 0xff0000 });
+    writeOutput(end, "coloring-numeric", bytes);
+    assert.deepEqual(textColors(end, bytes), textColors(end, draw({})));
+  });
 });

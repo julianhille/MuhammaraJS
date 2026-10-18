@@ -61,4 +61,30 @@ describeEnd("native", "Recipe create", function (end) {
     assert.deepEqual(reopened.getCurrentPageInfo(), reopened.pageInfo(pages));
     reopened.endPDF();
   });
+
+  it("rejects a missing source or output directory at construction", function () {
+    var missing = path.join(OUTPUT, "missing-directory", "x.pdf");
+    assert.throws(() => new end.Recipe("new", missing), {
+      name: "TypeError",
+      message:
+        "Unable to create PDF file, make sure that output file target is available",
+    });
+    assert.throws(() => new end.Recipe(fixture("Original.pdf"), missing), {
+      name: "Error",
+      message:
+        "TypeError: Unable to modify PDF file, make sure that output file target is available and that it is not protected",
+    });
+    assert.throws(
+      () => new end.Recipe(path.join(OUTPUT, "missing.pdf"), outputPath("x")),
+      { name: "Error", message: "TypeError: Unable to start parsing PDF file" },
+    );
+  });
+
+  it("creates the output file of a path Recipe at construction", function () {
+    var output = outputPath("create-output-early");
+    var recipe = new end.Recipe("new", output);
+    assert.ok(existsSync(output));
+    recipe.createPage(100, 100).endPage().endPDF();
+    assert.equal(pageCount(end, readFileSync(output)), 1);
+  });
 });

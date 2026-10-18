@@ -244,6 +244,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Info entries of the PDF they encrypt.
 - Recipe `image()` reports `Unknown image` for a page or frame the image does
   not have.
+- Recipe `position` without an active page is the last position of the
+  previous page, or `{ x: 0, y: 0 }` before the first page, instead of
+  throwing.
+- Recipe `lineStyle()` and `lineWidth()` before the first page set the style
+  of the next drawing instead of throwing `Cannot read properties of
+undefined`.
+- Recipe `comment()` and `annot()` without an active page throw
+  `Annotations require an active page` at the call, and `table()` throws
+  `No page is active`, instead of failing later with an internal error.
+- Recipe text takes a numeric string `size`, such as `"12"`, and a `color`
+  that is neither a string nor an array draws in the default color instead of
+  throwing `code.startsWith is not a function`.
 
 ### Changed
 

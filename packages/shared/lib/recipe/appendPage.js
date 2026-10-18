@@ -64,12 +64,12 @@ export const appendPage = function appendPage(pdfSrc, pages = []) {
         Array.from({ length: end - start + 1 }, (_, i) => start + i),
       )
     : Array.from({ length: pageCount }, (_, i) => i);
-  this.metadata = this.metadata || {};
+  this._metadata = this._metadata || {};
   appended.forEach((index) => {
     const pageNumber =
-      (this.metadata.pageCount ?? this.metadata.pages ?? 0) + 1;
-    this.metadata.pageCount = pageNumber;
-    this.metadata[pageNumber] = { ...sourcePages[index + 1], pageNumber };
+      (this._metadata.pageCount ?? this._metadata.pages ?? 0) + 1;
+    this._metadata.pageCount = pageNumber;
+    this._metadata[pageNumber] = { ...sourcePages[index + 1], pageNumber };
   });
   this.pagesAppended = true;
   return this;

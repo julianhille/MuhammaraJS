@@ -245,7 +245,7 @@ function _initOptions(self, x = {}, y, options = {}) {
   if (self._flow && mergedOpts.textBox.width === undefined) {
     mergedOpts.textBox.width = Math.max(
       0,
-      self.metadata[self.pageNumber].width - self.x - self._margin.right,
+      self._metadata[self.pageNumber].width - self.x - self._margin.right,
     );
   }
 

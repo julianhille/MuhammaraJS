@@ -79,4 +79,13 @@ describeEnds("Recipe coordinates", function (end) {
     );
     assert.deepEqual(position, { x: 70, y: 80 });
   });
+
+  it("reports a position without an active page", function () {
+    var recipe = end.newRecipe();
+    assert.deepEqual(recipe.position, { x: 0, y: 0 });
+    recipe.createPage(200, 200).moveTo(30, 40).endPage();
+    // The last position of the previous page.
+    assert.deepEqual(recipe.position, { x: 30, y: 40 });
+    recipe.endPDF();
+  });
 });

@@ -83,7 +83,6 @@ function createNativePlatform(muhammara) {
     fontFallsBackToDefault: true,
     textWithoutPageThrows: false,
     rejectsImageIndex: false,
-    unknownPageInfoIsNull: false,
     pageInfoIsRecord: false,
     sourceName: "an existing PDF",
     noPageError: () =>
@@ -98,7 +97,9 @@ function createNativePlatform(muhammara) {
      * @returns {Object} The source bytes (null for a new PDF), the output, the
      *   options and the source file name.
      * @throws {TypeError} If the source is not a string, Buffer, Uint8Array or
-     *   ArrayBuffer.
+     *   ArrayBuffer, or the output file of a new PDF cannot be created.
+     * @throws {Error} If a source path cannot be read, or its output file
+     *   cannot be written.
      */
     openArguments([src, output, options = {}]) {
       src = toRecipeSource(src);
@@ -106,14 +107,36 @@ function createNativePlatform(muhammara) {
       const isNew = isBuffer
         ? src.equals(Buffer.from(Source.NEW))
         : String(src).toLowerCase() === Source.NEW;
-      let source = null;
-      if (!isNew) source = isBuffer ? src : fs.readFileSync(src);
+      let source = isNew ? null : src;
+      if (!isBuffer) {
+        // Fail at construction, in the words of the addon, as Recipe did
+        // when it opened the files there.
+        if (!isNew) {
+          try {
+            source = fs.readFileSync(src);
+          } catch {
+            throw new Error("TypeError: Unable to start parsing PDF file");
+          }
+        }
+        try {
+          // "a" creates a missing file and never truncates the source.
+          fs.closeSync(fs.openSync(output || src, "a"));
+        } catch {
+          throw isNew
+            ? new TypeError(
+                "Unable to create PDF file, make sure that output file target is available",
+              )
+            : new Error(
+                "TypeError: Unable to modify PDF file, make sure that output file target is available and that it is not protected",
+              );
+        }
+      }
       return {
         source,
         // A path source writes its output file, by default the source itself.
         output: isBuffer
-          ? { path: output, buffer: true, log: LOG_FILE }
-          : { path: output || src, log: isNew ? undefined : LOG_FILE },
+          ? { src, path: output, buffer: true, log: LOG_FILE }
+          : { src, path: output || src, log: isNew ? undefined : LOG_FILE },
         options,
         name: isBuffer ? undefined : path.basename(src),
       };
@@ -128,7 +151,7 @@ function createNativePlatform(muhammara) {
      *   output path when it has one, and nothing for a path source.
      */
     deliver(recipe, bytes) {
-      const { path: outputPath, buffer } = recipe.output;
+      const { path: outputPath, buffer } = recipe._target;
       if (outputPath) {
         fs.writeFileSync(outputPath, bytes);
         return buffer ? outputPath : undefined;
@@ -152,14 +175,14 @@ function createNativePlatform(muhammara) {
     },
 
     newWriter(options, recipe) {
-      const log = recipe?.output.log;
+      const log = recipe?._target.log;
       return bufferedWriter((stream) =>
         muhammara.createWriter(stream, log ? { ...options, log } : options),
       );
     },
 
     modifyWriter(bytes, options, recipe) {
-      const log = recipe?.output.log;
+      const log = recipe?._target.log;
       return bufferedWriter((stream) =>
         muhammara.createWriterToModify(
           new muhammara.PDFRStreamForBuffer(asBuffer(bytes)),
@@ -276,6 +299,35 @@ function createRecipe(muhammara) {
   });
   // The text layout classes native Recipe has always exposed.
   Object.assign(Recipe.prototype, { Column, Line, Word });
+  // The instance state native Recipe has always exposed, read-only.
+  Object.defineProperties(
+    Recipe.prototype,
+    Object.getOwnPropertyDescriptors({
+      /** @returns {string|Buffer} The source as given: a path or a Buffer. */
+      get src() {
+        return this._target.src;
+      },
+      /** @returns {string|undefined} The output path. */
+      get output() {
+        return this._target.path;
+      },
+      /** @returns {boolean} Whether the source is a Buffer. */
+      get isBufferSrc() {
+        return this._target.buffer === true;
+      },
+      /** @returns {string} The error log the writers are given. */
+      get logFile() {
+        return LOG_FILE;
+      },
+      /**
+       * @returns {{buffer: Buffer}|undefined} For a Buffer source, the
+       *   finished PDF once endPDF() ran.
+       */
+      get outStream() {
+        return this._target.buffer ? { buffer: this.bytes_ } : undefined;
+      },
+    }),
+  );
   return Recipe;
 }
 

@@ -70,8 +70,10 @@ function annotationDate(writer, value) {
  *   position, size, opacity, border, or `quadPoints` value is invalid.
  * @throws {Error} If a PDF/A document does not allow the subtype, flags,
  *   opacity or color, or an area without an appearance stream.
+ * @throws {Error} If no page is active.
  */
 export const comment = function comment(text = "", x, y, options = {}) {
+  if (!this.pageNumber) throw new Error("Annotations require an active page");
   this._validateAnnot(options, AnnotSubtype.TEXT);
   validateAnnotationPosition(x, y, options);
   this.annotationsToWrite.push({
@@ -138,7 +140,7 @@ function linkPdf(recipe, url, left, bottom, width, height) {
     // and the link must cover the turned drawing. A negative width or height
     // covers the same area; the /Rect is written lower-left corner first.
     // Only an edited page's drawing is turned by its rotation.
-    const page = recipe.editingPage && recipe.metadata?.[recipe.pageNumber];
+    const page = recipe.editingPage && recipe._metadata?.[recipe.pageNumber];
     const matrix = page ? pageRotationMatrix(page) : null;
     const corners = [
       [left, bottom],
@@ -217,6 +219,7 @@ export { linkPdf };
  *   position, size, opacity, border, or `quadPoints` value is invalid.
  * @throws {Error} If a PDF/A document does not allow the subtype, flags,
  *   opacity or color, or an area without an appearance stream.
+ * @throws {Error} If no page is active.
  */
 export const annot = function annot(
   x,
@@ -224,6 +227,7 @@ export const annot = function annot(
   subtype,
   options = { text: "", width: 0, height: 0 },
 ) {
+  if (!this.pageNumber) throw new Error("Annotations require an active page");
   const { width, height, replies } = options;
   const text = options.text || options.contents;
   this._validateAnnot(options, subtype);
@@ -269,7 +273,7 @@ export const _annot = function _annot(subtype, args = {}, pageNumber, ref) {
   const { x, y, width, height, options, reply } = args;
   let { text } = args;
   this._startDictionary(pageNumber);
-  const { rotate } = this.metadata[pageNumber];
+  const { rotate } = this._metadata[pageNumber];
   // (x, y) is the top-left corner, like rectangle() and link(): offset by the
   // height to reach the bottom-left corner that PDF rectangles start from.
   let { nx, ny } = this._calibrateCoordinateForAnnots(

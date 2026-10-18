@@ -78,6 +78,8 @@ it on with a flag in `native-core/lib/Recipe.js` or `wasm/lib/recipe.js`.
 | `image()` with `index`                    | ignored                                                      | throws a `TypeError` pointing to `page`                                          |
 | `endPDF(callback)` returns                | the callback's result                                        | the PDF bytes                                                                    |
 | `editPage()` on a new PDF                 | `…constructed from an existing PDF`                          | `…constructed from PDF bytes`                                                    |
+| `editPage()` of a missing page            | `TypeError: context not created, …`                          | `RangeError: pageNumber must identify an existing page`                          |
+| `metadata` of a new PDF                   | `{ pageCount }`, counting the pages created                  | `undefined`                                                                      |
 | Writer log                                | writes `muhammara-error.log`, as before                      | none                                                                             |
 | `Recipe.prototype.Column`, `Line`, `Word` | present                                                      | absent                                                                           |
 
@@ -85,9 +87,9 @@ Editing a password-protected source opens it with `password` on native; the
 Wasm modifier cannot open one yet, so decrypt it with
 `recrypt(bytes, { password })` first.
 
-bidi-js, which the `direction` option reorders right-to-left text with, is
-bundled on both ends. Wasm still accepts its former `loadBidi()` and `bidi`
-option, which change nothing.
+bidi-js, which the `direction` option reorders right-to-left text with, is a
+dependency of the native packages and bundled into the Wasm build. Wasm still
+accepts its former `loadBidi()` and `bidi` option, which change nothing.
 
 `Recipe.thirdPartyLicenses()` reads the notices embedded in
 `muhammara-wasm.wasm`, which bundlers copy without the package's other files.

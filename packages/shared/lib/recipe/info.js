@@ -258,7 +258,7 @@ export const _readInfo = function _readInfo() {
  */
 function openSourceReader(recipe) {
   const parser = recipe.muhammara.createReader(
-    recipe.platform.readerSource(recipe.src),
+    recipe.platform.readerSource(recipe._source),
   );
   if (parser.getPagesCount() > 0) return parser;
   parser.end();

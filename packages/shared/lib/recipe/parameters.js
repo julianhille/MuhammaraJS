@@ -66,7 +66,7 @@ export const mediumSizes = {
  */
 export const _setParameters = function _setParameters() {
   this.debug = false;
-  this.metadata = {
+  this._metadata = {
     pageCount: 0,
   };
 

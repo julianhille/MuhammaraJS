@@ -33,7 +33,7 @@ export const overlay = function overlay(pdfSrc, x = 0, y = 0, options = {}) {
   const scale = options.scale || 1;
 
   const { width: pageWidth, height: pageHeight } =
-    this.metadata[this.pageNumber];
+    this._metadata[this.pageNumber];
 
   const inMetadata = this.read(pdfSrc);
   const page =

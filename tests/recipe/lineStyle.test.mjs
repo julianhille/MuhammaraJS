@@ -87,4 +87,19 @@ describeEnds("Recipe lineStyle", function (end) {
     writeOutput(end, "lineStyle-width", bytes);
     assert.match(strokeBlock(drawnContent(end, bytes)), /\b5 w\b/);
   });
+
+  it("records a line style set before the first page", function () {
+    var bytes = end
+      .newRecipe()
+      .lineStyle({ width: 2 })
+      .createPage(100, 100)
+      .line([
+        [10, 10],
+        [90, 90],
+      ])
+      .endPage()
+      .endPDF();
+    writeOutput(end, "lineStyle-before-page", bytes);
+    assert.match(strokeBlock(drawnContent(end, bytes)), /\b2 w\b/);
+  });
 });

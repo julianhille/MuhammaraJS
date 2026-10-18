@@ -394,6 +394,9 @@ export const _transformColor = function _transformColor(code = "", opt = {}) {
 
   if (Array.isArray(code)) {
     code = arrayToHex(code);
+  } else if (typeof code !== "string") {
+    // any other value, such as a number, is a missing color
+    code = "";
   } else if (code.startsWith("#")) {
     code = code.replace("#", "");
   } else if (code.startsWith("%")) {

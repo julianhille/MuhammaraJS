@@ -80,10 +80,10 @@ class Recipe {
       options = {},
       name,
     } = this.platform.openArguments(args);
-    this.src = source;
+    this._source = source;
     this.filename = name;
     this.isNewPDF = source === null;
-    this.output = output;
+    this._target = output;
     this.encryptOptions = this._getEncryptOptions(options, this.isNewPDF);
     this.options = Object.assign({}, options, this.encryptOptions);
     this.current = {};
@@ -160,7 +160,7 @@ class Recipe {
       this.read();
       try {
         this._output = this.platform.modifyWriter(
-          this.src,
+          this._source,
           Object.assign(this._openOptions(), this._compression()),
           this,
         );
@@ -235,10 +235,12 @@ class Recipe {
 
   /**
    * The current drawing position in Recipe coordinates, where y grows downward
-   * from the top edge of the page.
+   * from the top edge of the page. Without an active page it is the last
+   * position of the previous page, or the origin before the first page.
    * @returns {{x: number, y: number}} The current position.
    */
   get position() {
+    if (!this.pageNumber) return { ...(this._endedPosition ?? { x: 0, y: 0 }) };
     const { ox, oy } = this._reverseCoordinate(
       this._position.x,
       this._position.y,
@@ -247,6 +249,15 @@ class Recipe {
       x: ox,
       y: oy,
     };
+  }
+
+  /**
+   * The page count and the geometry of each page, keyed by one-based page
+   * number, as `read()` returns them for the source.
+   * @returns {Object} The metadata.
+   */
+  get metadata() {
+    return this._metadata;
   }
 
   /**
@@ -264,7 +275,9 @@ class Recipe {
    */
   read(inSrc) {
     const isForExternal = inSrc ? true : false;
-    const src = this.platform.readerSource(isForExternal ? inSrc : this.src);
+    const src = this.platform.readerSource(
+      isForExternal ? inSrc : this._source,
+    );
     let pdfReader = null;
     let isAdopted = false;
     try {
@@ -323,7 +336,7 @@ class Recipe {
         this._releaseReader();
         this.sourceEncrypted_ = pdfReader.isEncrypted();
         this.pdfReader = pdfReader;
-        this.metadata = metadata;
+        this._metadata = metadata;
         this.sourcePageCount = pages;
         isAdopted = true;
       }
@@ -397,8 +410,8 @@ class Recipe {
     var deletingPages = Boolean(this.deletedPages?.size);
     var deletionState = deletingPages
       ? {
-          metadata: this.metadata,
-          metadataValues: { ...this.metadata },
+          metadata: this._metadata,
+          metadataValues: { ...this._metadata },
           annotations: this.annotations,
           annotationsToWrite: this.annotationsToWrite,
           deletedPages: this.deletedPages,
@@ -484,7 +497,7 @@ class Recipe {
           (key) => delete deletionState.metadata[key],
         );
         Object.assign(deletionState.metadata, deletionState.metadataValues);
-        this.metadata = deletionState.metadata;
+        this._metadata = deletionState.metadata;
         this.annotations = deletionState.annotations;
         this.annotationsToWrite = deletionState.annotationsToWrite;
         this.deletedPages = deletionState.deletedPages;
@@ -620,7 +633,10 @@ function loadPrototypes() {
 loadPrototypes();
 
 // Named values for string options, for example Recipe.AnnotSubtype.HIGHLIGHT.
-Object.assign(Recipe, recipeConstants, { PdfA });
+// A CommonJS build adds a `default` interop key to the namespace; it is no
+// constant.
+const { default: _interop, ...constants } = recipeConstants;
+Object.assign(Recipe, constants, { PdfA });
 
 const SharedRecipe = Recipe;
 
@@ -630,16 +646,17 @@ const SharedRecipe = Recipe;
  * own `register()`ed callbacks; the Recipe methods reach them through
  * `this.platform` and `this.muhammara`.
  * @param {Object} platform - The platform: its low-level API as `muhammara`
- *   and the I/O hooks described in platform.js.
- * @param {Object} [constants] - Platform constants added to the class.
+ *   and its I/O hooks; packages/native-core/lib/Recipe.js documents each.
+ * @param {Object} [platformConstants] - Platform constants added to the class.
  * @returns {Function} The Recipe class bound to that platform.
  * @private
  */
-function createRecipe(platform, constants = {}) {
+function createRecipe(platform, platformConstants = {}) {
   class Recipe extends SharedRecipe {}
   Recipe.prototype.platform = platform;
   Recipe.prototype.muhammara = platform.muhammara;
-  Object.assign(Recipe, recipeConstants, { PdfA }, constants);
+  // The shared constants are inherited statics.
+  Object.assign(Recipe, platformConstants);
   return Recipe;
 }
 

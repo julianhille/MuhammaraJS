@@ -141,7 +141,8 @@ function appendPDFPagesFromPDFWithAnnotations(
  * metrics, so they are reported as invalid input naming the option and the
  * value. Omitting both options, or passing `null` or `undefined`, selects the
  * fallback.
- * @param {Object} [options] - Options holding `size` or `fontSize`.
+ * @param {Object} [options] - Options holding `size` or `fontSize`, a number or
+ *   a numeric string.
  * @param {number} [fallback] - Size used when neither option is given.
  * @returns {number} The resolved font size in PDF points.
  * @throws {RangeError} If the given size is not a finite number greater than
@@ -159,7 +160,8 @@ function resolveFontSize(options = {}, fallback) {
       `Text ${name} must be a number greater than zero, received ${size}`,
     );
   }
-  return size;
+  // A numeric string, such as the value of a form input, is a size too.
+  return Number(size);
 }
 
 /**

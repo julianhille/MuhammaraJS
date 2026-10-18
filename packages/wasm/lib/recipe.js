@@ -109,12 +109,21 @@ export function createRecipeFactory({
        * @param {number} pageIndex - The zero-based page.
        * @param {boolean} [ensureContentEncapsulation] - Wrap existing content in q/Q.
        * @returns {object} The page modifier.
+       * @throws {RangeError} If the page does not exist, in the words Wasm
+       *   Recipe has always used.
        */
       PDFPageModifier: function (
         writer,
         pageIndex,
         ensureContentEncapsulation,
       ) {
+        if (
+          !Number.isInteger(pageIndex) ||
+          pageIndex < 0 ||
+          pageIndex >= writer.getModifiedFileParser().getPagesCount()
+        ) {
+          throw new RangeError("pageNumber must identify an existing page");
+        }
         return writer.createPageModifier(pageIndex, ensureContentEncapsulation);
       },
     }),
@@ -125,7 +134,6 @@ export function createRecipeFactory({
     fontFallsBackToDefault: false,
     textWithoutPageThrows: true,
     rejectsImageIndex: true,
-    unknownPageInfoIsNull: true,
     pageInfoIsRecord: true,
     sourceName: "PDF bytes",
     noPageError: () => new Error("A page is required for coordinates"),
@@ -159,8 +167,19 @@ export function createRecipeFactory({
     // endPDF(callback) returns the bytes, as typed since 1.0.
     endPDFReturnsResult: true,
 
+    /**
+     * What the reader and copying APIs accept for a PDF: bytes, read from a
+     * registered asset for a name.
+     * @param {string|Uint8Array} source - A registered name or bytes.
+     * @returns {Uint8Array} The bytes.
+     * @throws {Error} If `source` names no registered PDF or image.
+     */
     readerSource(source) {
-      return typeof source === "string" ? assetBytes(source) : source;
+      if (typeof source !== "string") return source;
+      if (!assets.pdfs.has(source) && !assets.images.has(source)) {
+        throw unknownAsset("Unknown PDF", source);
+      }
+      return assetBytes(source);
     },
 
     newWriter(options) {
@@ -355,6 +374,17 @@ export function createRecipeFactory({
         name: `${prefix}-${index + 1}.pdf`,
         bytes: new Recipe().appendPage(name, index + 1).endPDF(),
       }));
+    },
+  });
+
+  Object.defineProperty(Recipe.prototype, "metadata", {
+    /**
+     * The metadata of the source PDF, as typed since 1.0.
+     * @returns {RecipeMetadata|undefined} The metadata, or undefined for a
+     *   new PDF.
+     */
+    get() {
+      return this.isNewPDF ? undefined : this._metadata;
     },
   });
 

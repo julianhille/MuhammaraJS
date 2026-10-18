@@ -208,7 +208,7 @@ function tableFields(contents, options) {
  * @param {Recipe.TableRowNth} [options.row.nth] - A `Recipe.TableRowNth` value, indicating that the
  * properties should be applied only to 'even' or 'odd' rows.
  * @returns {Recipe} The recipe instance.
- * @throws {TypeError} If no page is active.
+ * @throws {TypeError} If no page is active (an Error on Wasm).
  * @throws {RangeError} If the overflow callback continues into an area too small
  * for the pending row and its repeated header. Return true to stop, or provide
  * enough space; rows are not split and the callback is called once per overflow.
@@ -219,6 +219,7 @@ export const table = function table(x, y, contents, options = {}) {
   if (!Array.isArray(contents) || contents.length === 0) {
     return this;
   }
+  if (!this.page) throw this.platform.noPageError();
   // An open text flow is drawn before the table starts its own text.
   this._flushTextFlow();
   var columns = tableFields(contents, options).map((field) => {

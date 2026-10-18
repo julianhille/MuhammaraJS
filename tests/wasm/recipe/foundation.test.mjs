@@ -45,6 +45,26 @@ describeEnd("wasm", "Recipe foundation", function (end) {
     );
   });
 
+  it("rejects missing pages and unregistered PDFs in the words of 1.x", function () {
+    var source = end.newRecipe().createPage().endPage().endPDF();
+    [2, 0, -1, 1.5].forEach((pageNumber) =>
+      assert.throws(() => new end.Recipe(source).editPage(pageNumber), {
+        name: "RangeError",
+        message: "pageNumber must identify an existing page",
+      }),
+    );
+    var recipe = end.newRecipe().createPage();
+    assert.throws(() => recipe.appendPage("nope"), {
+      name: "Error",
+      message: "Unknown PDF: nope",
+    });
+    assert.throws(() => recipe.overlay("nope"), {
+      name: "Error",
+      message: "Unknown PDF: nope",
+    });
+    recipe.endPage().endPDF();
+  });
+
   it("requires the Async API for a Blob and reads it without entering source mode", async function () {
     var source = end.newRecipe().createPage().endPage().endPDF();
     var recipe = end.newRecipe();
@@ -118,5 +138,16 @@ describeEnd("wasm", "Recipe foundation", function (end) {
     assert.equal(new end.Recipe().encrypt({}).constructor, end.Recipe);
     end.Recipe.unregisterPdf("foundation-async-pdf");
     end.Recipe.unregisterImage("foundation-async-image");
+  });
+
+  it("has no metadata for a new PDF", function () {
+    var recipe = new end.Recipe();
+    assert.equal(recipe.metadata, undefined);
+    var source = recipe.createPage(100, 100).endPage().endPDF();
+    assert.equal(recipe.metadata, undefined);
+    recipe = new end.Recipe(source);
+    assert.equal(recipe.metadata.pages, 1);
+    assert.equal(recipe.metadata[1].width, 100);
+    recipe.endPDF();
   });
 });

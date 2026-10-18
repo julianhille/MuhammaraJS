@@ -97,6 +97,7 @@ var SHARED_PROTOTYPE = [
   "link",
   "margins",
   "mediumSizes",
+  "metadata",
   "moveTo",
   "movedown",
   "n_gon",
@@ -212,6 +213,12 @@ describeEnds("Recipe prototype", function (end) {
       assert.ok(Object.isFrozen(end.Recipe[name]), name);
       assert.equal(end.Recipe[name], Object.getPrototypeOf(end.Recipe)[name]);
     });
+    // Exactly these, without the `default` key of a CommonJS namespace.
+    assert.deepEqual(
+      Object.keys(Object.getPrototypeOf(end.Recipe)).sort(),
+      [...SHARED_CONSTANTS].sort(),
+    );
+    assert.equal("default" in end.Recipe, false);
   });
 });
 

@@ -709,7 +709,6 @@ export const pie = function pie(
  * @param {number[]} [options.dash] - The dash pattern.
  * @param {number} [options.dashPhase] - The dash pattern phase.
  * @returns {Recipe} The recipe instance.
- * @throws {TypeError} If no page is active.
  * @throws {RangeError} If `miterLimit` is not a number of at least 1.
  */
 export const lineStyle = function lineStyle(options = {}) {
@@ -719,33 +718,20 @@ export const lineStyle = function lineStyle(options = {}) {
   const miterLimit = miterLimitOption(options.miterLimit);
   if (miterLimit !== undefined) options = { ...options, miterLimit };
   this.current = this.current || {};
-  this.current.lineStyle = this.current.lineStyle || {};
+  const style = (this.current.lineStyle = this.current.lineStyle || {});
 
   if (options.width !== undefined || options.lineWidth !== undefined) {
-    const width = options.width ?? options.lineWidth;
-    this.current.lineStyle.width = width;
-    this.pageContext.w(width);
+    style.width = options.width ?? options.lineWidth;
   }
-  if (options.cap !== undefined) {
-    this.current.lineStyle.cap = options.cap;
-    this.pageContext.J(options.cap);
-  }
-  if (options.join !== undefined) {
-    this.current.lineStyle.join = options.join;
-    this.pageContext.j(options.join);
-  }
-  if (options.miterLimit !== undefined) {
-    this.current.lineStyle.miterLimit = options.miterLimit;
-    this.pageContext.M(options.miterLimit);
-  }
+  if (options.cap !== undefined) style.cap = options.cap;
+  if (options.join !== undefined) style.join = options.join;
+  if (options.miterLimit !== undefined) style.miterLimit = options.miterLimit;
   if (options.dash !== undefined || options.dashPhase !== undefined) {
-    const dash = options.dash ?? this.current.lineStyle.dash ?? [];
-    const dashPhase =
-      options.dashPhase ?? this.current.lineStyle.dashPhase ?? 0;
-    this.current.lineStyle.dash = dash;
-    this.current.lineStyle.dashPhase = dashPhase;
+    style.dash = options.dash ?? style.dash ?? [];
+    style.dashPhase = options.dashPhase ?? style.dashPhase ?? 0;
   }
-  return this._setLineStyle(options);
+  // Without a page the style is only recorded; the next drawing uses it.
+  return this.pageContext ? this._setLineStyle(options) : this;
 };
 
 /**
@@ -763,8 +749,8 @@ export const _setLineStyle = function _setLineStyle(options = {}) {
   if (options.miterLimit !== undefined) this.pageContext.M(options.miterLimit);
   if (options.dash !== undefined || options.dashPhase !== undefined)
     this.pageContext.d(
-      options.dash ?? this.current.lineStyle.dash ?? [],
-      options.dashPhase ?? this.current.lineStyle.dashPhase ?? 0,
+      this.current.lineStyle.dash,
+      this.current.lineStyle.dashPhase,
     );
   return this;
 };

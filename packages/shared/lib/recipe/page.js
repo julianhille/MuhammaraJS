@@ -584,13 +584,13 @@ export const createPage = function createPage(pageWidth, pageHeight, margins) {
     }
   }
   // from 0
-  this.metadata.pageCount =
-    (this.metadata.pageCount ?? this.metadata.pages ?? 0) + 1;
-  const pageNumber = this.metadata.pageCount;
+  this._metadata.pageCount =
+    (this._metadata.pageCount ?? this._metadata.pages ?? 0) + 1;
+  const pageNumber = this._metadata.pageCount;
   const dimensions = [0, 0, pageWidth, pageHeight];
   const layout =
     pageWidth > pageHeight ? PageLayout.LANDSCAPE : PageLayout.PORTRAIT;
-  this.metadata[pageNumber] = {
+  this._metadata[pageNumber] = {
     pageNumber,
     mediaBox: dimensions,
     layout,
@@ -698,7 +698,7 @@ export const rotate = function rotate(rotation) {
   }
   checkRotation(this.page, rotation);
   this.page.rotate = rotation;
-  this.metadata[this.pageNumber].rotate = rotation;
+  this._metadata[this.pageNumber].rotate = rotation;
   return this;
 };
 
@@ -736,7 +736,7 @@ export const setPageBox = function setPageBox(box, left, bottom, right, top) {
   const pageBox = [left, bottom, right, top];
   this.page[boxes[box]] = pageBox;
   if (box === muhammara.ePDFPageBoxMediaBox) {
-    const page = this.metadata[this.pageNumber];
+    const page = this._metadata[this.pageNumber];
     const width = right - left;
     const height = top - bottom;
     Object.assign(page, {
@@ -771,6 +771,8 @@ export const endPage = function endPage() {
   } else {
     this.writer.writePage(this.page);
   }
+  // position reads the page, which is gone after this
+  this._endedPosition = this.position;
   this.page = null;
   this.pageContext = null;
   this.pageNumber = 0;
@@ -821,7 +823,7 @@ export const editPage = function editPage(pageNumber) {
 
   if (this.debug) {
     const context = this.pageContext;
-    const { width, height, mediaBox } = this.metadata[pageNumber];
+    const { width, height, mediaBox } = this._metadata[pageNumber];
     const startX = mediaBox[0];
     const startY = mediaBox[1];
     const textOptions = {
@@ -1057,18 +1059,18 @@ export const _deletePages = function _deletePages() {
     copyingContext.end();
   }
 
-  const retained = Object.keys(this.metadata)
+  const retained = Object.keys(this._metadata)
     .filter((key) => /^\d+$/.test(key))
     .map(Number)
     .filter((pageNumber) => !this.deletedPages.has(pageNumber))
-    .map((pageNumber) => this.metadata[pageNumber]);
-  Object.keys(this.metadata)
+    .map((pageNumber) => this._metadata[pageNumber]);
+  Object.keys(this._metadata)
     .filter((key) => /^\d+$/.test(key))
-    .forEach((key) => delete this.metadata[key]);
+    .forEach((key) => delete this._metadata[key]);
   const pageNumberMap = new Map();
   retained.forEach((page, index) => {
     pageNumberMap.set(page.pageNumber, index + 1);
-    this.metadata[index + 1] = { ...page, pageNumber: index + 1 };
+    this._metadata[index + 1] = { ...page, pageNumber: index + 1 };
   });
   this.annotationsToWrite = this.annotationsToWrite
     .filter((annotation) => pageNumberMap.has(annotation.pageNumber))
@@ -1083,8 +1085,8 @@ export const _deletePages = function _deletePages() {
     }
   });
   this.annotations = annotations;
-  this.metadata.pages = retained.length;
-  this.metadata.pageCount = retained.length;
+  this._metadata.pages = retained.length;
+  this._metadata.pageCount = retained.length;
   this.deletedPages = null;
   return this;
 };
@@ -1109,13 +1111,13 @@ export const _resumePageRotation = function _resumePageRotation(
     width,
     height,
     mediaBox,
-  } = this.metadata[pageNumber];
+  } = this._metadata[pageNumber];
   context = context || this.pageContext;
   const startX = mediaBox[0];
   const startY = mediaBox[1];
   this.page.mediaBox = [startX, startY, width, height];
 
-  const matrix = pageRotationMatrix(this.metadata[pageNumber]);
+  const matrix = pageRotationMatrix(this._metadata[pageNumber]);
   if (matrix) context.cm(...matrix);
   return this;
 };
@@ -1130,10 +1132,10 @@ export const _resumePageRotation = function _resumePageRotation(
  * @throws {TypeError} If the page is unknown.
  */
 export const pageInfo = function pageInfo(pageNumber) {
-  const pageInfo = this.metadata?.[pageNumber];
+  const pageInfo = this._metadata?.[pageNumber];
   if (!pageInfo) {
     // Wasm reports an unknown page as null, as it always has.
-    if (this.platform.unknownPageInfoIsNull) return null;
+    if (this.platform.pageInfoIsRecord) return null;
     throw new TypeError(`Unknown page number: ${pageNumber}`);
   }
   const { width, height, rotate, mediaBox } = pageInfo;
@@ -1163,7 +1165,7 @@ export const pageInfo = function pageInfo(pageNumber) {
  */
 export const getCurrentPageInfo = function getCurrentPageInfo() {
   const pageNumber =
-    this.pageNumber || this.metadata?.pageCount || this.metadata?.pages;
+    this.pageNumber || this._metadata?.pageCount || this._metadata?.pages;
   return pageNumber ? this.pageInfo(pageNumber) : null;
 };
 

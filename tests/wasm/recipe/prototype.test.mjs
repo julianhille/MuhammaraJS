@@ -9,6 +9,7 @@ describeEnd("wasm", "Recipe prototype", function (end) {
       "constructor",
       "dispose",
       "htmlToTextObjects",
+      "metadata",
       "muhammara",
       "platform",
       "readAsync",

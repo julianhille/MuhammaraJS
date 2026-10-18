@@ -10,7 +10,7 @@ import { Coordinate } from "../recipe-constants.js";
  * @throws {TypeError} If there is no such page, for example before createPage().
  */
 function pageMetadata(recipe, pageNumber) {
-  const metadata = recipe.metadata[pageNumber || recipe.pageNumber];
+  const metadata = recipe._metadata[pageNumber || recipe.pageNumber];
   if (!metadata) throw recipe.platform.noPageError();
   return metadata;
 }

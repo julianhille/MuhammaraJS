@@ -203,4 +203,18 @@ describeEnds("Recipe annotation", function (end) {
     );
     assert.equal(square.Contents, "A square");
   });
+
+  it("throws for annotations without an active page", function () {
+    var recipe = end.newRecipe();
+    var error = {
+      name: "Error",
+      message: "Annotations require an active page",
+    };
+    assert.throws(() => recipe.comment("note", 10, 10), error);
+    assert.throws(() => recipe.annot(10, 10, "Square"), error);
+    recipe.createPage(100, 100).endPage();
+    assert.throws(() => recipe.comment("note", 10, 10), error);
+    assert.throws(() => recipe.annot(10, 10, "Square"), error);
+    recipe.endPDF();
+  });
 });
