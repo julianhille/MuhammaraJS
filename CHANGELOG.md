@@ -256,6 +256,8 @@ undefined`.
 - Recipe text takes a numeric string `size`, such as `"12"`, and a `color`
   that is neither a string nor an array draws in the default color instead of
   throwing `code.startsWith is not a function`.
+- Recipe `insertPage()` keeps the PDF version of the document instead of
+  writing PDF 1.4.
 
 ### Changed
 

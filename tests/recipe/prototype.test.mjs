@@ -211,6 +211,8 @@ describeEnds("Recipe prototype", function (end) {
   it("exposes the shared named option values as frozen statics", function () {
     SHARED_CONSTANTS.forEach((name) => {
       assert.ok(Object.isFrozen(end.Recipe[name]), name);
+      // own statics, so that Object.keys(Recipe) and spreading list them
+      assert.ok(Object.hasOwn(end.Recipe, name), name);
       assert.equal(end.Recipe[name], Object.getPrototypeOf(end.Recipe)[name]);
     });
     // Exactly these, without the `default` key of a CommonJS namespace.

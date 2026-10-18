@@ -59,7 +59,9 @@ function createNativePlatform(muhammara) {
   /**
    * Start a writer whose output collects in memory.
    * @param {Function} create - Creates the writer on the given output stream.
-   * @returns {{writer: Object, finish: function(): Uint8Array}} The writer.
+   * @returns {{writer: Object, finish: function(): Uint8Array, abort: function(): void}}
+   *   The writer, `finish()` that ends it and returns the PDF, and `abort()`
+   *   that releases it without output, also after `finish()`.
    */
   function bufferedWriter(create) {
     const stream = new PDFWStreamForBuffer();
@@ -69,6 +71,9 @@ function createNativePlatform(muhammara) {
       finish() {
         writer.end();
         return stream.buffer || Buffer.alloc(0);
+      },
+      abort() {
+        writer._abort();
       },
     };
   }

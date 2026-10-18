@@ -131,6 +131,33 @@ describeEnds("Recipe encryption", function (end) {
     assert.equal(opens(end, encrypted, "edit"), true);
   });
 
+  // The annotation and insert passes reopen the output, which a writer
+  // encrypted at creation could not give them.
+  it("encrypts a new PDF with comments and inserted pages", function () {
+    var bytes = end
+      .newRecipe({ userPassword: "view", ownerPassword: "edit" })
+      .createPage(100, 100)
+      .comment("encrypted", 10, 10)
+      .endPage()
+      .insertPage(1, end.pdf("Original.pdf"), 1)
+      .endPDF();
+    writeOutput(end, "encryption-new-comment-insert", bytes);
+    assertEncrypted(end, bytes, "view", AES_128);
+    var counts = withReader(
+      end,
+      bytes,
+      (reader) => [
+        reader.getPagesCount(),
+        reader
+          .queryDictionaryObject(reader.parsePageDictionary(0), "Annots")
+          .toPDFArray()
+          .toJSArray().length,
+      ],
+      { password: "view" },
+    );
+    assert.deepEqual(counts, [2, 1]);
+  });
+
   it("encrypts a new PDF with a constructor permission password", function () {
     var bytes = end
       .newRecipe({ password: "123" })

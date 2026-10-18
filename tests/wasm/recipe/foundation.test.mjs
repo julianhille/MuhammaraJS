@@ -150,4 +150,55 @@ describeEnd("wasm", "Recipe foundation", function (end) {
     assert.equal(recipe.metadata[1].width, 100);
     recipe.endPDF();
   });
+
+  // Wasm has no finalizers: a writer nobody ends keeps its memory.
+  it("releases the writer of a failed endPDF()", function () {
+    var protectedSource = end.openRecipe("PDFWithPassword.PDF", {
+      password: "user",
+    });
+    assert.throws(() => protectedSource.endPDF(), /password-protected/);
+    assert.throws(
+      () => protectedSource.writer.getDocumentContext(),
+      /PDF writer has ended/,
+    );
+    // the insert pass creates a writer of its own
+    var platform = end.Recipe.prototype.platform;
+    var newWriter = platform.newWriter;
+    var writers = [];
+    platform.newWriter = function (...args) {
+      var output = newWriter.apply(this, args);
+      writers.push(output.writer);
+      return output;
+    };
+    try {
+      var inserting = end
+        .newRecipe()
+        .createPage(100, 100)
+        .endPage()
+        .insertPage(1, "nope", 1);
+      assert.throws(() => inserting.endPDF(), /Unknown PDF: nope/);
+    } finally {
+      platform.newWriter = newWriter;
+    }
+    assert.equal(writers.length, 2);
+    writers.forEach((writer) =>
+      assert.throws(() => writer.getDocumentContext(), /PDF writer has ended/),
+    );
+  });
+
+  it("cannot end the PDF after dispose()", function () {
+    var recipe = end.newRecipe().createPage(100, 100).endPage();
+    recipe.dispose();
+    assert.throws(() => recipe.endPDF(), {
+      message: "Cannot end the PDF after disposal",
+    });
+    assert.throws(() => recipe.split(), {
+      message: "Cannot end the PDF after disposal",
+    });
+    // an ended Recipe keeps its bytes
+    var ended = end.newRecipe().createPage(100, 100).endPage();
+    var bytes = ended.endPDF();
+    ended.dispose();
+    assert.strictEqual(ended.endPDF(), bytes);
+  });
 });

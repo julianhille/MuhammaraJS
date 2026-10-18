@@ -147,13 +147,9 @@ class Recipe {
       this.pdfa_ ? this.pdfa_.version : options.version,
     );
     if (this.isNewPDF) {
+      // a new PDF is encrypted at the end, as an edited source is
       this._output = this.platform.newWriter(
-        Object.assign(
-          {},
-          this.encryptOptions,
-          { version },
-          this._compression(),
-        ),
+        Object.assign({ version }, this._compression()),
       );
       this.writer = this._output.writer;
     } else {
@@ -190,14 +186,12 @@ class Recipe {
   }
 
   /**
-   * Map a Recipe version option to a writer PDF version constant.
+   * Map a PDF version to a writer PDF version constant.
    * @private
    * @param {number} [version] - 1.0 through 1.7 or 2.0; other values use 1.7.
    * @returns {number} The matching `ePDFVersion*` constant.
    */
   _getVersion(version) {
-    // 10 through 17 and 20 name the same versions as 1.0 through 2.0.
-    if ([10, 11, 12, 13, 14, 15, 16, 17, 20].includes(version)) version /= 10;
     const supportedVersions = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 2.0];
     if (!supportedVersions.includes(version)) {
       version = 1.7;
@@ -474,19 +468,7 @@ class Recipe {
       if (this.needToInsertPages) {
         bytes = this._insertPages(bytes, fields, customInfo);
       }
-      // An unencrypted source given passwords is encrypted as a new PDF is;
-      // an encrypted source keeps its own encryption.
-      if (
-        !this.isNewPDF &&
-        !this.sourceEncrypted_ &&
-        this.encryptOptions.userPassword !== undefined
-      ) {
-        const { password, ...encryption } = this.encryptOptions;
-        bytes = this.platform.recrypt(bytes, encryption);
-      }
-      if (this.needToEncrypt) {
-        bytes = this._encrypt(bytes);
-      }
+      bytes = this._encrypt(bytes);
 
       this.bytes_ = bytes;
       this.result_ = this.platform.deliver(this, bytes);
@@ -505,9 +487,9 @@ class Recipe {
       this.endError = error;
       this.ended = true;
       try {
-        this.writer._abort?.();
+        this._output.abort();
       } catch (_) {
-        // Preserve the finalization error if native cleanup also fails.
+        // Preserve the finalization error if the cleanup also fails.
       }
       try {
         this._releaseReader();
@@ -655,9 +637,10 @@ function createRecipe(platform, platformConstants = {}) {
   class Recipe extends SharedRecipe {}
   Recipe.prototype.platform = platform;
   Recipe.prototype.muhammara = platform.muhammara;
-  // The shared constants are inherited statics.
-  Object.assign(Recipe, platformConstants);
+  // The shared constants are own statics too, so Object.keys(Recipe) lists
+  // them.
+  Object.assign(Recipe, constants, { PdfA }, platformConstants);
   return Recipe;
 }
 
-export { createRecipe, SharedRecipe as RecipeBase };
+export { createRecipe };

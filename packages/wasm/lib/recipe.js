@@ -100,6 +100,21 @@ export function createRecipeFactory({
     return module.FS.readFile(path);
   }
 
+  /**
+   * The handle of one writer pass, as the shared Recipe expects it.
+   * @param {object} writer - The writer.
+   * @returns {{writer: object, finish: Function, abort: Function}} The
+   *   writer, `finish()` that ends it and returns the bytes, and `abort()`
+   *   that releases it, also after `finish()`.
+   */
+  function writerHandle(writer) {
+    return {
+      writer,
+      finish: () => writer.end(),
+      abort: () => writer.dispose(),
+    };
+  }
+
   var platform = {
     muhammara: Object.assign(Object.create(api), {
       /**
@@ -163,6 +178,12 @@ export function createRecipeFactory({
       };
     },
 
+    /**
+     * Hands the finished PDF over: its bytes.
+     * @param {Recipe} recipe - The recipe.
+     * @param {Uint8Array} bytes - The PDF.
+     * @returns {Uint8Array} The bytes.
+     */
     deliver: (recipe, bytes) => bytes,
     // endPDF(callback) returns the bytes, as typed since 1.0.
     endPDFReturnsResult: true,
@@ -182,24 +203,46 @@ export function createRecipeFactory({
       return assetBytes(source);
     },
 
-    newWriter(options) {
-      var writer = api.createWriter(options);
-      return { writer, finish: () => writer.end() };
-    },
+    /**
+     * Starts the writer of a new PDF; native's Recipe.js describes the handle.
+     * @param {object} options - The writer options.
+     * @returns {{writer: object, finish: Function, abort: Function}} The handle.
+     */
+    newWriter: (options) => writerHandle(api.createWriter(options)),
 
-    modifyWriter(bytes, options) {
-      var writer = api.createWriterToModify(bytes, options);
-      return { writer, finish: () => writer.end() };
-    },
+    /**
+     * Starts a writer that modifies PDF bytes.
+     * @param {Uint8Array} bytes - The PDF.
+     * @param {object} options - The writer options.
+     * @returns {{writer: object, finish: Function, abort: Function}} The handle.
+     */
+    modifyWriter: (bytes, options) =>
+      writerHandle(api.createWriterToModify(bytes, options)),
 
+    /**
+     * Encrypts PDF bytes, keeping their Info dictionary.
+     * @param {Uint8Array} bytes - The PDF.
+     * @param {object} options - The encryption options and opening password.
+     * @returns {Uint8Array} The encrypted PDF.
+     */
     recrypt: (bytes, options) => api.recrypt(bytes, options),
 
     readBytes: assetBytes,
 
+    /**
+     * A key that changes when a registered image or PDF is replaced.
+     * @param {string} ref - The registered name.
+     * @returns {?string} The key, or null for an unregistered name.
+     */
     assetVersion(ref) {
       return assets.images.get(ref) || assets.pdfs.get(ref) || null;
     },
 
+    /**
+     * Gives a Recipe the shared font registry, with the default font.
+     * @param {Recipe} recipe - The recipe.
+     * @returns {void}
+     */
     loadFonts(recipe) {
       // fontSrcPath names folders, which Wasm cannot read; it is ignored, as
       // it always was.
@@ -207,12 +250,33 @@ export function createRecipeFactory({
       recipe.fonts = fonts;
     },
 
+    /**
+     * No font folders: Wasm cannot read them.
+     * @returns {Array} An empty list.
+     */
     fontFiles: () => [],
 
+    /**
+     * Stores registered font bytes under a fresh low-level name.
+     * @param {string} name - The family name.
+     * @param {Uint8Array} bytes - The font bytes.
+     * @returns {string} The low-level font name.
+     */
     fontSource: (name, bytes) => storeFont(bytes),
 
+    /**
+     * Whether a low-level font name is still registered.
+     * @param {string} ref - The low-level font name.
+     * @returns {boolean} Whether it is.
+     */
     fontExists: (ref) => assets.fonts.has(ref),
 
+    /**
+     * Loads a registered font into a writer.
+     * @param {object} writer - The writer.
+     * @param {string} ref - The low-level font name.
+     * @returns {object} The writer's font.
+     */
     getFont: (writer, ref) => writer.getFontForBytes(ref),
   };
 
@@ -465,8 +529,11 @@ export function createRecipeFactory({
      * @returns {void}
      */
     dispose() {
-      if (this.writer?.dispose) this.writer.dispose();
+      this._output.abort();
       this._releaseReader();
+      if (!this.ended) {
+        this.endError = new Error("Cannot end the PDF after disposal");
+      }
       this.ended = true;
       this.disposed_ = true;
     },

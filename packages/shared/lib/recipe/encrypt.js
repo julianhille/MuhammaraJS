@@ -115,22 +115,24 @@ export const encrypt = function encrypt(options = {}) {
 
 // http://pdfhummus.com/post/147451287581/hummus-1058-and-pdf-writer-updates-encryption
 /**
- * Re-encrypt the finished output with the encrypt() options. Nothing happens
- * when encrypt() was given no password. The finished output is opened with
- * the password the Recipe was created with, or none for an empty user
- * password, so a PDF whose constructor options already encrypted it can still
- * be re-encrypted with new passwords.
+ * Encrypt the finished output, once: with the encrypt() options, which
+ * replace the constructor ones, or else with the constructor passwords. A
+ * source that is already encrypted keeps its own encryption unless encrypt()
+ * replaces it, and is opened with the password the Recipe was created with.
  * @private
  * @param {Uint8Array} bytes - The finished output.
- * @returns {Uint8Array} The re-encrypted output.
- * @throws {Error} If the output cannot be re-encrypted.
+ * @returns {Uint8Array} The encrypted output, or the same bytes when there is
+ *   nothing to encrypt.
+ * @throws {Error} If the output cannot be encrypted.
  */
 export const _encrypt = function _encrypt(bytes) {
-  if (!this.encryption_ || Object.keys(this.encryption_).length === 0) {
-    return bytes;
-  }
-  const recryptOptions = Object.assign({}, this.encryption_, {
-    password: this.encryptOptions.password,
-  });
-  return this.platform.recrypt(bytes, recryptOptions);
+  const { password, ...constructorEncryption } = this.encryptOptions;
+  const encryption = Object.keys(this.encryption_ ?? {}).length
+    ? this.encryption_
+    : !this.sourceEncrypted_ && constructorEncryption.userPassword !== undefined
+      ? constructorEncryption
+      : null;
+  return encryption
+    ? this.platform.recrypt(bytes, { ...encryption, password })
+    : bytes;
 };

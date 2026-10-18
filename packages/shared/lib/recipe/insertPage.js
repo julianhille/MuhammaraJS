@@ -69,11 +69,13 @@ export const _insertPages = function _insertPages(
   }
   const reader = this.muhammara.createReader(this.platform.readerSource(bytes));
   const pageCount = reader.getPagesCount();
+  // the rebuilt PDF keeps the version of the output
+  const version = this._getVersion(reader.getPDFLevel());
   reader.end();
   const pagesForInsert = Array.from({ length: pageCount + 1 }, (_, i) => i);
 
-  const output = this.platform.newWriter(this._compression());
-  const pdfWriter = output.writer;
+  this._output = this.platform.newWriter({ ...this._compression(), version });
+  const pdfWriter = this._output.writer;
   const info = pdfWriter.getDocumentContext().getInfoDictionary();
   fields.forEach(([key, value]) => {
     if (value) info[key] = value;
@@ -108,5 +110,5 @@ export const _insertPages = function _insertPages(
       });
     }
   });
-  return output.finish();
+  return this._output.finish();
 };

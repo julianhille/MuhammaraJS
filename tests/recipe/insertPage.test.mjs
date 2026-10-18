@@ -118,6 +118,25 @@ describeEnds("Recipe insertPage", function (end) {
     ]);
   });
 
+  it("keeps the PDF version of the document", function () {
+    var created = end
+      .newRecipe({ version: 2.0 })
+      .createPage(100, 100)
+      .endPage()
+      .insertPage(1, end.pdf(TEST_PDF), 1)
+      .endPDF();
+    var edited = end
+      .openRecipe("recipe/test2.pdf")
+      .insertPage(1, end.pdf(TEST_PDF), 1)
+      .endPDF();
+    assert.deepEqual(
+      [created, edited].map((bytes) =>
+        new TextDecoder("latin1").decode(bytes.subarray(0, 8)),
+      ),
+      ["%PDF-2.0", "%PDF-1.3"],
+    );
+  });
+
   it("rejects incomplete or invalid arguments", function () {
     var recipe = end.openRecipe(numberedPdf(end, 2));
     assert.throws(() => recipe.insertPage(0), {
