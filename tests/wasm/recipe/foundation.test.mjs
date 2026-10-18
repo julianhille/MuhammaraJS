@@ -148,6 +148,9 @@ describeEnd("wasm", "Recipe foundation", function (end) {
     recipe = new end.Recipe(source);
     assert.equal(recipe.metadata.pages, 1);
     assert.equal(recipe.metadata[1].width, 100);
+    // assignable, as it was before it became a getter
+    recipe.metadata = { pages: 2 };
+    assert.deepEqual(recipe.metadata, { pages: 2 });
     recipe.endPDF();
   });
 

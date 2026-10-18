@@ -470,6 +470,15 @@ export function createRecipeFactory({
     get() {
       return this.isNewPDF ? undefined : this._metadata;
     },
+    /**
+     * Replaces the metadata, as the plain field it once was allowed.
+     * @private
+     * @param {RecipeMetadata} value - The metadata.
+     * @returns {void}
+     */
+    set(value) {
+      this._metadata = value;
+    },
   });
 
   Object.assign(Recipe.prototype, {

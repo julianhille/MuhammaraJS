@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describeEnd } from "../../support/ends.mjs";
@@ -35,8 +35,21 @@ describeEnd("native", "Recipe modules", function () {
     var internals = ["index.js", "muhammara.js"];
     files.forEach((file) => {
       var name = path.relative(lib, file);
+      var shared = path.join(lib, "shared", name);
       if (internals.includes(name)) {
         assert.throws(() => require(file), /instead of native-core internals/);
+      } else if (existsSync(shared)) {
+        // a shim hands out the exports of the generated module it is named
+        // after
+        var exports = require(shared);
+        assert.ok(Object.keys(exports).length > 0, name);
+        Object.keys(exports).forEach((key) =>
+          assert.strictEqual(
+            require(file)[key],
+            exports[key],
+            `${name} ${key}`,
+          ),
+        );
       } else {
         assert.doesNotThrow(() => require(file), name);
       }

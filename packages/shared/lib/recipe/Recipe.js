@@ -73,17 +73,12 @@ import * as m_vector from "./vector.js";
 class Recipe {
   constructor(...args) {
     // The platform turns its own arguments (a path, Buffer or bytes, an output
-    // target, the options) into the source bytes, or null for a new PDF.
-    const {
-      source,
-      output,
-      options = {},
-      name,
-    } = this.platform.openArguments(args);
+    // target, the options) into the source bytes, or null for a new PDF, and
+    // the instance state of its own Recipe.
+    const { source, options = {}, state } = this.platform.openArguments(args);
+    Object.assign(this, state);
     this._source = source;
-    this.filename = name;
     this.isNewPDF = source === null;
-    this._target = output;
     this.encryptOptions = this._getEncryptOptions(options, this.isNewPDF);
     this.options = Object.assign({}, options, this.encryptOptions);
     this.current = {};
@@ -150,6 +145,7 @@ class Recipe {
       // a new PDF is encrypted at the end, as an edited source is
       this._output = this.platform.newWriter(
         Object.assign({ version }, this._compression()),
+        this,
       );
       this.writer = this._output.writer;
     } else {
@@ -252,6 +248,16 @@ class Recipe {
    */
   get metadata() {
     return this._metadata;
+  }
+
+  /**
+   * Replace the metadata, as the plain field it once was allowed.
+   * @private
+   * @param {Object} value - The metadata.
+   * @returns {void}
+   */
+  set metadata(value) {
+    this._metadata = value;
   }
 
   /**

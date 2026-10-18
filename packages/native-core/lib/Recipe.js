@@ -51,6 +51,27 @@ function toRecipeSource(src) {
 }
 
 /**
+ * Create the output file of a path Recipe, where the addon used to open it,
+ * so an unwritable output fails before any page is drawn.
+ * @param {Recipe} recipe - The recipe, with its `output` path.
+ * @returns {void}
+ * @throws {TypeError} If the output file cannot be created or written, in
+ *   the words of the addon.
+ */
+function claimOutput(recipe) {
+  try {
+    // "a" creates a missing file and never truncates the source.
+    fs.closeSync(fs.openSync(recipe.output, "a"));
+  } catch {
+    throw new TypeError(
+      recipe.isNewPDF
+        ? "Unable to create PDF file, make sure that output file target is available"
+        : "Unable to modify PDF file, make sure that output file target is available and that it is not protected",
+    );
+  }
+}
+
+/**
  * Create the I/O of the shared Recipe for one loaded addon.
  * @param {Object} muhammara - The public API built by createMuhammara().
  * @returns {Object} The platform the shared Recipe runs on.
@@ -60,8 +81,7 @@ function createNativePlatform(muhammara) {
    * Start a writer whose output collects in memory.
    * @param {Function} create - Creates the writer on the given output stream.
    * @returns {{writer: Object, finish: function(): Uint8Array, abort: function(): void}}
-   *   The writer, `finish()` that ends it and returns the PDF, and `abort()`
-   *   that releases it without output, also after `finish()`.
+   *   The writer handle newWriter() describes.
    */
   function bufferedWriter(create) {
     const stream = new PDFWStreamForBuffer();
@@ -90,6 +110,10 @@ function createNativePlatform(muhammara) {
     rejectsImageIndex: false,
     pageInfoIsRecord: false,
     sourceName: "an existing PDF",
+    /**
+     * The error of a drawing call that needs a page when none is active.
+     * @returns {TypeError} The error.
+     */
     noPageError: () =>
       new TypeError("No page is active; call createPage() or editPage() first"),
 
@@ -99,69 +123,56 @@ function createNativePlatform(muhammara) {
      * optional output path and the options. A `Uint8Array` or `ArrayBuffer`
      * is wrapped in a Buffer without copying.
      * @param {Array} args - The constructor arguments.
-     * @returns {Object} The source bytes (null for a new PDF), the output, the
-     *   options and the source file name.
+     * @returns {Object} The source bytes (null for a new PDF), the options,
+     *   and the instance state native Recipe has always had: `src`, `output`,
+     *   `isBufferSrc`, `logFile`, and `outStream` for a Buffer source or
+     *   `filename` for a path.
      * @throws {TypeError} If the source is not a string, Buffer, Uint8Array or
-     *   ArrayBuffer, or the output file of a new PDF cannot be created.
-     * @throws {Error} If a source path cannot be read, or its output file
-     *   cannot be written.
+     *   ArrayBuffer.
+     * @throws {Error} If a source path cannot be read.
      */
     openArguments([src, output, options = {}]) {
       src = toRecipeSource(src);
-      const isBuffer = Buffer.isBuffer(src);
-      const isNew = isBuffer
+      const isBufferSrc = Buffer.isBuffer(src);
+      const isNew = isBufferSrc
         ? src.equals(Buffer.from(Source.NEW))
         : String(src).toLowerCase() === Source.NEW;
       let source = isNew ? null : src;
-      if (!isBuffer) {
+      if (!isBufferSrc && !isNew) {
         // Fail at construction, in the words of the addon, as Recipe did
-        // when it opened the files there.
-        if (!isNew) {
-          try {
-            source = fs.readFileSync(src);
-          } catch {
-            throw new Error("TypeError: Unable to start parsing PDF file");
-          }
-        }
+        // when it opened the file there.
         try {
-          // "a" creates a missing file and never truncates the source.
-          fs.closeSync(fs.openSync(output || src, "a"));
+          source = fs.readFileSync(src);
         } catch {
-          throw isNew
-            ? new TypeError(
-                "Unable to create PDF file, make sure that output file target is available",
-              )
-            : new Error(
-                "TypeError: Unable to modify PDF file, make sure that output file target is available and that it is not protected",
-              );
+          throw new Error("TypeError: Unable to start parsing PDF file");
         }
       }
+      const state = { src, isBufferSrc, logFile: LOG_FILE };
       return {
         source,
-        // A path source writes its output file, by default the source itself.
-        output: isBuffer
-          ? { src, path: output, buffer: true, log: LOG_FILE }
-          : { src, path: output || src, log: isNew ? undefined : LOG_FILE },
         options,
-        name: isBuffer ? undefined : path.basename(src),
+        // A path source writes its output file, by default the source itself.
+        state: isBufferSrc
+          ? { ...state, output, outStream: new PDFWStreamForBuffer() }
+          : { ...state, output: output || src, filename: path.basename(src) },
       };
     },
 
     /**
      * Hand the finished PDF over: write the output path, and return what the
-     * endPDF() callback receives.
+     * endPDF() callback receives. A Buffer source also keeps it in
+     * `outStream.buffer`.
      * @param {Recipe} recipe - The recipe.
      * @param {Uint8Array} bytes - The finished PDF.
      * @returns {Buffer|string|undefined} The Buffer for a Buffer source, its
      *   output path when it has one, and nothing for a path source.
      */
     deliver(recipe, bytes) {
-      const { path: outputPath, buffer } = recipe._target;
-      if (outputPath) {
-        fs.writeFileSync(outputPath, bytes);
-        return buffer ? outputPath : undefined;
-      }
-      return asBuffer(bytes);
+      const buffer = asBuffer(bytes);
+      if (recipe.isBufferSrc) recipe.outStream.buffer = buffer;
+      if (!recipe.output) return buffer;
+      fs.writeFileSync(recipe.output, buffer);
+      return recipe.isBufferSrc ? recipe.output : undefined;
     },
 
     /**
@@ -179,24 +190,58 @@ function createNativePlatform(muhammara) {
         : new muhammara.PDFRStreamForBuffer(source);
     },
 
+    /**
+     * Start the writer of a new PDF, or of the insert pass. The writer's
+     * output collects in memory; deliver() writes it to the output path.
+     * @param {Object} options - The writer options: `version`, `compress`.
+     * @param {Recipe} [recipe] - The recipe a new PDF is created for. Its
+     *   output path is created here, and a Buffer source gets the error log.
+     * @returns {{writer: Object, finish: function(): Uint8Array, abort: function(): void}}
+     *   The writer, `finish()` that ends it and returns the PDF, and
+     *   `abort()` that releases it without output, also after `finish()`.
+     * @throws {TypeError} If the output file cannot be created.
+     */
     newWriter(options, recipe) {
-      const log = recipe?._target.log;
+      if (recipe && !recipe.isBufferSrc) claimOutput(recipe);
       return bufferedWriter((stream) =>
-        muhammara.createWriter(stream, log ? { ...options, log } : options),
-      );
-    },
-
-    modifyWriter(bytes, options, recipe) {
-      const log = recipe?._target.log;
-      return bufferedWriter((stream) =>
-        muhammara.createWriterToModify(
-          new muhammara.PDFRStreamForBuffer(asBuffer(bytes)),
+        muhammara.createWriter(
           stream,
-          log ? { ...options, log } : options,
+          recipe?.isBufferSrc ? { ...options, log: recipe.logFile } : options,
         ),
       );
     },
 
+    /**
+     * Start a writer that modifies a PDF: the source, or the finished first
+     * pass for the annotation pass. It returns the handle newWriter() does.
+     * @param {Uint8Array} bytes - The PDF to modify.
+     * @param {Object} options - The writer options: `password`, `compress`.
+     * @param {Recipe} recipe - The recipe. Its output path is claimed, and
+     *   the writer gets its error log.
+     * @returns {{writer: Object, finish: function(): Uint8Array, abort: function(): void}}
+     *   The writer handle.
+     * @throws {TypeError} If the output file cannot be written, or the PDF
+     *   cannot be modified.
+     */
+    modifyWriter(bytes, options, recipe) {
+      if (!recipe.isBufferSrc) claimOutput(recipe);
+      return bufferedWriter((stream) =>
+        muhammara.createWriterToModify(
+          new muhammara.PDFRStreamForBuffer(asBuffer(bytes)),
+          stream,
+          { ...options, log: recipe.logFile },
+        ),
+      );
+    },
+
+    /**
+     * Encrypt a finished PDF, keeping its Info dictionary.
+     * @param {Uint8Array} bytes - The PDF.
+     * @param {Object} options - The encryption options, and the `password`
+     *   that opens an encrypted input.
+     * @returns {Buffer} The encrypted PDF.
+     * @throws {Error} If the PDF cannot be read or encrypted.
+     */
     recrypt(bytes, options) {
       const encrypted = new PDFWStreamForBuffer();
       muhammara.recrypt(
@@ -270,22 +315,52 @@ function createNativePlatform(muhammara) {
         );
     },
 
+    /**
+     * What a font registered from a file is stored as: its path.
+     * @param {string} name - The family name.
+     * @param {string} file - The font path.
+     * @returns {string} The path.
+     */
     fontSource(name, file) {
       return file;
     },
 
+    /**
+     * Whether a stored font can still be loaded.
+     * @param {string} file - The font path.
+     * @returns {boolean} Whether the file exists.
+     */
     fontExists(file) {
       return fs.existsSync(file);
     },
 
+    /**
+     * Load a stored font into a writer.
+     * @param {Object} writer - The writer.
+     * @param {string} file - The font path.
+     * @returns {Object} The writer's font.
+     */
     getFont(writer, file) {
       return writer.getFontForFile(file);
     },
 
+    /**
+     * Write one page that split() made.
+     * @param {string} outputDir - The directory.
+     * @param {string} fileName - The file name.
+     * @param {Uint8Array} bytes - The one-page PDF.
+     * @returns {void}
+     */
     saveSplit(outputDir, fileName, bytes) {
       fs.writeFileSync(path.join(outputDir, fileName), bytes);
     },
 
+    /**
+     * Write the text structure() made.
+     * @param {string} output - The output path.
+     * @param {string} text - The structure.
+     * @returns {void}
+     */
     writeStructure(output, text) {
       fs.writeFileSync(output, text);
     },
@@ -304,35 +379,6 @@ function createRecipe(muhammara) {
   });
   // The text layout classes native Recipe has always exposed.
   Object.assign(Recipe.prototype, { Column, Line, Word });
-  // The instance state native Recipe has always exposed, read-only.
-  Object.defineProperties(
-    Recipe.prototype,
-    Object.getOwnPropertyDescriptors({
-      /** @returns {string|Buffer} The source as given: a path or a Buffer. */
-      get src() {
-        return this._target.src;
-      },
-      /** @returns {string|undefined} The output path. */
-      get output() {
-        return this._target.path;
-      },
-      /** @returns {boolean} Whether the source is a Buffer. */
-      get isBufferSrc() {
-        return this._target.buffer === true;
-      },
-      /** @returns {string} The error log the writers are given. */
-      get logFile() {
-        return LOG_FILE;
-      },
-      /**
-       * @returns {{buffer: Buffer}|undefined} For a Buffer source, the
-       *   finished PDF once endPDF() ran.
-       */
-      get outStream() {
-        return this._target.buffer ? { buffer: this.bytes_ } : undefined;
-      },
-    }),
-  );
   return Recipe;
 }
 

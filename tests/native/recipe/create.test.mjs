@@ -80,6 +80,19 @@ describeEnd("native", "Recipe create", function (end) {
     );
   });
 
+  it("leaves no output file when construction fails", function () {
+    var output = outputPath("create-failed");
+    assert.throws(
+      () => new end.Recipe(fixture("PDFWithPassword.PDF"), output),
+      /pages=0/,
+    );
+    assert.throws(
+      () => new end.Recipe("new", output, { pdfa: { level: "9Z" } }),
+      TypeError,
+    );
+    assert.equal(existsSync(output), false);
+  });
+
   it("creates the output file of a path Recipe at construction", function () {
     var output = outputPath("create-output-early");
     var recipe = new end.Recipe("new", output);
