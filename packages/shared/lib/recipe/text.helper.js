@@ -456,7 +456,7 @@ export const _getTextBoxOffset = function _getTextBoxOffset(
  * @name textDimensions
  * @function
  * @memberof Recipe#
- * @param {string} text - text to be measured; other values are measured as text, as text() draws them
+ * @param {string} text - text to be measured; other values are measured as text; `undefined` measures as `"undefined"`, which `text()` draws as nothing
  * @param {Object} [options] - The options
  * @param {string} [options.font='helvetica'] - name of font from which measurements are to be taken
  * @param {number} [options.size=14] - size of font to be used in taking measurements

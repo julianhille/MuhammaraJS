@@ -93,7 +93,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Recipe `appendPage()`, `insertPage()` and `overlay()` take PDF bytes as
   well as a registered name.
 - Recipe `read()` takes a registered PDF name, as `appendPage()` does; a name
-  that is not registered throws `Unknown PDF: <name>`.
+  that is not registered throws `Unknown PDF: <name>`. Without an argument it
+  also reads a source after `endPDF()`, as native does.
 
 ### Fixed
 
@@ -220,8 +221,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   ascent, the text cursor after `text()` stays on its last line, and
   `lineTo()` without options draws its segment instead of nothing.
 - Recipe `createPage()` on a source PDF keeps its size instead of A4.
-- Recipe `encrypt({})` keeps the constructor passwords of a new PDF instead
-  of writing it unencrypted, as native does.
+- Recipe `encrypt({})` keeps the encryption set before, by the constructor
+  passwords of a new PDF or an earlier `encrypt()`, instead of writing the PDF
+  unencrypted.
 - A Recipe link on text starts where the text starts instead of at its first
   glyph, as native does.
 - A `>` inside a quoted Recipe HTML attribute no longer ends the tag, so the
@@ -274,6 +276,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Recipe `insertPage()` after `endPDF()` throws `PDF writer has ended`.
   Repeated `endPDF()` calls return the first PDF, as documented, so the page
   used to be dropped, or added only when no page was inserted before.
+- After `endPDF()`, Recipe `createPage()` throws `PDF writer has ended`, as
+  native does, and `replaceText()`/`removeText()` throw native's `RangeError`;
+  `permission()` with an array throws native's `TypeError`.
+- Recipe `lineStyle()` takes `cap` and `join` as numbers; a numeric string
+  such as `"1"` throws.
 
 ## [1.2.0] - 2026-10-12
 

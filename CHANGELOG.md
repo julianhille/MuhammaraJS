@@ -284,6 +284,8 @@ undefined`.
 - Recipe shapes, images and text leave the caller's options object as it was,
   so frozen options work, and a style object reused after `opacity()`, or a
   text flow continued after it, draws at the new opacity.
+- A path Recipe whose `endPDF()` fails leaves its output file, or the source
+  it edits in place, as it was instead of truncating it to 0 bytes.
 
 ### Changed
 
@@ -306,6 +308,8 @@ undefined`.
 - Recipe `appendPage()` of a PDF that needs a password throws
   `TypeError: HummusJS: Unable to read/edit PDF file (pages=0)` instead of
   `TypeError: unable to create copying context…`.
+- Recipe `encrypt({})` after an earlier `encrypt()` keeps that encryption
+  instead of writing the PDF unencrypted.
 
 ## [7.2.0] - 2026-10-12
 

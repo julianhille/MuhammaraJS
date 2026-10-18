@@ -420,7 +420,8 @@ export const _makeTextBox = function _makeTextBox(options) {
  * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
  */
 export const text = function text(text = "", x, y, options = {}) {
-  // Draw what textDimensions() measures: a value that is no text as a string.
+  // Draw a value that is no text as textDimensions() measures it; an omitted
+  // text draws nothing.
   if (!Array.isArray(text)) text = String(text);
   // null options act like omitted options.
   if (options === null) options = {};
