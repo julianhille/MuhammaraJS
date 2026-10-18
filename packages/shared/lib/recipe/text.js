@@ -563,7 +563,7 @@ export const text = function text(text = "", x, y, options = {}) {
   }
 
   if (!textBox.width) {
-    textBox.width = (this._flowLines[0] || toWriteTextObjects[0]).lineWidth;
+    textBox.width = (this._flowLines[0] || toWriteTextObjects[0])?.lineWidth;
   }
 
   textBox.firstLineHeight = this._firstLineHeight;

@@ -244,6 +244,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   throwing, skips a DOCTYPE, XML declaration or broken comment, draws the
   text of markup it cannot recover, starts a `<div>` on its own line, and
   justifies every line of a paragraph but its last.
+- Recipe `text()` with `html` and markup without text, such as `<p></p>` or a
+  lone space, draws nothing instead of throwing a `TypeError`.
+- Recipe HTML draws the text after a `<` that starts no tag once instead of
+  twice.
 - Recipe `encrypt()`, and low-level `recrypt()` and `recryptAsync()`, keep the
   Info entries of the PDF they encrypt.
 - Recipe `image()` reports `Unknown image` for a page or frame the image does

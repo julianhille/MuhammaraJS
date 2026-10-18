@@ -178,6 +178,23 @@ describe("HTML to TextObjects parser", function () {
       assert.equal(h(html)[0].value, "x", html),
     );
   });
+
+  it("keeps the text after a < that starts no tag once", function () {
+    /**
+     * The text values of a parsed tree, joined in order.
+     * @param {Array<object>} nodes - The parsed nodes.
+     * @returns {string} Their text.
+     */
+    var text = (nodes) =>
+      nodes
+        .map((node) => (node.value || "") + text(node.childs || []))
+        .join("");
+    assert.equal(text(htmlToTextObjects("a < b")), "a < b");
+    assert.equal(
+      text(htmlToTextObjects("<p>if x < y then</p>")),
+      "if x < y then",
+    );
+  });
 });
 
 describeEnds("HTML to TextObjects", function (end) {
@@ -744,6 +761,33 @@ describeEnds("HTML to TextObjects", function (end) {
         .map((run) => run.text.trim())
         .filter(Boolean),
       ["x", "x"],
+    );
+  });
+
+  it("draws nothing for HTML without text", function () {
+    [" ", "<p></p>", "<!DOCTYPE html>"].forEach((html) => {
+      var recipe = end.newRecipe().createPage(400, 400);
+      assert.strictEqual(recipe.text(html, 10, 10, { html: true }), recipe);
+      assert.doesNotThrow(() => recipe.endPage().endPDF());
+    });
+    var bytes = page("empty-flow", (recipe) =>
+      recipe
+        .text("<p></p>", 10, 10, { ...ARIAL_12, flow: true })
+        .text("x", 10, 10, { font: "arial", size: 12 }),
+    );
+    assert.deepEqual(
+      drawnRuns(end, bytes).map((run) => run.text.trim()),
+      ["x"],
+    );
+  });
+
+  it("draws the text after a < that starts no tag once", function () {
+    var bytes = page("stray-less-than", (recipe) =>
+      recipe.text("a < b", 10, 10, ARIAL_12),
+    );
+    assert.deepEqual(
+      drawnRuns(end, bytes).map((run) => run.text),
+      ["a < b"],
     );
   });
 

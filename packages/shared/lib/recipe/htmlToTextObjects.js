@@ -277,7 +277,7 @@ function parseNode(node, options) {
     childs: [],
   };
   if (lineFeed) endsWithLineFeed.add(parsedData);
-  for (let num in node.childNodes) {
+  for (let num = 0; num < node.childNodes.length; num++) {
     const child = node.childNodes[num];
     const parsedChild = parseNode(child, options);
     parsedData.childs.push(parsedChild);
