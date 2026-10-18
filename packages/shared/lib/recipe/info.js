@@ -124,7 +124,7 @@ function setInfoValue(recipe, key, value) {
  * @desc Read the XMP metadata packet of the source PDF.
  * @memberof Recipe#
  * @function
- * @returns {string|undefined} The XMP packet as text, or undefined for a new PDF, a source without one, or a source that needs its user password. After endPDF(), a path source edited in place is the output.
+ * @returns {string|undefined} The XMP packet as text, or undefined for a new PDF, a source without one, or a source that needs its user password. After endPDF(), a path source edited in place is the output (native).
  * @throws {Error} If the source cannot be read, or keeps its metadata
  *   unencrypted (`/EncryptMetadata false`).
  */
@@ -442,7 +442,7 @@ function writeXmp(writer, info, dates, pdfa) {
  * @memberof Recipe#
  * @function
  * @param {string} name - The file name.
- * @param {Uint8Array|string} file - The file content, or its path.
+ * @param {Uint8Array|string} file - The file content, or on native also its path.
  * @param {Object} [options] - The options.
  * @param {string} [options.mimeType="application/octet-stream"] - The MIME type.
  * @param {string} [options.description] - A description of the file.

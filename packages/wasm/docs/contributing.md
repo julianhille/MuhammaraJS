@@ -35,6 +35,10 @@ package's TypeScript declarations. Public Recipe methods use `@name`,
 underscore-prefixed implementation helpers with `@private` so they stay out of
 the public reference.
 
+Shared Recipe JSDoc renders into both references: write it for native, and
+where Wasm differs, name both ends in the same block or override the entry from
+`packages/wasm/lib/recipe.js`.
+
 ## Examples
 
 Copyable browser examples belong in `packages/wasm/examples/browser/`. Add a

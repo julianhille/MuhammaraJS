@@ -169,6 +169,42 @@ describeEnd("wasm", "Recipe JSDoc", function (end) {
     assert.doesNotMatch(reference, /name="Recipe\+_/);
   });
 
+  it("keeps shared JSDoc true on Wasm", function () {
+    var blocks = (file) =>
+      Array.from(
+        readFileSync(file, "utf8").matchAll(/\/\*\*([\s\S]*?)\*\//g),
+        (match) => match[1],
+      );
+    var sources = recipeSources();
+    var overridden = new Set(
+      sources
+        .filter((file) => !file.startsWith(sharedRecipe))
+        .flatMap(blocks)
+        .map((doc) => doc.match(/@name\s+(\w+)/)?.[1]),
+    );
+    var nativeOnly = sources
+      .filter((file) => file.startsWith(sharedRecipe))
+      .flatMap(blocks)
+      .filter(
+        (doc) => /@memberof\s+Recipe/.test(doc) && !/@private\b/.test(doc),
+      )
+      .map((doc) => ({ doc, name: doc.match(/@name\s+(\w+)/)?.[1] }))
+      .filter(
+        ({ doc, name }) =>
+          !overridden.has(name) &&
+          /\bBuffer\b|file path|its path|path of|output (file|path)|path source/.test(
+            doc,
+          ) &&
+          !/\bnative\b|\bWasm\b/i.test(doc),
+      )
+      .map(({ name }) => name);
+    assert.deepEqual(
+      nativeOnly,
+      [],
+      "Name both ends, or override the entry in packages/wasm/lib/recipe.js",
+    );
+  });
+
   it("marks underscore-prefixed Recipe methods as private", function () {
     var sources = recipeSources().map((file) => ({
       file: path.relative(root, file),

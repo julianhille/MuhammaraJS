@@ -35,8 +35,9 @@ import * as m_vector from "./vector.js";
  * @desc Create a new PDF, or open an existing one for editing.
  * @namespace
  * @constructor
- * @param {string|Buffer} src - `Recipe.Source.NEW` ("new", or `Buffer.from("new")`) for a new PDF,
- *   otherwise the path or Buffer of the PDF to edit.
+ * @param {string|Buffer|Uint8Array|ArrayBuffer} src - `Recipe.Source.NEW` ("new", or `Buffer.from("new")`) for a new PDF,
+ *   otherwise the path or bytes of the PDF to edit. A `Uint8Array` or
+ *   `ArrayBuffer` is wrapped in a Buffer without copying.
  * @param {string} [output] - The output path. For a path source it defaults to
  *   the source path; for a Buffer source the result is only returned by
  *   `endPDF()` unless an output path is given.
@@ -64,6 +65,7 @@ import * as m_vector from "./vector.js";
  * @param {string} [options.ownerPassword] - The 'edit' password.
  * @param {number} [options.userProtectionFlag] - Encryption permission flags, see `permission()`.
  * @param {string|string[]} [options.fontSrcPath] - Directory location(s) of additional fonts.
+ * @throws {TypeError} If `src` is not a string, Buffer, Uint8Array or ArrayBuffer.
  * @throws {Error} If an existing source PDF cannot be read or opened for editing.
  * @throws {TypeError} If `pdfa` has an unknown level, an unusable profile or
  *   an `outputCondition` that is no string.

@@ -94,9 +94,8 @@ export const _getEncryptOptions = function _getEncryptOptions(options) {
  * @param {string} [options.ownerPassword] - The password for editing.
  * @param {string} [options.userPassword] - The password for viewing & encryption.
  * @param {number} [options.userProtectionFlag] - The flag for the security level, see `permission()`.
- * @returns {Recipe} The recipe instance. The output is encrypted by `endPDF()`:
- *   the output file for a path source, and the Buffer passed to the callback
- *   (or written to the output path) for a Buffer source.
+ * @returns {Recipe} The recipe instance. The output that `endPDF()` delivers
+ *   is encrypted.
  * @throws {Error} If the Recipe writes PDF/A, which does not allow encryption.
  */
 export const encrypt = function encrypt(options = {}) {

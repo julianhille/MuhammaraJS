@@ -1128,8 +1128,8 @@ export const _resumePageRotation = function _resumePageRotation(
  * @function
  * @memberof Recipe#
  * @param {number} pageNumber - The one-based page number.
- * @returns {RecipePageInfo} The page information.
- * @throws {TypeError} If the page is unknown.
+ * @returns {RecipePageInfo|null} The page information; null for an unknown page on Wasm.
+ * @throws {TypeError} If the page is unknown, on native.
  */
 export const pageInfo = function pageInfo(pageNumber) {
   const pageInfo = this._metadata?.[pageNumber];

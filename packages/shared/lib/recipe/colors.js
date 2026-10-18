@@ -71,7 +71,7 @@ export const knownColors = {
  * @function
  * @memberof Recipe#
  * @param {string} name - the name to be associated to given color value, or `Recipe.ChromaCommand.LOAD`
- * @param {string|number[]} value - the color value (HexColor, DecimalColor, or PercentColor), or the path of the JSON file to load
+ * @param {string|number[]} value - the color value (HexColor, DecimalColor, or PercentColor), or the JSON color file to load: a path on native, bytes on Wasm
  * @param {Recipe.Colorspace|""} [colorspace=''] - One of the `Recipe.Colorspace`
  *   values; empty picks gray, rgb or cmyk from the value length.
  * @returns {Recipe} The recipe instance.
