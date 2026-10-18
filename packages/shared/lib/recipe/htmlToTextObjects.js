@@ -351,8 +351,10 @@ function closeOmittedListItems(html) {
       .join("");
   const isList = (name) => name === HtmlTag.UL || name === HtmlTag.OL;
   const body = String(html).replace(
-    /<(\/?)([a-zA-Z][\w-]*)\b(?:[^>"']|"[^"]*"|'[^']*')*>/g,
-    (tag, closing, name) => {
+    // comments, CDATA and script or style bodies pass through unbalanced
+    /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<(script|style)\b[\s\S]*?<\/\1\s*>|<(\/?)([a-zA-Z][\w-]*)\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi,
+    (tag, rawText, closing, name) => {
+      if (!name) return tag;
       name = name.toLowerCase();
       if (VOID_ELEMENTS.has(name)) return closing ? "" : tag;
       if (!closing) {

@@ -87,6 +87,41 @@ describe("HTML to TextObjects parser", function () {
       [true, true, true, false],
     );
   });
+
+  it("does not balance tags inside comments, CDATA, script or style", function () {
+    /**
+     * The tags and values of a parsed tree.
+     * @param {object[]} objects - The text objects.
+     * @returns {Array} [tag, value, children] per object.
+     */
+    var tree = (objects) =>
+      objects.map((object) => [object.tag, object.value, tree(object.childs)]);
+    // the text inside is kept, as the parser always kept it
+    assert.deepEqual(tree(htmlToTextObjects("<!-- <b> --> text")), [
+      [undefined, "<b> ", []],
+      [undefined, " text", []],
+    ]);
+    assert.deepEqual(tree(htmlToTextObjects("<b>x</b><!--<i>-->y")), [
+      ["b", null, [[undefined, "x", []]]],
+      [undefined, "<i>", []],
+      [undefined, "y", []],
+    ]);
+    assert.deepEqual(tree(htmlToTextObjects("<![CDATA[<b>]]>tail")), [
+      [undefined, "<b>", []],
+      [undefined, "tail", []],
+    ]);
+    assert.deepEqual(
+      tree(htmlToTextObjects("<p>x</p><SCRIPT>if(a<b){}</SCRIPT>")),
+      [
+        ["p", null, [[undefined, "x", []]]],
+        ["SCRIPT", null, [[undefined, "if(a<b){}", []]]],
+      ],
+    );
+    assert.deepEqual(tree(htmlToTextObjects("<!-- </p> --><p>x</p>")), [
+      [undefined, "</p> ", []],
+      ["p", null, [[undefined, "x", []]]],
+    ]);
+  });
 });
 
 describeEnds("HTML to TextObjects", function (end) {
