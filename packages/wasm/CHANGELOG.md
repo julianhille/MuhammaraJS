@@ -271,6 +271,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   2-point line, and a negative `lineWidth` option of a shape draws 1 point
   wide instead of 2. A negative width given to `lineWidth()` or `lineStyle()`
   keeps the width set before instead of drawing 2 points wide.
+- Recipe `insertPage()` after `endPDF()` throws `PDF writer has ended`.
+  Repeated `endPDF()` calls return the first PDF, as documented, so the page
+  used to be dropped, or added only when no page was inserted before.
 
 ## [1.2.0] - 2026-10-12
 

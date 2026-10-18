@@ -96,9 +96,18 @@ export const _getEncryptOptions = function _getEncryptOptions(options) {
  * @param {number} [options.userProtectionFlag] - The flag for the security level, see `permission()`.
  * @returns {Recipe} The recipe instance. The output that `endPDF()` delivers
  *   is encrypted.
- * @throws {Error} If the Recipe writes PDF/A, which does not allow encryption.
+ * @throws {TypeError} On Wasm, if `options` is not a non-array object; native
+ *   ignores it and writes the PDF unencrypted.
+ * @throws {Error} If the Recipe writes PDF/A, which does not allow encryption,
+ *   or on Wasm after `endPDF()`, which native ignores.
  */
 export const encrypt = function encrypt(options = {}) {
+  // Wasm rejects what native ignores, as it always has.
+  if (this.platform.rejectsIgnoredCalls) {
+    if (!options || typeof options !== "object" || Array.isArray(options))
+      throw new TypeError("encrypt options must be an object");
+    if (this.ended) throw new Error("Cannot encrypt a finished Recipe");
+  }
   if (this.pdfa_) throw new Error("PDF/A does not allow encryption");
   this.needToEncrypt = true;
   const encryption = this._getEncryptOptions(options);

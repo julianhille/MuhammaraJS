@@ -177,7 +177,7 @@ export const image = function image(imgSrc, x, y, options = {}) {
  */
 function imageIndex(recipe, options) {
   // Wasm rejects the prerelease zero-based option, as it always has.
-  if (options.index !== undefined && recipe.platform.rejectsImageIndex) {
+  if (options.index !== undefined && recipe.platform.rejectsIgnoredCalls) {
     throw new TypeError(
       "image index was replaced by the one-based page option; pass page: index + 1",
     );

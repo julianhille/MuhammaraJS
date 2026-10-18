@@ -426,7 +426,7 @@ export const text = function text(text = "", x, y, options = {}) {
   if (options === null) options = {};
   // Without a page, native draws nothing, as it always has; Wasm throws.
   if (!this.pageContext) {
-    if (this.platform.textWithoutPageThrows) throw this.platform.noPageError();
+    if (this.platform.rejectsIgnoredCalls) throw this.platform.noPageError();
     return this;
   }
   // A call with coordinates starts a new text box, so an open flow is drawn

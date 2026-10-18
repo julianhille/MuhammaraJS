@@ -106,8 +106,10 @@ function createNativePlatform(muhammara) {
     // Native's behaviour where the ends differed; kept until a major release
     // unifies them, see packages/wasm/DIFFERENCES.md.
     fontFallsBackToDefault: true,
-    textWithoutPageThrows: false,
-    rejectsImageIndex: false,
+    // Wasm throws for a call native ignores: text() without a page,
+    // image({index}), encrypt() with a non-object or after endPDF(),
+    // insertPage() after endPDF().
+    rejectsIgnoredCalls: false,
     pageInfoIsRecord: false,
     sourceName: "an existing PDF",
     /**

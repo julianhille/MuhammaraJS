@@ -38,6 +38,27 @@ describeEnds("Recipe endPDF called twice", function (end) {
     assert.deepEqual(secondOutput, firstOutput);
   });
 
+  it("rejects encrypt() and insertPage() after endPDF() on Wasm only", function () {
+    var recipe = end.newRecipe().createPage("letter").endPage();
+    var first = recipe.endPDF();
+    var source = end.pdf("recipe/test.pdf");
+    if (end.name === "wasm") {
+      assert.throws(() => recipe.encrypt({ userPassword: "u" }), {
+        name: "Error",
+        message: "Cannot encrypt a finished Recipe",
+      });
+      assert.throws(() => recipe.insertPage(1, source, 1), {
+        name: "Error",
+        message: "PDF writer has ended",
+      });
+      return;
+    }
+    // Native ignores both calls, as it always has.
+    assert.strictEqual(recipe.encrypt({ userPassword: "u" }), recipe);
+    assert.strictEqual(recipe.insertPage(1, source, 1), recipe);
+    assert.equal(recipe.endPDF(), first);
+  });
+
   it("retires the Recipe and rethrows the original error after a finalization failure", function () {
     var recipe = end.openRecipe("recipe/createWithBuffer.pdf");
     var finalizationError = new Error("injected finalization failure");

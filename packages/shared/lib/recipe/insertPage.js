@@ -19,12 +19,15 @@ import * as utils from "./utils.js";
  * @throws {TypeError} If pdfSrc or srcPageNumber is missing; on Wasm also a
  *   name that is not registered or a page that is not a whole number of at
  *   least 1.
+ * @throws {Error} On Wasm after `endPDF()`; native ignores the call.
  */
 export const insertPage = function insertPage(
   afterPageNumber,
   pdfSrc,
   srcPageNumber,
 ) {
+  if (this.ended && this.platform.rejectsIgnoredCalls)
+    throw new Error("PDF writer has ended");
   if (this.deletedPages?.size) {
     throw new Error("insertPage cannot be combined with deletePage");
   }

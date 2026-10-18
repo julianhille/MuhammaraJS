@@ -240,6 +240,22 @@ describeEnds("Recipe encryption", function (end) {
     assert.deepEqual(encryption(end, bytes), { encrypted: false, pages: 2 });
   });
 
+  it("rejects encrypt() options that are not an object on Wasm only", function () {
+    var recipe = end.newRecipe().createPage(100, 100).endPage();
+    if (end.name === "wasm") {
+      ["u", []].forEach((options) =>
+        assert.throws(() => recipe.encrypt(options), {
+          name: "TypeError",
+          message: "encrypt options must be an object",
+        }),
+      );
+      return;
+    }
+    // Native ignores them, as it always has, and writes the PDF unencrypted.
+    assert.strictEqual(recipe.encrypt("u"), recipe);
+    assert.equal(encryption(end, recipe.endPDF()).encrypted, false);
+  });
+
   it("replaces the constructor password with the encrypt() one", function () {
     var bytes = end
       .newRecipe({ userPassword: "first" })

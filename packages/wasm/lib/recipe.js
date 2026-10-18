@@ -147,8 +147,10 @@ export function createRecipeFactory({
     // Wasm's behaviour where the ends differed; kept until a major release
     // unifies them, see DIFFERENCES.md.
     fontFallsBackToDefault: false,
-    textWithoutPageThrows: true,
-    rejectsImageIndex: true,
+    // Wasm throws for a call native ignores: text() without a page,
+    // image({index}), encrypt() with a non-object or after endPDF(),
+    // insertPage() after endPDF().
+    rejectsIgnoredCalls: true,
     pageInfoIsRecord: true,
     sourceName: "PDF bytes",
     noPageError: () => new Error("A page is required for coordinates"),
