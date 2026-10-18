@@ -38,4 +38,23 @@ describeEnd("native", "Recipe split", function (end) {
       assert.equal(pageCount(end, readFileSync(path.join(dir, name))), 1),
     );
   });
+
+  it("splits a password-protected source opened with its password", function () {
+    var dir = path.join(OUTPUT, "split-password-source");
+    rmSync(dir, { recursive: true, force: true });
+    mkdirSync(dir, { recursive: true });
+    end.openRecipe("PDFWithPassword.PDF", { password: "user" }).split(dir, "p");
+    assert.deepEqual(readdirSync(dir), ["p-1.pdf"]);
+    assert.equal(pageCount(end, readFileSync(path.join(dir, "p-1.pdf"))), 1);
+  });
+
+  it("keeps its errors for a missing directory and after endPDF()", function () {
+    var recipe = end.openRecipe("Original.pdf");
+    assert.throws(
+      () => recipe.split(path.join(OUTPUT, "split-missing", "dir"), "p"),
+      { name: "TypeError", message: /Unable to create PDF file/ },
+    );
+    recipe.endPDF();
+    assert.throws(() => recipe.split(OUTPUT, "p"), /released by endPDF/);
+  });
 });

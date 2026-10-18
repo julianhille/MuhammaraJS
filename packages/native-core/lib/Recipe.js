@@ -350,9 +350,17 @@ function createNativePlatform(muhammara) {
      * @param {string} fileName - The file name.
      * @param {Uint8Array} bytes - The one-page PDF.
      * @returns {void}
+     * @throws {TypeError} If the file cannot be written, with the message
+     *   createWriter() throws for such a path.
      */
     saveSplit(outputDir, fileName, bytes) {
-      fs.writeFileSync(path.join(outputDir, fileName), bytes);
+      try {
+        fs.writeFileSync(path.join(outputDir, fileName), bytes);
+      } catch {
+        throw new TypeError(
+          "Unable to create PDF file, make sure that output file target is available",
+        );
+      }
     },
 
     /**

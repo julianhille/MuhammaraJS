@@ -19,7 +19,7 @@ export const split = function split(outputDir = "", prefix) {
     const output = this.platform.newWriter({});
     utils.appendPDFPageFromPDFWithAnnotations(
       output.writer,
-      this.platform.readerSource(this._source),
+      this._getReader(),
       i,
     );
     this.platform.saveSplit(
