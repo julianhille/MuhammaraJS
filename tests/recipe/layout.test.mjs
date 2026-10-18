@@ -276,7 +276,7 @@ describeEnds("Recipe layout", function (end) {
       next.every((x) => x < 55 + 241),
       JSON.stringify(next),
     );
-  }).timeout(60000);
+  });
 
   it("stops flowing when overflow returns true", function () {
     var lorem =
