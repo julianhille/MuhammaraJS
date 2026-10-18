@@ -931,11 +931,15 @@ export interface Recipe {
     y: RecipeCoordinate,
     options?: RecipeImageOptions,
   ): this;
-  appendPage(name: string, pages?: RecipePageSelection): this;
-  overlay(name: string, options?: RecipeOverlayOptions): this;
-  overlay(name: string, x: number, options?: RecipeOverlayOptions): this;
+  appendPage(name: string | ByteSource, pages?: RecipePageSelection): this;
+  overlay(name: string | ByteSource, options?: RecipeOverlayOptions): this;
   overlay(
-    name: string,
+    name: string | ByteSource,
+    x: number,
+    options?: RecipeOverlayOptions,
+  ): this;
+  overlay(
+    name: string | ByteSource,
     x?: number,
     y?: number,
     options?: RecipeOverlayOptions,
@@ -1043,7 +1047,7 @@ export interface Recipe {
   custom(key: string, value: unknown): this;
   insertPage(
     afterPageNumber: number,
-    name: string,
+    name: string | ByteSource,
     sourcePageNumber: number,
   ): this;
   split(prefix?: string): RecipeSplitResult[];

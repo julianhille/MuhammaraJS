@@ -90,6 +90,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
 - Recipe `chroma("!load", bytes)` loads colors from JSON bytes, and the
   annotations of appended, inserted and split pages are kept.
+- Recipe `appendPage()`, `insertPage()` and `overlay()` take PDF bytes as
+  well as a registered name.
 
 ### Fixed
 

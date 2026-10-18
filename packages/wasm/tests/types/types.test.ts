@@ -712,6 +712,9 @@ async function usesLowLevelSurface() {
       link: "https://image.example.test",
     })
     .appendPage("pdf", [1, [2, 3]])
+    .appendPage(new Uint8Array(0))
+    .overlay(new Uint8Array(0), 0, 0)
+    .insertPage(1, new Uint8Array(0), 1)
     .overlay("pdf", { page: 1, fitWidth: true })
     .overlay("pdf", 10, { page: 1 })
     .overlay("pdf", 10, 10, {
