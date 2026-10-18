@@ -237,11 +237,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   was.
 - Recipe `replaceText()` on a page without content throws its clear error,
   and `removeText()` with `forms` works for edited sources on both ends.
-- Recipe HTML keeps a list item that holds only a no-break or em space, draws
-  no blank line for whitespace before a block, reads malformed markup such as
-  list items without `</li>` as browsers do instead of throwing, starts a
-  `<div>` on its own line, and justifies every line of a paragraph but its
-  last.
+- Recipe HTML keeps a list item that holds only a no-break or em space, and
+  no-break spaces at the start of text or alone in an element, as browsers
+  do, draws no blank line for whitespace before a block, reads malformed
+  markup such as list items without `</li>` as browsers do instead of
+  throwing, skips a DOCTYPE, XML declaration or broken comment, draws the
+  text of markup it cannot recover, starts a `<div>` on its own line, and
+  justifies every line of a paragraph but its last.
 - Recipe `encrypt()`, and low-level `recrypt()` and `recryptAsync()`, keep the
   Info entries of the PDF they encrypt.
 - Recipe `image()` reports `Unknown image` for a page or frame the image does

@@ -233,6 +233,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Recipe `insertPage()` keeps the PDF version of an edited source, as native
   does, instead of writing PDF 1.7; `encrypt()` picks the cipher of that
   version, RC4-128 for PDF 1.4.
+- Recipe `text()` and `table()` with `html` read HTML with native's parser;
+  markup it cannot recover is drawn as its text.
 
 ## [1.2.0] - 2026-10-12
 

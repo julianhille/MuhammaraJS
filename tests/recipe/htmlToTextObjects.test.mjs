@@ -162,10 +162,21 @@ describe("HTML to TextObjects parser", function () {
       htmlToTextObjects("<textarea><b>x</textarea>")[0].childs[0].value,
       "<b>x",
     );
-    // an unterminated tag or comment still throws, and quickly
-    assert.throws(() => htmlToTextObjects('<b attr=">x</b>'), /mismatch/);
-    assert.throws(() => htmlToTextObjects("</b".repeat(50000)));
-    assert.throws(() => htmlToTextObjects("<!--".repeat(50000) + "</i>"));
+    // an unterminated tag or comment is drawn as its text, and quickly
+    assert.equal(htmlToTextObjects('<b attr=">x</b>')[0].value, "x");
+    assert.deepEqual(htmlToTextObjects("</b".repeat(50000)), []);
+    assert.deepEqual(htmlToTextObjects("<!--".repeat(50000) + "</i>"), []);
+  });
+
+  it("skips declarations and draws the text of markup it cannot recover", function () {
+    var h = htmlToTextObjects;
+    assert.deepEqual(h("<!DOCTYPE html><p>x</p>"), h("<p>x</p>"));
+    assert.deepEqual(h('<?xml version="1.0"?><b>x</b>'), h("<b>x</b>"));
+    assert.deepEqual(h("<p>x<!-- -- --></p>"), h("<p>x</p>"));
+    assert.equal(h('<p a="1" a="2">dup</p>')[0].value, "dup");
+    ["<1>x</1>", "< b>x</ b>", "<b <i>x</b>"].forEach((html) =>
+      assert.equal(h(html)[0].value, "x", html),
+    );
   });
 });
 
@@ -716,6 +727,24 @@ describeEnds("HTML to TextObjects", function (end) {
     var y = (text) => runs.find((run) => run.text.trim() === text).y;
     assert.ok(y("one") > y("two") && y("two") > y("three"));
     assert.equal(remainder, "\nb\nc");
+  });
+
+  it("draws text and table HTML after a DOCTYPE", function () {
+    var html = "<!DOCTYPE html><p>x</p>";
+    var bytes = page("doctype", (recipe) =>
+      recipe
+        .text(html, 20, 20, { ...ARIAL_12, textBox: { width: 200 } })
+        .table(20, 100, [{ a: html }], {
+          ...ARIAL_12,
+          columns: [{ name: "a", width: 150 }],
+        }),
+    );
+    assert.deepEqual(
+      drawnRuns(end, bytes)
+        .map((run) => run.text.trim())
+        .filter(Boolean),
+      ["x", "x"],
+    );
   });
 
   it("lays out upper-case lists with bullets and numbers", function () {

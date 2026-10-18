@@ -55,12 +55,13 @@ export const htmlToTextObjects = function (htmlCodes, options = {}) {
   let nodes;
   try {
     nodes = parseHtml(htmlCodes);
-  } catch (error) {
-    // markup the XML parser rejects is read as browsers recover it
+  } catch {
+    // markup the XML parser rejects is read as browsers recover it, and
+    // markup that still fails as its text, as Wasm Recipe always drew it
     try {
       nodes = parseHtml(closeOmittedListItems(htmlCodes));
     } catch {
-      throw error;
+      nodes = parseHtml(String(htmlCodes).replace(/<[^>]*>?/g, ""));
     }
   }
   const textObjects = parseNode(nodes, options).childs[0].childs;
@@ -358,7 +359,8 @@ const VOID_ELEMENTS = new Set([
  * inside its element, an end tag without an open element is dropped, a `<p>`
  * or `<li>` ends an open element of its name, a `</ul>` or `</ol>` ends the
  * innermost list when no list of its name is open, and what is still open at
- * the end is ended there. It runs only on markup the XML parser rejects.
+ * the end is ended there. It also drops markup declarations, processing
+ * instructions and comments. It runs only on markup the XML parser rejects.
  * @private
  * @param {string} html - The HTML source.
  * @returns {string} The HTML with balanced tags.
@@ -372,7 +374,8 @@ function closeOmittedListItems(html) {
       .map((name) => `</${name}>`)
       .join("");
   const isList = (name) => name === HtmlTag.UL || name === HtmlTag.OL;
-  const body = String(html).replace(
+  html = String(html).replace(/<!--[\s\S]*?(?:-->|$)|<[!?][^>]*>?/g, "");
+  const body = html.replace(
     /<(\/?)([a-zA-Z][\w:.-]*)\b(?:[^>"']|"[^"]*(?:"|$)|'[^']*(?:'|$))*(?:>|$)/g,
     (tag, closing, name) => {
       // an unterminated tag is left for the parser to reject
