@@ -15,7 +15,6 @@ node_modules
 src/deps/openssl/
 aws.json
 etc
-recipe-docs/
 site/
 .docs-venv/
 docs/.staging/
