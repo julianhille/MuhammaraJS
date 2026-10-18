@@ -70,6 +70,25 @@ describe("Xcryption", function () {
     plainReader.end();
   });
 
+  it("keeps the Info dictionary through recrypt", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter();
+    var info = writer.getDocumentContext().getInfoDictionary();
+    info.title = "Kept";
+    info.addAdditionalInfoEntry("Custom", "value");
+    writer.writePage(new muhammara.PDFPage(0, 0, 100, 100));
+    var encrypted = muhammara.recrypt(writer.end(), { userPassword: "view" });
+    var plain = muhammara.recrypt(encrypted, { password: "view" });
+    writeOutput("Xcryption-recrypt-info", plain);
+    var reader = muhammara.createReader(plain);
+    var kept = reader
+      .queryDictionaryObject(reader.getTrailer(), "Info")
+      .toPDFDictionary();
+    assert.equal(kept.queryObject("Title").toText(), "Kept");
+    assert.equal(kept.queryObject("Custom").toText(), "value");
+    reader.end();
+  });
+
   it("creates a PDF with a password, as native createWriter does", async function () {
     var muhammara = await createMuhammaraWasm();
     var writer = muhammara.createWriter({

@@ -1,4 +1,4 @@
-#include "RecryptKeepingInfo.h"
+#include "../../native-with-source/src/RecryptKeepingInfo.h"
 #include "wasm_api_internal.h"
 
 extern "C" {

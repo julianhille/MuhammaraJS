@@ -39,13 +39,16 @@ export function createRawObjectsContext({
      * @param {number} writer - Native byte writer.
      * @param {ByteSource} bytes - Bytes to write.
      * @returns {number} The number of bytes written.
-     * @throws {TypeError} If `bytes` is not a supported byte source.
+     * @throws {TypeError} If `bytes` is not a supported byte source, or an
+     *   array item is not an integer from 0 to 255.
      * @throws {Error} If the writer is no longer active.
      */
     function writeBytes(writer, bytes) {
       // An array of byte values, as native write() accepts.
-      if (Array.isArray(bytes)) bytes = Uint8Array.from(bytes);
-      bytes = normalizeBytes(bytes, "ByteWriter input");
+      bytes = normalizeBytes(
+        byteArrayToBytes(bytes, "ByteWriter input"),
+        "ByteWriter input",
+      );
       return withBytes(bytes, (pointer) => {
         var written = module._muhammara_wasm_byte_writer_write(
           writer,

@@ -4258,9 +4258,6 @@ export function createWriterFactory({
         if (options && typeof options === "object" && "password" in options) {
           throw new TypeError("PDF passwords are not supported in Wasm");
         }
-        // A registered PDF name, as native takes a path.
-        if (typeof sourceBytes === "string" && pdfs.has(sourceBytes))
-          sourceBytes = module.FS.readFile(pdfs.get(sourceBytes));
         sourceBytes = normalizeBytes(sourceBytes, "PDF input");
         var sourcePath = `/pdfs/${state.nextPdf++}.pdf`;
         module.FS.mkdirTree("/pdfs");

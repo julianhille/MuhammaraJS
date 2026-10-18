@@ -3,8 +3,8 @@
 // PDFWriter::RecryptPDF, which also keeps the source's Info dictionary.
 // RecryptPDF deep-copies the catalog only, so a recrypted PDF lost its title,
 // author and custom Info entries. This copy uses PDFWriter's public API and
-// copies the trailer's /Info as it copies /Root. The Wasm glue keeps the same
-// routine in packages/wasm/src/RecryptKeepingInfo.h.
+// copies the trailer's /Info as it copies /Root. The Wasm glue includes this
+// file too.
 
 #include <string>
 
