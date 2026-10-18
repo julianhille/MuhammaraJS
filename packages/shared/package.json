@@ -7,5 +7,10 @@
   "type": "module",
   "exports": {
     "./*": "./lib/*"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "^0.9.10",
+    "bidi-js": "1.1.0",
+    "linebreak": "^1.1.0"
   }
 }

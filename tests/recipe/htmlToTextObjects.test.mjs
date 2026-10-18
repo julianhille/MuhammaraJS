@@ -319,10 +319,8 @@ describeEnds("HTML to TextObjects", function (end) {
     );
   });
 
-  // HTML5 makes </li> optional and browsers recover from misnested lists.
-  // The parser is XML-strict and throws for this markup instead (see the
-  // parser test "requires well-formed list markup"); the former Wasm parser
-  // recovered: the item ended at its sibling or at its list.
+  // HTML5 makes </li> optional and browsers recover from misnested lists:
+  // an item ends at its sibling or at its list, on both ends.
   it("ends items without </li> and recovers misnested lists", function () {
     [
       ["<ul><li>one<li>two</ul>tail", ["* one", "* two", "tail"]],

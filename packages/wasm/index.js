@@ -1,3 +1,3 @@
-// The package entry: the bundle in dist/, which holds the shared Recipe. The
-// sources are in lib/ (lib/main.js is the entry the bundle is built from).
+// The package entry: the bundle in dist/, which holds the shared Recipe. It
+// is built from lib/main.js, which is not published.
 export * from "./dist/index.js";

@@ -148,14 +148,6 @@ export var FontStyle = Object.freeze({
   BOLD_ITALIC: "bold-italic",
 });
 
-/** Short FontStyle spellings, also the font registry keys; internal, not exported. */
-export var FontStyleKey = Object.freeze({
-  R: "r",
-  B: "b",
-  I: "i",
-  BI: "bi",
-});
-
 /** Where `replaceObject()` replaces references: `global` means every page. */
 export var ObjectReplacementScope = Object.freeze({
   GLOBAL: "global",
