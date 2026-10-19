@@ -88,8 +88,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Add an AcroForm tab to the browser example that lists the form fields of an
   uploaded PDF, or of a built-in sample form, in a one-page report
   [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
-- Recipe `chroma("!load", bytes)` loads colors from JSON bytes, and the
-  annotations of appended, inserted and split pages are kept.
+- Recipe `chroma("!load", bytes)` loads colors from JSON bytes.
 - Recipe `appendPage()`, `insertPage()` and `overlay()` take PDF bytes as
   well as a registered name.
 - Recipe `read()` takes a registered PDF name, as `appendPage()` does; a name
@@ -188,6 +187,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Turn a rotated Recipe `polygon()` without `rotationOrigin` around the center
   of its bounding box, as native does, instead of its first point. Pass
   `rotationOrigin: coordinates[0]` to keep the old pivot [#924](https://github.com/julianhille/MuhammaraJS/issues/924)
+- Recipe keeps the annotations of appended, inserted and split pages.
 - Recipe `insertPage()` keeps the Info entries of the PDF.
 - Recipe opens an owner-protected source with `password` without losing its
   Info entries.
@@ -234,7 +234,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `circle()` throw for missing or non-finite values instead of writing `nan`
   into the PDF. `insertPage()` throws for a source page that does not exist
   instead of inserting another, as native does. `createPage()` with a
-  negative size throws a `RangeError` instead of an internal operation error.
+  negative size throws a `RangeError` instead of an internal operation error,
+  and an infinite width given to `lineStyle()` or a shape is ignored instead
+  of writing `inf`.
 - Recipe HTML keeps the text after a `<` that starts no tag, such as
   `a < b and c`, instead of dropping it.
 - Recipe `createPage()` takes numeric strings such as `"100"`, as native does,
@@ -262,9 +264,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   the end as in browsers, and `<script>` content is drawn as text.
 - Recipe `textBox.wrap: "trim"` drops a first word wider than the box, as
   native does, instead of drawing it past the box edge.
-- Recipe `insertPage()` of bytes that are no PDF fails at `endPDF()` with
-  `Unable to create PDF copying context`, as native words it, instead of
-  `Unable to parse PDF`.
+- Recipe `insertPage()` of a registered name whose bytes are no PDF fails at
+  `endPDF()` with `Unable to create PDF copying context`, as native words it,
+  instead of `Unable to parse PDF`.
 - Recipe `getPageInfo()` of an edited source shows `info()` changes after
   `endPDF()`, as native does.
 - Recipe `chroma()` accepts a non-hex value of a valid length, as native does;
@@ -277,10 +279,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   Repeated `endPDF()` calls return the first PDF, as documented, so the page
   used to be dropped, or added only when no page was inserted before.
 - After `endPDF()`, Recipe `createPage()` throws `PDF writer has ended`, as
-  native does, and `replaceText()`/`removeText()` throw native's `RangeError`;
-  `permission()` with an array throws native's `TypeError`.
-- Recipe `lineStyle()` takes `cap` and `join` as numbers; a numeric string
-  such as `"1"` throws.
+  native does, and `replaceText()`/`removeText()` throw native's `RangeError`.
+- Recipe errors for a non-numeric `lineStyle()` dash, `editPage()` of a source
+  that needs its user password, and `polygon([])` are worded differently;
+  their types are unchanged.
 
 ## [1.2.0] - 2026-10-12
 

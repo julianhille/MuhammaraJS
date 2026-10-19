@@ -233,8 +233,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   filled.
 - Recipe `textDimensions()` widens `width` by `charSpace`, as it widens
   `xMax`.
-- Recipe text with a `textBox.style` leaves the caller's style object as it
-  was.
 - Recipe `replaceText()` on a page without content throws its clear error,
   and `removeText()` with `forms` works for edited sources on both ends.
 - Recipe HTML keeps a list item that holds only a no-break or em space, and
@@ -256,8 +254,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   previous page, or `{ x: 0, y: 0 }` before the first page, instead of
   throwing.
 - Recipe `lineStyle()` and `lineWidth()` before the first page set the style
-  of the next drawing instead of throwing `Cannot read properties of
-undefined`.
+  of the next drawing instead of throwing
+  `Cannot read properties of undefined`.
 - Recipe `comment()` and `annot()` without an active page throw
   `Annotations require an active page` at the call, and `table()`,
   `overlay()` and `polygon()` throw `No page is active`, instead of failing
@@ -279,13 +277,19 @@ undefined`.
 - Recipe `lineWidth()` and `lineStyle()` ignore a negative width instead of
   writing it into the PDF, which does not allow one.
 - Recipe `lineWidth()` and `lineStyle()` take a numeric-string width such as
-  `"3"`, as shapes do, instead of throwing `Wrong Argument`; an infinite or
-  non-numeric width is ignored.
+  `"3"`, and `lineStyle()` a numeric-string `cap` or `join`, instead of
+  throwing `Wrong Argument`; an infinite or non-numeric width, also a shape's
+  `lineWidth`, is ignored.
+- Recipe `permission()` reads an array as comma-separated names, as
+  `@muhammara/wasm` does, instead of throwing `flags.split is not a function`.
 - Recipe shapes, images and text leave the caller's options object as it was,
   so frozen options work, and a style object reused after `opacity()`, or a
   text flow continued after it, draws at the new opacity.
-- A path Recipe whose `endPDF()` fails leaves its output file, or the source
-  it edits in place, as it was instead of truncating it to 0 bytes.
+- A path Recipe leaves an existing output file, or the source it edits in
+  place, as it was until `endPDF()` succeeds, instead of truncating it to 0
+  bytes.
+- Recipe `encrypt({})` after an earlier `encrypt()` keeps that encryption
+  instead of writing the PDF unencrypted.
 
 ### Changed
 
@@ -307,9 +311,8 @@ undefined`.
   of the wrong length.
 - Recipe `appendPage()` of a PDF that needs a password throws
   `TypeError: HummusJS: Unable to read/edit PDF file (pages=0)` instead of
-  `TypeError: unable to create copying context…`.
-- Recipe `encrypt({})` after an earlier `encrypt()` keeps that encryption
-  instead of writing the PDF unencrypted.
+  `TypeError: unable to create copying context…`, and `appendPage()` of a
+  missing path throws a `TypeError` instead of the `ENOENT` `Error`.
 
 ## [7.2.0] - 2026-10-12
 
