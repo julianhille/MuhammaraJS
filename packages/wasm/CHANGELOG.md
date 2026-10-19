@@ -6,6 +6,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Breaking Changes
 
+- Recipe `text(null)`, `textDimensions(null)` and `textDimensions(undefined)`
+  throw `TypeError: text must not be null` (or `undefined`), as on native,
+  instead of drawing or measuring the text `null` or `undefined`; see
+  [Breaking Changes](docs/breaking-changes.md#recipe-text)
 - Recipe `info()` without arguments reports the custom keys of a source PDF
   in their own spelling, as the PDF stores them, instead of lower-cased:
   `info().reportid` is now `info().ReportId`; see

@@ -812,17 +812,19 @@ describeEnds("Recipe text", function (end) {
     recipe.endPage().endPDF();
   });
 
-  it("draws null as the text textDimensions() measures for it", function () {
-    var draw = (value) =>
-      textRuns(
-        end,
-        end
-          .newRecipe()
-          .createPage(200, 200)
-          .text(value, 10, 10)
-          .endPage()
-          .endPDF(),
-      );
-    assert.deepEqual(draw(null), draw("null"));
+  it("rejects null text and draws nothing for omitted text", function () {
+    var recipe = end.newRecipe().createPage(200, 200);
+    assert.throws(() => recipe.text(null, 10, 10), {
+      name: "TypeError",
+      message: "text must not be null",
+    });
+    [null, undefined].forEach((value) =>
+      assert.throws(() => recipe.textDimensions(value), {
+        name: "TypeError",
+        message: `text must not be ${value}`,
+      }),
+    );
+    var bytes = recipe.text().endPage().endPDF();
+    assert.deepEqual(textRuns(end, bytes), []);
   });
 });

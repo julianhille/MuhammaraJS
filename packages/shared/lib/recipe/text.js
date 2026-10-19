@@ -413,15 +413,15 @@ export const _makeTextBox = function _makeTextBox(options) {
  * @param {string} [options.subject] - Subject of annotation.
  * @param {string} [options.link] - Make the text open this URL.
  * @returns {Recipe} The recipe instance. Without an active page nothing is drawn.
- * @throws {TypeError} If `options.charSpace` or `options.rotation` is not a finite number, or
- * `options.direction` is not a `Recipe.TextDirection` value; nothing is drawn.
+ * @throws {TypeError} If `text` is `null`, `options.charSpace` or `options.rotation` is not a
+ * finite number, or `options.direction` is not a `Recipe.TextDirection` value; nothing is drawn.
  * @throws {RangeError} If `options.size` is not greater than zero or
  *   `options.miterLimit` is below 1; nothing is drawn.
  * @throws {Error} If an overflow callback names an undefined layout, or a font cannot be loaded.
  */
 export const text = function text(text = "", x, y, options = {}) {
-  // Draw a value that is no text as textDimensions() measures it; an omitted
-  // text draws nothing.
+  // An omitted text draws nothing; null is no text.
+  if (text === null) throw new TypeError("text must not be null");
   if (!Array.isArray(text)) text = String(text);
   // null options act like omitted options.
   if (options === null) options = {};

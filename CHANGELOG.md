@@ -270,8 +270,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `TypeError`.
 - Recipe `textDimensions()` measures a number or other value as text, as
   `text()` draws it, instead of throwing a `TypeError`.
-- Recipe `text(null)` draws `null`, as `textDimensions(null)` measures it,
-  instead of throwing `Cannot read properties of undefined (reading 'lineWidth')`.
+- Recipe `text(null)`, `textDimensions(null)` and `textDimensions(undefined)`
+  throw `TypeError: text must not be null` (or `undefined`) instead of an
+  internal error such as `Cannot read properties of undefined (reading
+'lineWidth')`.
 - Recipe `createPage()` with numeric strings records the page size as
   numbers, so `pageInfo()` and the page layout are right.
 - Recipe `lineWidth()` and `lineStyle()` ignore a negative width instead of
