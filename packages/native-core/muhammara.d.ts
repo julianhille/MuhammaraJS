@@ -3376,8 +3376,13 @@ declare namespace muhammara {
       "regular" | "bold" | "italic" | "bold-italic" | "r" | "b" | "i" | "bi";
 
     interface RecipeOptions {
-      /** PDF version of a new PDF: 1.0 through 1.7 or 2.0; other values use 1.7. */
+      /**
+       * PDF version of a new PDF: 1.0 through 1.7 or 2.0, or 10 through 17 or
+       * 20; other values use 1.7.
+       */
       version?: number;
+      /** Flate-compress the streams. Defaults to true. */
+      compress?: boolean;
       /**
        * Write a new PDF as PDF/A (ISO 19005): the PDF version of the level, XMP
        * metadata with the PDF/A identification, and an output intent with the
@@ -3393,12 +3398,13 @@ declare namespace muhammara {
       author?: string;
       title?: string;
       subject?: string;
-      keywords?: string[];
+      /** Keywords; an array is joined with a comma and a space. */
+      keywords?: string | string[];
       /** Default colorspace; see `Recipe.Colorspace`. */
       colorspace?: Colorspace;
       /** Owner password; also opens a protected source PDF. */
       password?: string;
-      /** The 'view' password; also enables encryption. */
+      /** The 'view' password; also encrypts a new PDF. */
       userPassword?: string;
       /** The 'edit' password. */
       ownerPassword?: string;
@@ -3970,7 +3976,7 @@ declare namespace muhammara {
      * @param options.colorspace - The default colorspace, one
      *   of the `Recipe.Colorspace` values.
      * @param options.password - Owner password; also opens a protected source.
-     * @param options.userPassword - The 'view' password; also enables encryption.
+     * @param options.userPassword - The 'view' password; also encrypts a new PDF.
      * @param options.ownerPassword - The 'edit' password.
      * @param options.userProtectionFlag - Encryption permission flags, see `permission()`.
      * @param options.fontSrcPath - Directory location(s) of additional fonts.
@@ -4395,7 +4401,7 @@ declare namespace muhammara {
     /**
      * Append pages from the other pdf to the current pdf. An active page is
      * finished first, so appended pages follow it in the output.
-     * @param pdfSrc - The path for the other pdf.
+     * @param pdfSrc - The path or bytes of the other pdf.
      * @param pages - ] - A one-based page; defaults to [.
      * number or array of page numbers and inclusive ranges. Omitting it appends all
      * pages; endpoints beyond the source are clamped to its final page.
@@ -4406,7 +4412,7 @@ declare namespace muhammara {
      * @throws {Error} If the source PDF cannot be read.
      */
     appendPage(
-      pdfSrc: string,
+      pdfSrc: string | Uint8Array | ArrayBuffer,
       pages?: number | (number | [number, number])[],
     ): Recipe;
 
@@ -4577,10 +4583,11 @@ declare namespace muhammara {
     /**
      * Insert a page from the other pdf
      * @param afterPageNumber - The one-based page number to insert after; 0 inserts before the first page.
-     * @param pdfSrc - The path for the other pdf
+     * @param pdfSrc - The path or bytes of the other pdf
      * @param srcPageNumber - The one-based page number to be inserted from the other pdf.
-     * @returns The recipe instance. Pages are inserted by `endPDF()`;
-     *   Buffer sources do not support insertion.
+     * @returns The recipe instance. Pages are inserted by `endPDF()`.
+     *   The pages are copied into a new PDF, so an encrypted source loses its
+     *   encryption unless `encrypt()` is called.
      * @throws {Error} If pages were deleted with deletePage() on this Recipe,
      *   or it writes PDF/A, attached files or form fills.
      * @throws {Error} If afterPageNumber is not a number.
@@ -4588,13 +4595,13 @@ declare namespace muhammara {
      */
     insertPage(
       afterPageNumber: number,
-      pdfSrc: string,
+      pdfSrc: string | Uint8Array | ArrayBuffer,
       srcPageNumber: number,
     ): Recipe;
 
     /**
      * Overlay a pdf to the current pdf
-     * @param pdfSrc - The path for the overlay pdf
+     * @param pdfSrc - The path or bytes of the overlay pdf
      * @param x - The PDF x offset from the left edge, or options when using the two-argument form; defaults to 0.
      * @param y - The offset from the top edge; defaults to 0.
      * @param options - The options.
@@ -4607,9 +4614,12 @@ declare namespace muhammara {
      * @throws {TypeError} If no page is active.
      * @throws {Error} If the overlay PDF cannot be read.
      */
-    overlay(pdfSrc: string, options?: Recipe.OverlayOptions): Recipe;
     overlay(
-      pdfSrc: string,
+      pdfSrc: string | Uint8Array | ArrayBuffer,
+      options?: Recipe.OverlayOptions,
+    ): Recipe;
+    overlay(
+      pdfSrc: string | Uint8Array | ArrayBuffer,
       x: number,
       y: number,
       options?: Recipe.OverlayOptions,
@@ -5468,11 +5478,13 @@ declare namespace muhammara {
      *   finished: with the output Buffer for a Buffer source without an output
      *   path, with the output path for a Buffer source with one, and without an
      *   argument for a path source.
-     * @returns The callback result, or undefined without a callback.
+     * @returns The callback result; without a callback, what the callback
+     *   would receive: the Buffer, the output path, or undefined for a path
+     *   source.
      * @throws {Error} If pages are being deleted while a page is still open.
      * @throws {Error} If finalization fails; later calls rethrow the same error.
      */
-    endPDF(): void;
+    endPDF(): Buffer | string | undefined;
     endPDF<T>(callback: (output?: Buffer | string) => T): T;
     /** The 6.x callback shape, also accepted as `Recipe.EndPDFCallback`. */
     endPDF<T>(callback: (buffer: Buffer) => T): T;

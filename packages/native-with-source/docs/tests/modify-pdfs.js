@@ -203,12 +203,6 @@ describe("Documentation examples", function () {
       var streams = contents.toJSArray().map(function (entry) {
         return reader.parseNewObject(entry.getObjectID());
       });
-      var xObjects = reader
-        .queryDictionaryObject(
-          reader.queryDictionaryObject(page, "Resources"),
-          "XObject",
-        )
-        .toJSObject();
       var readStream = function (stream) {
         var streamReader = reader.startReadingFromStream(stream);
         var chunks = [];
@@ -220,14 +214,27 @@ describe("Documentation examples", function () {
 
       assert.deepStrictEqual(reader.extractPageText(0), []);
       assert.notMatch(streams.map(readStream).join("\n"), /\bTj\b/);
-      assert.match(
-        Object.keys(xObjects)
+      // The text layer is drawn in a form, and its opacity puts it in a
+      // nested one.
+      var readForms = function (resources) {
+        var xObjects =
+          resources && reader.queryDictionaryObject(resources, "XObject");
+        if (!xObjects) return "";
+        xObjects = xObjects.toJSObject();
+        return Object.keys(xObjects)
           .map(function (name) {
-            return readStream(
-              reader.parseNewObject(xObjects[name].getObjectID()),
+            var form = reader.parseNewObject(xObjects[name].getObjectID());
+            return (
+              readStream(form) +
+              readForms(
+                reader.queryDictionaryObject(form.getDictionary(), "Resources"),
+              )
             );
           })
-          .join("\n"),
+          .join("\n");
+      };
+      assert.match(
+        readForms(reader.queryDictionaryObject(page, "Resources")),
         /\bTj\b/,
       );
     } finally {

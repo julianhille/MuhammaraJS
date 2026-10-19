@@ -289,6 +289,60 @@ static bool isActiveCopyingContext(WasmCopyingContext* context) {
          (context->modifier == nullptr || !context->modifier->finished);
 }
 
+namespace {
+
+// Writes the /Annots of the page being appended as a deep copy of the source
+// page's, as the native Recipe does through its OnPageWrite event.
+class WasmAnnotsCopyExtender : public DocumentContextExtenderAdapter {
+ public:
+  PDFDocumentCopyingContext* copying;
+  PDFObject* annots;
+  EStatusCodeAndObjectIDTypeList copied{PDFHummus::eSuccess, {}};
+  bool written = false;
+
+  WasmAnnotsCopyExtender(PDFDocumentCopyingContext* context, PDFObject* value)
+      : copying(context), annots(value) {}
+
+  PDFHummus::EStatusCode OnPageWrite(PDFPage*, DictionaryContext* page,
+                                     ObjectsContext*,
+                                     PDFHummus::DocumentContext*) override {
+    if (written) return PDFHummus::eSuccess;
+    written = true;
+    page->WriteKey("Annots");
+    copied = copying->CopyDirectObjectWithDeepCopy(annots);
+    return copied.first;
+  }
+};
+
+}  // namespace
+
+// Appends a source page together with its annotations.
+WASM_EXPORT unsigned long muhammara_wasm_copying_context_append_page_with_annotations(
+    WasmCopyingContext* context, unsigned long pageIndex) {
+  if (!isActiveCopyingContext(context)) return 0;
+  PDFWriter& writer =
+      context->recipe != nullptr ? context->recipe->writer : context->modifier->writer;
+  RefCountPtr<PDFDictionary> page(
+      context->context->GetSourceDocumentParser()->ParsePage(pageIndex));
+  if (!page || !page->Exists("Annots")) {
+    EStatusCodeAndObjectIDType plain = context->context->AppendPDFPageFromPDF(pageIndex);
+    return plain.first == PDFHummus::eSuccess ? plain.second : 0;
+  }
+  RefCountPtr<PDFObject> annots(page->QueryDirectObject("Annots"));
+  WasmAnnotsCopyExtender extender(context->context, annots.GetPtr());
+  writer.GetDocumentContext().AddDocumentContextExtender(&extender);
+  EStatusCodeAndObjectIDType result = context->context->AppendPDFPageFromPDF(pageIndex);
+  writer.GetDocumentContext().RemoveDocumentContextExtender(&extender);
+  if (result.first != PDFHummus::eSuccess || extender.copied.first != PDFHummus::eSuccess)
+    return 0;
+  if (!extender.copied.second.empty() &&
+      context->context->CopyNewObjectsForDirectObject(extender.copied.second) !=
+          PDFHummus::eSuccess)
+    return 0;
+  return result.second;
+}
+
+
 WASM_EXPORT int muhammara_wasm_copying_context_copy_object(
     WasmCopyingContext* context, unsigned long sourceObjectId,
     unsigned long* copiedObjectId) {

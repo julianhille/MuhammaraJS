@@ -1,0 +1,168 @@
+import assert from "node:assert/strict";
+import { describeEnds, writeOutput } from "../support/ends.mjs";
+import { drawnContent } from "../support/pdf.mjs";
+
+/**
+ * The operators of the first stroked path's graphics state block, from its
+ * `q` to the `S` that strokes it.
+ * @param {string} content - Drawn content.
+ * @returns {string} The block.
+ */
+function strokeBlock(content) {
+  var match = content.match(/q\b(?:(?!\bQ\b)[\s\S])*?\bS\b/);
+  assert.ok(match, "the line is stroked inside a graphics state block");
+  return match[0];
+}
+
+describeEnds("Recipe lineStyle", function (end) {
+  it("throws for a miter limit below 1 before drawing", function () {
+    var recipe = end.newRecipe().createPage(100, 100);
+    [-1, 0.5, NaN, "wide"].forEach((miterLimit) => {
+      var error = {
+        name: "RangeError",
+        message: "miterLimit must be a number of at least 1",
+      };
+      assert.throws(
+        () =>
+          recipe.line(
+            [
+              [10, 10],
+              [90, 90],
+            ],
+            { miterLimit },
+          ),
+        error,
+      );
+      assert.throws(() => recipe.lineStyle({ miterLimit }), error);
+    });
+    var bytes = recipe
+      .lineStyle({ miterLimit: "4" })
+      .line([
+        [10, 10],
+        [90, 90],
+      ])
+      .endPage()
+      .endPDF();
+    var content = drawnContent(end, bytes);
+    assert.match(content, /\b4 M\b/);
+    assert.doesNotMatch(content, /-1 M|0\.5 M/);
+  });
+
+  it("ignores a negative or infinite line width", function () {
+    var bytes = end
+      .newRecipe()
+      .createPage(200, 200)
+      .lineWidth(3)
+      .lineWidth(-1)
+      .lineWidth(Infinity)
+      .line([
+        [1, 1],
+        [50, 50],
+      ])
+      .endPage()
+      .endPDF();
+    var content = drawnContent(end, bytes);
+    assert.match(content, /\b3 w\b/);
+    assert.doesNotMatch(content, /-1 w/);
+    var circle = (options) =>
+      drawnContent(
+        end,
+        end
+          .newRecipe()
+          .createPage(200, 200)
+          .circle(50, 50, 20, { stroke: "#000000", ...options })
+          .endPage()
+          .endPDF(),
+      );
+    assert.equal(circle({ lineWidth: Infinity }), circle({}));
+  });
+
+  it("takes numeric-string widths, caps and joins", function () {
+    var bytes = end
+      .newRecipe()
+      .createPage(200, 200)
+      .lineWidth("3")
+      .line([
+        [1, 1],
+        [50, 50],
+      ])
+      .endPage()
+      .endPDF();
+    assert.match(drawnContent(end, bytes), /\b3 w\b/);
+    bytes = end
+      .newRecipe()
+      .createPage(200, 200)
+      .circle(50, 50, 20, { stroke: "#000000", lineWidth: "3" })
+      .endPage()
+      .endPDF();
+    assert.match(drawnContent(end, bytes), /\b3 w\b/);
+    bytes = end
+      .newRecipe()
+      .createPage(200, 200)
+      .lineStyle({ cap: "1", join: "2" })
+      .line([
+        [1, 1],
+        [50, 50],
+      ])
+      .endPage()
+      .endPDF();
+    var content = drawnContent(end, bytes);
+    assert.match(content, /\b1 J\b/);
+    assert.match(content, /\b2 j\b/);
+  });
+
+  it("writes every line style operator before the stroke", function () {
+    var bytes = end
+      .newRecipe()
+      .createPage(100, 100)
+      .lineStyle({
+        width: 3,
+        cap: 1,
+        join: 2,
+        miterLimit: 4,
+        dash: [6, 3],
+        dashPhase: 2,
+      })
+      .line([
+        [10, 10],
+        [90, 90],
+      ])
+      .endPage()
+      .endPDF();
+    writeOutput(end, "lineStyle-dashed", bytes);
+    var block = strokeBlock(drawnContent(end, bytes));
+    [/\b3 w\b/, /\b1 J\b/, /\b2 j\b/, /\b4 M\b/, /\[ 6 3 \] 2 d/].forEach(
+      (operator) => assert.match(block, operator),
+    );
+  });
+
+  it("applies lineWidth to subsequent lines", function () {
+    var bytes = end
+      .newRecipe()
+      .createPage(100, 100)
+      .lineWidth(5)
+      .line([
+        [10, 10],
+        [90, 90],
+      ])
+      .endPage()
+      .endPDF();
+    writeOutput(end, "lineStyle-width", bytes);
+    assert.match(strokeBlock(drawnContent(end, bytes)), /\b5 w\b/);
+  });
+
+  it("records a line style set before the first page", function () {
+    var bytes = end
+      .newRecipe()
+      .lineStyle({ width: 2 })
+      .createPage(100, 100)
+      .line([
+        [10, 10],
+        [90, 90],
+      ])
+      .endPage()
+      .endPDF();
+    writeOutput(end, "lineStyle-before-page", bytes);
+    assert.match(strokeBlock(drawnContent(end, bytes)), /\b2 w\b/);
+  });
+});

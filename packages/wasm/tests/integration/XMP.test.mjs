@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
-import { buildXmpPacket, pdfDateToXmp } from "../../lib/xmp.js";
+import { buildXmpPacket, pdfDateToXmp } from "@muhammara/shared/xmp.js";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("XMP metadata", function () {

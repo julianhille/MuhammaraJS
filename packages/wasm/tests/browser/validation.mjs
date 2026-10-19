@@ -27,6 +27,67 @@ function equalBytes(actual, expected, message) {
   }
 }
 
+/**
+ * Checks that the published bundle reorders right-to-left text with the
+ * bidi-js it carries, wherever it runs.
+ * @returns {Promise<{assertions: number}>} The number of checks made.
+ */
+export async function rtlValidation() {
+  var fontBytes = new Uint8Array(
+    await (
+      await fetch(
+        "/packages/native-with-source/tests/TestMaterials/fonts/arial.ttf",
+      )
+    ).arrayBuffer(),
+  );
+  var muhammara = await createMuhammaraWasm();
+  var Recipe = await createRecipe({ recryptWorker: false });
+  Recipe.registerFont("rtl-arial", fontBytes);
+  /**
+   * The glyphs a line of mixed text is drawn with, in drawing order.
+   * @param {string} direction - A TextDirection value.
+   * @returns {string} The extracted glyph codes.
+   */
+  function drawn(direction) {
+    var recipe = new Recipe();
+    try {
+      var bytes = recipe
+        .createPage(300, 300)
+        .text("\u05e9\u05dc\u05d5\u05dd abc", 50, 50, {
+          direction,
+          font: "rtl-arial",
+        })
+        .endPage()
+        .endPDF();
+      var reader = muhammara.createReader(bytes);
+      try {
+        return reader
+          .extractPageText(0)
+          .map((run) => run.content)
+          .join("");
+      } finally {
+        reader.end();
+      }
+    } finally {
+      recipe.dispose();
+    }
+  }
+  try {
+    // Two-byte glyph codes: as given, "abc" comes last; reordered for a
+    // right-to-left paragraph, it comes first.
+    var given = drawn("none");
+    var visual = drawn("auto");
+    assert(
+      visual !== given && visual.startsWith(given.slice(-6)),
+      "right-to-left text reorders",
+    );
+  } finally {
+    Recipe.disposeAssets();
+    muhammara.disposeAssets();
+  }
+  return { assertions: 1 };
+}
+
 /** Runs browser-safe byte, writer, reader, and modifier assertions. */
 export async function runValidation() {
   var assertions = 0;
@@ -252,10 +313,11 @@ export async function runValidation() {
     rotatedRecipe.endPage().endPDF(),
   );
   assert(
-    /0 1 -1 0 190 20 cm/.test(rotatedOutput) &&
+    // A displayed point (x, y) is the media box point (10 + y, 20 + x).
+    /0 1 -1 0 230 10 cm/.test(rotatedOutput) &&
       /60 160 m\s+80 140 l/.test(rotatedOutput) &&
       // annot() takes the top-left corner; the height runs along +x here.
-      /\/Rect \[ 90 140 130 170 \]/.test(rotatedOutput),
+      /\/Rect \[ 130 130 170 160 \]/.test(rotatedOutput),
     "browser and Worker rotated Recipe output",
   );
   assertions += 6;
@@ -457,7 +519,13 @@ export async function runValidation() {
     /\/URI \(https:\/\/example\.test\)/.test(sourceOutput),
     "source Recipe link",
   );
-  assert(/30 [\d.]+ re\r?\nW\r?\nn/.test(sourceOutput), "source Recipe clip");
+  // The text box, x 10 to 40, as a closed clipping path.
+  assert(
+    /10 [\d.]+ m\r?\n40 [\d.]+ l\r?\n40 [\d.]+ l\r?\n10 [\d.]+ l\r?\nh\r?\nW\r?\nn/.test(
+      sourceOutput,
+    ),
+    "source Recipe clip",
+  );
   assertions += 2;
 
   var annotationRecipe = new Recipe({ compress: false })

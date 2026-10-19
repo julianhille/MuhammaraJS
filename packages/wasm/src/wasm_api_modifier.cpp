@@ -709,7 +709,8 @@ WASM_EXPORT int muhammara_wasm_modifier_write_page(WasmModifier* modifier) {
 WASM_EXPORT WasmForm* muhammara_wasm_modifier_create_form(
     WasmModifier* modifier, double left, double bottom, double right, double top,
     unsigned long objectId) {
-  if (modifier == nullptr || modifier->finished || right <= left || top <= bottom) {
+  // Any rectangle, empty or inverted too, as the native addon allows.
+  if (modifier == nullptr || modifier->finished) {
     return nullptr;
   }
   PDFFormXObject* form = objectId == 0

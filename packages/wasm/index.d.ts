@@ -737,8 +737,8 @@ export interface Recipe {
   getPageInfo(): Record<string, unknown> | InfoDictionary;
   /** Returns geometry for the current Recipe page. */
   getCurrentPageInfo(): RecipePageInfo | null;
-  /** Inspects PDF metadata without changing this Recipe's output state. Blob/File input requires readAsync. */
-  read(source: ByteSource): RecipeMetadata;
+  /** Inspects PDF metadata without changing this Recipe's output state: the source, other PDF bytes or a registered PDF name. Blob/File input requires readAsync. */
+  read(source?: ByteSource | string): RecipeMetadata;
   readAsync(source: AsyncByteSource): Promise<RecipeMetadata>;
   /** Starts a prepend-safe editing context for an existing one-based page number. */
   editPage(pageNumber: number): this;
@@ -931,11 +931,15 @@ export interface Recipe {
     y: RecipeCoordinate,
     options?: RecipeImageOptions,
   ): this;
-  appendPage(name: string, pages?: RecipePageSelection): this;
-  overlay(name: string, options?: RecipeOverlayOptions): this;
-  overlay(name: string, x: number, options?: RecipeOverlayOptions): this;
+  appendPage(name: string | ByteSource, pages?: RecipePageSelection): this;
+  overlay(name: string | ByteSource, options?: RecipeOverlayOptions): this;
   overlay(
-    name: string,
+    name: string | ByteSource,
+    x: number,
+    options?: RecipeOverlayOptions,
+  ): this;
+  overlay(
+    name: string | ByteSource,
     x?: number,
     y?: number,
     options?: RecipeOverlayOptions,
@@ -1043,7 +1047,7 @@ export interface Recipe {
   custom(key: string, value: unknown): this;
   insertPage(
     afterPageNumber: number,
-    name: string,
+    name: string | ByteSource,
     sourcePageNumber: number,
   ): this;
   split(prefix?: string): RecipeSplitResult[];
@@ -2959,13 +2963,9 @@ export interface MuhammaraWasmOptions {
    */
   recryptWorker?: boolean;
   /**
-   * Whether to load bidi-js, which the `direction` option reorders
-   * right-to-left text with, with `import("bidi-js")`. Defaults to `true`.
-   * It is loaded once for the page, Worker or process, and every instance
-   * shares it. With `false`, this call does not load it; while nothing has
-   * loaded it, or when it cannot be loaded, everything else works, and every
-   * call that has to order text by direction throws instead of drawing it in
-   * the wrong order.
+   * Ignored. bidi-js, which the `direction` option reorders right-to-left
+   * text with, is bundled; this option is kept for code written when it was
+   * loaded on demand.
    */
   bidi?: boolean;
   [key: string]: unknown;
@@ -2989,12 +2989,10 @@ export function createRecipe(
 ): Promise<RecipeConstructor>;
 
 /**
- * Loads bidi-js, which the `direction` option reorders right-to-left text
- * with, after `createMuhammaraWasm()` or `createRecipe()` skipped it with
- * `bidi: false` or could not import it. Instances already created reorder
- * text once it resolves. Without a source it imports `"bidi-js"`; a page or
- * Worker that cannot resolve that specifier passes the bidi-js module, or
- * its default export, that it imported itself. Rejects with a `TypeError`
- * for any other source, or with the import's error.
+ * Kept for code written when bidi-js, which the `direction` option reorders
+ * right-to-left text with, was loaded on demand. bidi-js is bundled, so
+ * without a source this resolves at once; a given bidi-js module, or its
+ * default export, replaces the bundled one. Rejects with a `TypeError` for
+ * any other source.
  */
 export function loadBidi(source?: object | (() => unknown)): Promise<void>;

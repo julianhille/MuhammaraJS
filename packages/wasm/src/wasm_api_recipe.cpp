@@ -6,22 +6,6 @@ void muhammara_wasm_recipe_destroy(WasmRecipe* recipe) {
   delete recipe;
 }
 
-int muhammara_wasm_recipe_add_page(WasmRecipe* recipe, double width,
-                                    double height) {
-  if (recipe == nullptr || recipe->page != nullptr || recipe->finished ||
-      width <= 0 || height <= 0) {
-    return 0;
-  }
-
-  recipe->page = new PDFPage();
-  recipe->page->SetMediaBox(PDFRectangle(0, 0, width, height));
-  recipe->context = recipe->writer.StartPageContentContext(recipe->page);
-  if (recipe->context != nullptr) return 1;
-  delete recipe->page;
-  recipe->page = nullptr;
-  return 0;
-}
-
 int muhammara_wasm_recipe_add_page_with_box(WasmRecipe* recipe, double left,
                                              double bottom, double right,
                                              double top) {
@@ -262,7 +246,8 @@ WASM_EXPORT WasmForm* muhammara_wasm_writer_create_form(WasmRecipe* recipe,
                                                           double left, double bottom,
                                                           double right, double top,
                                                           unsigned long objectId) {
-  if (recipe == nullptr || recipe->finished || right <= left || top <= bottom) {
+  // Any rectangle, empty or inverted too, as the native addon allows.
+  if (recipe == nullptr || recipe->finished) {
     return nullptr;
   }
   PDFFormXObject* form = objectId == 0
@@ -744,27 +729,6 @@ int muhammara_wasm_recipe_line(WasmRecipe* recipe, double startX, double startY,
          recipe->context->S() == PDFHummus::eSuccess;
 }
 
-int muhammara_wasm_recipe_move_to(WasmRecipe* recipe, double x, double y) {
-  return recipe != nullptr && recipe->context != nullptr &&
-         recipe->context->m(x, y) == PDFHummus::eSuccess;
-}
-
-int muhammara_wasm_recipe_line_to(WasmRecipe* recipe, double x, double y) {
-  return recipe != nullptr && recipe->context != nullptr &&
-         recipe->context->l(x, y) == PDFHummus::eSuccess;
-}
-
-int muhammara_wasm_recipe_curve_to(WasmRecipe* recipe, double x1, double y1,
-                                   double x2, double y2, double x3, double y3) {
-  return recipe != nullptr && recipe->context != nullptr &&
-         recipe->context->c(x1, y1, x2, y2, x3, y3) == PDFHummus::eSuccess;
-}
-
-int muhammara_wasm_recipe_close_path(WasmRecipe* recipe) {
-  return recipe != nullptr && recipe->context != nullptr &&
-         recipe->context->h() == PDFHummus::eSuccess;
-}
-
 int muhammara_wasm_recipe_paint_path(WasmRecipe* recipe, unsigned int color,
                                      double lineWidth, int fill) {
   if (recipe == nullptr || recipe->context == nullptr || lineWidth < 0 ||
@@ -783,33 +747,9 @@ int muhammara_wasm_recipe_paint_path(WasmRecipe* recipe, unsigned int color,
          recipe->context->S() == PDFHummus::eSuccess;
 }
 
-int muhammara_wasm_recipe_save(WasmRecipe* recipe) {
-  return recipe != nullptr && recipe->context != nullptr &&
-         recipe->context->q() == PDFHummus::eSuccess;
-}
-
-int muhammara_wasm_recipe_restore(WasmRecipe* recipe) {
-  return recipe != nullptr && recipe->context != nullptr &&
-         recipe->context->Q() == PDFHummus::eSuccess;
-}
-
-WASM_EXPORT int muhammara_wasm_recipe_clip_rectangle(
-    WasmRecipe* recipe, double x, double y, double width, double height) {
-  return recipe != nullptr && recipe->context != nullptr &&
-         recipe->context->re(x, y, width, height) == PDFHummus::eSuccess &&
-         recipe->context->W() == PDFHummus::eSuccess &&
-         recipe->context->n() == PDFHummus::eSuccess;
-}
-
 int muhammara_wasm_recipe_line_width(WasmRecipe* recipe, double width) {
   return recipe != nullptr && recipe->context != nullptr && width >= 0 &&
          recipe->context->w(width) == PDFHummus::eSuccess;
-}
-
-int muhammara_wasm_recipe_rectangle_path(WasmRecipe* recipe, double x, double y,
-                                         double width, double height) {
-  return recipe != nullptr && recipe->context != nullptr &&
-         recipe->context->re(x, y, width, height) == PDFHummus::eSuccess;
 }
 
 int muhammara_wasm_recipe_fill_path(WasmRecipe* recipe) {
@@ -822,123 +762,9 @@ int muhammara_wasm_recipe_stroke_path(WasmRecipe* recipe) {
          recipe->context->S() == PDFHummus::eSuccess;
 }
 
-int muhammara_wasm_recipe_transform(WasmRecipe* recipe, double a, double b,
-                                    double c, double d, double e, double f) {
-  return recipe != nullptr && recipe->context != nullptr &&
-         recipe->context->cm(a, b, c, d, e, f) == PDFHummus::eSuccess;
-}
-
-int muhammara_wasm_recipe_set_line_style(WasmRecipe* recipe, double width,
-                                         int cap, int join, double miterLimit,
-                                         const double* dash, int dashLength,
-                                         double dashPhase) {
-  if (recipe == nullptr || recipe->context == nullptr || width < 0 || cap < 0 ||
-      cap > 2 || join < 0 || join > 2 || miterLimit < 1 || dashLength < 0 ||
-      (dashLength > 0 && dash == nullptr)) {
-    return 0;
-  }
-  return recipe->context->w(width) == PDFHummus::eSuccess &&
-         recipe->context->J(cap) == PDFHummus::eSuccess &&
-         recipe->context->j(join) == PDFHummus::eSuccess &&
-         recipe->context->M(miterLimit) == PDFHummus::eSuccess &&
-         recipe->context->d(const_cast<double*>(dash), dashLength, dashPhase) ==
-             PDFHummus::eSuccess;
-}
-
 int muhammara_wasm_recipe_set_opacity(WasmRecipe* recipe, double opacity) {
   return recipe != nullptr && recipe->context != nullptr && opacity >= 0 &&
          opacity <= 1 && recipe->context->SetOpacity(opacity) == PDFHummus::eSuccess;
-}
-
-// colorSpace is 0 for gray, 1 for RGB, 2 for CMYK, or 3 to keep the current
-// fill color, such as a Separation color. color packs one byte per component
-// in PDFWriter's order: 0xGG, 0xRRGGBB, or 0xCCMMYYKK; code 3 ignores it.
-// breaks are ascending UTF-8 byte offsets into text where a TJ adjustment
-// takes the character spacing back.
-int muhammara_wasm_recipe_text(WasmRecipe* recipe, double x, double y,
-                               const char* text, const char* fontPath,
-                               double fontSize, int colorSpace,
-                               unsigned int color, double characterSpacing,
-                               const int* breaks, int breakCount) {
-  if (recipe == nullptr || recipe->context == nullptr || text == nullptr ||
-      fontPath == nullptr || fontSize <= 0 || colorSpace < 0 ||
-      colorSpace > 3 || !std::isfinite(characterSpacing) || breakCount < 0 ||
-      (breakCount > 0 && breaks == nullptr)) {
-    return 0;
-  }
-  StringOrDoubleList pieces;
-  if (breakCount > 0) {
-    std::string value(text);
-    size_t start = 0;
-    double back = characterSpacing * 1000 / fontSize;
-    for (int index = 0; index < breakCount; ++index) {
-      if (breaks[index] <= 0 || static_cast<size_t>(breaks[index]) <= start) {
-        return 0;
-      }
-      // Text is drawn up to a NUL, as Tj draws it; later breaks are past it.
-      if (static_cast<size_t>(breaks[index]) >= value.size()) break;
-      size_t end = static_cast<size_t>(breaks[index]);
-      pieces.push_back(StringOrDouble(value.substr(start, end - start)));
-      pieces.push_back(StringOrDouble(back));
-      start = end;
-    }
-    pieces.push_back(StringOrDouble(value.substr(start)));
-  }
-  // Color space 3 keeps the current fill color, such as a Separation color
-  // the caller selected with cs and scn.
-  bool keepColor = colorSpace == 3;
-  AbstractContentContext::EColorSpace textColorSpace =
-      colorSpace == 0   ? AbstractContentContext::eGray
-      : colorSpace == 1 ? AbstractContentContext::eRGB
-                        : AbstractContentContext::eCMYK;
-  PDFUsedFont* font = recipe->writer.GetFontForFile(fontPath);
-  if (font == nullptr) {
-    return 0;
-  }
-  if (recipe->context->q() != PDFHummus::eSuccess) return 0;
-
-  PDFHummus::EStatusCode status = recipe->context->BT();
-  if (status == PDFHummus::eSuccess) {
-    status = recipe->context->Tc(characterSpacing);
-    PDFHummus::EStatusCode endTextStatus = recipe->context->ET();
-    if (status == PDFHummus::eSuccess) status = endTextStatus;
-  }
-  if (status == PDFHummus::eSuccess && (keepColor || breakCount > 0)) {
-    if (!keepColor) {
-      status = recipe->context->SetupColor(AbstractContentContext::eFill,
-                                           color, textColorSpace,
-                                           NO_OPACITY_VALUE);
-    }
-    if (status == PDFHummus::eSuccess) status = recipe->context->BT();
-    if (status == PDFHummus::eSuccess) {
-      recipe->context->Tf(font, fontSize);
-      status = recipe->context->Tm(1, 0, 0, 1, x, y);
-      if (status == PDFHummus::eSuccess) {
-        status = breakCount > 0 ? recipe->context->TJ(pieces)
-                                : recipe->context->Tj(text);
-      }
-      PDFHummus::EStatusCode endTextStatus = recipe->context->ET();
-      if (status == PDFHummus::eSuccess) status = endTextStatus;
-    }
-  } else if (status == PDFHummus::eSuccess) {
-    status = recipe->context->WriteText(
-        x, y, text,
-        AbstractContentContext::TextOptions(font, fontSize, textColorSpace,
-                                            color));
-  }
-  PDFHummus::EStatusCode restoreStatus = recipe->context->Q();
-  return status == PDFHummus::eSuccess &&
-         restoreStatus == PDFHummus::eSuccess;
-}
-
-int muhammara_wasm_recipe_text_dimensions(WasmRecipe* recipe, const char* text,
-                                          const char* fontPath, double fontSize,
-                                          double* values) {
-  if (recipe == nullptr || fontPath == nullptr) {
-    return 0;
-  }
-  PDFUsedFont* font = recipe->writer.GetFontForFile(fontPath);
-  return measureTextDimensions(font, text, fontSize, values) ? 1 : 0;
 }
 
 int muhammara_wasm_recipe_image(WasmRecipe* recipe, const char* imagePath,
@@ -954,41 +780,6 @@ int muhammara_wasm_recipe_image(WasmRecipe* recipe, const char* imagePath,
   options.fitProportional = true;
   options.fitPolicy = AbstractContentContext::eAlways;
   return recipe->context->DrawImage(x, y, imagePath, options) == PDFHummus::eSuccess;
-}
-
-WASM_EXPORT int muhammara_wasm_recipe_image_page(WasmRecipe* recipe,
-                                                 const char* imagePath,
-                                                 double x, double y,
-                                                 double width, double height,
-                                                 unsigned long pageIndex) {
-  if (recipe == nullptr || recipe->context == nullptr || imagePath == nullptr ||
-      width <= 0 || height <= 0) return 0;
-  AbstractContentContext::ImageOptions options;
-  options.imageIndex = pageIndex;
-  options.transformationMethod = AbstractContentContext::eFit;
-  options.boundingBoxWidth = width;
-  options.boundingBoxHeight = height;
-  options.fitProportional = false;
-  options.fitPolicy = AbstractContentContext::eAlways;
-  return recipe->context->DrawImage(x, y, imagePath, options) == PDFHummus::eSuccess;
-}
-
-int muhammara_wasm_recipe_image_dimensions(WasmRecipe* recipe,
-                                           const char* imagePath,
-                                           unsigned int imageIndex,
-                                           double* width, double* height) {
-  if (recipe == nullptr || imagePath == nullptr || width == nullptr ||
-      height == nullptr) {
-    return 0;
-  }
-  DoubleAndDoublePair dimensions =
-      recipe->writer.GetImageDimensions(imagePath, imageIndex);
-  if (dimensions.first <= 0 || dimensions.second <= 0) {
-    return 0;
-  }
-  *width = dimensions.first;
-  *height = dimensions.second;
-  return 1;
 }
 
 int muhammara_wasm_recipe_set_info(WasmRecipe* recipe, const char* key,
@@ -1139,13 +930,6 @@ WASM_EXPORT unsigned char* muhammara_wasm_pdf_date_normalize(
   return result;
 }
 
-int muhammara_wasm_recipe_link(WasmRecipe* recipe, const char* url, double x,
-                               double y, double width, double height) {
-  return recipe != nullptr && url != nullptr && recipe->context != nullptr &&
-         recipe->writer.AttachURLLinktoCurrentPage(
-             url, PDFRectangle(x, y, x + width, y + height)) == PDFHummus::eSuccess;
-}
-
 WASM_EXPORT int muhammara_wasm_writer_attach_url_link(
     WasmRecipe* recipe, const char* url, double left, double bottom, double right,
     double top) {
@@ -1241,111 +1025,6 @@ int muhammara_wasm_recipe_annotation(WasmRecipe* recipe, const char* subtype,
   if (status != PDFHummus::eSuccess) return 0;
   recipe->writer.GetDocumentContext().RegisterAnnotationReferenceForNextPageWrite(id);
   return 1;
-}
-
-// Recipe annotations need a few dictionary entries beyond the compact legacy
-// bridge above. Keep this byte-only so browser Recipe can retain Node fields.
-WASM_EXPORT unsigned long muhammara_wasm_recipe_annotation_full(
-    WasmRecipe* recipe, const char* subtype, const char* text, const char* title,
-    const char* subject, const char* date, const char* name, double left,
-    double bottom, double right, double top, const double* color, int colorLength,
-    double borderWidth, const double* borderDash, int borderDashLength,
-    const double* quadPoints, int quadPointsLength, unsigned long flags, int open,
-    double opacity, int richText, int isReply, unsigned long replyTo,
-    unsigned long* outputId) {
-  if (recipe == nullptr || recipe->context == nullptr || subtype == nullptr ||
-      text == nullptr || title == nullptr || subject == nullptr || date == nullptr ||
-      name == nullptr || outputId == nullptr || right < left || top < bottom || colorLength < 0 ||
-       borderDashLength < 0 || quadPointsLength < 0 ||
-       (colorLength != 0 && color == nullptr) ||
-       (borderDashLength != 0 && borderDash == nullptr) ||
-       (quadPointsLength != 0 && quadPoints == nullptr) || opacity < 0 || opacity > 1)
-    return 0;
-  ObjectsContext& objects = recipe->writer.GetObjectsContext();
-  ObjectIDType id = objects.StartNewIndirectObject();
-  if (id == 0) return 0;
-  DictionaryContext* dictionary = objects.StartDictionary();
-  if (dictionary == nullptr) {
-    objects.EndIndirectObject();
-    return 0;
-  }
-  dictionary->WriteKey("Type"); dictionary->WriteNameValue("Annot");
-  dictionary->WriteKey("Subtype"); dictionary->WriteNameValue(subtype);
-  dictionary->WriteKey("Rect");
-  dictionary->WriteRectangleValue(PDFRectangle(left, bottom, right, top));
-  // Text strings are PDFDocEncoding or UTF-16BE, never raw UTF-8.
-  if (*subject) {
-    dictionary->WriteKey("Subj");
-    dictionary->WriteLiteralStringValue(PDFTextString().FromUTF8(subject).ToString());
-  }
-  if (*title) {
-    dictionary->WriteKey("T");
-    dictionary->WriteLiteralStringValue(PDFTextString().FromUTF8(title).ToString());
-  }
-  if (*date) { dictionary->WriteKey("M"); dictionary->WriteLiteralStringValue(date); }
-  dictionary->WriteKey("Open"); dictionary->WriteBooleanValue(open != 0);
-  dictionary->WriteKey("F"); dictionary->WriteIntegerValue(flags);
-  if (*text) {
-    dictionary->WriteKey(richText ? "RC" : "Contents");
-    dictionary->WriteLiteralStringValue(PDFTextString().FromUTF8(text).ToString());
-  }
-  if (isReply && (replyTo || recipe->lastAnnotationId)) {
-    dictionary->WriteKey("IRT"); dictionary->WriteObjectReferenceValue(
-        replyTo ? replyTo : recipe->lastAnnotationId, 0);
-    dictionary->WriteKey("RT"); dictionary->WriteNameValue("R");
-  }
-  if (*name) { dictionary->WriteKey("Name"); dictionary->WriteNameValue(name); }
-  if (borderWidth >= 0) {
-    dictionary->WriteKey("Border"); objects.StartArray();
-    objects.WriteDouble(0); objects.WriteDouble(0); objects.WriteDouble(borderWidth);
-    if (borderDashLength) {
-      objects.StartArray();
-      for (int i = 0; i < borderDashLength; ++i) objects.WriteDouble(borderDash[i]);
-      objects.EndArray();
-    }
-    objects.EndArray();
-  }
-  if (colorLength) {
-    dictionary->WriteKey("C"); objects.StartArray();
-    for (int i = 0; i < colorLength; ++i) objects.WriteDouble(color[i]);
-    objects.EndArray();
-  }
-  if (quadPointsLength) {
-    dictionary->WriteKey("QuadPoints"); objects.StartArray();
-    for (int i = 0; i < quadPointsLength; ++i) objects.WriteDouble(quadPoints[i]);
-    objects.EndArray();
-  }
-  if (opacity != 1) { dictionary->WriteKey("CA"); dictionary->WriteDoubleValue(opacity); }
-  PDFHummus::EStatusCode status = objects.EndDictionary(dictionary);
-  objects.EndIndirectObject();
-  if (status != PDFHummus::eSuccess) return 0;
-  recipe->writer.GetDocumentContext().RegisterAnnotationReferenceForNextPageWrite(id);
-  if (!isReply) recipe->lastAnnotationId = id;
-  *outputId = id;
-  return id;
-}
-
-int muhammara_wasm_recipe_append_pdf(WasmRecipe* recipe, const char* path) {
-  if (recipe == nullptr || path == nullptr || recipe->page != nullptr ||
-      recipe->finished) {
-    return 0;
-  }
-  PDFPageRange range;
-  return recipe->writer.AppendPDFPagesFromPDF(path, range).first ==
-         PDFHummus::eSuccess;
-}
-
-int muhammara_wasm_recipe_append_pdf_range(WasmRecipe* recipe, const char* path,
-                                           unsigned long start, unsigned long end) {
-  if (recipe == nullptr || path == nullptr || recipe->page != nullptr ||
-      recipe->finished || end < start) {
-    return 0;
-  }
-  PDFPageRange range;
-  range.mType = PDFPageRange::eRangeTypeSpecific;
-  range.mSpecificRanges.push_back(ULongAndULong(start, end));
-  return recipe->writer.AppendPDFPagesFromPDF(path, range).first ==
-         PDFHummus::eSuccess;
 }
 
 }  // extern "C"

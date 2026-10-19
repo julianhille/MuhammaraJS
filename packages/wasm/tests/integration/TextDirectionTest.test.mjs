@@ -25,7 +25,7 @@ import {
   useBidi,
   visualRuns,
   visualWords,
-} from "../../lib/text-direction.js";
+} from "@muhammara/shared/text-direction.js";
 import { writeOutput } from "../testOutput.mjs";
 
 /** Reads the shared Arial fixture, which has Hebrew glyphs. */
@@ -37,6 +37,8 @@ describe("TextDirection", function () {
   var muhammara;
 
   before(async function () {
+    // The package bundles its own copy; this source copy needs bidi-js too.
+    useBidi((await import("bidi-js")).default);
     muhammara = await createMuhammaraWasm();
     muhammara.registerFont("arial", await arialBytes());
   });
@@ -780,336 +782,6 @@ describe("TextDirection", function () {
       );
     }
 
-    it("is loaded by createMuhammaraWasm() and createRecipe() by default", async function () {
-      // A literal specifier, so bundlers keep bidi-js as a chunk.
-      assert.match(
-        await readFile(new URL("../../index.js", import.meta.url), "utf8"),
-        /import\("bidi-js"\)/,
-      );
-      for (var [factory, options] of [
-        ["createMuhammaraWasm", { recryptWorker: false }],
-        ["createRecipe", { defaultFont: false, recryptWorker: false }],
-      ]) {
-        var entry = await freshEntry();
-        assert.throws(() => toVisual(text, "auto"), needsBidi);
-        var created = await entry[factory](options);
-        assert.equal(toVisual(text, "auto"), "abc םולש");
-        created.disposeAssets();
-      }
-    });
-
-    it("is not loaded with bidi: false", async function () {
-      var entry = await freshEntry();
-      var Recipe = await entry.createRecipe({
-        defaultFont: false,
-        recryptWorker: false,
-        bidi: false,
-      });
-      assert.equal(toVisual(text, "none"), text);
-      assert.throws(() => toVisual(text, "auto"), needsBidi);
-      Recipe.disposeAssets();
-    });
-
-    it("rejects a bidi-js import without the module's export and tries again", async function () {
-      // Such as an import map that points "bidi-js" at the UMD build.
-      var hooks = registerHooks({
-        resolve(specifier, context, nextResolve) {
-          return specifier === "bidi-js"
-            ? { url: "data:text/javascript,globalThis.x=1", shortCircuit: true }
-            : nextResolve(specifier, context);
-        },
-      });
-      try {
-        var entry = await freshEntry();
-        await assert.rejects(entry.loadBidi(), {
-          name: "TypeError",
-          message: '"bidi-js" did not resolve to the bidi-js module',
-        });
-        assert.throws(() => toVisual(text, "auto"), needsBidi);
-      } finally {
-        hooks.deregister();
-      }
-      await entry.loadBidi();
-      assert.equal(toVisual(text, "auto"), "abc םולש");
-    });
-
-    it("is shared by every instance, bidi: false ones too", async function () {
-      // bidi: false skips loading bidi-js; it does not take it away from an
-      // instance once another call loaded it.
-      var entry = await freshEntry();
-      var Recipe = await entry.createRecipe({
-        defaultFont: false,
-        recryptWorker: false,
-      });
-      var muhammara = await entry.createMuhammaraWasm({
-        recryptWorker: false,
-        bidi: false,
-      });
-      assert.equal(toVisual(text, "auto"), "abc םולש");
-      Recipe.disposeAssets();
-      muhammara.disposeAssets();
-    });
-
-    it("draws flowed left-to-right runs that ask for different directions without bidi-js", async function () {
-      var entry = await freshEntry();
-      var Recipe = await entry.createRecipe({
-        recryptWorker: false,
-        bidi: false,
-      });
-      try {
-        for (var [first, second] of [
-          [undefined, "ltr"],
-          ["auto", "none"],
-        ]) {
-          var recipe = new Recipe();
-          try {
-            recipe
-              .createPage(300, 300)
-              .text("Hello ", 50, 50, { flow: true, direction: first })
-              .text("world", { direction: second })
-              .text("", { flow: false })
-              .endPage()
-              .endPDF();
-          } finally {
-            recipe.dispose();
-          }
-        }
-        // Each line of a flow is checked on its own: a line of Hebrew drawn
-        // as given and a left-to-right line need no bidi-js.
-        for (var [head, tail] of [
-          [
-            ["\u05e9\u05dc\u05d5\u05dd\n", "none"],
-            ["abc", "ltr"],
-          ],
-          [
-            ["abc\n", "auto"],
-            ["\u05e9\u05dc\u05d5\u05dd", "none"],
-          ],
-        ]) {
-          recipe = new Recipe();
-          try {
-            recipe
-              .createPage(300, 300)
-              .text(head[0], 50, 50, { flow: true, direction: head[1] })
-              .text(tail[0], { direction: tail[1] })
-              .text("", { flow: false })
-              .endPage()
-              .endPDF();
-          } finally {
-            recipe.dispose();
-          }
-        }
-      } finally {
-        Recipe.disposeAssets();
-      }
-    });
-
-    it("throws before drawing text that needs bidi-js without it", async function () {
-      var entry = await freshEntry();
-      var Recipe = await entry.createRecipe({
-        recryptWorker: false,
-        bidi: false,
-      });
-      var muhammara = await entry.createMuhammaraWasm({
-        recryptWorker: false,
-        bidi: false,
-      });
-      var draws = {
-        // The first line needs no reordering, the second does: nothing of
-        // the call is drawn, its box neither.
-        lines: (recipe) =>
-          recipe.text("Hello\n" + text, 20, 20, {
-            direction: "ltr",
-            textBox: { width: 200, style: { fill: "#eeeeee" } },
-          }),
-        // Each run alone is drawn as given, but the line reorders them.
-        flow: (recipe) =>
-          recipe
-            .text("Line one is long enough to wrap here Hello ", 20, 20, {
-              flow: true,
-              direction: "ltr",
-              textBox: { width: 150 },
-            })
-            .text("\u05e9\u05dc\u05d5\u05dd", { direction: "none" })
-            .text("", { flow: false }),
-        // A later row needs it, after rows that do not.
-        table: (recipe) =>
-          recipe.table(
-            20,
-            20,
-            [
-              { a: "one", b: "two" },
-              { a: "x", b: "\u05e9\u05dc\u05d5\u05dd" },
-            ],
-            {
-              direction: "auto",
-              header: true,
-              columns: [
-                { name: "a", width: 100 },
-                { name: "b", width: 100 },
-              ],
-            },
-          ),
-      };
-      try {
-        for (var [name, draw] of Object.entries(draws)) {
-          var recipe = new Recipe().createPage(300, 300);
-          try {
-            assert.throws(() => draw(recipe), needsBidi, name);
-            var reader = muhammara.createReader(recipe.endPage().endPDF());
-            try {
-              assert.equal(reader.extractPageText(0).length, 0, name);
-              assert.equal(
-                reader.parsePage(0).getDictionary().exists("Contents"),
-                false,
-                name,
-              );
-            } finally {
-              reader.end();
-            }
-          } finally {
-            recipe.dispose();
-          }
-        }
-      } finally {
-        Recipe.disposeAssets();
-        muhammara.disposeAssets();
-      }
-    });
-
-    it("runs table renderers row by row without bidi-js", async function () {
-      var entry = await freshEntry();
-      var Recipe = await entry.createRecipe({
-        recryptWorker: false,
-        bidi: false,
-      });
-      var calls = [];
-      var recipe = new Recipe().createPage(400, 400);
-      try {
-        recipe.table(
-          20,
-          300,
-          Array.from({ length: 6 }, (_, index) => ({ c: "row" + index })),
-          {
-            size: 30,
-            columns: [
-              {
-                name: "c",
-                renderer: (text, record, field, row) => {
-                  calls.push("render " + row);
-                },
-              },
-            ],
-            overflow: (self, row) => {
-              calls.push("overflow " + row);
-              return true;
-            },
-          },
-        );
-        // A renderer that has its cell drawn as given needs no bidi-js.
-        recipe.table(20, 20, [{ a: "abc" }], {
-          columns: [
-            {
-              name: "a",
-              direction: "rtl",
-              renderer: () => ({ direction: "none" }),
-            },
-          ],
-        });
-      } finally {
-        recipe.dispose();
-        Recipe.disposeAssets();
-      }
-      // The overflow that ends the table comes before the renderer of a row
-      // that is never drawn, as with bidi-js.
-      assert.deepEqual(calls, ["render 1", "overflow 1"]);
-    });
-
-    it("spaces left-to-right text with marks without bidi-js", async function () {
-      // Placing the spacing around a mark between two letters asks whether
-      // the letter after it is right to left, which left-to-right text
-      // answers without bidi-js.
-      var entry = await freshEntry();
-      var Recipe = await entry.createRecipe({
-        recryptWorker: false,
-        bidi: false,
-      });
-      var recipe = new Recipe();
-      try {
-        recipe
-          .createPage(200, 200)
-          .text("Café áb", 10, 10, {
-            direction: "auto",
-            charSpace: 2,
-          })
-          .endPage()
-          .endPDF();
-      } finally {
-        recipe.dispose();
-        Recipe.disposeAssets();
-      }
-    });
-
-    it("loads bidi-js later with loadBidi()", async function () {
-      for (var source of [undefined, await import("bidi-js")]) {
-        var entry = await freshEntry();
-        var Recipe = await entry.createRecipe({
-          defaultFont: false,
-          recryptWorker: false,
-          bidi: false,
-        });
-        assert.throws(() => toVisual(text, "auto"), needsBidi);
-        await entry.loadBidi(source);
-        assert.equal(toVisual(text, "auto"), "abc םולש");
-        Recipe.disposeAssets();
-      }
-    });
-
-    it("keeps the bidi-js loadBidi() was given when a factory's import ends later", async function () {
-      var entry = await freshEntry();
-      var factory = (await import("bidi-js")).default;
-      var calls = 0;
-      // A copy of bidi-js of its own, which counts the text it reorders.
-      /**
-       * A copy of bidi-js whose embedding levels count their calls.
-       *
-       * @returns {Object} The bidi-js API.
-       */
-      var own = () => {
-        var api = factory();
-        var levels = api.getEmbeddingLevels;
-        api.getEmbeddingLevels = (...args) => (calls++, levels(...args));
-        return api;
-      };
-      // The factory's import of "bidi-js" ends after loadBidi() installed
-      // its copy.
-      var pending = entry.createRecipe({
-        defaultFont: false,
-        recryptWorker: false,
-      });
-      await entry.loadBidi(own);
-      var Recipe = await pending;
-      calls = 0;
-      toVisual(text, "auto");
-      assert.equal(calls, 1);
-      Recipe.disposeAssets();
-    });
-
-    it("uses the bidi-js instance loadBidi() checked its source with", async function () {
-      var factory = (await import("bidi-js")).default;
-      var built = 0;
-      try {
-        await loadBidi(() => {
-          built++;
-          return factory();
-        });
-        assert.equal(toVisual("\u05d0\u05d1", "rtl"), "\u05d1\u05d0");
-        assert.equal(built, 1);
-      } finally {
-        await loadBidi(factory);
-      }
-    });
-
     it("rejects a loadBidi() source that is not bidi-js", async function () {
       for (var source of [
         null,
@@ -1134,6 +806,30 @@ describe("TextDirection", function () {
           name: "TypeError",
           message: "bidi must be a boolean",
         });
+      }
+    });
+    it("is bundled, so bidi: false and loadBidi() keep text reordered", async function () {
+      var entry = await freshEntry();
+      var Recipe = await entry.createRecipe({
+        recryptWorker: false,
+        bidi: false,
+      });
+      await entry.loadBidi();
+      Recipe.registerFont("arial", await arialBytes());
+      var recipe = new Recipe();
+      try {
+        var bytes = recipe
+          .createPage(300, 300)
+          .text("\u05e9\u05dc\u05d5\u05dd abc", 50, 50, {
+            direction: "auto",
+            font: "arial",
+          })
+          .endPage()
+          .endPDF();
+        assert.ok(pageText(bytes).join("").includes("\u05dd"));
+      } finally {
+        recipe.dispose();
+        Recipe.disposeAssets();
       }
     });
   });

@@ -123,6 +123,9 @@ writer
   .Q();
 
 declare const recipe: muhammara.Recipe;
+recipe.appendPage(new Uint8Array(0));
+recipe.insertPage(1, new ArrayBuffer(0), 1);
+recipe.overlay(new Uint8Array(0), 0, 0);
 recipe
   .link("https://example.com", 100, 200, 160, 24)
   .comment("Please review.", 300, 100, {

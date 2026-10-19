@@ -15,7 +15,6 @@ node_modules
 src/deps/openssl/
 aws.json
 etc
-recipe-docs/
 site/
 .docs-venv/
 docs/.staging/
@@ -73,6 +72,7 @@ xcode/DerivedData
 packages/wasm/build/
 packages/wasm/.ccache/
 packages/wasm/dist/
+packages/native-core/lib/shared/
 packages/wasm/tests/fuzz/findings/
 packages/wasm/pages/
 packages/wasm/pages-site/
@@ -83,3 +83,4 @@ packages/native/docs/api/type-declarations.md
 
 # Fuzzer output
 packages/native-with-source/fuzz/out/
+tests/output/

@@ -1,0 +1,59 @@
+description: "Hebrew, then an HTML span whose quoted attribute holds a '>'"
+kind: flow
+runs:
+  - text: "שלום"
+  - text: "<span title='a>b'> עולם</span>"
+    html: true
+expected:
+  end none left:
+    native:
+      lines:
+        - [["שלום", 50], ["after", 50], [" עולם", 73.15]]
+      annotations: []
+    wasm: same
+  end none right:
+    native:
+      lines:
+        - [["after", 50], ["שלום", 202.36], [" עולם", 225.51]]
+      annotations: []
+    wasm: same
+  end auto left:
+    native:
+      lines:
+        - [["םלוע ", 50], ["after", 50], ["םולש", 75.34]]
+      annotations: []
+    wasm: same
+  end auto right:
+    native:
+      lines:
+        - [["after", 50], ["םלוע ", 201.24], ["םולש", 226.59]]
+      annotations: []
+    wasm: same
+  movedown none left:
+    native:
+      lines:
+        - [["שלום", 50], [" עולם", 73.15]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown none right:
+    native:
+      lines:
+        - [["שלום", 202.36], [" עולם", 225.51]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto left:
+    native:
+      lines:
+        - [["םלוע ", 50], ["םולש", 75.34]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same
+  movedown auto right:
+    native:
+      lines:
+        - [["םלוע ", 201.24], ["םולש", 226.59]]
+        - [["after", 50]]
+      annotations: []
+    wasm: same

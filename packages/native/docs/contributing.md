@@ -22,6 +22,11 @@ request.
 `npm run docs:build` and `npm run docs:check` write the generated site to the
 `packages/native/site/` directory. It is generated output and is ignored by Git.
 
+The Recipe reference is generated from the JSDoc of the shared Recipe in
+`packages/shared/lib/recipe/*.js`. Shared Recipe JSDoc renders into both
+references: write it for native, and where Wasm differs, name both ends in the
+same block or override the entry from `packages/wasm/lib/recipe.js`.
+
 ## Examples
 
 Copyable native examples belong in `packages/native/docs/examples/`. A matching

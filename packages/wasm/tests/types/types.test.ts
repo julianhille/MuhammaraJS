@@ -712,6 +712,9 @@ async function usesLowLevelSurface() {
       link: "https://image.example.test",
     })
     .appendPage("pdf", [1, [2, 3]])
+    .appendPage(new Uint8Array(0))
+    .overlay(new Uint8Array(0), 0, 0)
+    .insertPage(1, new Uint8Array(0), 1)
     .overlay("pdf", { page: 1, fitWidth: true })
     .overlay("pdf", 10, { page: 1 })
     .overlay("pdf", 10, 10, {
@@ -811,6 +814,8 @@ async function usesLowLevelSurface() {
   byteRecipe.deletePage(1, { pruneReferences: "yes" });
   var asyncByteRecipe = new Recipe();
   var metadata: RecipeMetadata = await asyncByteRecipe.readAsync(sourceBlob);
+  var namedMetadata: RecipeMetadata = asyncByteRecipe.read("pdf");
+  namedMetadata.pages;
   metadata[1].width;
   asyncByteRecipe.editPage(1).endPage().endPDF();
   var structure = recipe.structure("json");
