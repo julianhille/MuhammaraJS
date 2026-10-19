@@ -38,7 +38,7 @@ describeEnds("Recipe endPDF called twice", function (end) {
     assert.deepEqual(secondOutput, firstOutput);
   });
 
-  it("rejects encrypt() and insertPage() after endPDF() on Wasm only", function () {
+  it("rejects calls after endPDF() on Wasm only", function () {
     var recipe = end.newRecipe().createPage("letter").endPage();
     var first = recipe.endPDF();
     var source = end.pdf("recipe/test.pdf");
@@ -51,11 +51,21 @@ describeEnds("Recipe endPDF called twice", function (end) {
         name: "Error",
         message: "PDF writer has ended",
       });
+      assert.throws(() => recipe.comment("n", 10, 10), {
+        name: "Error",
+        message: "Annotations require an active page",
+      });
+      assert.throws(() => recipe.annot(10, 10, "Square"), {
+        name: "Error",
+        message: "Annotations require an active page",
+      });
       return;
     }
-    // Native ignores both calls, as it always has.
+    // Native ignores these calls, as it always has.
     assert.strictEqual(recipe.encrypt({ userPassword: "u" }), recipe);
     assert.strictEqual(recipe.insertPage(1, source, 1), recipe);
+    assert.strictEqual(recipe.comment("n", 10, 10), recipe);
+    assert.strictEqual(recipe.annot(10, 10, "Square"), recipe);
     assert.equal(recipe.endPDF(), first);
   });
 

@@ -70,9 +70,10 @@ function annotationDate(writer, value) {
  *   position, size, opacity, border, or `quadPoints` value is invalid.
  * @throws {Error} If a PDF/A document does not allow the subtype, flags,
  *   opacity or color, or an area without an appearance stream.
- * @throws {Error} If no page is active.
+ * @throws {Error} If no page is active; native ignores a call after `endPDF()`.
  */
 export const comment = function comment(text = "", x, y, options = {}) {
+  if (this.ended && !this.platform.rejectsIgnoredCalls) return this;
   if (!this.pageNumber) throw new Error("Annotations require an active page");
   this._validateAnnot(options, AnnotSubtype.TEXT);
   validateAnnotationPosition(x, y, options);
@@ -219,7 +220,7 @@ export { linkPdf };
  *   position, size, opacity, border, or `quadPoints` value is invalid.
  * @throws {Error} If a PDF/A document does not allow the subtype, flags,
  *   opacity or color, or an area without an appearance stream.
- * @throws {Error} If no page is active.
+ * @throws {Error} If no page is active; native ignores a call after `endPDF()`.
  */
 export const annot = function annot(
   x,
@@ -227,6 +228,7 @@ export const annot = function annot(
   subtype,
   options = { text: "", width: 0, height: 0 },
 ) {
+  if (this.ended && !this.platform.rejectsIgnoredCalls) return this;
   if (!this.pageNumber) throw new Error("Annotations require an active page");
   const { width, height, replies } = options;
   const text = options.text || options.contents;

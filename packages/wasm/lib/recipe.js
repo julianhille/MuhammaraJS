@@ -149,7 +149,7 @@ export function createRecipeFactory({
     fontFallsBackToDefault: false,
     // Wasm throws for a call native ignores: text() without a page,
     // image({index}), encrypt() with a non-object or after endPDF(),
-    // insertPage() after endPDF().
+    // insertPage(), comment() or annot() after endPDF().
     rejectsIgnoredCalls: true,
     pageInfoIsRecord: true,
     sourceName: "PDF bytes",
