@@ -64,9 +64,20 @@ describeEnds("Recipe lineStyle", function (end) {
     var content = drawnContent(end, bytes);
     assert.match(content, /\b3 w\b/);
     assert.doesNotMatch(content, /-1 w/);
+    var circle = (options) =>
+      drawnContent(
+        end,
+        end
+          .newRecipe()
+          .createPage(200, 200)
+          .circle(50, 50, 20, { stroke: "#000000", ...options })
+          .endPage()
+          .endPDF(),
+      );
+    assert.equal(circle({ lineWidth: Infinity }), circle({}));
   });
 
-  it("takes a numeric-string width", function () {
+  it("takes numeric-string widths, caps and joins", function () {
     var bytes = end
       .newRecipe()
       .createPage(200, 200)
@@ -85,6 +96,19 @@ describeEnds("Recipe lineStyle", function (end) {
       .endPage()
       .endPDF();
     assert.match(drawnContent(end, bytes), /\b3 w\b/);
+    bytes = end
+      .newRecipe()
+      .createPage(200, 200)
+      .lineStyle({ cap: "1", join: "2" })
+      .line([
+        [1, 1],
+        [50, 50],
+      ])
+      .endPage()
+      .endPDF();
+    var content = drawnContent(end, bytes);
+    assert.match(content, /\b1 J\b/);
+    assert.match(content, /\b2 j\b/);
   });
 
   it("writes every line style operator before the stroke", function () {

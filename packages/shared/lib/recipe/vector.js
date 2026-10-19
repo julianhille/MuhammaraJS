@@ -704,8 +704,10 @@ export const pie = function pie(
  * @param {number} [options.width] - The line width, a number or numeric string;
  *   a negative, infinite or non-numeric width is ignored.
  * @param {number} [options.lineWidth] - Alias for width.
- * @param {number} [options.cap] - The PDF line cap style, a `LineCapStyle` value.
- * @param {number} [options.join] - The PDF line join style: 0 miter, 1 round, 2 bevel.
+ * @param {number} [options.cap] - The PDF line cap style, a `LineCapStyle` value;
+ *   a numeric string acts as its number.
+ * @param {number} [options.join] - The PDF line join style: 0 miter, 1 round,
+ *   2 bevel; a numeric string acts as its number.
  * @param {number} [options.miterLimit] - The miter limit, at least 1.
  * @param {number[]} [options.dash] - The dash pattern.
  * @param {number} [options.dashPhase] - The dash pattern phase.
@@ -727,6 +729,10 @@ export const lineStyle = function lineStyle(options = {}) {
       width: isFinite(width) && width >= 0 ? Number(width) : undefined,
       lineWidth: undefined,
     };
+  // cap and join take numeric strings too, as Wasm always did.
+  for (const key of ["cap", "join"])
+    if (typeof options[key] === "string" && isFinite(options[key]))
+      options = { ...options, [key]: Number(options[key]) };
   this.current = this.current || {};
   const style = (this.current.lineStyle = this.current.lineStyle || {});
 

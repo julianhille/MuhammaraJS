@@ -242,6 +242,11 @@ describeEnds("Recipe info", function (end) {
     assert.throws(() => recipe.permission("print, fly"), {
       message: "Unknown user access permission (fly)",
     });
+    assert.equal(recipe.permission(["print", "copy"]), 20);
+    assert.throws(() => recipe.permission(["print", 4]), {
+      name: "Error",
+      message: "Unknown user access permission (4)",
+    });
     assert.strictEqual(recipe.encrypt(), recipe);
   });
 

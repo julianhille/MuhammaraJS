@@ -76,7 +76,7 @@ export const _getPathOptions = function _getPathOptions(
 
   if (options.width || options.lineWidth) {
     const width = options.width || options.lineWidth;
-    if (!isNaN(width)) {
+    if (isFinite(width)) {
       pathOptions.width = width <= 0 ? 1 : Number(width);
     }
   }

@@ -30,9 +30,11 @@ export const permission = function permission(flags = Permission.PRINT) {
     [Permission.PRINT_BEST]: 1 << 11, // allow high resolution printing when 'print' is allowed
   };
 
-  const perms = flags.split(",").map((x) => {
-    return x.trim();
-  });
+  const perms = String(flags)
+    .split(",")
+    .map((x) => {
+      return x.trim();
+    });
   let access = 0;
   perms.forEach((perm) => {
     if (!userAccessPermissions[perm]) {
