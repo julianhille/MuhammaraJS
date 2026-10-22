@@ -200,4 +200,11 @@ describe("parser security regressions", function () {
       reader.end();
     }
   });
+  // Port of tests/security/GHSA-8j62-hp3j-vp33.js.
+  it("rejects more null Kids entries than the page tree Count", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = await readFile("tests/TestMaterials/NullKidsOverCount.pdf");
+
+    assert.throws(() => muhammara.createReader(source), /Unable to parse PDF/);
+  });
 });
