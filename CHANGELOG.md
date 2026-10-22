@@ -254,6 +254,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
+- Update the documentation-build dependency `markdown-it` (pulled in by
+  `jsdoc-to-markdown`) from 14.3.2 to 14.3.3 for its security fixes. Only the
+  repository's reference-doc generation uses it; installed packages are
+  unaffected.
 - Update the documentation-build dependency `handlebars` (pulled in by
   `jsdoc-to-markdown`) from 4.7.9 to 4.7.10 for its security fixes. Only the
   repository's reference-doc generation uses it; installed packages are
