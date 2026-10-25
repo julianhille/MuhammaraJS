@@ -216,6 +216,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
 - Test the native prebuilds up to Node.js 26.11.1 and Electron 44.7.1
   [#984](https://github.com/julianhille/MuhammaraJS/issues/984)
+- Update the test dependency `serialize-javascript` (pulled in by `mocha`)
+  from 7.1.2 to 7.1.4 for its security fix. Only the repository's tests use
+  it; installed packages are unaffected.
 
 ## [7.2.2] - 2026-10-22
 
