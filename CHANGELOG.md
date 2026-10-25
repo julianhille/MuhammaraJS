@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fix a security vulnerability
   [GHSA-8j62-hp3j-vp33](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-8j62-hp3j-vp33)
 
+### Changed
+
+- Update the documentation-build dependency `markdown-it` (pulled in by
+  `jsdoc-to-markdown`) from 14.3.2 to 14.3.3 for its security fixes. Only the
+  repository's reference-doc generation uses it; installed packages are
+  unaffected.
+
 ## [7.2.1] - 2026-10-15
 
 ### Fixed
