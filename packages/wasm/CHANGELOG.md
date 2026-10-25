@@ -182,6 +182,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   of its bounding box, as native does, instead of its first point. Pass
   `rotationOrigin: coordinates[0]` to keep the old pivot [#924](https://github.com/julianhille/MuhammaraJS/issues/924)
 
+### Changed
+
+- Update the test dependency `undici` (pulled in by `jsdom`) from 7.30.0 to
+  7.30.1 for its security fixes. Only the repository's tests use it; the
+  installed package is unaffected.
+
 ## [1.2.2] - 2026-10-22
 
 ### Fixed
