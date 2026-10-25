@@ -217,6 +217,27 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Test the native prebuilds up to Node.js 26.11.1 and Electron 44.7.1
   [#984](https://github.com/julianhille/MuhammaraJS/issues/984)
 
+## [7.2.2] - 2026-10-22
+
+### Fixed
+
+- Fix a security vulnerability
+  [GHSA-8j62-hp3j-vp33](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-8j62-hp3j-vp33)
+
+### Changed
+
+- Update the documentation-build dependency `markdown-it` (pulled in by
+  `jsdoc-to-markdown`) from 14.3.2 to 14.3.3 for its security fixes. Only the
+  repository's reference-doc generation uses it; installed packages are
+  unaffected.
+
+## [7.2.1] - 2026-10-15
+
+### Fixed
+
+- Fix a security vulnerability
+  [GHSA-f2qr-8r8j-mm94](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-f2qr-8r8j-mm94)
+
 ## [7.2.0] - 2026-10-12
 
 ### Fixed
@@ -2030,7 +2051,9 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.0...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.2...HEAD
+[7.2.2]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.1...native-v7.2.2
+[7.2.1]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.0...native-v7.2.1
 [7.2.0]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.1.1...native-v7.2.0
 [7.1.1]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.1.0...native-v7.1.1
 [7.1.0]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.0.0...native-v7.1.0

@@ -1032,6 +1032,12 @@ EStatusCode PDFParser::ParsePagesIDs(
 			{
 				if (it.GetItem()->GetType() == PDFObject::ePDFObjectNull) {
 					// null pointer. mark as empty page
+					if(ioCurrentPageIndex >= mPagesCount)
+					{
+						TRACE_LOG("PDFParser::ParsePagesIDs, there are more pages than the page count specifies. fail.");
+						status = PDFHummus::eFailure;
+						break;
+					}
 					mPagesObjectIDs[ioCurrentPageIndex] = 0;
 					++ioCurrentPageIndex;
 					continue;

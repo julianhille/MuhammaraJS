@@ -184,4 +184,27 @@ describe("parser security regressions", function () {
       reader.end();
     }
   });
+  // Port of tests/security/GHSA-f2qr-8r8j-mm94.js.
+  it("decodes a text string that is only a UTF-16BE byte order mark to an empty string", async function () {
+    var muhammara = await createMuhammaraWasm();
+    assert.equal(new muhammara.PDFTextString([0xfe, 0xff]).toString(), "");
+
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/BOMOnlyTextString.pdf"),
+    );
+    try {
+      var info = reader.parseNewObject(4).toJSObject();
+      assert.equal(info.Title.toText(), "");
+      assert.equal(info.Subject.toText(), "");
+    } finally {
+      reader.end();
+    }
+  });
+  // Port of tests/security/GHSA-8j62-hp3j-vp33.js.
+  it("rejects more null Kids entries than the page tree Count", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = await readFile("tests/TestMaterials/NullKidsOverCount.pdf");
+
+    assert.throws(() => muhammara.createReader(source), /Unable to parse PDF/);
+  });
 });

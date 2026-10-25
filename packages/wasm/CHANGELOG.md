@@ -182,6 +182,20 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   of its bounding box, as native does, instead of its first point. Pass
   `rotationOrigin: coordinates[0]` to keep the old pivot [#924](https://github.com/julianhille/MuhammaraJS/issues/924)
 
+## [1.2.2] - 2026-10-22
+
+### Fixed
+
+- Fix a security vulnerability
+  [GHSA-8j62-hp3j-vp33](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-8j62-hp3j-vp33)
+
+## [1.2.1] - 2026-10-15
+
+### Fixed
+
+- Fix a security vulnerability
+  [GHSA-f2qr-8r8j-mm94](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-f2qr-8r8j-mm94)
+
 ## [1.2.0] - 2026-10-12
 
 ### Added
@@ -751,7 +765,9 @@ function or function signature mismatch` and later calls read freed
   runtime use, and Emscripten output is cached per build configuration [#568](https://github.com/julianhille/MuhammaraJS/issues/568)
   [#684](https://github.com/julianhille/MuhammaraJS/issues/684) [#690](https://github.com/julianhille/MuhammaraJS/issues/690) [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.0...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.2...HEAD
+[1.2.2]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.1...wasm-v1.2.2
+[1.2.1]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.0...wasm-v1.2.1
 [1.2.0]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.1.1...wasm-v1.2.0
 [1.1.1]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.1.0...wasm-v1.1.1
 [1.1.0]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.0.0...wasm-v1.1.0
