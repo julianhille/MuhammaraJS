@@ -41,6 +41,14 @@ which Wasm follows
   `rotateContent()` is unchanged and still turns counter-clockwise
   [#916](https://github.com/julianhille/MuhammaraJS/issues/916)
 
+### Recipe Text
+
+- `text(null)`, `textDimensions(null)` and `textDimensions(undefined)` throw
+  `TypeError: text must not be null` (or `undefined`) instead of drawing or
+  measuring the text `null` or `undefined`, the same on both ends. Pass the
+  text to draw, such as `String(value)` or `value ?? ""`; an omitted text,
+  `text()`, still draws nothing.
+
 ### Recipe Information
 
 These land in a 1.x release to fix custom Info entries that were lost or

@@ -87,6 +87,16 @@ describe("Parsed string bytes", function () {
       /Value bytes must be integers from 0 to 255/,
     );
     objects.writeNumber(0).endIndirectObject();
+    objects.startNewIndirectObject();
+    var rawStream = objects.startPDFStream();
+    [[300], [-1], [1.5]].forEach((bytes) =>
+      assert.throws(() => rawStream.getWriteStream().write(bytes), {
+        name: "TypeError",
+        message: "ByteWriter input bytes must be integers from 0 to 255",
+      }),
+    );
+    assert.equal(rawStream.getWriteStream().write([65]), 1);
+    objects.endPDFStream(rawStream).endIndirectObject();
 
     var stream = new muhammara.PDFWStreamForBuffer();
     assert.equal(stream.write([1, 2, 3]), 3);

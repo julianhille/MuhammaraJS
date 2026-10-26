@@ -1,25 +1,13 @@
-import { readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createRecipe } from "../../index.js";
 
 var recipePromise;
 
 /**
- * Reads a PDF fixture shared with the native Recipe tests.
- * @param {string} name - The fixture file name without extension.
- * @returns {Uint8Array} The fixture bytes.
+ * The Recipe class of one shared factory, with the arial font and the logo
+ * image registered. Every call returns the same class.
+ * @returns {Promise<Function>} The Recipe class.
  */
-export function recipeFixture(name) {
-  return new Uint8Array(
-    readFileSync(
-      new URL(
-        `../../../native-with-source/tests/TestMaterials/recipe/${name}.pdf`,
-        import.meta.url,
-      ),
-    ),
-  );
-}
-
 export function getRecipe() {
   if (!recipePromise) {
     recipePromise = createRecipe().then(async (Recipe) => {

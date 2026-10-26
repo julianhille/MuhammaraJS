@@ -1,0 +1,47 @@
+description: Clipped Latin text with spaces at its end, linked and underlined
+kind: markup
+sameAsTyped: true
+text: "Hello world   "
+options:
+  link: https://example.com
+  underline: true
+  textBox:
+    width: 180
+    wrap: clip
+expected:
+  none left:
+    native:
+      lines:
+        - [["Hello world   ", 20], ["Hello world   ", 220]]
+      annotations: [[20, 86], [220, 286], [20, 86], [220, 286]]
+    wasm: same
+  none right:
+    native:
+      lines:
+        - [["Hello world   ", 134.02], ["Hello world   ", 334.02]]
+      annotations: [[134, 200], [334, 400], [134, 200], [334, 400]]
+    wasm: same
+  auto left:
+    native:
+      lines:
+        - [["Hello world   ", 20], ["Hello world   ", 220]]
+      annotations: [[20, 86], [220, 286], [20, 86], [220, 286]]
+    wasm: same
+  auto right:
+    native:
+      lines:
+        - [["Hello world   ", 134.02], ["Hello world   ", 334.02]]
+      annotations: [[134, 200], [334, 400], [134, 200], [334, 400]]
+    wasm: same
+  rtl left:
+    native:
+      lines:
+        - [["Hello world   ", 20], ["Hello world   ", 220]]
+      annotations: [[20, 86], [220, 286], [20, 86], [220, 286]]
+    wasm: same
+  rtl right:
+    native:
+      lines:
+        - [["Hello world   ", 134.02], ["Hello world   ", 341.55]]
+      annotations: [[134, 200], [341.5, 400], [134, 200], [341.5, 400]]
+    wasm: same

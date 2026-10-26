@@ -1,5 +1,5 @@
 import { normalizeBytes } from "./bytes.js";
-import { EEncoding } from "./value-sets.js";
+import { EEncoding } from "@muhammara/shared/value-sets.js";
 import { isPageBoxType } from "./constants.js";
 
 /**

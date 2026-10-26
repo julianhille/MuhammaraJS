@@ -1,3 +1,4 @@
+#include "../../native-with-source/src/RecryptKeepingInfo.h"
 #include "wasm_api_internal.h"
 
 extern "C" {
@@ -22,7 +23,7 @@ WASM_EXPORT unsigned char* muhammara_wasm_recrypt(
   settings.DocumentEncryptionOptions.OwnerPassword = ownerPassword;
   settings.DocumentEncryptionOptions.UserProtectionOptionsFlag =
       userProtectionFlag;
-  if (PDFWriter::RecryptPDF(&source, password, &output,
+  if (RecryptPDFKeepingInfo(&source, password, &output,
                             LogConfiguration::DefaultLogConfiguration(), settings,
                             static_cast<EPDFVersion>(version)) !=
       PDFHummus::eSuccess) {

@@ -43,9 +43,6 @@ package's public `index.js` and generated `dist/muhammara-wasm.wasm` files. The
 workflow modules contain no repository fixture paths. When installed in another
 application, preserve that relationship or replace the two relative package
 URLs with your bundler's `@muhammara/wasm` import and emitted `.wasm` URL.
-bidi-js is loaded from the repository's `node_modules` by a third relative
-URL, `bidiUrl` in `module-options.mjs` and the import map in `index.html`;
-point both at your own copy of bidi-js, or let your bundler resolve it.
 
 The workflow renders Recipe text and tables without uploads. Supplying a custom font
 and JPEG/PNG/TIFF files additionally exercises registered fonts, metrics,

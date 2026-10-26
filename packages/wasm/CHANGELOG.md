@@ -6,6 +6,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Breaking Changes
 
+- Recipe `text(null)`, `textDimensions(null)` and `textDimensions(undefined)`
+  throw `TypeError: text must not be null` (or `undefined`), as on native,
+  instead of drawing or measuring the text `null` or `undefined`; see
+  [Breaking Changes](docs/breaking-changes.md#recipe-text)
 - Recipe `info()` without arguments reports the custom keys of a source PDF
   in their own spelling, as the PDF stores them, instead of lower-cased:
   `info().reportid` is now `info().ReportId`; see
@@ -88,6 +92,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Add an AcroForm tab to the browser example that lists the form fields of an
   uploaded PDF, or of a built-in sample form, in a one-page report
   [#992](https://github.com/julianhille/MuhammaraJS/issues/992)
+- Recipe `chroma("!load", bytes)` loads colors from JSON bytes.
+- Recipe `appendPage()`, `insertPage()` and `overlay()` take PDF bytes as
+  well as a registered name.
+- Recipe `read()` takes a registered PDF name, as `appendPage()` does; a name
+  that is not registered throws `Unknown PDF: <name>`. Without an argument it
+  also reads a source after `endPDF()`, as native does.
 
 ### Fixed
 
@@ -181,6 +191,102 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Turn a rotated Recipe `polygon()` without `rotationOrigin` around the center
   of its bounding box, as native does, instead of its first point. Pass
   `rotationOrigin: coordinates[0]` to keep the old pivot [#924](https://github.com/julianhille/MuhammaraJS/issues/924)
+- Recipe keeps the annotations of appended, inserted and split pages.
+- Recipe `insertPage()` keeps the Info entries of the PDF.
+- Recipe opens an owner-protected source with `password` without losing its
+  Info entries.
+- Recipe `position`, and drawing, annotations and links on a rotated page
+  whose media box does not start at 0, 0, use the page as displayed; the
+  media box offset was ignored or applied twice.
+- Recipe `link()` and text links on an edited rotated page cover their text
+  instead of a rectangle outside the page.
+- Recipe `appendPage()` records the appended pages, so pages created after it
+  are numbered after them and their annotations are written on them.
+- Recipe circles, ellipses, arcs, rectangles and polygons apply `lineCap`,
+  `lineJoin` and `miterLimit`, as lines do; their default join is round.
+- Recipe text with `opacity: 0` and a `hilite` with `opacity: 0` are
+  invisible instead of opaque or half opaque.
+- Recipe stars with a multiple of 4 points reach their radius when only
+  filled.
+- Recipe `textDimensions()` widens `width` by `charSpace`, as it widens
+  `xMax`.
+- Recipe text with a `textBox.style` leaves the caller's style object as it
+  was.
+- Recipe `replaceText()` on a page without content throws its clear error,
+  and `removeText()` with `forms` works for edited sources on both ends.
+- Recipe HTML keeps a list item that holds only a no-break or em space, draws
+  no blank line for whitespace before a block, sizes `h1`–`h3` and `small`,
+  and justifies every line of a paragraph but its last.
+- Recipe `encrypt()`, and `recrypt()` and `recryptAsync()`, keep the Info
+  entries of the PDF they encrypt.
+- Recipe `image()` mirrors an image of negative width or height, and reports
+  `Unknown image` for a page or frame the image does not have.
+- Recipe text lays out as native's: the first baseline sits at the font's
+  ascent, the text cursor after `text()` stays on its last line, and
+  `lineTo()` without options draws its segment instead of nothing.
+- Recipe `createPage()` on a source PDF keeps its size instead of A4.
+- Recipe `encrypt({})` keeps the encryption set before, by the constructor
+  passwords of a new PDF or an earlier `encrypt()`, instead of writing the PDF
+  unencrypted.
+- A Recipe link on text starts where the text starts instead of at its first
+  glyph, as native does.
+- A `>` inside a quoted Recipe HTML attribute no longer ends the tag, so the
+  rest of the attribute is not drawn as text.
+- Recipe text after a flow that ends with a closed HTML block element, such as
+  `</p>`, starts on a new line, as native does.
+- Recipe `createPage()`, `setPageBox()`, `rotateContent()`, `rectangle()` and
+  `circle()` throw for missing or non-finite values instead of writing `nan`
+  into the PDF. `insertPage()` throws for a source page that does not exist
+  instead of inserting another, as native does. `createPage()` with a
+  negative size throws a `RangeError` instead of an internal operation error,
+  and an infinite width given to `lineStyle()` or a shape is ignored instead
+  of writing `inf`.
+- Recipe HTML keeps the text after a `<` that starts no tag, such as
+  `a < b and c`, instead of dropping it.
+- Recipe `createPage()` takes numeric strings such as `"100"`, as native does,
+  instead of drawing a Letter page.
+- Recipe `overlay()` without a page throws
+  `A page is required for coordinates`, and `appendPage()`, `insertPage()`
+  and `overlay()` of a registered PDF that needs a password throw
+  `Unable to read/edit PDF file (pages=0)` or
+  `Unable to create PDF copying context`, instead of an internal error.
+
+### Changed
+
+- Recipe is one implementation shared with the native packages, in
+  `packages/shared`, bundled into `dist/index.js`, which `index.js` exports.
+  bidi-js, linebreak and @xmldom/xmldom are bundled too, with their MIT
+  notices in `THIRD_PARTY_LICENSES.md`, so right-to-left text is always
+  reordered; `loadBidi()` and the `bidi` option are still accepted. Image and PDF
+  low-level calls take registered PDF names, forms take any rectangle
+  and stream `write()` takes byte arrays, as on native.
+- Recipe `insertPage()` keeps the PDF version of an edited source, as native
+  does, instead of writing PDF 1.7; `encrypt()` picks the cipher of that
+  version, RC4-128 for PDF 1.4.
+- Recipe `text()` and `table()` with `html` read HTML with native's parser;
+  markup it cannot recover is drawn as its text, an unclosed comment runs to
+  the end as in browsers, and `<script>` content is drawn as text.
+- Recipe `textBox.wrap: "trim"` drops a first word wider than the box, as
+  native does, instead of drawing it past the box edge.
+- Recipe `insertPage()` of a registered name whose bytes are no PDF fails at
+  `endPDF()` with `Unable to create PDF copying context`, as native words it,
+  instead of `Unable to parse PDF`.
+- Recipe `getPageInfo()` of an edited source shows `info()` changes after
+  `endPDF()`, as native does.
+- Recipe `chroma()` accepts a non-hex value of a valid length, as native does;
+  it draws in the default color.
+- Recipe `lineWidth(0)` draws the thinnest line, as native does, instead of a
+  2-point line, and a negative `lineWidth` option of a shape draws 1 point
+  wide instead of 2. A negative width given to `lineWidth()` or `lineStyle()`
+  keeps the width set before instead of drawing 2 points wide.
+- Recipe `insertPage()` after `endPDF()` throws `PDF writer has ended`.
+  Repeated `endPDF()` calls return the first PDF, as documented, so the page
+  used to be dropped, or added only when no page was inserted before.
+- After `endPDF()`, Recipe `createPage()` throws `PDF writer has ended`, as
+  native does, and `replaceText()`/`removeText()` throw native's `RangeError`.
+- Recipe errors for a non-numeric `lineStyle()` dash, `editPage()` of a source
+  that needs its user password, and `polygon([])` are worded differently;
+  their types are unchanged.
 
 ## [1.2.2] - 2026-10-22
 

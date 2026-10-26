@@ -1,3 +1,4 @@
+#include "RecryptKeepingInfo.h"
 #include "napi/NapiSupport.h"
 
 #include "ByteReaderDriver.h"
@@ -294,12 +295,12 @@ napi_value Recrypt(const CallbackArgs &args) {
   if (IsObject(args.Env(), args[0])) {
     ObjectByteReaderWithPosition r(args.Env(), args[0]);
     ObjectByteWriterWithPosition w(args.Env(), args[1]);
-    status = PDFWriter::RecryptPDF(&r, options.password, &w, log,
+    status = RecryptPDFKeepingInfo(&r, options.password, &w, log,
                                    options.creation, options.version);
     if (w.Flush() != eSuccess && status == eSuccess)
       status = eFailure;
   } else
-    status = PDFWriter::RecryptPDF(LegacyString(args.Env(), args[0]),
+    status = RecryptPDFKeepingInfo(LegacyString(args.Env(), args[0]),
                                    options.password,
                                    LegacyString(args.Env(), args[1]), log,
                                    options.creation, options.version);

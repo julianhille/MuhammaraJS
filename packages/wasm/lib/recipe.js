@@ -1,252 +1,528 @@
-import { recipeConstants } from "./recipe/constants.js";
-import { Colorspace, DeviceColorSpace } from "./value-sets.js";
-import { coordinateMethods } from "./recipe/coordinate.js";
-import {
-  colorModel,
-  knownColors,
-  createColorMethods,
-  createSeparationMethods,
-} from "./recipe/colors.js";
-import { endPDF } from "./recipe/end.js";
-import { getFont, registerFont } from "./recipe/font.js";
-import { createImageMethods } from "./recipe/image.js";
-import { initializeRecipe, recipeVersion } from "./recipe/parameters.js";
-import {
-  createPageMethods,
-  endActivePage,
-  hasActivePage,
-  updateMediaBox,
-} from "./recipe/page.js";
-import { createShapeMethods } from "./recipe/shapes.js";
-import {
-  createVectorHelpers,
-  miterLimitOption,
-} from "./recipe/vector.helper.js";
-import { createLineMethods } from "./recipe/vector-line.js";
-import { createPolygonMethods } from "./recipe/vector-polygon.js";
-import { createVectorMethods } from "./recipe/vector.js";
-import { createTextMethods } from "./recipe/text.js";
-import { resolveFontSize } from "./recipe/text.helper.js";
-import { htmlToTextObjects } from "./recipe/htmlToTextObjects.js";
-import { spacedPieces } from "./text-direction.js";
-import { createTableMethods } from "./recipe/table.js";
-import { createAnnotationMethods } from "./recipe/annotation.js";
-import {
-  createCompositionMethods,
-  createEndPDF,
-  createSplitPdf,
-  createStructure,
-} from "./recipe/composition.js";
-import { createInfoMethods } from "./recipe/info.js";
+// The Wasm Recipe: the shared Recipe on the byte-first Wasm low-level API,
+// with registered assets (fonts, images, PDFs) in place of paths.
+import { createRecipe as createSharedRecipe } from "@muhammara/shared/recipe/Recipe.js";
+import { FontStyle, StructureFormat } from "@muhammara/shared/value-sets.js";
 import { createInspectPdf } from "./recipe/inspection.js";
-import { createRegistrationMethods } from "./recipe/registration.js";
-import { createSecurityMethods, permission } from "./recipe/security.js";
-import { createReplaceTextMethods } from "./recipe/replace-text.js";
-import { createFormMethods } from "./recipe/form.js";
+import { permission } from "./recipe/security.js";
 import { thirdPartyLicenses } from "./recipe/licenses.js";
-import { standardInfoKeys } from "./recipe-info.js";
-import { PdfAFeature, pdfaOptions, requirePdfaAllows } from "./pdfa.js";
+import { unknownAsset } from "./recipe/unknown-asset.js";
+import { htmlToTextObjects } from "./recipe/html-text-runs.js";
+
+// Keys of the per-style font files stored for each family, as in the shared
+// Recipe's font registry.
+var FontSlot = Object.freeze({
+  [FontStyle.REGULAR]: "r",
+  [FontStyle.BOLD]: "b",
+  [FontStyle.ITALIC]: "i",
+  [FontStyle.BOLD_ITALIC]: "bi",
+  r: "r",
+  b: "b",
+  i: "i",
+  bi: "bi",
+});
 
 /**
- * Packs a Recipe color model for the text export: a color-space index (0 gray,
- * 1 RGB, 2 CMYK) and one byte per component, as PDFWriter expects.
- * @param {{colorspace: DeviceColorSpace, values: number[]}} model - Resolved color.
- * @returns {{space: number, value: number}} The packed color.
- */
-function textColor(model) {
-  // Code 3 keeps the color already selected, such as a Separation color.
-  if (model.colorspace === Colorspace.SEPARATION) return { space: 3, value: 0 };
-  return {
-    space: [
-      DeviceColorSpace.GRAY,
-      DeviceColorSpace.RGB,
-      DeviceColorSpace.CMYK,
-    ].indexOf(model.colorspace),
-    value: model.values.reduce(
-      (packed, component) => packed * 256 + Math.round(component * 255),
-      0,
-    ),
-  };
-}
-
-/**
- * Creates the high-level Recipe PDF composition factory.
- * @param {object} dependencies - Module, default font, byte helpers, and low-level factories.
+ * Creates the Wasm Recipe class on one Wasm runtime.
+ * @param {object} runtime - The runtime: its low-level `api`, the Emscripten
+ *   `module`, the low-level asset maps, byte helpers and the default font.
  * @returns {Function} The Recipe class.
  */
 export function createRecipeFactory({
-  defaultFont,
+  api,
   module,
-  encoder,
+  assets,
   normalizeBytes,
   normalizeBytesAsync,
-  createReader,
-  createWriterToModify,
-  recrypt,
-  valueTypes,
-  pageBoxes,
-  registerWriterFont,
-  unregisterWriterFont,
-  removeFile,
   withString,
-  withDoubles,
-  rawObjectsContext,
-  resourcesDictionary,
-  assertOutputSize,
+  defaultFont,
 }) {
-  var fonts = new Map();
-  var images = new Map();
-  var pdfs = new Map();
-  var state = { nextFont: 0, nextImage: 0, nextPdf: 0 };
+  // Family (lower-cased) -> style slot -> low-level font name. Every Recipe
+  // of this class uses this one object as its font registry, so a font
+  // registered later is available to existing Recipes too.
+  var fonts = {};
+  var state = { nextFont: 0, nextPdf: 0 };
 
   /**
-   * Resolves the registered font path for text options, registering the default font on first use.
-   * @param {object} [options={}] - Text options with `font`, `bold`, and `italic`.
-   * @returns {string} Virtual path of the font.
-   * @throws {Error} If the font is not registered.
+   * Registers font bytes in the low-level registry under a fresh name.
+   * @param {Uint8Array} bytes - Font bytes.
+   * @returns {string} The low-level font name.
    */
-  function resolveFont(options = {}) {
-    var name = options.font || defaultFont?.name;
-    if (
-      defaultFont &&
-      String(name).toLowerCase() === defaultFont.name.toLowerCase() &&
-      !fonts.has(defaultFont.name.toLowerCase())
-    ) {
-      Recipe.registerFont(defaultFont.name, defaultFont.loadBytes());
-    }
-    return getFont(fonts, { ...options, font: name });
+  function storeFont(bytes) {
+    var name = `recipe-font-${state.nextFont++}`;
+    api.registerFont(name, normalizeBytes(bytes, "Font bytes"));
+    return name;
   }
 
   /**
-   * Calls a Recipe export and throws when it reports failure.
-   * @param {string} name - Export name.
-   * @param {...*} args - Export arguments.
+   * Records a font under a family and style for every future Recipe.
+   * @param {string} family - The family name.
+   * @param {string} ref - The low-level font name.
+   * @param {string} [type] - The style.
    * @returns {void}
-   * @throws {Error} If the export returns a falsy value.
    */
-  function call(name, ...args) {
-    if (!module[name](...args)) {
-      throw new Error(`Muhammara WebAssembly operation failed: ${name}`);
-    }
+  function recordFont(family, ref, type) {
+    var key = family.toLowerCase();
+    var slots = fonts[key] || {};
+    var slot = FontSlot[type] || FontSlot.r;
+    if (slots[slot]) api.unregisterFont(slots[slot]);
+    slots[slot] = ref;
+    fonts[key] = slots;
   }
 
-  class Recipe {
+  /**
+   * Registers the default font on first use.
+   * @returns {void}
+   */
+  function ensureDefaultFont() {
+    if (!defaultFont || fonts[defaultFont.name.toLowerCase()]) return;
+    recordFont(defaultFont.name, storeFont(defaultFont.loadBytes()));
+  }
+
+  /**
+   * Reads the bytes of a registered image or PDF, or normalizes given bytes.
+   * @param {string|Uint8Array} ref - A registered name or bytes.
+   * @param {string} [user] - What reads them, for the error message.
+   * @returns {Uint8Array} The bytes.
+   * @throws {TypeError} If `ref` is neither bytes nor a registered name.
+   */
+  function assetBytes(ref, user) {
+    if (typeof ref !== "string") {
+      // Bytes are normalized; anything else is left for the caller's check.
+      var isBytes = ref instanceof ArrayBuffer || ArrayBuffer.isView(ref);
+      return isBytes ? normalizeBytes(ref, "Asset bytes") : ref;
+    }
+    var path = assets.images.get(ref) || assets.pdfs.get(ref);
+    if (!path) {
+      throw new TypeError(
+        `${user ? `${user} reads` : "Wasm reads"} registered assets or bytes, not paths: ${ref}`,
+      );
+    }
+    return module.FS.readFile(path);
+  }
+
+  /**
+   * The handle of one writer pass, as the shared Recipe expects it.
+   * @param {object} writer - The writer.
+   * @returns {{writer: object, finish: Function, abort: Function}} The
+   *   writer, `finish()` that ends it and returns the bytes, and `abort()`
+   *   that releases it, also after `finish()`.
+   */
+  function writerHandle(writer) {
+    return {
+      writer,
+      finish: () => writer.end(),
+      abort: () => writer.dispose(),
+    };
+  }
+
+  var platform = {
+    muhammara: Object.assign(Object.create(api), {
+      /**
+       * Opens a page of the modified PDF for drawing, as native's
+       * PDFPageModifier does.
+       * @param {object} writer - The writer to modify.
+       * @param {number} pageIndex - The zero-based page.
+       * @param {boolean} [ensureContentEncapsulation] - Wrap existing content in q/Q.
+       * @returns {object} The page modifier.
+       * @throws {RangeError} If the page does not exist, in the words Wasm
+       *   Recipe has always used.
+       */
+      PDFPageModifier: function (
+        writer,
+        pageIndex,
+        ensureContentEncapsulation,
+      ) {
+        if (
+          !Number.isInteger(pageIndex) ||
+          pageIndex < 0 ||
+          pageIndex >= writer.getModifiedFileParser().getPagesCount()
+        ) {
+          throw new RangeError("pageNumber must identify an existing page");
+        }
+        return writer.createPageModifier(pageIndex, ensureContentEncapsulation);
+      },
+    }),
+    // What image() takes, for its error messages.
+    imageReference: "a registered name",
+    // Wasm's behaviour where the ends differed; kept until a major release
+    // unifies them, see DIFFERENCES.md.
+    fontFallsBackToDefault: false,
+    // Wasm throws for a call native ignores: text() without a page,
+    // image({index}), encrypt() with a non-object or after endPDF(),
+    // insertPage(), comment() or annot() after endPDF().
+    rejectsIgnoredCalls: true,
+    pageInfoIsRecord: true,
+    sourceName: "PDF bytes",
+    noPageError: () => new Error("A page is required for coordinates"),
     /**
-     * Creates a byte-first high-level PDF Recipe.
-     * Pass PDF bytes as the first argument to modify an existing document, or
-     * pass only options to create a new document. For Blob or File input, await
-     * `arrayBuffer()` and pass the resulting bytes to the constructor.
-     *
-     * @param {ByteSource|RecipeOptions} [sourceOrOptions={}] Source PDF bytes or creation options.
-     * @param {RecipeOptions} [options={}] Options used when modifying source bytes.
-     * @throws {TypeError} If Recipe options are not an object, or `pdfa` has an
-     * unknown level, an unusable profile or an `outputCondition` that is no
-     * string.
-     * @throws {Error} If the source has no readable pages, as with an encrypted
-     *   source opened without its password, the PDF cannot be created, or
-     *   `pdfa` is given for a source PDF, with another `version`, or with
-     *   encryption.
+     * The error of a PDF source that cannot be read or edited: the error as
+     * raised, as Wasm Recipe has always thrown it, and native's pages=0
+     * message without its brand.
+     * @param {*} err - The error the reader raised.
+     * @returns {Error} The error to throw.
      */
-    constructor(sourceOrOptions = {}, options = {}) {
+    sourceError: (err) =>
+      typeof err === "string" ? new Error(err.replace("HummusJS: ", "")) : err,
+    /**
+     * Checks the insertPage() arguments at the call, as Wasm Recipe always
+     * did.
+     * @param {*} afterPageNumber - The page to insert after.
+     * @param {*} source - A registered name or bytes.
+     * @param {*} pageNumber - The one-based source page.
+     * @returns {void}
+     * @throws {Error} If afterPageNumber is not a whole number of at least 0.
+     * @throws {TypeError} If the source is no registered name or bytes, or the
+     *   page is not a whole number of at least 1.
+     */
+    checkInsertPage(afterPageNumber, source, pageNumber) {
+      if (!Number.isInteger(afterPageNumber) || afterPageNumber < 0) {
+        throw new Error("The afterPageNumber is inValid.");
+      }
+      var isPdf =
+        typeof source === "string"
+          ? assets.pdfs.has(source)
+          : source instanceof ArrayBuffer || ArrayBuffer.isView(source);
+      if (!isPdf || !Number.isInteger(pageNumber) || pageNumber < 1) {
+        throw new TypeError(
+          "insertPage requires a registered PDF and one-based source page",
+        );
+      }
+    },
+    get defaultFontFamily() {
+      return defaultFont?.name.toLowerCase();
+    },
+
+    /**
+     * Reads `new Recipe(options)` or `new Recipe(bytes, options)`.
+     * @param {Array} args - The constructor arguments.
+     * @returns {object} The source bytes (null for a new PDF) and the options.
+     */
+    openArguments([source, options]) {
       var hasSource =
-        sourceOrOptions instanceof Uint8Array ||
-        sourceOrOptions instanceof ArrayBuffer ||
-        (typeof Blob !== "undefined" && sourceOrOptions instanceof Blob);
+        source instanceof Uint8Array ||
+        source instanceof ArrayBuffer ||
+        ArrayBuffer.isView(source) ||
+        (typeof Blob !== "undefined" && source instanceof Blob);
       if (hasSource) options = options || {};
-      else options = sourceOrOptions;
+      else options = source === undefined ? {} : source;
       if (!options || typeof options !== "object" || Array.isArray(options)) {
         throw new TypeError("Recipe options must be an object");
       }
-      initializeRecipe(this, options);
-      this.encryption_ = hasSource ? {} : this._getEncryptOptions(options);
-      var iccProfile = options.pdfa?.iccProfile;
-      this._pdfa = pdfaOptions(
-        {
-          ...options,
-          version:
-            options.version === undefined
-              ? undefined
-              : recipeVersion(options.version) / 10,
-        },
-        iccProfile instanceof ArrayBuffer
-          ? new Uint8Array(iccProfile)
-          : iccProfile,
-        !hasSource,
-        Object.keys(this.encryption_).length > 0,
-      );
-      var version = recipeVersion(
-        this._pdfa ? this._pdfa.version : options.version,
-      );
-      this._version = version;
-      this._recipe = 0;
-      if (!hasSource) {
-        this._recipe = module._muhammara_wasm_recipe_create_with_options(
-          version,
-          options.compress !== false,
-        );
-        if (!this._recipe) throw new Error("Unable to create PDF");
+      return {
+        source: hasSource ? normalizeBytes(source, "PDF bytes") : null,
+        options,
+      };
+    },
+
+    /**
+     * Hands the finished PDF over: its bytes.
+     * @param {Recipe} recipe - The recipe.
+     * @param {Uint8Array} bytes - The PDF.
+     * @returns {Uint8Array} The bytes.
+     */
+    deliver: (recipe, bytes) => bytes,
+    // endPDF(callback) returns the bytes, as typed since 1.0.
+    endPDFReturnsResult: true,
+
+    /**
+     * What the reader and copying APIs accept for a PDF: bytes, read from a
+     * registered asset for a name.
+     * @param {string|Uint8Array} source - A registered name or bytes.
+     * @returns {Uint8Array} The bytes.
+     * @throws {Error} If `source` names no registered PDF or image.
+     */
+    readerSource(source) {
+      if (typeof source !== "string") return source;
+      if (!assets.pdfs.has(source) && !assets.images.has(source)) {
+        throw unknownAsset("Unknown PDF", source);
       }
-      this.knownColors = Object.fromEntries(
-        Object.entries(knownColors).map(([space, colors]) => [
-          space,
-          { ...colors },
-        ]),
-      );
-      var info = {};
-      standardInfoKeys.forEach((key) => {
-        if (options[key] !== undefined) info[key] = options[key];
-      });
-      if (hasSource) this._openSource(sourceOrOptions);
-      if (Object.keys(info).length) this.info(info);
-    }
+      return assetBytes(source);
+    },
 
     /**
-     * The last moveTo or lineTo path position in Recipe coordinates.
-     * @returns {{x: number, y: number}} A copy of the position.
+     * Starts the writer of a new PDF; native's Recipe.js describes the handle.
+     * @param {object} options - The writer options.
+     * @returns {{writer: object, finish: Function, abort: Function}} The handle.
      */
-    get position() {
-      return { ...this._cursor };
-    }
+    newWriter: (options) => writerHandle(api.createWriter(options)),
 
     /**
-     * Asynchronously inspects PDF bytes without changing this Recipe's output.
-     * Blob and File inputs are accepted in addition to synchronous byte sources.
-     *
-     * @name readAsync
-     * @function
-     * @memberof Recipe#
-     * @param {AsyncByteSource} bytes - PDF bytes or a blob-like source.
-     * @returns {Promise<RecipeMetadata>} One-based page geometry and the page count.
-     * @throws {TypeError} If the source cannot be normalized to bytes.
-     * @throws {Error} If the bytes cannot be opened as a PDF or have no
-     *   readable pages; the Recipe `password` opens encrypted bytes.
+     * Starts a writer that modifies PDF bytes.
+     * @param {Uint8Array} bytes - The PDF.
+     * @param {object} options - The writer options.
+     * @returns {{writer: object, finish: Function, abort: Function}} The handle.
      */
-    async readAsync(bytes) {
-      return this.read(await normalizeBytesAsync(bytes, "PDF input"));
-    }
+    modifyWriter: (bytes, options) =>
+      writerHandle(api.createWriterToModify(bytes, options)),
 
     /**
-     * Releases this Recipe's writer and native WebAssembly state.
-     * The instance must not be used after disposal. Registered static assets
-     * remain available until {@link Recipe.disposeAssets} is called.
-     *
-     * @name dispose
-     * @function
-     * @memberof Recipe#
+     * Encrypts PDF bytes, keeping their Info dictionary.
+     * @param {Uint8Array} bytes - The PDF.
+     * @param {object} options - The encryption options and opening password.
+     * @returns {Uint8Array} The encrypted PDF.
+     */
+    recrypt: (bytes, options) => api.recrypt(bytes, options),
+
+    readBytes: assetBytes,
+
+    /**
+     * A key that changes when a registered image or PDF is replaced.
+     * @param {string} ref - The registered name.
+     * @returns {?string} The key, or null for an unregistered name.
+     */
+    assetVersion(ref) {
+      return assets.images.get(ref) || assets.pdfs.get(ref) || null;
+    },
+
+    /**
+     * Gives a Recipe the shared font registry, with the default font.
+     * @param {Recipe} recipe - The recipe.
      * @returns {void}
      */
-    dispose() {
-      if (this.writer?.dispose) this.writer.dispose();
-      if (this._recipe) module._muhammara_wasm_recipe_destroy(this._recipe);
-      this._recipe = 0;
-      this._releaseImageCopies();
-      this._disposed = true;
-    }
+    loadFonts(recipe) {
+      // fontSrcPath names folders, which Wasm cannot read; it is ignored, as
+      // it always was.
+      ensureDefaultFont();
+      recipe.fonts = fonts;
+    },
 
+    /**
+     * No font folders: Wasm cannot read them.
+     * @returns {Array} An empty list.
+     */
+    fontFiles: () => [],
+
+    /**
+     * Stores registered font bytes under a fresh low-level name.
+     * @param {string} name - The family name.
+     * @param {Uint8Array} bytes - The font bytes.
+     * @returns {string} The low-level font name.
+     */
+    fontSource: (name, bytes) => storeFont(bytes),
+
+    /**
+     * Whether a low-level font name is still registered.
+     * @param {string} ref - The low-level font name.
+     * @returns {boolean} Whether it is.
+     */
+    fontExists: (ref) => assets.fonts.has(ref),
+
+    /**
+     * Loads a registered font into a writer.
+     * @param {object} writer - The writer.
+     * @param {string} ref - The low-level font name.
+     * @returns {object} The writer's font.
+     */
+    getFont: (writer, ref) => writer.getFontForBytes(ref),
+  };
+
+  /**
+   * @name Recipe
+   * @desc Creates a byte-first high-level PDF Recipe. Pass PDF bytes as the
+   * first argument to modify an existing document, or pass only options to
+   * create a new document. For Blob or File input, await `arrayBuffer()` and
+   * pass the resulting bytes to the constructor.
+   * @namespace
+   * @constructor
+   * @param {ByteSource|RecipeOptions} [sourceOrOptions={}] Source PDF bytes or
+   *   creation options.
+   * @param {RecipeOptions} [options={}] Options used when modifying source
+   *   bytes.
+   * @throws {TypeError} If Recipe options are not an object, or `pdfa` has an
+   *   unknown level, an unusable profile or an `outputCondition` that is no
+   *   string.
+   * @throws {Error} If the source has no readable pages, as with an encrypted
+   *   source opened without its password, the PDF cannot be created, or
+   *   `pdfa` is given for a source PDF, with another `version`, or with
+   *   encryption.
+   */
+  var Recipe = createSharedRecipe(platform, { StructureFormat });
+  var inspectPdf = createInspectPdf({ module, withString, pdfs: assets.pdfs });
+
+  Object.assign(Recipe, {
+    /**
+     * Registers font bytes under a name and style for future Recipe instances.
+     * Registering the same name and style replaces the prior font.
+     *
+     * @name registerFont
+     * @function
+     * @memberof Recipe
+     * @param {string} name Non-empty font family name used by Recipe text.
+     * @param {ByteSource} bytes Font bytes.
+     * @param {RecipeFontStyle} [type="regular"] Font family style.
+     * @returns {void}
+     * @throws {TypeError} If the name is empty or the bytes are unsupported.
+     */
+    registerFont(name, bytes, type) {
+      if (typeof name !== "string" || !name) {
+        throw new TypeError("Font names must be non-empty strings");
+      }
+      recordFont(name, storeFont(bytes), type);
+    },
+    /**
+     * Asynchronously registers a font for future Recipe instances.
+     * @name registerFontAsync
+     * @function
+     * @memberof Recipe
+     * @async
+     * @param {string} name Non-empty font family name used by Recipe text.
+     * @param {AsyncByteSource} bytes Font bytes, Blob, or File.
+     * @param {RecipeFontStyle} [type="regular"] Font family style.
+     * @returns {Promise<void>} Resolves after the font is registered.
+     * @throws {TypeError} If the name is empty or the bytes are unsupported.
+     */
+    async registerFontAsync(name, bytes, type) {
+      return Recipe.registerFont(
+        name,
+        await normalizeBytesAsync(bytes, "Font bytes"),
+        type,
+      );
+    },
+    /**
+     * Registers image bytes for `Recipe#image`.
+     * @name registerImage
+     * @function
+     * @memberof Recipe
+     * @param {string} name Image name used by `Recipe#image`.
+     * @param {ByteSource} bytes Image bytes.
+     * @param {string} extension Image filename extension.
+     * @returns {void}
+     * @throws {TypeError} If the bytes are unsupported or the extension is not
+     * a supported JPEG, PNG, or TIFF extension.
+     */
+    registerImage: (name, bytes, extension) =>
+      api.registerImage(name, bytes, extension),
+    /**
+     * Asynchronously registers an image for `Recipe#image`.
+     * @name registerImageAsync
+     * @function
+     * @memberof Recipe
+     * @async
+     * @param {string} name Image name.
+     * @param {AsyncByteSource} bytes Image bytes, Blob, or File.
+     * @param {string} extension Image filename extension.
+     * @returns {Promise<void>} Resolves after the image is registered.
+     */
+    registerImageAsync: (name, bytes, extension) =>
+      api.registerImageAsync(name, bytes, extension),
+    /**
+     * Registers PDF bytes for appendPage, insertPage, overlay and image.
+     * @name registerPdf
+     * @function
+     * @memberof Recipe
+     * @param {string} name PDF name.
+     * @param {ByteSource} bytes PDF bytes.
+     * @returns {void}
+     */
+    registerPdf: (name, bytes) => api.registerPdf(name, bytes),
+    /**
+     * Asynchronously registers PDF bytes.
+     * @name registerPdfAsync
+     * @function
+     * @memberof Recipe
+     * @async
+     * @param {string} name PDF name.
+     * @param {AsyncByteSource} bytes PDF bytes, Blob, or File.
+     * @returns {Promise<void>} Resolves after the PDF is registered.
+     */
+    registerPdfAsync: (name, bytes) => api.registerPdfAsync(name, bytes),
+    /**
+     * Removes a registered font style.
+     * @name unregisterFont
+     * @function
+     * @memberof Recipe
+     * @param {string} name Font family name.
+     * @param {RecipeFontStyle} [type="regular"] Font family style.
+     * @returns {boolean} Whether a font was removed.
+     */
+    unregisterFont(name, type = FontStyle.REGULAR) {
+      var key = String(name).toLowerCase();
+      var slots = fonts[key];
+      var slot = FontSlot[type] || FontSlot.r;
+      if (!slots || !slots[slot]) return false;
+      api.unregisterFont(slots[slot]);
+      delete slots[slot];
+      if (!Object.keys(slots).length) delete fonts[key];
+      return true;
+    },
+    /**
+     * Removes a registered image.
+     * @name unregisterImage
+     * @function
+     * @memberof Recipe
+     * @param {string} name Image name.
+     * @returns {boolean} Whether an image was removed.
+     */
+    unregisterImage: (name) => api.unregisterImage(name),
+    /**
+     * Removes a registered PDF.
+     * @name unregisterPdf
+     * @function
+     * @memberof Recipe
+     * @param {string} name PDF name.
+     * @returns {boolean} Whether a PDF was removed.
+     */
+    unregisterPdf: (name) => api.unregisterPdf(name),
+    /**
+     * Removes every registered font, image, and PDF.
+     * @name disposeAssets
+     * @function
+     * @memberof Recipe
+     * @returns {void}
+     */
+    disposeAssets() {
+      Object.keys(fonts).forEach((key) => delete fonts[key]);
+      api.disposeAssets();
+    },
+    inspectPdf,
+    permission,
+    thirdPartyLicenses,
+    /**
+     * Splits a registered PDF into one-page PDF byte arrays.
+     * @name splitPdf
+     * @function
+     * @memberof Recipe
+     * @param {string} name Registered PDF name.
+     * @param {string} [prefix="page"] Prefix used for each output filename.
+     * @returns {RecipeSplitResult[]} One result per source page, in page order.
+     * @throws {Error} If no PDF is registered under `name` or it cannot be parsed.
+     */
+    splitPdf(name, prefix = "page") {
+      if (!assets.pdfs.has(name)) throw unknownAsset("Unknown PDF", name);
+      var pages = inspectPdf(name).pages;
+      return Array.from({ length: pages }, (_, index) => ({
+        name: `${prefix}-${index + 1}.pdf`,
+        bytes: new Recipe().appendPage(name, index + 1).endPDF(),
+      }));
+    },
+  });
+
+  Object.defineProperty(Recipe.prototype, "metadata", {
+    /**
+     * The metadata of the source PDF, as typed since 1.0.
+     * @returns {RecipeMetadata|undefined} The metadata, or undefined for a
+     *   new PDF.
+     */
+    get() {
+      return this.isNewPDF ? undefined : this._metadata;
+    },
+    /**
+     * Replaces the metadata, as the plain field it once was allowed.
+     * @private
+     * @param {RecipeMetadata} value - The metadata.
+     * @returns {void}
+     */
+    set(value) {
+      this._metadata = value;
+    },
+  });
+
+  Object.assign(Recipe.prototype, {
     /**
      * Adds a named extension method to all Recipe instances.
      * The callback executes with the Recipe as `this`. Existing Recipe methods
-     * cannot be replaced through this API.
+     * cannot be replaced through this API. Unlike native, which throws
+     * strings, it throws Error objects, as Wasm always has.
      *
      * @name register
      * @function
@@ -270,14 +546,29 @@ export function createRecipeFactory({
       }
       Recipe.prototype[key] = callback;
       return this;
-    }
-
+    },
     /**
-     * Converts supported DOM-free HTML into styled Recipe text fragments.
-     * Ordered and unordered list fragments include their visual prefix and
-     * native-style indentation. Unlike native's nested XML-derived layout tree,
-     * Wasm returns flat visual fragments. This helper does not draw content or
-     * alter Recipe state.
+     * Returns the document information dictionary without changing page state.
+     * This method reports PDF metadata, not Recipe-coordinate page geometry;
+     * use `pageInfo()` or `getCurrentPageInfo()` for geometry.
+     * For a new PDF it returns the `info()` record, as Wasm always has.
+     *
+     * @name getPageInfo
+     * @function
+     * @memberof Recipe#
+     * @returns {Record<string, unknown>|InfoDictionary} The current document information dictionary.
+     */
+    getPageInfo() {
+      return this.isNewPDF
+        ? this.info()
+        : this.writer.getDocumentContext().getInfoDictionary();
+    },
+    /**
+     * Converts supported HTML into styled text fragments. Ordered and
+     * unordered list fragments include their visual prefix and native-style
+     * indentation. Unlike native's nested XML-derived layout tree, Wasm
+     * returns flat visual fragments, as it always has. This helper does not
+     * draw content or alter Recipe state.
      *
      * @name htmlToTextObjects
      * @function
@@ -288,792 +579,102 @@ export function createRecipeFactory({
      */
     htmlToTextObjects(html, options = {}) {
       return htmlToTextObjects(html, options);
-    }
-
-    /**
-     * Sets a page boundary using native PDF bottom-left coordinates.
-     * Changing the media box also updates active Recipe page dimensions.
-     *
-     * @name setPageBox
-     * @function
-     * @memberof Recipe#
-     * @param {PDFPageBoxType|PageBox} box - Page-box constant or `PageBox` name.
-     * @param {number} left - Left PDF coordinate.
-     * @param {number} bottom - Bottom PDF coordinate.
-     * @param {number} right - Right PDF coordinate.
-     * @param {number} top - Top PDF coordinate.
-     * @returns {Recipe} The Recipe instance.
-     * @throws {RangeError} If `box` is not a supported page-box constant.
-     * @throws {Error} If the underlying PDF operation fails.
-     */
-    setPageBox(box, left, bottom, right, top) {
-      // Also accept the PageBox names, which are pageBoxes' keys.
-      if (typeof box === "string" && Object.hasOwn(pageBoxes, box))
-        box = pageBoxes[box];
-      if ([left, bottom, right, top].some((value) => typeof value === "bigint"))
-        throw new TypeError("setPageBox coordinates must be numbers");
-      if (!Object.values(pageBoxes).includes(box)) {
-        throw new RangeError(`Unknown page box: ${box}`);
-      }
-      call(
-        "_muhammara_wasm_recipe_set_page_box",
-        this._recipe,
-        box,
-        left,
-        bottom,
-        right,
-        top,
-      );
-      if (box === pageBoxes.media) {
-        updateMediaBox(this, [left, bottom, right, top]);
-      }
-      return this;
-    }
-
-    /**
-     * Sets the active page's rotation in degrees.
-     * The page metadata is updated so later Recipe-coordinate operations account
-     * for the rotation.
-     *
-     * @name rotate
-     * @function
-     * @memberof Recipe#
-     * @param {number} rotation - Page rotation in degrees, a multiple of 90.
-     * @returns {Recipe} The Recipe instance.
-     * @throws {TypeError} If no page is active or `rotation` is not a number.
-     * @throws {RangeError} If `rotation` is not a multiple of 90.
-     * @throws {Error} If the active page was opened with `editPage()`, or the
-     *   underlying PDF operation fails.
-     */
-    rotate(rotation) {
-      if (this._editingPage) {
-        throw new Error(
-          "rotate() is only available on pages created with createPage()",
-        );
-      }
-      if (!this._pageHeight)
-        throw new TypeError("rotate requires an active page");
-      if (typeof rotation !== "number")
-        throw new TypeError("Rotation is not set to a number");
-      if (!Number.isInteger(rotation / 90))
-        throw new RangeError("Rotation must be a multiple of 90 degrees");
-      call("_muhammara_wasm_recipe_set_page_rotation", this._recipe, rotation);
-      var page = this._pages[this._pages.length - 1];
-      if (page) {
-        page.rotate = rotation;
-      }
-      return this;
-    }
-
-    /**
-     * Saves the active PDF graphics state.
-     * @private
-     * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If the state cannot be saved.
-     */
-    _save() {
-      if (this._pageContext) return this._pageContext.q() && this;
-      call("_muhammara_wasm_recipe_save", this._recipe);
-      return this;
-    }
-
-    /**
-     * Restores the active PDF graphics state.
-     * @private
-     * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If the state cannot be restored.
-     */
-    _restore() {
-      if (this._pageContext) return this._pageContext.Q() && this;
-      call("_muhammara_wasm_recipe_restore", this._recipe);
-      return this;
-    }
-
-    /**
-     * Applies a PDF transformation matrix to the active context.
-     * @private
-     * @param {number} a - Matrix component `a`.
-     * @param {number} b - Matrix component `b`.
-     * @param {number} c - Matrix component `c`.
-     * @param {number} d - Matrix component `d`.
-     * @param {number} e - Matrix component `e`.
-     * @param {number} f - Matrix component `f`.
-     * @returns {Recipe} The Recipe instance.
-     * @throws {TypeError} If a component is not finite.
-     * @throws {Error} If the matrix cannot be applied.
-     */
-    _transform(a, b, c, d, e, f) {
-      if (this._pageContext)
-        return this._pageContext.cm(a, b, c, d, e, f) && this;
-      call("_muhammara_wasm_recipe_transform", this._recipe, a, b, c, d, e, f);
-      return this;
-    }
-
-    /**
-     * Rotates subsequent content around a point in Recipe coordinates.
-     * Positive angles rotate counter-clockwise on the page, as in native
-     * Recipe; the `rotation` option of shapes, text, and images turns
-     * clockwise instead. The transformation remains active until the current
-     * graphics state is restored or the page ends.
-     *
-     * @name rotateContent
-     * @function
-     * @memberof Recipe#
-     * @param {number} degrees - Counter-clockwise rotation angle in degrees.
-     * @param {number|string} [x=0] - Horizontal rotation origin, or `center`.
-     * @param {number|string} [y=0] - Vertical rotation origin, or `center`.
-     * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If there is no active page or the PDF operation fails.
-     */
-    rotateContent(degrees, x = 0, y = 0) {
-      var radians = (degrees * Math.PI) / 180;
-      var cosine = Math.cos(radians);
-      var sine = Math.sin(radians);
-      var point = this._calibrateCoordinate(x, y);
-      return this._transform(1, 0, 0, 1, point.nx, point.ny)
-        ._transform(cosine, sine, -sine, cosine, 0, 0)
-        ._transform(1, 0, 0, 1, -point.nx, -point.ny);
-    }
-
-    /**
-     * Rotates subsequent content for a `rotation` drawing option. Like native
-     * Recipe, positive angles turn clockwise on the page, the opposite of
-     * `rotateContent()`.
-     * @private
-     * @param {number} degrees - Clockwise rotation angle in degrees.
-     * @param {number|string} x - Horizontal rotation origin, or `center`.
-     * @param {number|string} y - Vertical rotation origin, or `center`.
-     * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If there is no active page or the PDF operation fails.
-     */
-    _rotate(degrees, x, y) {
-      return this.rotateContent(-degrees, x, y);
-    }
-
-    /**
-     * Sets defaults for subsequent line and shape drawing.
-     * When a page context is active, supplied values are applied immediately;
-     * omitted values preserve the stored style.
-     *
-     * @name lineStyle
-     * @function
-     * @memberof Recipe#
-     * @param {RecipeLineStyleOptions} [options] - Width, cap, join, miter, and dash settings.
-     * @returns {Recipe} The Recipe instance.
-     * @throws {TypeError} If a dash pattern containing non-finite values is applied to an active page context.
-     * @throws {RangeError} If `miterLimit` is not a number of at least 1.
-     * @throws {Error} If the underlying PDF operation fails.
-     */
-    lineStyle(options = {}) {
-      // null options act like omitted options.
-      if (options === null) options = {};
-      // Validate before anything is written.
-      var miterLimit = miterLimitOption(options.miterLimit);
-      if (miterLimit !== undefined) options = { ...options, miterLimit };
-      this._lineStyle = this._lineStyle || {};
-      if (options.width !== undefined || options.lineWidth !== undefined)
-        this._lineStyle.width = options.width ?? options.lineWidth;
-      if (options.cap !== undefined) this._lineStyle.cap = options.cap;
-      if (options.join !== undefined) this._lineStyle.join = options.join;
-      if (options.miterLimit !== undefined)
-        this._lineStyle.miterLimit = options.miterLimit;
-      if (options.dash !== undefined || options.dashPhase !== undefined) {
-        this._lineStyle.dash = options.dash ?? this._lineStyle.dash ?? [];
-        this._lineStyle.dashPhase =
-          options.dashPhase ?? this._lineStyle.dashPhase ?? 0;
-      }
-
-      if (!this._pageContext) return this;
-      return this._setLineStyle(options);
-    }
-
-    /**
-     * Applies line style values to the active PDF context.
-     * @private
-     * @param {object} [options={}] - `width` or `lineWidth`, `cap`, `join`, `miterLimit`, `dash`, and `dashPhase`,
-     * with numeric cap and join styles.
-     * @returns {Recipe} The Recipe instance.
-     * @throws {TypeError} If the dash pattern or a value is invalid.
-     * @throws {RangeError} If a cap or join style is out of range.
-     * @throws {Error} If the style cannot be applied.
-     */
-    _setLineStyle(options = {}) {
-      if (this._pageContext) {
-        if (options.width !== undefined || options.lineWidth !== undefined)
-          this._pageContext.w(options.width ?? options.lineWidth);
-        if (options.cap !== undefined) this._pageContext.J(options.cap);
-        if (options.join !== undefined) this._pageContext.j(options.join);
-        if (options.miterLimit !== undefined)
-          this._pageContext.M(options.miterLimit);
-        if (options.dash !== undefined || options.dashPhase !== undefined)
-          this._pageContext.d(options.dash || [], options.dashPhase ?? 0);
-        return this;
-      }
-      var dash = options.dash || [];
-      if (!Array.isArray(dash) || !dash.every(Number.isFinite)) {
-        throw new TypeError("Dash patterns must be arrays of finite numbers");
-      }
-      var dashPointer = dash.length ? module._malloc(dash.length * 8) : 0;
-      try {
-        if (dash.length) {
-          module.HEAPF64.set(dash, dashPointer >>> 3);
-        }
-        call(
-          "_muhammara_wasm_recipe_set_line_style",
-          this._recipe,
-          options.width ?? options.lineWidth ?? 1,
-          options.cap ?? 0,
-          options.join ?? 0,
-          options.miterLimit ?? 10,
-          dashPointer,
-          dash.length,
-          options.dashPhase ?? 0,
-        );
-        return this;
-      } finally {
-        if (dashPointer) {
-          module._free(dashPointer);
-        }
-      }
-    }
-
-    /**
-     * Sets fill and stroke opacity for subsequent drawing.
-     *
-     * @name opacity
-     * @function
-     * @memberof Recipe#
-     * @param {number} value - Opacity from 0 (transparent) through 1 (opaque).
-     * @returns {Recipe} The Recipe instance.
-     * @throws {RangeError} If the value is not finite or outside 0 through 1.
-     * @throws {Error} If the underlying PDF operation fails.
-     */
-    opacity(value) {
-      if (!Number.isFinite(value) || value < 0 || value > 1) {
-        throw new RangeError("Opacity must be a finite number between 0 and 1");
-      }
-      this._setOpacity(value);
-      this._opacity = value;
-      return this;
-    }
-
-    /**
-     * Applies opacity to the active PDF context.
-     * @private
-     * @param {number} value - Opacity from 0 to 1.
-     * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If the opacity cannot be applied, or the PDF/A level does
-     *   not allow transparency.
-     */
-    _setOpacity(value) {
-      if (value < 1) requirePdfaAllows(this._pdfa, PdfAFeature.TRANSPARENCY);
-      if (this._pageContext) this._pageContext.setOpacity(value);
-      else call("_muhammara_wasm_recipe_set_opacity", this._recipe, value);
-      return this;
-    }
-
-    /**
-     * Moves the active native PDF path.
-     * @private
-     * @param {number} x - PDF x.
-     * @param {number} y - PDF y.
-     * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If the operator fails.
-     */
-    _movePdf(x, y) {
-      if (this._pageContext) return this._pageContext.m(x, y) && this;
-      call("_muhammara_wasm_recipe_move_to", this._recipe, x, y);
-      return this;
-    }
-
-    /**
-     * Adds a line to the active native PDF path.
-     * @private
-     * @param {number} x - PDF x.
-     * @param {number} y - PDF y.
-     * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If the operator fails.
-     */
-    _linePdf(x, y) {
-      if (this._pageContext) return this._pageContext.l(x, y) && this;
-      call("_muhammara_wasm_recipe_line_to", this._recipe, x, y);
-      return this;
-    }
-
-    /**
-     * Adds a cubic curve to the active native PDF path.
-     * @private
-     * @param {number} x1 - First control point x.
-     * @param {number} y1 - First control point y.
-     * @param {number} x2 - Second control point x.
-     * @param {number} y2 - Second control point y.
-     * @param {number} x3 - End point x.
-     * @param {number} y3 - End point y.
-     * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If the operator fails.
-     */
-    _curvePdf(x1, y1, x2, y2, x3, y3) {
-      if (this._pageContext)
-        return this._pageContext.c(x1, y1, x2, y2, x3, y3) && this;
-      call(
-        "_muhammara_wasm_recipe_curve_to",
-        this._recipe,
-        x1,
-        y1,
-        x2,
-        y2,
-        x3,
-        y3,
-      );
-      return this;
-    }
-
-    /**
-     * Draws one text run after coordinate and style normalization.
-     * @private
-     * @param {string} value - Text.
-     * @param {number} x - Recipe x.
-     * @param {number} y - Recipe y of the baseline.
-     * @param {object} [options={}] - Font, size, color, spacing, rotation, skew, opacity, and HTML decorations.
-     * @returns {Recipe} The Recipe instance.
-     * @throws {TypeError} If `charSpace` is not finite or a color is invalid.
-     * @throws {Error} If the font is not registered or the text cannot be
-     *   drawn, or the PDF/A level does not allow transparency.
-     */
-    _drawText(value, x, y, options = {}) {
-      var point = this._calibrateCoordinate(x, y);
-      var characterSpacing = options.charSpace ?? 0;
-      if (!Number.isFinite(characterSpacing)) {
-        throw new TypeError("charSpace must be a finite number");
-      }
-      // Resolve like native: registered names, gray/RGB/CMYK codes, and the
-      // #1777d1 default for a missing or unknown color.
-      var fill = colorModel(this, options.color, options);
-      var separation = fill.colorspace === Colorspace.SEPARATION;
-      if (separation) this._separationColorspace(fill);
-      // Resolve like native: a missing or NaN opacity keeps the current
-      // graphics state; any other value is clamped to 0..1 and applies to
-      // this run only, leaving the Recipe-level opacity() default untouched.
-      var opacity =
-        options.opacity == null || Number.isNaN(Number(options.opacity))
-          ? undefined
-          : Math.max(0, Math.min(1, Number(options.opacity)));
-      var transformed =
-        options.rotation ||
-        options.skewX ||
-        options.skewY ||
-        opacity !== undefined;
-      // checked before the q, so a refused run leaves no state behind
-      if (opacity < 1) requirePdfaAllows(this._pdfa, PdfAFeature.TRANSPARENCY);
-      if (transformed) {
-        this._save();
-        if (opacity !== undefined) this._setOpacity(opacity);
-        var origin = options.rotationOrigin || [x, y];
-        if (options.rotation)
-          this._rotate(options.rotation, origin[0], origin[1]);
-        if (options.skewX || options.skewY) {
-          this._transform(
-            1,
-            Math.tan(((options.skewY || 0) * Math.PI) / 180),
-            Math.tan(((options.skewX || 0) * Math.PI) / 180),
-            1,
-            0,
-            0,
-          );
-        }
-      }
-      var fontPath = resolveFont(options);
-      var fontSize = resolveFontSize(options);
-      // Character spacing leaves out the points drawn before a right-to-left
-      // letter, so they stay over it; spacing too large to take back with a
-      // TJ adjustment is not taken back.
-      var pieces =
-        characterSpacing &&
-        Number.isFinite((characterSpacing * 1000) / fontSize)
-          ? spacedPieces(String(value), options.direction)
-          : [String(value)];
-      if (this._pageContext) {
-        var editContext = this._pageContext
-          .BT()
-          .Tf(this.writer.getFontForBytes(fontPath), fontSize)
-          .Tc(characterSpacing);
-        if (separation) this._setSeparationColor(fill, false);
-        else if (fill.colorspace === DeviceColorSpace.GRAY)
-          editContext.g(...fill.values);
-        else if (fill.colorspace === DeviceColorSpace.CMYK)
-          editContext.k(...fill.values);
-        else editContext.rg(...fill.values);
-        editContext.Tm(1, 0, 0, 1, point.nx, point.ny);
-        if (pieces.length === 1) editContext.Tj(String(value));
-        else {
-          // A positive adjustment moves the next glyph back by the spacing
-          // added after the previous one.
-          var back = (characterSpacing * 1000) / fontSize;
-          var items = pieces.flatMap((piece, index) =>
-            index ? [back, piece] : [piece],
-          );
-          // A long line takes several TJ operators, each continuing where
-          // the one before it ended, so each stays within TJ's item limit.
-          for (var start = 0; start < items.length; start += 10000) {
-            editContext.TJ(...items.slice(start, start + 10000));
-          }
-        }
-        editContext.ET();
-      } else {
-        var packedFill = textColor(fill);
-        if (separation) {
-          this._save();
-          this._setSeparationColor(fill, false);
-        }
-        // The UTF-8 byte offsets where each piece but the last ends; the
-        // spacing after them is taken back, as on native.
-        var breaks = [];
-        var offset = 0;
-        pieces.slice(0, -1).forEach((piece) => {
-          offset += encoder.encode(piece).length;
-          breaks.push(offset);
-        });
-        var breaksPointer = breaks.length
-          ? module._malloc(breaks.length * 4)
-          : 0;
-        try {
-          if (breaksPointer) module.HEAP32.set(breaks, breaksPointer >>> 2);
-          withString(value, (textPointer) =>
-            withString(fontPath, (fontPointer) => {
-              call(
-                "_muhammara_wasm_recipe_text",
-                this._recipe,
-                point.nx,
-                point.ny,
-                textPointer,
-                fontPointer,
-                fontSize,
-                packedFill.space,
-                packedFill.value,
-                characterSpacing,
-                breaksPointer,
-                breaks.length,
-              );
-            }),
-          );
-        } finally {
-          if (breaksPointer) module._free(breaksPointer);
-        }
-        if (separation) this._restore();
-      }
-      // Text-markup annotations are added per line by text(); only HTML
-      // underline and strike-out styles draw a visible decoration line.
-      if (options.htmlUnderline || options.htmlStrikeOut) {
-        // A reordered piece's lines stay under its glyphs, without the
-        // spaces that end it.
-        var runWidth =
-          options._decorationWidth ??
-          this.textDimensions(value, {
-            ...options,
-            fontSize,
-          }).xMax;
-        // Native measures markup against one sample so every run on a line
-        // gets the same height, including descenders and tall glyphs.
-        var textHeight = this.textDimensions(
-          "ABCDEFGHIJKLMNOPQRSTUVWXYZgjpqy|}",
-          { ...options, fontSize },
-        ).height;
-        var decoration = {
-          stroke: options.color || "#1777d1",
-          colorspace: options.colorspace,
-          colorName: options.colorName,
-          width: 2,
-        };
-        if (options.htmlUnderline) {
-          var underlineY = y + textHeight * 0.1;
-          this.line(x, underlineY, x + runWidth, underlineY, decoration);
-        }
-        if (options.htmlStrikeOut) {
-          var strikeOutY = y - textHeight * 0.2;
-          this.line(x, strikeOutY, x + runWidth, strikeOutY, decoration);
-        }
-      }
-      if (transformed) this._restore();
-      this._lastLineHeight = fontSize;
-      this._textCursor = { x, y: y + this._lastLineHeight };
-      return this;
-    }
-  }
-
-  Object.assign(
-    Recipe.prototype,
-    createTextMethods({
-      module,
-      /**
-       * The font and size text options measure in. A font registered again
-       * has a path of its own.
-       * @param {object} options - Font and size options.
-       * @returns {string} The key.
-       * @throws {Error} If the font is not registered.
-       */
-      fontKey: (options) =>
-        resolveFont(options) + "\u0000" + resolveFontSize(options),
-      /**
-       * Draws one text run for the shared text methods.
-       * @param {string} value - Text.
-       * @param {number} x - Recipe x.
-       * @param {number} y - Recipe y.
-       * @param {object} options - Normalized text options.
-       * @returns {Recipe} The Recipe instance.
-       * @throws {Error} If the text cannot be drawn.
-       */
-      drawText: function (value, x, y, options) {
-        return this._drawText(value, x, y, options);
-      },
-      /**
-       * Measures one text run with the resolved font and size.
-       * @param {string} value - Text.
-       * @param {object} options - Font and size options.
-       * @returns {TextDimensions} Bounds and advance in points.
-       * @throws {Error} If the font is not registered or the text cannot be measured.
-       */
-      measure: function (value, options) {
-        var fontPath = resolveFont(options);
-        if (this._sourceMode) {
-          return this.writer
-            .getFontForBytes(fontPath)
-            .calculateTextDimensions(String(value), resolveFontSize(options));
-        }
-        var resultPointer = module._malloc(48);
-        try {
-          return withString(value, (textPointer) =>
-            withString(fontPath, (fontPointer) => {
-              call(
-                "_muhammara_wasm_recipe_text_dimensions",
-                this._recipe,
-                textPointer,
-                fontPointer,
-                resolveFontSize(options),
-                resultPointer,
-              );
-              var offset = resultPointer >>> 3;
-              return {
-                xMin: module.HEAPF64[offset],
-                yMin: module.HEAPF64[offset + 1],
-                xMax: module.HEAPF64[offset + 2],
-                yMax: module.HEAPF64[offset + 3],
-                width: module.HEAPF64[offset + 4],
-                height: module.HEAPF64[offset + 5],
-              };
-            }),
-          );
-        } finally {
-          module._free(resultPointer);
-        }
-      },
-    }),
-    createTableMethods(),
-  );
-
-  var runtime = {
-    module,
-    call,
-    withString,
-    images,
-    pdfs,
-    createReader,
-    removeFile,
-  };
-  Object.assign(
-    Recipe.prototype,
-    coordinateMethods,
-    createPageMethods(call, { createReader, createWriterToModify, module }),
-    createColorMethods(),
-    createSeparationMethods({
-      module,
-      rawObjectsContext,
-      resourcesDictionary,
-      withString,
-      withDoubles,
-    }),
-    createVectorHelpers(runtime),
-    createLineMethods(runtime),
-    createPolygonMethods(runtime),
-    createVectorMethods(runtime),
-    createShapeMethods(),
-    createImageMethods(runtime),
-    createAnnotationMethods({ module, withString, withDoubles }),
-    createInfoMethods({ call, withString, createReader, valueTypes }),
-    createSecurityMethods(),
-    createReplaceTextMethods(),
-    createFormMethods({ createReader, resolveFont }),
-  );
-
-  // Composition modules receive closures rather than reaching into Recipe state.
-  var inspectPdf = createInspectPdf({ module, withString, pdfs });
-  var registration = createRegistrationMethods({
-    module,
-    normalizeBytes,
-    normalizeBytesAsync,
-    fonts,
-    images,
-    pdfs,
-    state,
-    registerFont,
-    registerWriterFont,
-    unregisterWriterFont,
-    removeFile,
-  });
-  Object.assign(Recipe, registration, {
-    inspectPdf,
-    permission,
-    thirdPartyLicenses,
-    splitPdf: createSplitPdf({
-      module,
-      pdfs,
-      withString,
-      call,
-      /**
-       * Creates a Recipe for each split page.
-       * @param {RecipeOptions} options - Recipe options.
-       * @returns {Recipe} A new Recipe.
-       */
-      createRecipe: (options) => new Recipe(options),
-    }),
-  });
-  Object.assign(Recipe.prototype, {
-    /**
-     * Registers font bytes globally and makes them available to this Recipe.
-     *
-     * @name registerFont
-     * @function
-     * @memberof Recipe#
-     * @param {string} name - Non-empty font family name.
-     * @param {ByteSource} bytes - Font bytes.
-     * @param {RecipeFontStyle} [type="regular"] - Font family style.
-     * @returns {Recipe} The Recipe instance.
-     * @throws {TypeError} If the name or bytes are invalid.
-     */
-    registerFont: function (name, bytes, type) {
-      Recipe.registerFont(name, bytes, type);
-      return this;
     },
     /**
-     * Asynchronously registers font bytes and makes them available to this Recipe.
-     *
+     * Asynchronously reads PDF metadata. Blob and File inputs are accepted in
+     * addition to synchronous byte sources.
+     * @name readAsync
+     * @function
+     * @memberof Recipe#
+     * @param {AsyncByteSource} bytes - PDF bytes or a blob-like source.
+     * @returns {Promise<RecipeMetadata>} One-based page geometry and the page count.
+     */
+    async readAsync(bytes) {
+      return this.read(await normalizeBytesAsync(bytes, "PDF input"));
+    },
+    /**
+     * Asynchronously registers a font for this Recipe.
      * @name registerFontAsync
      * @function
      * @memberof Recipe#
      * @async
-     * @param {string} name - Non-empty font family name.
-     * @param {AsyncByteSource} bytes - Font bytes or a blob-like source.
-     * @param {RecipeFontStyle} [type="regular"] - Font family style.
-     * @returns {Promise<Recipe>} The Recipe instance after registration.
-     * @throws {TypeError} If the name or bytes are invalid.
+     * @param {string} name Font family name.
+     * @param {AsyncByteSource} bytes Font bytes, Blob, or File.
+     * @param {RecipeFontStyle} [type="regular"] Font family style.
+     * @returns {Promise<Recipe>} The recipe instance.
      */
-    registerFontAsync: async function (name, bytes, type) {
-      await Recipe.registerFontAsync(name, bytes, type);
-      return this;
+    async registerFontAsync(name, bytes, type) {
+      return this.registerFont(
+        name,
+        await normalizeBytesAsync(bytes, "Font bytes"),
+        type,
+      );
+    },
+    /**
+     * Releases this Recipe's writer and reader. The instance must not be used
+     * after disposal; registered assets stay until `Recipe.disposeAssets()`.
+     * @name dispose
+     * @function
+     * @memberof Recipe#
+     * @returns {void}
+     */
+    dispose() {
+      this._output.abort();
+      this._releaseReader();
+      if (!this.ended) {
+        this.endError = new Error("Cannot end the PDF after disposal");
+      }
+      this.ended = true;
+      this.disposed_ = true;
+    },
+    /**
+     * Finishes this Recipe and splits it into one-page PDF byte arrays.
+     * @name split
+     * @function
+     * @memberof Recipe#
+     * @param {string} [prefix="page"] - Prefix for each output filename.
+     * @returns {RecipeSplitResult[]} One result per page.
+     */
+    split(prefix = "page") {
+      var name = `split-${state.nextPdf++}`;
+      Recipe.registerPdf(name, this.endPDF());
+      try {
+        return Recipe.splitPdf(name, prefix);
+      } finally {
+        Recipe.unregisterPdf(name);
+      }
+    },
+    /**
+     * Reports basic structure for the finished PDF, finishing the Recipe.
+     * @name structure
+     * @function
+     * @memberof Recipe#
+     * @param {RecipeStructureFormat} [format="string"] Output format.
+     * @returns {string|RecipeStructure} A text summary, or page, encryption
+     *   and indirect-object counts for JSON output.
+     */
+    structure(format = StructureFormat.STRING) {
+      var bytes = this.endPDF();
+      var text = new TextDecoder("latin1").decode(bytes);
+      var objects = (text.match(/\n\d+ \d+ obj\b/g) || []).length;
+      var reader = api.createReader(
+        bytes,
+        Object.keys(this.encryption_).length
+          ? this.encryption_
+          : this.encryptOptions,
+      );
+      var pages;
+      try {
+        pages = reader.getPagesCount();
+      } finally {
+        reader.end();
+      }
+      if (format === StructureFormat.JSON || format?.json) {
+        return { pages, encrypted: /\/Encrypt\b/.test(text), objects };
+      }
+      return `Info\nRoot\nSize: ${objects}\nPages: ${pages}`;
     },
   });
-  Object.assign(
-    Recipe.prototype,
-    createCompositionMethods({ module, pdfs, withString, call, inspectPdf }),
-    {
-      endPDF: createEndPDF({
-        /**
-         * Finishes the open page and writes the Recipe, rolling back page deletions
-         * when modifying a source PDF fails.
-         * @param {Recipe} recipe - Recipe to finish.
-         * @returns {Uint8Array} The PDF bytes.
-         * @throws {Error} If a page is open while pages are deleted, or writing fails.
-         */
-        endPDF: (recipe) => {
-          if (recipe._endError) throw recipe._endError;
-          // deletePage() rewrites the page tree it read when the page was
-          // marked, so an open page cannot be folded into that rewrite.
-          // Native reports the same conflict the same way.
-          if (recipe._deletedPages?.size && hasActivePage(recipe)) {
-            throw new Error("Finish the current page before endPDF");
-          }
-          // Otherwise finish the open page for the caller, before finalization
-          // retires the Recipe: a forgotten page ending must not cost the page
-          // or leave an unrecoverable document behind.
-          endActivePage(recipe);
-          if (recipe._sourceMode) {
-            if (!recipe._endedBytes) {
-              var deletingPages = Boolean(recipe._deletedPages?.size);
-              var deletionState = deletingPages
-                ? {
-                    pages: recipe._pages,
-                    metadata: recipe.metadata,
-                    metadataValues: { ...recipe.metadata },
-                    activePageNumber: recipe._activePageNumber,
-                    deletedPages: recipe._deletedPages,
-                  }
-                : null;
-              try {
-                recipe._deletePages();
-                recipe._writeCanonicalInfo();
-                recipe._writeFormFills();
-                recipe._endedBytes = recipe.writer.end();
-              } catch (error) {
-                if (!deletingPages) throw error;
-                recipe._pages = deletionState.pages;
-                Object.keys(deletionState.metadata).forEach(
-                  (key) => delete deletionState.metadata[key],
-                );
-                Object.assign(
-                  deletionState.metadata,
-                  deletionState.metadataValues,
-                );
-                recipe.metadata = deletionState.metadata;
-                recipe._activePageNumber = deletionState.activePageNumber;
-                recipe._deletedPages = deletionState.deletedPages;
-                recipe._endError = error;
-                try {
-                  recipe.writer.dispose();
-                } catch (_) {
-                  // Preserve the deletion error if modifier cleanup fails.
-                }
-                throw error;
-              }
-            }
-            return recipe._endedBytes;
-          }
-          return endPDF(recipe, module, assertOutputSize);
-        },
-        state,
-        registerPdf: Recipe.registerPdf,
-        unregisterPdf: Recipe.unregisterPdf,
-        inspectPdf,
-        /**
-         * Creates the Recipe that endPDF() uses for post-processing.
-         * @param {RecipeOptions} options - Recipe options.
-         * @returns {Recipe} A new Recipe.
-         */
-        createRecipe: (options) => new Recipe(options),
-        recrypt,
-      }),
-      /**
-       * Finishes this Recipe and splits it into one-page PDF byte arrays.
-       * Calling this method ends the Recipe; result names use one-based page numbers.
-       *
-       * @name split
-       * @function
-       * @memberof Recipe#
-       * @param {string} [prefix="page"] - Prefix for each output filename.
-       * @returns {RecipeSplitResult[]} One result per page in source order.
-       * @throws {Error} If the Recipe cannot be finished or split.
-       */
-      split: function (prefix = "page") {
-        var name = `split-${state.nextPdf++}`;
-        Recipe.registerPdf(name, this.endPDF());
-        try {
-          return Recipe.splitPdf(name, prefix);
-        } finally {
-          Recipe.unregisterPdf(name);
-        }
-      },
-      structure: createStructure(),
-    },
-  );
 
-  Object.assign(Recipe, recipeConstants);
   return Recipe;
 }

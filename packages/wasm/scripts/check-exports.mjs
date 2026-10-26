@@ -34,7 +34,6 @@ async function list(directory) {
 }
 
 var runtimeFiles = [
-  path.join(packageRoot, "index.js"),
   ...(await list(path.join(packageRoot, "lib"))).filter((file) =>
     file.endsWith(".js"),
   ),

@@ -303,6 +303,7 @@ describe("PDFTextExtraction", function () {
       "..",
       "native-core",
       "lib",
+      "shared",
       "glyph-list.js",
     );
     var normalize = String.prototype.normalize;

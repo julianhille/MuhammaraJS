@@ -1,5 +1,8 @@
-import { DeviceColorSpace, DrawingPathType } from "./value-sets.js";
-import { readDirection } from "./text-direction.js";
+import {
+  DeviceColorSpace,
+  DrawingPathType,
+} from "@muhammara/shared/value-sets.js";
+import { readDirection } from "@muhammara/shared/text-direction.js";
 
 /**
  * Rejects overflowing derived geometry before any operator is emitted.

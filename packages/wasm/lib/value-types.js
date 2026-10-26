@@ -1,4 +1,4 @@
-import { PageBox } from "./value-sets.js";
+import { PageBox } from "@muhammara/shared/value-sets.js";
 
 /**
  * Creates PDF value encoders and constructors backed by the Wasm module.

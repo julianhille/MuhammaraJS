@@ -25,7 +25,62 @@ function assertRecryptedPdf(filePath, password, encrypted) {
   }
 }
 
+/**
+ * A one-page PDF with a title and a custom Info entry.
+ *
+ * @returns {Buffer} The PDF.
+ */
+function pdfWithInfo() {
+  var stream = new muhammara.PDFWStreamForBuffer();
+  var writer = muhammara.createWriter(stream);
+  var info = writer.getDocumentContext().getInfoDictionary();
+  info.title = "Kept";
+  info.addAdditionalInfoEntry("Custom", "value");
+  writer.writePage(writer.createPage(0, 0, 100, 100));
+  writer.end();
+  return stream.buffer;
+}
+
+/**
+ * Assert that a PDF keeps the Info entries of pdfWithInfo().
+ *
+ * @param {Buffer} pdf - The PDF.
+ * @returns {void}
+ */
+function assertInfoKept(pdf) {
+  var reader = muhammara.createReader(new muhammara.PDFRStreamForBuffer(pdf));
+  try {
+    var info = reader
+      .queryDictionaryObject(reader.getTrailer(), "Info")
+      .toJSObject();
+    assert.equal(info.Title.toText(), "Kept");
+    assert.equal(info.Custom.toText(), "value");
+  } finally {
+    reader.end();
+  }
+}
+
 describe("Xcryption", function () {
+  it("keeps the Info dictionary through recrypt and recryptAsync", async function () {
+    var target = new muhammara.PDFWStreamForBuffer();
+    muhammara.recrypt(
+      new muhammara.PDFRStreamForBuffer(pdfWithInfo()),
+      target,
+      { userPassword: "view" },
+    );
+    var plain = new muhammara.PDFWStreamForBuffer();
+    muhammara.recrypt(new muhammara.PDFRStreamForBuffer(target.buffer), plain, {
+      password: "view",
+    });
+    assertInfoKept(plain.buffer);
+    var asyncTarget = new muhammara.PDFWStreamForBuffer();
+    await muhammara.recryptAsync(
+      new muhammara.PDFRStreamForBuffer(pdfWithInfo()),
+      asyncTarget,
+    );
+    assertInfoKept(asyncTarget.buffer);
+  });
+
   describe("Strip PDF From Password", function () {
     it("should complete without error", function () {
       muhammara.recrypt(

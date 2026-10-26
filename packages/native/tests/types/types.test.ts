@@ -125,6 +125,21 @@ recipe
   .info({ ReportId: "X-789", Count: 3, Gone: null });
 var existingInfo: Record<string, string> = recipe.info();
 void existingInfo;
+// The byte-first Recipe options shared with Wasm, and endPDF()'s result.
+var sharedOptions: muhammara.Recipe.RecipeOptions = {
+  version: 17,
+  compress: false,
+  keywords: "one, two",
+};
+var finished: Buffer | string | undefined = new muhammara.Recipe(
+  Buffer.from("new"),
+  undefined,
+  sharedOptions,
+)
+  .createPage(100, 100)
+  .endPage()
+  .endPDF();
+void finished;
 // @ts-expect-error info() without options returns the Info record, not the Recipe.
 recipe.info().custom("ReportId", "X-000");
 recipe.rectangle(10, 10, 100, 40, { useGivenCoords: true });
