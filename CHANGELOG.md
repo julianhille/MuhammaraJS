@@ -90,6 +90,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Recipe `editPage()` throws a `RangeError` for a page number that is not an
+  existing page (such as `1.5`, `0`, a page past the end, or the string `"1"`),
+  as `@muhammara/wasm` does, instead of an internal `TypeError`
+  [#1023](https://github.com/julianhille/MuhammaraJS/issues/1023)
 - Open a Recipe from a `Uint8Array` or an `ArrayBuffer` source, and `read()`
   one, as `@muhammara/wasm` does, instead of throwing
   `src.toLowerCase is not a function` or `Unable to start parsing PDF file`;

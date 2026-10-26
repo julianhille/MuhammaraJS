@@ -781,7 +781,7 @@ exports.endPage = function endPage() {
  * @param {number} pageNumber - The one-based page number to be edited.
  * @returns {Recipe} The recipe instance.
  * @throws {Error} If the Recipe was not constructed from an existing PDF.
- * @throws {Error} If the page does not exist in the source PDF.
+ * @throws {RangeError} If `pageNumber` does not identify an existing page.
  * @throws {Error} If another page is still active; call endPage() first.
  */
 exports.editPage = function editPage(pageNumber) {
@@ -794,6 +794,13 @@ exports.editPage = function editPage(pageNumber) {
   // silently dropped at endPDF().
   if (this.page) {
     throw new Error("Finish the current page before editing another page");
+  }
+  if (
+    !Number.isInteger(pageNumber) ||
+    pageNumber < 1 ||
+    pageNumber > this.metadata.pages
+  ) {
+    throw new RangeError("pageNumber must identify an existing page");
   }
   const pdfWriter = this.writer;
   const pageIndex = pageNumber - 1;
