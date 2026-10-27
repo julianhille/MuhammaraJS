@@ -207,4 +207,21 @@ describe("parser security regressions", function () {
 
     assert.throws(() => muhammara.createReader(source), /Unable to parse PDF/);
   });
+  // Port of tests/security/GHSA-5pp7-hx79-5mm2.js.
+  it("ends a TIFF predictor stream whose row size overflows", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/TIFFPredictorOverflow.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(3).toPDFStream(),
+      );
+
+      assert.deepEqual(stream.read(65536), new Uint8Array());
+      assert.equal(stream.notEnded(), false);
+    } finally {
+      reader.end();
+    }
+  });
 });
