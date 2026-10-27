@@ -21,9 +21,10 @@ export function endPDF(recipe, module, assertOutputSize) {
         lengthPointer,
       );
       var length = module.HEAPU32[lengthPointer >>> 2];
+      // Past the limit the pointer is null and the length is what it would be.
+      assertOutputSize(length);
       if (!pdfPointer || !length) throw new Error("Unable to finish PDF");
       try {
-        assertOutputSize(length);
         recipe._endedBytes = module.HEAPU8.slice(
           pdfPointer,
           pdfPointer + length,

@@ -990,14 +990,7 @@ unsigned char* muhammara_wasm_modifier_end_pdf(WasmModifier* modifier,
     return nullptr;
   }
   modifier->finished = true;
-  std::string pdf = modifier->output.ToString();
-  unsigned char* result = static_cast<unsigned char*>(std::malloc(pdf.size()));
-  if (result == nullptr) {
-    return nullptr;
-  }
-  std::memcpy(result, pdf.data(), pdf.size());
-  *outputLength = static_cast<unsigned int>(pdf.size());
-  return result;
+  return takeOutput(modifier->output, outputLength);
 }
 
 }  // extern "C"

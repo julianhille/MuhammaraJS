@@ -255,11 +255,12 @@ export function createModifierFactory({
             lengthPointer,
           );
           var length = module.HEAPU32[lengthPointer >>> 2];
+          // Past the limit the pointer is null and the length is what it would be.
+          assertOutputSize(length);
           if (!pdfPointer || !length) {
             throw new Error("Unable to finish modified PDF");
           }
           try {
-            assertOutputSize(length);
             return module.HEAPU8.slice(pdfPointer, pdfPointer + length);
           } finally {
             module._muhammara_wasm_free(pdfPointer);

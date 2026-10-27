@@ -39,7 +39,7 @@
 #include "PDFStreamInput.h"
 #include "PDFStream.h"
 #include "PDFSymbol.h"
-#include "OutputStringBufferStream.h"
+#include "IByteWriterWithPosition.h"
 #include "PDFPage.h"
 #include "PDFPageInput.h"
 #include "PDFModifiedPage.h"
@@ -58,6 +58,68 @@
 #include <vector>
 
 class WasmDictionaryContext;
+
+// The instance's limits.maxOutputBytes, set when the JS runtime loads it.
+inline unsigned int gMaxOutputBytes = std::numeric_limits<unsigned int>::max();
+
+// PDF output kept in memory up to gMaxOutputBytes, in fixed-size chunks that
+// are never reallocated. Bytes past the limit are counted but dropped, so a
+// document that would exceed it fails without first growing memory to its
+// full size.
+class WasmOutputStream : public IByteWriterWithPosition {
+ public:
+  static constexpr size_t kChunkSize = 1 << 20;
+  std::vector<std::string> chunks;
+  unsigned long long written = 0;
+
+  IOBasicTypes::LongBufferSizeType Write(
+      const IOBasicTypes::Byte* inBuffer,
+      IOBasicTypes::LongBufferSizeType inSize) override {
+    written += inSize;
+    if (written > gMaxOutputBytes) {
+      std::vector<std::string>().swap(chunks);
+      return inSize;
+    }
+    for (size_t offset = 0; offset < inSize;) {
+      if (chunks.empty() || chunks.back().size() == kChunkSize) {
+        chunks.emplace_back();
+        chunks.back().reserve(kChunkSize);
+      }
+      size_t count =
+          std::min<size_t>(inSize - offset, kChunkSize - chunks.back().size());
+      chunks.back().append(reinterpret_cast<const char*>(inBuffer) + offset,
+                           count);
+      offset += count;
+    }
+    return inSize;
+  }
+
+  IOBasicTypes::LongFilePositionType GetCurrentPosition() override {
+    return written;
+  }
+};
+
+// Copies the output into a buffer the caller releases with muhammara_wasm_free.
+// Past the limit it returns null but still reports the size, which the JS side
+// rejects as exceeding maxOutputBytes.
+inline unsigned char* takeOutput(const WasmOutputStream& output,
+                                 unsigned int* outputLength) {
+  *outputLength = static_cast<unsigned int>(std::min<unsigned long long>(
+      output.written, std::numeric_limits<unsigned int>::max()));
+  if (output.written > gMaxOutputBytes) return nullptr;
+  unsigned char* result = static_cast<unsigned char*>(std::malloc(output.written));
+  if (result == nullptr) {
+    *outputLength = 0;
+    return nullptr;
+  }
+  size_t offset = 0;
+  for (const std::string& chunk : output.chunks) {
+    std::memcpy(result + offset, chunk.data(), chunk.size());
+    offset += chunk.size();
+  }
+  return result;
+}
+
 class WasmPDFStream;
 class WasmByteWriter;
 class WasmContentStream;
@@ -214,7 +276,7 @@ static void releaseForm(WasmForm* form) {
 
 class WasmRecipe {
  public:
-  OutputStringBufferStream output;
+  WasmOutputStream output;
   PDFWriter writer;
   PDFPage* page = nullptr;
   PageContentContext* context = nullptr;
@@ -967,7 +1029,7 @@ static ObjectIDType writeAnnotation(
 class WasmModifier {
  public:
   InputFile input;
-  OutputStringBufferStream output;
+  WasmOutputStream output;
   PDFWriter writer;
   PDFModifiedPage* page = nullptr;
   PDFPage* newPage = nullptr;
