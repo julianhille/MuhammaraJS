@@ -211,6 +211,22 @@ describe("Recipe finalization with an active page", () => {
     expect(pageCount(output)).to.equal(pageCount(source) + 1);
   });
 
+  it("rejects editPage for a page that does not exist", () => {
+    const output = path.join(__dirname, "../output/active-page-edit-range.pdf");
+    const recipe = new Recipe(source, output);
+
+    for (const pageNumber of [1.5, 0, pageCount(source) + 1, "1"]) {
+      expect(() => recipe.editPage(pageNumber)).to.throw(
+        RangeError,
+        "pageNumber must identify an existing page",
+      );
+    }
+    // The rejected calls left no page open.
+    recipe.editPage(1).endPage().endPDF();
+
+    expect(pageCount(output)).to.equal(pageCount(source));
+  });
+
   it("rejects editPage on a new document", () => {
     const recipe = new Recipe(
       "new",

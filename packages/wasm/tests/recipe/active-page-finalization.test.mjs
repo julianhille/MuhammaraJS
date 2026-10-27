@@ -287,6 +287,24 @@ describe("Recipe finalization with an active page", function () {
     assert.equal(pageCount(muhammara, bytes), 2);
   });
 
+  it("rejects editPage for a page that does not exist", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var source = new Recipe().createPage(300, 300).endPage().endPDF();
+    var recipe = new Recipe(source);
+
+    for (var pageNumber of [1.5, 0, 2, "1"]) {
+      assert.throws(
+        () => recipe.editPage(pageNumber),
+        /^RangeError: pageNumber must identify an existing page$/,
+      );
+    }
+    // The rejected calls left no page open.
+    var bytes = recipe.editPage(1).endPage().endPDF();
+    writeOutput("active-page-edit-range", bytes);
+    assert.equal(pageCount(muhammara, bytes), 1);
+  });
+
   it("rejects editPage on a new document", async function () {
     var Recipe = await getRecipe();
     var recipe = new Recipe();
