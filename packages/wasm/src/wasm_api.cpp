@@ -15,7 +15,7 @@ WASM_EXPORT unsigned char* muhammara_wasm_recrypt(
 
   *outputLength = 0;
   InputByteArrayStream source(const_cast<unsigned char*>(input), inputLength);
-  OutputStringBufferStream output;
+  WasmOutputStream output;
   PDFCreationSettings settings(compress != 0, true);
   settings.DocumentEncryptionOptions.ShouldEncrypt = shouldEncrypt != 0;
   settings.DocumentEncryptionOptions.UserPassword = userPassword;
@@ -29,12 +29,7 @@ WASM_EXPORT unsigned char* muhammara_wasm_recrypt(
     return nullptr;
   }
 
-  std::string pdf = output.ToString();
-  unsigned char* result = static_cast<unsigned char*>(std::malloc(pdf.size()));
-  if (result == nullptr) return nullptr;
-  std::memcpy(result, pdf.data(), pdf.size());
-  *outputLength = static_cast<unsigned int>(pdf.size());
-  return result;
+  return takeOutput(output, outputLength);
 }
 
 unsigned char* muhammara_wasm_recipe_end_pdf(WasmRecipe* recipe,
@@ -46,14 +41,7 @@ unsigned char* muhammara_wasm_recipe_end_pdf(WasmRecipe* recipe,
   recipe->finished = true;
   for (WasmContentStream* stream : recipe->contentStreams) stream->active = false;
   for (WasmContentByteWriter* writer : recipe->contentWriters) writer->active = false;
-  std::string pdf = recipe->output.ToString();
-  unsigned char* result = static_cast<unsigned char*>(std::malloc(pdf.size()));
-  if (result == nullptr) {
-    return nullptr;
-  }
-  std::memcpy(result, pdf.data(), pdf.size());
-  *outputLength = static_cast<unsigned int>(pdf.size());
-  return result;
+  return takeOutput(recipe->output, outputLength);
 }
 
 /**
@@ -70,7 +58,7 @@ unsigned char* muhammara_wasm_create_blank_pdf(double width, double height,
   }
 
   *outputLength = 0;
-  OutputStringBufferStream output;
+  WasmOutputStream output;
   PDFWriter writer;
 
   if (writer.StartPDFForStream(&output, ePDFVersion14) != PDFHummus::eSuccess) {
@@ -84,19 +72,15 @@ unsigned char* muhammara_wasm_create_blank_pdf(double width, double height,
     return nullptr;
   }
 
-  std::string pdf = output.ToString();
-  unsigned char* result = static_cast<unsigned char*>(std::malloc(pdf.size()));
-  if (result == nullptr) {
-    return nullptr;
-  }
-
-  std::memcpy(result, pdf.data(), pdf.size());
-  *outputLength = static_cast<unsigned int>(pdf.size());
-  return result;
+  return takeOutput(output, outputLength);
 }
 
 void muhammara_wasm_free(void* pointer) {
   std::free(pointer);
+}
+
+void muhammara_wasm_set_max_output_bytes(unsigned int limit) {
+  gMaxOutputBytes = limit;
 }
 
 

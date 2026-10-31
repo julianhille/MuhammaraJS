@@ -128,6 +128,30 @@ describe("content bombs", function () {
     });
   }
 
+  // GHSA-44w8-cf9c-7cwg. Wasm only: native has no maxOutputBytes.
+  it("stops keeping recrypted output at maxOutputBytes", async function () {
+    var module;
+    var limited = await createMuhammaraWasm({
+      limits: { maxOutputBytes: 1 << 20 },
+      recryptWorker: false,
+      onRuntimeInitialized() {
+        module = this;
+      },
+    });
+    var before = module.HEAPU8.buffer.byteLength;
+
+    assert.throws(
+      () => limited.recrypt(whitespace, { compress: false }),
+      (error) =>
+        error instanceof RangeError &&
+        error.message === "PDF output exceeds maxOutputBytes",
+    );
+    // Building the 96 MiB decoded output in full grew memory by about 300 MiB.
+    // Stopping at the limit grows it by a few MiB, and about 40 MiB in the
+    // LeakSanitizer build, whose allocator reuses freed memory less.
+    assert.ok(module.HEAPU8.buffer.byteLength - before < 64 << 20);
+  });
+
   it("ends an object parser at a token longer than 32 MiB", function () {
     var reader = muhammara.createReader(string);
     try {
