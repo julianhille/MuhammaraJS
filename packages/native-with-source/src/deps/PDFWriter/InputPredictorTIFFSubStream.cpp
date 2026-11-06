@@ -53,7 +53,8 @@ InputPredictorTIFFSubStream::~InputPredictorTIFFSubStream(void)
 
 LongBufferSizeType InputPredictorTIFFSubStream::Read(Byte* inBuffer,LongBufferSizeType inBufferSize)
 {
-	if(!mSourceStream)
+	// MuhammaraJS: Assign() leaves mRowBuffer NULL when it rejects the parameters
+	if(!mSourceStream || !mRowBuffer)
 		return 0;
 
 	LongBufferSizeType readBytes = 0;
@@ -87,7 +88,8 @@ LongBufferSizeType InputPredictorTIFFSubStream::Read(Byte* inBuffer,LongBufferSi
 
 bool InputPredictorTIFFSubStream::NotEnded()
 {
-	if(!mSourceStream)
+	// MuhammaraJS: Assign() leaves mRowBuffer NULL when it rejects the parameters
+	if(!mSourceStream || !mRowBuffer)
 		return false;
 	return mSourceStream->NotEnded() || (LongBufferSizeType)(mReadColorsIndex - mReadColors) < mReadColorsCount;
 }

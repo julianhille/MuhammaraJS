@@ -210,6 +210,11 @@ async function createRuntime(options) {
   var bidiImport = useBidiJs && importBidi();
   var module = await createModule(moduleOptions);
   await bidiImport;
+  // The writers stop keeping output past the limit instead of building it in
+  // full first. A length that does not fit in 32 bits cannot be produced.
+  module._muhammara_wasm_set_max_output_bytes(
+    Math.min(maxOutputBytes, 0xffffffff),
+  );
   /**
    * Copies byte input and enforces `maxInputBytes`.
    * @param {ByteSource} value - Bytes.
@@ -591,9 +596,10 @@ async function createRuntime(options) {
           lengthPointer,
         );
         var length = module.HEAPU32[lengthPointer >>> 2];
+        // Past the limit the pointer is null and the length is what it would be.
+        assertOutputSize(length);
         if (!pdfPointer || !length) throw new Error("Unable to create PDF");
         try {
-          assertOutputSize(length);
           return module.HEAPU8.slice(pdfPointer, pdfPointer + length);
         } finally {
           module._muhammara_wasm_free(pdfPointer);
