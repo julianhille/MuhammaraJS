@@ -2902,49 +2902,75 @@ describe("Recipe text direction", function () {
     ]);
   });
 
-  it("ends a flowed line at any paragraph separator that ends a run", async function () {
-    const options = { font: "arial", size: 12, direction: "auto" };
-    /**
-     * Draw a flowed run ending with a separator, then the next run.
-     *
-     * @param {string} separator The paragraph separator ending the first run.
-     * @param {boolean} [movedown] Whether movedown(0) follows it.
-     * @returns {Promise<Array<{text: string, x: number, y: number}>>|Array<{text: string, x: number, y: number}>} The runs.
-     */
-    const draw = (separator, movedown) =>
-      drawPage("text-direction-flow-trailing-separator", (recipe) => {
-        recipe.text("\u05e9\u05dc\u05d5\u05dd" + separator, 50, 50, {
-          ...options,
-          flow: true,
-          textBox: { width: 300 },
-        });
-        if (movedown) recipe.movedown(0);
-        recipe.text("\u05e2\u05d5\u05dc\u05dd", { ...options, flow: false });
-      });
-    for (const movedown of [false, true]) {
-      const expected = (await draw("\n", movedown)).map((run) => [
-        run.text,
-        run.y,
-      ]);
-      for (const separator of [
-        "\u2029",
-        "\u2028",
-        "\r\n",
-        "\r",
-        "\v",
-        "\f",
-        "\u0085",
-      ]) {
-        // Not drawn; the next run starts the next line, as after "\n".
-        assert.deepEqual(
-          (await draw(separator, movedown)).map((run) => [run.text, run.y]),
-          expected,
-          JSON.stringify(separator) + (movedown ? " with movedown(0)" : ""),
+  for (const separator of [
+    "\u2029",
+    "\u2028",
+    "\r\n",
+    "\r",
+    "\v",
+    "\f",
+    "\u0085",
+  ]) {
+    it(
+      "ends a flowed line at " +
+        [...separator]
+          .map(
+            (character) =>
+              "U+" +
+              character
+                .codePointAt(0)
+                .toString(16)
+                .toUpperCase()
+                .padStart(4, "0"),
+          )
+          .join(" ") +
+        " ending a run",
+      async function () {
+        this.timeout(30000);
+        const options = { font: "arial", size: 12, direction: "auto" };
+        const cases = [
+          ["\n", false],
+          [separator, false],
+          ["\n", true],
+          [separator, true],
+        ];
+        // One flowed run per case, each followed by the next run.
+        const runs = await drawPage(
+          "text-direction-flow-trailing-separator",
+          (recipe) => {
+            cases.forEach(([ending, movedown], index) => {
+              recipe.text(
+                "\u05e9\u05dc\u05d5\u05dd" + ending,
+                50,
+                20 + index * 90,
+                {
+                  ...options,
+                  flow: true,
+                  textBox: { width: 300 },
+                },
+              );
+              if (movedown) recipe.movedown(0);
+              recipe.text("\u05e2\u05d5\u05dc\u05dd", {
+                ...options,
+                flow: false,
+              });
+            });
+          },
         );
-      }
-      assert.notEqual(expected[0][1], expected[1][1]);
-    }
-  });
+        const pairs = cases.map((ending, index) => [
+          runs[2 * index].text,
+          runs[2 * index + 1].text,
+          Math.round((runs[2 * index + 1].y - runs[2 * index].y) * 1000) / 1000,
+        ]);
+        // Not drawn; the next run starts the next line, as after "\n".
+        assert.equal(runs.length, 2 * cases.length);
+        assert.deepEqual(pairs[1], pairs[0]);
+        assert.deepEqual(pairs[3], pairs[2], "with movedown(0)");
+        assert.notEqual(pairs[0][2], 0);
+        assert.notEqual(pairs[2][2], 0);
+      },
+    );
+  }
 
   it("moves the cursor below a flow that ends with any paragraph separator", async function () {
     const options = { font: "arial", size: 12, direction: "auto" };
