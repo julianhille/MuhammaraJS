@@ -53,6 +53,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Throw `Unable to read image dimensions` from `getImageDimensions()` for a
   password-protected PDF or a PDF without the requested page instead of
   returning a made-up 595 by 842.
+- Throw `Unable to finish PDF` instead of a spurious `maxOutputBytes`
+  `RangeError` when `end()` cannot finish a PDF.
 
 ## [1.2.3] - 2026-10-27
 

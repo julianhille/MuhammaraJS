@@ -984,7 +984,11 @@ int muhammara_wasm_modifier_end_page(WasmModifier* modifier) {
 
 unsigned char* muhammara_wasm_modifier_end_pdf(WasmModifier* modifier,
                                                unsigned int* outputLength) {
-  if (modifier == nullptr || outputLength == nullptr || modifier->page != nullptr ||
+  if (outputLength == nullptr) {
+    return nullptr;
+  }
+  *outputLength = 0;
+  if (modifier == nullptr || modifier->page != nullptr ||
       modifier->newPage != nullptr || modifier->context != nullptr ||
       modifier->finished || modifier->writer.EndPDFForStream() != PDFHummus::eSuccess) {
     return nullptr;
