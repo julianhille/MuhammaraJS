@@ -635,4 +635,54 @@ describe("parser security regressions", function () {
       assert.ok(new TextDecoder("latin1").decode(pdf).includes("/FontFile3"));
     });
   });
+  // Port of tests/security/GHSA-fm69-f3cr-v22g.js.
+  describe("GHSA-fm69-f3cr-v22g", function () {
+    var muhammara;
+
+    before(async function () {
+      muhammara = await createMuhammaraWasm();
+      muhammara.registerFont(
+        "type2-roll-out-of-range",
+        await readFile("tests/TestMaterials/fonts/Type2RollOutOfRange.otf"),
+      );
+    });
+
+    after(function () {
+      muhammara.unregisterFont("type2-roll-out-of-range");
+    });
+
+    /**
+     * Writes `text` in the crafted font and ends the document. "A" runs
+     * `1 roll`, "B" `0 5 1 roll`, "C" shifts one item about 2^30 times.
+     * @param {string} text - Text to write.
+     * @returns {Uint8Array} The produced PDF.
+     */
+    function writeWithFont(text) {
+      var writer = muhammara.createWriter();
+      var page = writer.createPage(0, 0, 595, 842);
+      writer.startPageContentContext(page).writeText(text, 10, 400, {
+        font: writer.getFontForBytes("type2-roll-out-of-range"),
+        size: 20,
+      });
+      writer.writePage(page);
+      return writer.end();
+    }
+
+    it("fails to embed a Type 2 roll with fewer than two operands", function () {
+      assert.throws(() => writeWithFont("A"), /Unable to finish PDF/);
+    });
+
+    it("fails to embed a Type 2 roll of more items than on the stack", function () {
+      assert.throws(() => writeWithFont("B"), /Unable to finish PDF/);
+    });
+
+    it("embeds a Type 2 roll with a huge shift amount", function () {
+      this.timeout(10000);
+      var pdf = writeWithFont("C");
+      var reader = muhammara.createReader(pdf);
+      assert.equal(reader.getPagesCount(), 1);
+      reader.end();
+      assert.ok(new TextDecoder("latin1").decode(pdf).includes("/FontFile3"));
+    });
+  });
 });

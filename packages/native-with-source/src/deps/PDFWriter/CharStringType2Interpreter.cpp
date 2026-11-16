@@ -1299,7 +1299,8 @@ Byte* CharStringType2Interpreter::InterpretRoll(Byte* inProgramCounter, LongFile
 	CharStringOperand valueA;
 	CharStringOperand valueB;
 
-	if(mOperandStack.size() < 1) {
+	// MuhammaraJS: roll pops two operands
+	if(mOperandStack.size() < 2) {
 		TRACE_LOG1("CharStringType2Interpreter::InterpretRoll, roll should have at least 2 arguments on stack. got %d. aborting", mOperandStack.size());
 		return NULL;
 	}	
@@ -1309,10 +1310,18 @@ Byte* CharStringType2Interpreter::InterpretRoll(Byte* inProgramCounter, LongFile
 	valueA = mOperandStack.back();
 	mOperandStack.pop_back();
 
-	long shiftAmount = (valueB.IsInteger ? valueB.IntegerValue : (long)valueB.RealValue);
-	long itemsCount = (valueA.IsInteger ? valueA.IntegerValue : (long)valueA.RealValue);
+	// MuhammaraJS: cast a real only when it fits a long (NaN does not); a count that does not is out of range, a shift that does not rolls by zero
+	long shiftAmount = (valueB.IsInteger ? valueB.IntegerValue : (fabs(valueB.RealValue) < (double)LONG_MAX ? (long)valueB.RealValue : 0));
+	long itemsCount = (valueA.IsInteger ? valueA.IntegerValue : (fabs(valueA.RealValue) < (double)LONG_MAX ? (long)valueA.RealValue : -1));
+
+	// MuhammaraJS: roll at most the items on the stack, and shift less than a full turn
+	if(itemsCount < 0 || (unsigned long)itemsCount > mOperandStack.size()) {
+		TRACE_LOG1("CharStringType2Interpreter::InterpretRoll, roll items count %ld is out of range. aborting", itemsCount);
+		return NULL;
+	}
 
 	if(itemsCount > 0) {
+		shiftAmount %= itemsCount;
 		CharStringOperandList groupToShift;
 
 		for(long i=0; i < itemsCount && mOperandStack.size() > 0;++i)
