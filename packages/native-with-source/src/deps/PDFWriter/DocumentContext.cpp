@@ -1892,6 +1892,8 @@ EStatusCode DocumentContext::ReadState(PDFParser* inStateReader,ObjectIDType inO
 	PDFObjectCastPtr<PDFIndirectObjectReference> encrytpionStateID(documentState->QueryDirectObject("mEncryptionHelper"));
 	if(!encrytpionStateID)
 		return eFailure;
+	// MuhammaraJS: encrypt what the continued writer writes, as the other setup paths do
+	mObjectsContext->SetEncryptionHelper(&mEncryptionHelper);
 	return mEncryptionHelper.ReadState(inStateReader, encrytpionStateID->mObjectID);
 }
 

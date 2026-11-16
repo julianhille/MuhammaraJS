@@ -322,4 +322,5 @@ describe("parser security regressions", function () {
       }
     });
   });
+  // GHSA-fvpv-4wx7-85f6 is native only: Wasm has no createWriterToContinue().
 });
