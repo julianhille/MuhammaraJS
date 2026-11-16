@@ -1,4 +1,5 @@
 var expect = require("chai").expect;
+var fs = require("fs");
 var path = require("path");
 var muhammara = require("../..");
 var Recipe = muhammara.Recipe;
@@ -72,6 +73,8 @@ describe("Replace text", function () {
       .replaceText("Before", "$&After", 1)
       .endPDF();
 
+    // endPDFStream() ends the replacement object; no second endobj follows.
+    expect(fs.readFileSync(output, "latin1")).not.to.match(/endobj\s+endobj/);
     var reader = muhammara.createReader(output);
     var text = reader.extractPageText(0);
 

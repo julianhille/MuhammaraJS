@@ -40,6 +40,10 @@ struct OpenContent {
   std::map<PDFPage *, DriverLifecycle> pages;
   std::set<PDFModifiedPage *> modifiedPages;
   std::set<PDFStream *> streams;
+  // The object that startNewIndirectObject() or startModifiedIndirectObject()
+  // opened. After endPDFStream() ended it, the following endIndirectObject()
+  // writes nothing.
+  enum { None, Open, EndedByStream } indirectObject = None;
 };
 
 class PDFWriterDriver : public muhammara::napi::ObjectWrap,

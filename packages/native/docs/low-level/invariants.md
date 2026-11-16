@@ -15,7 +15,8 @@
 - `PDFPageModifier` page indexes are zero-based, while Recipe page numbers are
   one-based.
 - Low-level object streams must be created inside an indirect object and ended
-  with `endPDFStream`; do not call `endIndirectObject` afterward.
+  with `endPDFStream`, which also ends the object; a following
+  `endIndirectObject()` is ignored.
 
 These constraints are verified by the writer, image, links, stream, form,
 modification, and object-writing tests referenced by the low-level guides.

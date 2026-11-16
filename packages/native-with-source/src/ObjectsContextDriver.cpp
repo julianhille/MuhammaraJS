@@ -149,7 +149,13 @@ napi_value ObjectsContextDriver::EndDictionary(const CallbackArgs &a) {
   return a.This();
 }
 napi_value ObjectsContextDriver::EndIndirectObject(const CallbackArgs &a) {
-  Driver(a)->ObjectsContextInstance->EndIndirectObject();
+  auto *d = Driver(a);
+  auto &state = d->openContent->indirectObject;
+  if (state == OpenContent::None)
+    return ThrowError(a.Env(), "Unable to end indirect object");
+  if (state == OpenContent::Open)
+    d->ObjectsContextInstance->EndIndirectObject();
+  state = OpenContent::None;
   return a.This();
 }
 napi_value
@@ -174,19 +180,33 @@ napi_value ObjectsContextDriver::StartNewIndirectObject(const CallbackArgs &a) {
     return ThrowTypeError(a.Env(),
                           "wrong arguments, pass no arguments, or pass 1 "
                           "argument that is an object ID");
-  if (!a.Length())
-    return Number(a.Env(),
-                  Driver(a)->ObjectsContextInstance->StartNewIndirectObject());
-  Driver(a)->ObjectsContextInstance->StartNewIndirectObject(
-      ToUint32(a.Env(), a[0]));
-  return a.This();
+  if (a.Length() && !ToUint32(a.Env(), a[0]))
+    return ThrowRangeError(a.Env(), "Object ID must be positive");
+  auto *d = Driver(a);
+  auto &state = d->openContent->indirectObject;
+  if (state == OpenContent::Open)
+    return ThrowError(a.Env(), "Unable to start indirect object");
+  ObjectsContext *objects = d->ObjectsContextInstance;
+  ObjectIDType id = a.Length() ? ToUint32(a.Env(), a[0])
+                               : objects->StartNewIndirectObject();
+  if (!id || (a.Length() &&
+              objects->StartNewIndirectObject(id) != PDFHummus::eSuccess))
+    return ThrowError(a.Env(), "Unable to start indirect object");
+  state = OpenContent::Open;
+  return a.Length() ? a.This() : Number(a.Env(), id);
 }
 napi_value
 ObjectsContextDriver::StartModifiedIndirectObject(const CallbackArgs &a) {
   if (!OneNumber(a, "wrong arguments, pass 1 argument that is an object ID"))
     return nullptr;
-  Driver(a)->ObjectsContextInstance->StartModifiedIndirectObject(
-      ToUint32(a.Env(), a[0]));
+  if (!ToUint32(a.Env(), a[0]))
+    return ThrowRangeError(a.Env(), "Object ID must be positive");
+  auto &state = Driver(a)->openContent->indirectObject;
+  if (state == OpenContent::Open ||
+      Driver(a)->ObjectsContextInstance->StartModifiedIndirectObject(
+          ToUint32(a.Env(), a[0])) != PDFHummus::eSuccess)
+    return ThrowError(a.Env(), "Unable to start modified indirect object");
+  state = OpenContent::Open;
   return a.This();
 }
 #define STRING_WRITER(Method, Native, Error)                                   \
@@ -270,7 +290,7 @@ static napi_value StartStream(const CallbackArgs &a, bool filtered) {
                   : d->ObjectsContextInstance->StartUnfilteredPDFStream());
   sd->mOwns = true;
   sd->AddOwner(d->Lifecycle());
-  if (d->openContent && sd->PDFStreamInstance) {
+  if (sd->PDFStreamInstance) {
     d->openContent->streams.insert(sd->PDFStreamInstance);
     sd->openContent = d->openContent;
   }
@@ -292,9 +312,10 @@ napi_value ObjectsContextDriver::EndPDFStream(const CallbackArgs &a) {
   if (!stream || !stream->PDFStreamInstance || !stream->EndStream())
     return ThrowError(a.Env(), "Unable to end PDF stream");
   // Ending finalizes the stream, so it no longer needs releasing.
-  if (d->openContent)
-    d->openContent->streams.erase(stream->PDFStreamInstance);
+  d->openContent->streams.erase(stream->PDFStreamInstance);
   d->ObjectsContextInstance->EndPDFStream(stream->PDFStreamInstance);
+  // EndPDFStream() also ended the indirect object holding the stream.
+  d->openContent->indirectObject = OpenContent::EndedByStream;
   return a.This();
 }
 napi_value ObjectsContextDriver::StartFreeContext(const CallbackArgs &a) {
