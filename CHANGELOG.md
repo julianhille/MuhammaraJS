@@ -223,6 +223,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update the test dependency `serialize-javascript` (pulled in by `mocha`)
   from 7.1.2 to 7.1.4 for its security fix. Only the repository's tests use
   it; installed packages are unaffected.
+- Check the npm, GitHub Actions, and docs requirements dependencies weekly
+  with Dependabot
+  [#867](https://github.com/julianhille/MuhammaraJS/issues/867)
 
 ## [7.2.3] - 2026-10-27
 
