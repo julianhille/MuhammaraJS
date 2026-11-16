@@ -1015,8 +1015,7 @@ export interface Recipe {
    * Read the XMP metadata packet of the source PDF.
    * @returns The packet as text, or undefined for a new PDF, a source
    *   without one, or a source that needs a password to open.
-   * @throws {Error} If the source cannot be read, or keeps its metadata
-   *   unencrypted (`/EncryptMetadata false`).
+   * @throws {Error} If the source cannot be read.
    */
   xmp(): string | undefined;
   /**

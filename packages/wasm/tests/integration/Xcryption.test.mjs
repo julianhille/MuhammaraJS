@@ -326,6 +326,72 @@ describe("Xcryption", function () {
     }
   });
 
+  describe("Unencrypted metadata (/EncryptMetadata false)", function () {
+    /**
+     * Reads the XMP packets of a PDF's catalog and first page.
+     * @param {object} muhammara The Wasm module.
+     * @param {Uint8Array} pdf The PDF.
+     * @param {string} [password] Its password.
+     * @returns {string[]} The packets as latin1 text; only the catalog's when
+     *   the page has none.
+     */
+    function readXmp(muhammara, pdf, password) {
+      var reader = muhammara.createReader(pdf, { password });
+      try {
+        var root = reader.queryDictionaryObject(reader.getTrailer(), "Root");
+        return [root, reader.parsePageDictionary(0)]
+          .map((owner) => reader.queryDictionaryObject(owner, "Metadata"))
+          .filter(Boolean)
+          .map(function (metadata) {
+            var stream = reader.startReadingFromStream(metadata.toPDFStream());
+            var bytes = [];
+            while (stream.notEnded()) bytes.push(...stream.read(4096));
+            return new TextDecoder("latin1").decode(new Uint8Array(bytes));
+          });
+      } finally {
+        reader.end();
+      }
+    }
+
+    /**
+     * Asserts the packets that readXmp() reads.
+     * @param {string[]} packets The catalog's packet, then the page's.
+     * @param {number} count How many packets the PDF has.
+     */
+    function assertXmp(packets, count) {
+      assert.equal(packets.length, count);
+      assert.match(packets[0], />Plain<\/rdf:li>/);
+      // a page's metadata is still decrypted
+      if (count > 1) assert.match(packets[1], />PageMeta<\/rdf:li>/);
+    }
+
+    [
+      ["AES-128", "recipe/xmp-plain-metadata.pdf", undefined, 1],
+      ["AES-256", "xmp-plain-metadata-aes256.pdf", "u", 2],
+    ].forEach(function ([label, name, password, count]) {
+      it(
+        "reads the XMP packet and keeps it through recrypt, " + label,
+        async function () {
+          // #1027: the plain packet was decrypted like any other stream
+          var muhammara = await createMuhammaraWasm();
+          var source = new Uint8Array(
+            fs.readFileSync("tests/TestMaterials/" + name),
+          );
+          assertXmp(readXmp(muhammara, source, password), count);
+          var plain = muhammara.recrypt(source, { password });
+          writeOutput("Xcryption-plain-metadata-decrypted-" + label, plain);
+          assertXmp(readXmp(muhammara, plain), count);
+          var encrypted = muhammara.recrypt(source, {
+            password,
+            userPassword: "user1",
+          });
+          writeOutput("Xcryption-plain-metadata-encrypted-" + label, encrypted);
+          assertXmp(readXmp(muhammara, encrypted, "user1"), count);
+        },
+      );
+    });
+  });
+
   it("generates a distinct IV for each AES-encrypted stream", async function () {
     var muhammara = await createMuhammaraWasm();
     var writer = muhammara.createWriter({ compress: false });

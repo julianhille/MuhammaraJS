@@ -94,6 +94,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   PDF specification uses. Their strings and streams were returned still
   encrypted, and `recrypt()` wrote them out unchanged
   [#1026](https://github.com/julianhille/MuhammaraJS/issues/1026)
+- Read the document's XMP metadata stream (the catalog's `/Metadata`) of an
+  encrypted PDF that keeps its metadata unencrypted (`/EncryptMetadata false`)
+  as stored, instead of decrypting it into unreadable bytes, so `recrypt()`
+  keeps the packet intact
+  [#1027](https://github.com/julianhille/MuhammaraJS/issues/1027)
 - Recipe `editPage()` throws a `RangeError` for a page number that is not an
   existing page (such as `1.5`, `0`, a page past the end, or the string `"1"`),
   as `@muhammara/wasm` does, instead of an internal `TypeError`

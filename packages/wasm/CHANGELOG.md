@@ -95,6 +95,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   PDF specification uses. Their strings and streams were returned still
   encrypted, and `recrypt()` wrote them out unchanged
   [#1026](https://github.com/julianhille/MuhammaraJS/issues/1026)
+- Read the document's XMP metadata stream (the catalog's `/Metadata`) of an
+  encrypted PDF that keeps its metadata unencrypted (`/EncryptMetadata false`)
+  as stored, instead of decrypting it into unreadable bytes, so `recrypt()`
+  keeps the packet intact
+  [#1027](https://github.com/julianhille/MuhammaraJS/issues/1027)
 - Decrypt strings and streams correctly when a PDF encrypted with RC4 or
   AES-128 (security handler revision 2 to 4) is opened with its owner password,
   instead of returning garbled text without an error. AES-256 was not affected

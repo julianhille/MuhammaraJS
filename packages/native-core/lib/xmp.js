@@ -166,8 +166,7 @@ function buildXmpPacket(info) {
 
 /**
  * Whether a PDF keeps its metadata unencrypted (`/EncryptMetadata false`),
- * which the reader and writer do not honour: they decrypt and encrypt the
- * XMP packet anyway.
+ * whose XMP Recipe cannot write.
  * @param {Object} reader - A reader of the PDF.
  * @returns {boolean} True for such a PDF.
  */

@@ -1,11 +1,6 @@
 import { constants } from "../constants.js";
 import { infoOptionName, standardInfoKeys } from "../recipe-info.js";
-import {
-  buildXmpPacket,
-  dateToXmp,
-  pdfDateToXmp,
-  hasPlainMetadata,
-} from "../xmp.js";
+import { buildXmpPacket, dateToXmp, pdfDateToXmp } from "../xmp.js";
 import {
   PdfAFeature,
   requirePdfaAllows,
@@ -23,7 +18,7 @@ var trappedValues = {
 var PRODUCER = "MuhammaraJS (https://github.com/julianhille/MuhammaraJS)";
 var CREATOR = "Muhammara-Recipe (https://github.com/julianhille/MuhammaraJS)";
 var PLAIN_METADATA =
-  "Recipe cannot read or write the XMP of a PDF whose metadata is not encrypted";
+  "Recipe cannot write the XMP of a PDF whose metadata is not encrypted";
 
 /**
  * Creates Recipe document-information methods.
@@ -281,8 +276,7 @@ export function createInfoMethods({
      * @private
      * @param {Date} now - The modification date, and creation date of a new PDF.
      * @returns {void}
-     * @throws {Error} For a source that keeps its metadata unencrypted, since
-     * the writer would encrypt the packet.
+     * @throws {Error} For a source that keeps its metadata unencrypted.
      */
     _writeXmp: function (now) {
       if (this._plainMetadata) throw new Error(PLAIN_METADATA);
@@ -353,14 +347,12 @@ export function createInfoMethods({
      * @returns {string|undefined} The XMP packet as text, or undefined for a
      * new PDF, a source without one, or a source that needs a password to
      * open.
-     * @throws {Error} If the source cannot be read, or keeps its metadata
-     * unencrypted (`/EncryptMetadata false`).
+     * @throws {Error} If the source cannot be read.
      */
     xmp: function () {
       if (!this._sourceMode || this._sourceNeedsPassword) return undefined;
       var reader = createReader(this._sourceBytes);
       try {
-        if (hasPlainMetadata(reader)) throw new Error(PLAIN_METADATA);
         var root = reader.queryDictionaryObject(reader.getTrailer(), "Root");
         var metadata = root && reader.queryDictionaryObject(root, "Metadata");
         if (metadata?.getType() !== constants.ePDFObjectStream) {

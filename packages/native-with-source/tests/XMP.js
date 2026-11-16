@@ -262,10 +262,9 @@ describe("XMP metadata", function () {
       assert.ok(xmpOf(edited).includes(">LowLevel</rdf:li>"));
     });
 
-    it("refuses the packet of a PDF whose metadata is not encrypted", function () {
+    it("reads but does not write the packet of a PDF whose metadata is not encrypted", function () {
       var message =
-        "Recipe cannot read or write the XMP of a PDF whose metadata is not encrypted";
-      // the reader and writer would decrypt and encrypt it all the same
+        "Recipe cannot write the XMP of a PDF whose metadata is not encrypted";
       var source = path.join(
         __dirname,
         "TestMaterials",
@@ -274,7 +273,7 @@ describe("XMP metadata", function () {
       );
       var recipe = new Recipe(source, out("XMPPlain"), { xmp: true });
       assert.strictEqual(recipe.info().title, "Plain");
-      assert.throws(() => recipe.xmp(), { message });
+      assert.match(recipe.xmp(), />Plain<\/rdf:li>/);
       assert.throws(() => recipe.endPDF(), { message });
     });
 

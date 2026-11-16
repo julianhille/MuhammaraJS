@@ -24,6 +24,7 @@ limitations under the License.
 #include "XCryptor.h"
 
 #include <string>
+#include <vector>
 
 class PDFParser;
 class IByteReader;
@@ -119,7 +120,11 @@ private:
 	unsigned int mLength; // mLength is in bytes!
 	
 	IByteReader* CreateDecryptionReader(IByteReader* inSourceStream,const ByteList& inEncryptionKey, bool inUsingAES);
-	XCryptor* GetCryptForStream(PDFStreamInput* inStream);
+	XCryptor* GetCryptForStream(PDFStreamInput* inStream, long long inObjectID);
+	// MuhammaraJS: IDs of the objects being parsed
+	std::vector<long long> mObjectIDs;
+	// MuhammaraJS: ID of the catalog's /Metadata stream, 0 for none, -1 until looked up
+	long long mMetadataObjectID;
 
 	// Standard filter specific
 	bool mFailedPasswordVerification;
