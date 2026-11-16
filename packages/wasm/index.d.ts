@@ -2378,6 +2378,7 @@ export interface PDFReader {
 }
 export interface CopyingObjectOperations {
   copyObject(id: number): number;
+  copyDirectObjectAsIs(object: PDFObject): this;
   copyDirectObjectWithDeepCopy(object: PDFObject): number[];
   copyNewObjectsForDirectObject(ids: number[]): this;
   getCopiedObjectID(id: number): number;
@@ -2387,7 +2388,6 @@ export interface CopyingObjectOperations {
 export interface DocumentCopyingContext extends CopyingObjectOperations {
   getSourceDocumentParser(): PDFReader;
   getSourceDocumentStream(): PositionedPDFByteReader;
-  copyDirectObjectAsIs(object: PDFObject): this;
   appendPDFPageFromPDF(index: number): number;
   appendPDFPagesFromPDF(start: number, end: number): this;
   mergePDFPageToPage(page: PDFPage, index: number): this;

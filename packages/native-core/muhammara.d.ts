@@ -2142,6 +2142,8 @@ declare namespace muhammara {
      * @param objectToCopy - The source object.
      * @throws {TypeError} If objectToCopy is not a PDF object or cannot be copied.
      * @throws {TypeError} If the copying context has ended.
+     * @throws {Error} If the writer was created with a password and no indirect
+     *   object is open.
      */
     copyDirectObjectAsIs(objectToCopy: PDFObject): void;
     /**
@@ -2161,6 +2163,8 @@ declare namespace muhammara {
      * @returns The source IDs of the referenced objects still to copy.
      * @throws {TypeError} If objectToCopy is not a PDF object or cannot be copied.
      * @throws {TypeError} If the copying context has ended.
+     * @throws {Error} If the writer was created with a password and no indirect
+     *   object is open.
      */
     copyDirectObjectWithDeepCopy(objectToCopy: PDFObject): Array<number>;
     /**
@@ -2240,6 +2244,8 @@ declare namespace muhammara {
      * @param literal - The text, or its byte values.
      * @returns This dictionary context.
      * @throws {TypeError} If literal is not a single string or array.
+     * @throws {Error} If the writer was created with a password and no indirect
+     *   object is open.
      */
     writeLiteralStringValue(literal: Array<number> | string): this;
     /**
@@ -2389,6 +2395,8 @@ declare namespace muhammara {
      * @param literal - The text, or its byte values.
      * @returns This context.
      * @throws {TypeError} If literal is not a single string or array.
+     * @throws {Error} If the writer was created with a password and no indirect
+     *   object is open.
      */
     writeLiteralString(literal: string | number[]): this;
     /**
@@ -2396,6 +2404,8 @@ declare namespace muhammara {
      * @param hex - The bytes as a string of hex digits, or their byte values.
      * @returns This context.
      * @throws {TypeError} If hex is not a single string or array.
+     * @throws {Error} If the writer was created with a password and no indirect
+     *   object is open.
      */
     writeHexString(hex: string | number[]): this;
     /**
@@ -2432,6 +2442,8 @@ declare namespace muhammara {
      *   Filter to; a new one when omitted.
      * @returns The stream; write to its write stream, then call endPDFStream().
      * @throws {TypeError} If dictionaryContext is given and is not a dictionary context.
+     * @throws {Error} If the writer was created with a password and no indirect
+     *   object is open.
      */
     startPDFStream(dictionaryContext?: DictionaryContext): PDFStream;
     /**
@@ -2440,6 +2452,8 @@ declare namespace muhammara {
      *   a new one when omitted.
      * @returns The stream; write to its write stream, then call endPDFStream().
      * @throws {TypeError} If dictionaryContext is given and is not a dictionary context.
+     * @throws {Error} If the writer was created with a password and no indirect
+     *   object is open.
      */
     startUnfilteredPDFStream(dictionaryContext?: DictionaryContext): PDFStream;
     /**

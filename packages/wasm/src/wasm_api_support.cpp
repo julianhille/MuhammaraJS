@@ -138,6 +138,11 @@ WASM_EXPORT int muhammara_wasm_objects_start_modified_indirect_object(
   return 1;
 }
 
+WASM_EXPORT int muhammara_wasm_objects_is_encrypting_outside_indirect_object(
+    WasmObjectsContext* context) {
+  return context != nullptr && context->context->IsEncryptingOutsideIndirectObject();
+}
+
 WASM_EXPORT int muhammara_wasm_objects_delete_object(WasmObjectsContext* context,
                                                      unsigned long objectId) {
   if (context == nullptr || objectId == 0) return 0;

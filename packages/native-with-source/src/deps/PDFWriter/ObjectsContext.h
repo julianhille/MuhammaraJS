@@ -110,6 +110,9 @@ public:
 	// override for objects that already have been allocated in advance, and have an object ID
 	PDFHummus::EStatusCode StartNewIndirectObject(ObjectIDType inObjectID);
 	void EndIndirectObject();
+	// MuhammaraJS: true when encrypting with no indirect object open, where
+	// strings and streams cannot be written
+	bool IsEncryptingOutsideIndirectObject();
 
     // for modified files scenarios, modify an existing object
     PDFHummus::EStatusCode StartModifiedIndirectObject(ObjectIDType inObjectID);
@@ -150,6 +153,7 @@ private:
 	EncryptionHelper* mEncryptionHelper;
 
 	DictionaryContextList mDictionaryStack;
+	size_t mOpenIndirectObjects;
 
 	void WritePDFStreamEndWithoutExtent();
 	PDFHummus::EStatusCode WritePDFStreamExtent(PDFStream* inStream);

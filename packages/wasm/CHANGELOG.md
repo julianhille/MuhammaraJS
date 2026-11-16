@@ -114,6 +114,16 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   that filter from the copy, instead of copying the encrypted bytes that
   readers cannot decode
   [#1028](https://github.com/julianhille/MuhammaraJS/issues/1028)
+- `writeLiteralString()`, `writeHexString()`, `startPDFStream()` and
+  `startUnfilteredPDFStream()` of the objects context, a dictionary's
+  `writeLiteralStringValue()` and `writeHexStringValue()`, and a copying
+  context's `copyDirectObjectAsIs()` and `copyDirectObjectWithDeepCopy()`
+  throw an `Error` when a writer created with a password has no indirect
+  object open, as native does, instead of an internal WebAssembly
+  `RuntimeError`. On a writer created with `version: ePDFVersion20`, and for
+  direct copies that contain no strings, these calls used to succeed and now
+  throw as well; call `startNewIndirectObject()` first
+  [#1029](https://github.com/julianhille/MuhammaraJS/issues/1029)
 - Decrypt strings and streams correctly when a PDF encrypted with RC4 or
   AES-128 (security handler revision 2 to 4) is opened with its owner password,
   instead of returning garbled text without an error. AES-256 was not affected

@@ -3591,30 +3591,6 @@ export function createWriterToModifyFactory({
             var parser = this.getSourceDocumentParser();
             return parser.getSourceDocumentStream();
           },
-          /**
-           * Writes a source object into the current output object unchanged.
-           * @param {PDFObject} object - Object from this context's source parser.
-           * @returns {this} The copying context.
-           * @throws {TypeError} If `object` is from another source.
-           * @throws {Error} If the context ended or the object cannot be copied.
-           */
-          copyDirectObjectAsIs: function (object) {
-            requireCopying();
-            if (!object || object._copyingContext !== copying) {
-              throw new TypeError(
-                "PDF object must originate from this source document parser",
-              );
-            }
-            if (
-              !module._muhammara_wasm_copying_context_copy_direct_object_as_is(
-                copying,
-                object._handle,
-              )
-            ) {
-              throw new Error("Unable to copy PDF object");
-            }
-            return this;
-          },
           ...copyingObjectOperations(copying, requireCopying),
           /**
            * Appends one source page as a new page.
@@ -3857,30 +3833,6 @@ export function createWriterToModifyFactory({
             requireCopying();
             var parser = this.getSourceDocumentParser();
             return parser.getSourceDocumentStream();
-          },
-          /**
-           * Writes a source object into the current output object unchanged.
-           * @param {PDFObject} object - Object from this context's source parser.
-           * @returns {this} The copying context.
-           * @throws {TypeError} If `object` is from another source.
-           * @throws {Error} If the context ended or the object cannot be copied.
-           */
-          copyDirectObjectAsIs: function (object) {
-            requireCopying();
-            if (!object || object._copyingContext !== copying) {
-              throw new TypeError(
-                "PDF object must originate from this source document parser",
-              );
-            }
-            if (
-              !module._muhammara_wasm_copying_context_copy_direct_object_as_is(
-                copying,
-                object._handle,
-              )
-            ) {
-              throw new Error("Unable to copy PDF object");
-            }
-            return this;
           },
           ...copyingObjectOperations(copying, requireCopying),
           /**

@@ -1043,6 +1043,7 @@ napi_value PDFWriterDriver::CreatePDFCopyingContext(const CallbackArgs &a) {
     return nullptr;
   }
   cd->CopyingContext = c;
+  cd->TargetObjectsContext = &d->writer_.GetObjectsContext();
   cd->ReadStreamProxy = proxy;
   cd->AddOwnerLifecycle(d->lifecycle_);
   cd->AddCallbackDepth(d->callbackDepth_);
@@ -1141,6 +1142,7 @@ PDFWriterDriver::CreatePDFCopyingContextForModifiedFile(const CallbackArgs &a) {
     return nullptr;
   }
   cd->CopyingContext = c;
+  cd->TargetObjectsContext = &d->writer_.GetObjectsContext();
   cd->AddOwnerLifecycle(d->lifecycle_);
   cd->AddCallbackDepth(d->callbackDepth_);
   return v;

@@ -106,6 +106,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   that filter from the copy, instead of copying the encrypted bytes that
   readers cannot decode
   [#1028](https://github.com/julianhille/MuhammaraJS/issues/1028)
+- `writeLiteralString()`, `writeHexString()`, `startPDFStream()` and
+  `startUnfilteredPDFStream()` of the objects context, a dictionary's
+  `writeLiteralStringValue()`, and a copying context's `copyDirectObjectAsIs()`
+  and `copyDirectObjectWithDeepCopy()` throw an `Error` when a writer created
+  with a password has no indirect object open, instead of terminating the
+  process. On a writer created with `version: ePDFVersion20`, and for direct
+  copies that contain no strings, these calls used to succeed and now throw as
+  well; call `startNewIndirectObject()` first
+  [#1029](https://github.com/julianhille/MuhammaraJS/issues/1029)
 - Recipe `editPage()` throws a `RangeError` for a page number that is not an
   existing page (such as `1.5`, `0`, a page past the end, or the string `"1"`),
   as `@muhammara/wasm` does, instead of an internal `TypeError`

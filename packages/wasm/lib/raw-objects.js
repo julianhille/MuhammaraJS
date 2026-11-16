@@ -1,6 +1,21 @@
 import { byteArrayToBytes } from "./bytes.js";
 
 /**
+ * Throws when an encrypting writer has no indirect object open, as strings and
+ * streams of an encrypted PDF are written inside one.
+ * @param {number} outside - Nonzero when the writer encrypts outside an indirect object.
+ * @returns {void}
+ * @throws {Error} If `outside` is nonzero.
+ */
+export function requireIndirectObjectToEncrypt(outside) {
+  if (outside) {
+    throw new Error(
+      "Strings and streams of an encrypted PDF must be written inside an indirect object. Call startNewIndirectObject() first",
+    );
+  }
+}
+
+/**
  * Creates the low-level context for writing raw PDF objects.
  * @param {object} dependencies - Module, constants, and byte helpers.
  * @returns {Function} `rawObjectsContext(handle, requireOpen)`.
@@ -35,6 +50,20 @@ export function createRawObjectsContext({
     }
 
     /**
+     * Rejects writing a string or stream outside an indirect object of an
+     * encrypting writer.
+     * @returns {void}
+     * @throws {Error} If the writer encrypts and no indirect object is open.
+     */
+    function requireEncryptionObject() {
+      requireIndirectObjectToEncrypt(
+        module._muhammara_wasm_objects_is_encrypting_outside_indirect_object(
+          handle,
+        ),
+      );
+    }
+
+    /**
      * Writes bytes through a native byte writer.
      * @param {number} writer - Native byte writer.
      * @param {ByteSource} bytes - Bytes to write.
@@ -61,11 +90,16 @@ export function createRawObjectsContext({
      * @param {string|Uint8Array|ArrayBuffer} value - Token text or string bytes.
      * @returns {void}
      * @throws {TypeError} If `value` has the wrong type for `type`.
-     * @throws {Error} If the writer has ended or the token cannot be written.
+     * @throws {Error} If the writer has ended, the writer was created with a
+     *   password and no indirect object is open, or the token cannot be
+     *   written.
      */
     function writeObjectString(type, value) {
       requireContext();
-      if (type === 1 || type === 2) value = byteArrayToBytes(value, "Value");
+      if (type === 1 || type === 2) {
+        value = byteArrayToBytes(value, "Value");
+        requireEncryptionObject();
+      }
       if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
         if (type !== 1 && type !== 2) {
           throw new TypeError("Only literal and hex strings accept bytes");
@@ -118,10 +152,13 @@ export function createRawObjectsContext({
        * @param {string|Uint8Array|ArrayBuffer} value - Value text or string bytes.
        * @returns {DictionaryContext} The dictionary context.
        * @throws {TypeError} If `value` has the wrong type.
-       * @throws {Error} If the dictionary is inactive or the value cannot be written.
+       * @throws {Error} If the dictionary is inactive, the writer was created
+       *   with a password and no indirect object is open, or the value cannot
+       *   be written.
        */
       function writeValue(type, value) {
         requireDictionary();
+        if (type === 1 || type === 2) requireEncryptionObject();
         if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
           return withBytes(normalizeBytes(value), (pointer) => {
             if (
@@ -193,7 +230,9 @@ export function createRawObjectsContext({
          * @returns {this} The dictionary context.
          * @throws {TypeError} If `value` is neither a string nor bytes, or an
          *   array item is not an integer from 0 to 255.
-         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         * @throws {Error} If the writer has ended, the dictionary is no longer
+         *   active, or the writer was created with a password and no indirect
+         *   object is open.
          */
         writeLiteralStringValue: function (value) {
           value = byteArrayToBytes(value, "Literal string value");
@@ -216,7 +255,9 @@ export function createRawObjectsContext({
          * @returns {this} The dictionary context.
          * @throws {TypeError} If `value` is neither a string nor bytes, or an
          *   array item is not an integer from 0 to 255.
-         * @throws {Error} If the writer has ended or the dictionary is no longer active.
+         * @throws {Error} If the writer has ended, the dictionary is no longer
+         *   active, or the writer was created with a password and no indirect
+         *   object is open.
          */
         writeHexStringValue: function (value) {
           value = byteArrayToBytes(value, "Hex string value");
@@ -646,7 +687,8 @@ export function createRawObjectsContext({
        * @returns {this} The objects context.
        * @throws {TypeError} If `value` is neither a string nor bytes, or an
        *   array item is not an integer from 0 to 255.
-       * @throws {Error} If the writer has ended or writing fails.
+       * @throws {Error} If the writer has ended, the writer was created with a
+       *   password and no indirect object is open, or writing fails.
        */
       writeLiteralString: function (value) {
         writeObjectString(1, value);
@@ -659,7 +701,8 @@ export function createRawObjectsContext({
        * @returns {this} The objects context.
        * @throws {TypeError} If `value` is neither a string nor bytes, or an
        *   array item is not an integer from 0 to 255.
-       * @throws {Error} If the writer has ended or writing fails.
+       * @throws {Error} If the writer has ended, the writer was created with a
+       *   password and no indirect object is open, or writing fails.
        */
       writeHexString: function (value) {
         writeObjectString(2, value);
@@ -719,7 +762,9 @@ export function createRawObjectsContext({
        * @param {DictionaryContext} [dictionary] - Active stream dictionary to finish; `/Length` and `/Filter` are added.
        * @returns {PDFStream} The active stream.
        * @throws {TypeError} If `dictionary` is not the active dictionary.
-       * @throws {Error} If the writer has ended or the stream cannot be started.
+       * @throws {Error} If the writer has ended, the writer was created with a
+       *   password and no indirect object is open, or the stream cannot be
+       *   started.
        */
       startPDFStream: function (dictionary) {
         requireContext();
@@ -729,6 +774,7 @@ export function createRawObjectsContext({
         ) {
           throw new TypeError("Provide the active dictionary context");
         }
+        requireEncryptionObject();
         var stream = module._muhammara_wasm_objects_start_pdf_stream(
           handle,
           dictionary?._handle || 0,
@@ -744,7 +790,9 @@ export function createRawObjectsContext({
        * @param {DictionaryContext} [dictionary] - Active stream dictionary to finish; `/Length` is added.
        * @returns {PDFStream} The active stream.
        * @throws {TypeError} If `dictionary` is not the active dictionary.
-       * @throws {Error} If the writer has ended or the stream cannot be started.
+       * @throws {Error} If the writer has ended, the writer was created with a
+       *   password and no indirect object is open, or the stream cannot be
+       *   started.
        */
       startUnfilteredPDFStream: function (dictionary) {
         requireContext();
@@ -754,6 +802,7 @@ export function createRawObjectsContext({
         ) {
           throw new TypeError("Provide the active dictionary context");
         }
+        requireEncryptionObject();
         var stream = module._muhammara_wasm_objects_start_pdf_stream(
           handle,
           dictionary?._handle || 0,
