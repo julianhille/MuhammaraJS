@@ -23,6 +23,8 @@
 #include "RefCountPtr.h"
 #include "PDFObjectCast.h"
 #include "PDFArray.h"
+#include "PDFName.h"
+#include "DecryptionHelper.h"
 #include "PDFInteger.h"
 #include "PDFReal.h"
 #include "PDFDictionary.h"
@@ -2104,6 +2106,15 @@ EStatusCode PDFDocumentHandler::WriteStreamObject(PDFStreamInput* inStream, IObj
 	bool readingDecrypted = false;
 	IByteReader* streamReader = NULL;
 
+	// MuhammaraJS: plain copying does not decrypt a stream whose first filter is
+	// its own Crypt filter. Read /Filter and /DecodeParms before reading the
+	// stream moves the parser.
+	PDFObjectCastPtr<PDFArray> filters(mParser->QueryDictionaryObject(streamDictionary.GetPtr(), "Filter"));
+	PDFObjectCastPtr<PDFArray> decodeParms(mParser->QueryDictionaryObject(streamDictionary.GetPtr(), "DecodeParms"));
+	PDFObjectCastPtr<PDFName> firstFilter(!filters ? mParser->QueryDictionaryObject(streamDictionary.GetPtr(), "Filter") : filters->QueryObject(0));
+	PDFObjectCastPtr<PDFDictionary> cryptParms(!decodeParms ? mParser->QueryDictionaryObject(streamDictionary.GetPtr(), "DecodeParms") : mParser->QueryArrayObject(decodeParms.GetPtr(), 0));
+	PDFObjectCastPtr<PDFName> cryptName(!cryptParms ? NULL : mParser->QueryDictionaryObject(cryptParms.GetPtr(), "Name"));
+
 	/*
 	*	To support unencrypted pdf output, mostly used for debugging, (and maybe i should put a general flag there),
 	*	add ability here to copy by rewriting the streams...when possible.
@@ -2112,8 +2123,11 @@ EStatusCode PDFDocumentHandler::WriteStreamObject(PDFStreamInput* inStream, IObj
 		streamReader = mParser->StartReadingFromStream(inStream);
 		readingDecrypted = streamReader != NULL;
 	}	
+	bool ownCrypt = !readingDecrypted && !!firstFilter && firstFilter->GetValue() == "Crypt";
 	if(!readingDecrypted) {
 		streamReader = mParser->StartReadingFromStreamForPlainCopying(inStream);
+		if (streamReader && ownCrypt)
+			streamReader = mParser->GetDecryptionHelper().CreateDecryptionFilterForStream(inStream, streamReader, !cryptName ? "Identity" : cryptName->GetValue());
 	}
 
 	if (streamReader == NULL) {
@@ -2122,7 +2136,22 @@ EStatusCode PDFDocumentHandler::WriteStreamObject(PDFStreamInput* inStream, IObj
 	
 	while (it.MoveNext() && PDFHummus::eSuccess == status)
 	{
-		if (it.GetKey()->GetValue() != "Length" && (!readingDecrypted || it.GetKey()->GetValue() != "Filter")) {
+		if (ownCrypt && (it.GetKey()->GetValue() == "Filter" || it.GetKey()->GetValue() == "DecodeParms")) {
+			// MuhammaraJS: copy only the filters after the Crypt filter decrypted above
+			PDFArray* items = it.GetKey()->GetValue() == "Filter" ? filters.GetPtr() : decodeParms.GetPtr();
+			if (items && items->GetLength() > 1) {
+				status = newStreamDictionary->WriteKey(it.GetKey()->GetValue());
+				if (PDFHummus::eSuccess == status) {
+					mObjectsContext->StartArray();
+					for (unsigned long i = 1; i < items->GetLength() && PDFHummus::eSuccess == status; ++i) {
+						RefCountPtr<PDFObject> item(items->QueryObject(i));
+						status = WriteObjectByType(item.GetPtr(), eTokenSeparatorSpace, inWritePolicy, inDepth);
+					}
+					mObjectsContext->EndArray(eTokenSeparatorEndLine);
+				}
+			}
+		}
+		else if (it.GetKey()->GetValue() != "Length" && (!readingDecrypted || it.GetKey()->GetValue() != "Filter")) {
 			status = newStreamDictionary->WriteKey(it.GetKey()->GetValue());
 			if (PDFHummus::eSuccess == status)
 				status = WriteObjectByType(it.GetValue(), eTokenSeparatorEndLine, inWritePolicy, inDepth);
