@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [7.2.4] - 2026-11-18
 
 ### Added
 
@@ -1913,7 +1913,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.3...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.4...HEAD
+[7.2.4]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.3...native-v7.2.4
 [7.2.3]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.2...native-v7.2.3
 [7.2.2]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.1...native-v7.2.2
 [7.2.1]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.0...native-v7.2.1

@@ -2,7 +2,7 @@
 
 All notable changes to `@muhammara/wasm` are documented in this file.
 
-## [Unreleased]
+## [1.2.4] - 2026-11-18
 
 ### Fixed
 
@@ -648,7 +648,8 @@ function or function signature mismatch` and later calls read freed
   runtime use, and Emscripten output is cached per build configuration [#568](https://github.com/julianhille/MuhammaraJS/issues/568)
   [#684](https://github.com/julianhille/MuhammaraJS/issues/684) [#690](https://github.com/julianhille/MuhammaraJS/issues/690) [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.3...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.4...HEAD
+[1.2.4]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.3...wasm-v1.2.4
 [1.2.3]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.2...wasm-v1.2.3
 [1.2.2]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.1...wasm-v1.2.2
 [1.2.1]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.0...wasm-v1.2.1
