@@ -719,4 +719,34 @@ describe("parser security regressions", function () {
       reader.end();
     }
   });
+  // Port of tests/security/GHSA-7pgh-4m9g-9wrj.js.
+  it("reads pages missing from Kids as null pages", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = await readFile("tests/TestMaterials/KidsUnderCount.pdf");
+    // The missing page IDs were whatever the instance's memory held before,
+    // so read the file again after earlier reads left data behind.
+    for (var round = 0; round < 3; ++round) {
+      var reader = muhammara.createReader(source);
+      try {
+        assert.equal(reader.getPagesCount(), 40);
+        assert.equal(reader.getPageObjectID(0), 3);
+        assert.equal(
+          reader.parsePageDictionary(0).toJSObject().Type.value,
+          "Page",
+        );
+        for (var index = 1; index < 40; ++index) {
+          assert.throws(() => reader.getPageObjectID(index), RangeError);
+          assert.throws(() => reader.parsePageDictionary(index), RangeError);
+        }
+      } finally {
+        reader.end();
+      }
+    }
+    var writer = muhammara.createWriter();
+    assert.throws(
+      () => writer.getImageDimensions(source, 1),
+      /Unable to read image dimensions/,
+    );
+    writer.end();
+  });
 });

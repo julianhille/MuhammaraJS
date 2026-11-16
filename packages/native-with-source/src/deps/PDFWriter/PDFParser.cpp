@@ -950,7 +950,8 @@ EStatusCode PDFParser::ParsePagesObjectIDs()
 
 		// safe: bounded above by actualXrefSize (an ObjectIDType) by the check above
 		mPagesCount = (unsigned long)pagesCountValue;
-		mPagesObjectIDs = new ObjectIDType[mPagesCount];
+		// MuhammaraJS: zero-fill, so pages /Kids does not list are null pages, not heap garbage
+		mPagesObjectIDs = new ObjectIDType[mPagesCount]();
 
 		// now iterate through pages objects, and fill up the IDs [don't really need the object ID for the root pages tree...but whatever
 		status = ParsePagesIDs(pages.GetPtr(),pagesReference->mObjectID);
@@ -1114,7 +1115,8 @@ PDFDictionary* PDFParser::ParsePage(unsigned long inPageIndex)
 
 	PDFObjectCastPtr<PDFName> objectType(pageObject->QueryDirectObject("Type"));
 
-	if(scPage == objectType->GetValue())
+	// MuhammaraJS: a page object without a /Type name is not a page
+	if(!!objectType && scPage == objectType->GetValue())
 	{
 		pageObject->AddRef();
 		return pageObject.GetPtr();

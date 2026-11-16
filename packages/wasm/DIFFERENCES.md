@@ -37,6 +37,9 @@ it cannot read; native returns `{ width: 0, height: 0 }` for one, except for a
 PDF that opens but whose requested page is missing or cannot be read, where it
 throws like Wasm. Measure a password-protected PDF after decrypting it with
 `recrypt(bytes, { password })`.
+For a page that is null or missing from `/Kids`, native `getPageObjectID()`
+returns 0 and `parsePageDictionary()` throws; Wasm throws a `RangeError` from
+both.
 
 `Recipe.thirdPartyLicenses()` exists only in Wasm. It reads the notices embedded in
 `muhammara-wasm.wasm`, which bundlers copy without the package's other files.
