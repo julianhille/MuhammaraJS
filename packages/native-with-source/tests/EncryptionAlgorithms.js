@@ -165,6 +165,22 @@ describe("Encryption algorithms", function () {
     ]);
   });
 
+  // CryptFilterV2.pdf names its RC4 crypt filter /V2, as the specification
+  // does, not /RC4 (#1026).
+  it("decrypts an RC4 crypt filter named /V2", function () {
+    var filePath = path.join(outputDirectory, "CryptFilterV2.pdf");
+    fs.copyFileSync(
+      path.join(__dirname, "TestMaterials", "CryptFilterV2.pdf"),
+      filePath,
+    );
+    ["user", "owner"].forEach(function (password) {
+      var decrypted = readDecrypted(filePath, password);
+      assert.equal(decrypted.title, "CFM V2", password);
+      assert.include(decrypted.content, "0 0 10 10 re", password);
+      assert.include(decrypted.recrypted, "0 0 10 10 re", password);
+    });
+  });
+
   it("generates a distinct IV for each AES-encrypted stream", function () {
     var outputPath = path.join(outputDirectory, "distinct-aes-ivs.pdf");
     var writer = muhammara.createWriter(outputPath, {

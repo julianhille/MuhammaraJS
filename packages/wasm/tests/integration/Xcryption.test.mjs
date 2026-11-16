@@ -40,6 +40,22 @@ function encryptionEntries(pdf) {
     .filter((entry, index, all) => all.indexOf(entry) === index);
 }
 
+/**
+ * Reads the decoded content of a PDF's first page.
+ * @param {object} reader - Reader of the PDF.
+ * @returns {string} The content stream as latin1 text.
+ */
+function readPageContent(reader) {
+  var contents = reader.queryDictionaryObject(
+    reader.parsePageDictionary(0),
+    "Contents",
+  );
+  var stream = reader.startReadingFromStream(contents.toPDFStream());
+  var bytes = [];
+  while (stream.notEnded()) bytes.push(...stream.read(4096));
+  return new TextDecoder("latin1").decode(new Uint8Array(bytes));
+}
+
 describe("Xcryption", function () {
   it("adds, changes, and removes passwords from byte PDFs", async function () {
     var muhammara = await createMuhammaraWasm();
@@ -200,16 +216,6 @@ describe("Xcryption", function () {
   it("decrypts strings and streams with the owner password, as with the user password", async function () {
     // #1002: revisions 2 to 4 derived the key from the owner password itself.
     var muhammara = await createMuhammaraWasm();
-    var readPageContent = function (reader) {
-      var contents = reader.queryDictionaryObject(
-        reader.parsePageDictionary(0),
-        "Contents",
-      );
-      var stream = reader.startReadingFromStream(contents.toPDFStream());
-      var bytes = [];
-      while (stream.notEnded()) bytes.push(...stream.read(4096));
-      return new TextDecoder("latin1").decode(new Uint8Array(bytes));
-    };
     for (var version of [13, 14, 17, 20]) {
       var writer = muhammara.createWriter({
         version,
@@ -292,6 +298,32 @@ describe("Xcryption", function () {
       () => muhammara.recrypt(encrypted, { password: "wrong" }),
       /Unable to recrypt PDF/,
     );
+  });
+
+  // CryptFilterV2.pdf names its RC4 crypt filter /V2, as the specification
+  // does, not /RC4 (#1026).
+  it("decrypts an RC4 crypt filter named /V2", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var encrypted = new Uint8Array(
+      fs.readFileSync("tests/TestMaterials/CryptFilterV2.pdf"),
+    );
+    for (var password of ["user", "owner"]) {
+      var reader = muhammara.createReader(encrypted, { password });
+      var info = reader.queryDictionaryObject(reader.getTrailer(), "Info");
+      assert.equal(
+        reader.queryDictionaryObject(info, "Title").toText(),
+        "CFM V2",
+        password,
+      );
+      assert.match(readPageContent(reader), /0 0 10 10 re/, password);
+      reader.end();
+      var plain = muhammara.recrypt(encrypted, { password });
+      writeOutput("Xcryption-cfm-v2-decrypted-" + password, plain);
+      var plainReader = muhammara.createReader(plain);
+      assert.equal(plainReader.isEncrypted(), false, password);
+      assert.match(readPageContent(plainReader), /0 0 10 10 re/, password);
+      plainReader.end();
+    }
   });
 
   it("generates a distinct IV for each AES-encrypted stream", async function () {

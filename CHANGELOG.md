@@ -90,6 +90,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Decrypt PDFs whose crypt filter selects RC4 with `/CFM /V2`, the name the
+  PDF specification uses. Their strings and streams were returned still
+  encrypted, and `recrypt()` wrote them out unchanged
+  [#1026](https://github.com/julianhille/MuhammaraJS/issues/1026)
 - Recipe `editPage()` throws a `RangeError` for a page number that is not an
   existing page (such as `1.5`, `0`, a page past the end, or the string `"1"`),
   as `@muhammara/wasm` does, instead of an internal `TypeError`

@@ -301,7 +301,8 @@ EStatusCode DecryptionHelper::Setup(PDFParser* inParser, const string& inPasswor
 						if (!cfmNameObject)
 							continue;
 						string cfmName = cfmNameObject->GetValue();
-						if(cfmName != "AESV2" && cfmName != "AESV3" && cfmName != "RC4") {
+						// MuhammaraJS: /V2 is the specification's name for RC4
+						if(cfmName != "AESV2" && cfmName != "AESV3" && cfmName != "RC4" && cfmName != "V2") {
 							continue; // probably "None"". could also be unsupported. in any case, ignore and this means that this crypt filter will not encrypt
 						}
 						EXCryptorAlgo xCryptorAlgo = cfmName == "AESV3" ? eAESV3 : (cfmName == "AESV2" ? eAESV2 : eRC4);
