@@ -220,6 +220,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
 - Test the native prebuilds up to Node.js 26.11.1 and Electron 44.7.1
   [#984](https://github.com/julianhille/MuhammaraJS/issues/984)
+- Track npm, GitHub Actions, and docs requirements updates with Renovate and
+  its Dependency Dashboard issue
+  [#867](https://github.com/julianhille/MuhammaraJS/issues/867)
 
 ## [7.2.3] - 2026-10-27
 
