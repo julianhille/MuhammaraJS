@@ -282,4 +282,44 @@ describe("parser security regressions", function () {
       reader.end();
     }
   });
+  // Port of tests/security/GHSA-wj5h-wf8p-8vhv.js.
+  [
+    ["/StmF /Identity", "EncryptedStmFIdentity.pdf"],
+    ["/CFM /None", "EncryptedCFMNone.pdf"],
+  ].forEach(function ([name, fixture]) {
+    it(`modifies an encrypted PDF with ${name}`, async function () {
+      var muhammara = await createMuhammaraWasm();
+      var modifier = muhammara.createWriterToModify(
+        await readFile("tests/TestMaterials/" + fixture),
+        { compress: false },
+      );
+      var pageModifier = modifier.createPageModifier(0, true).startContext();
+      pageModifier.getContext().q().re(7, 8, 9, 10).f().Q();
+      pageModifier.endContext().writePage();
+      var output = modifier.end();
+      writeOutput("GHSA-wj5h-wf8p-8vhv-" + fixture.slice(0, -4), output);
+
+      var reader = muhammara.createReader(output);
+      try {
+        assert.equal(reader.isEncrypted(), true);
+        var streams = "";
+        for (var id = 1; id < reader.getXrefSize(); ++id) {
+          var object = reader.parseNewObject(id);
+          if (object.getType() !== muhammara.ePDFObjectStream) continue;
+          var stream = reader.startReadingFromStream(object.toPDFStream());
+          while (stream.notEnded()) {
+            streams += new TextDecoder("latin1").decode(stream.read(4096));
+          }
+        }
+        assert.ok(streams.includes("Hello Secret"));
+        assert.ok(streams.includes("7 8 9 10 re"));
+        assert.equal(
+          reader.parseNewObject(2).queryObject("Title").toText(),
+          "Secret Title",
+        );
+      } finally {
+        reader.end();
+      }
+    });
+  });
 });

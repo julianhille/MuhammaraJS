@@ -324,7 +324,10 @@ std::string EncryptionHelper::EncryptString(const std::string& inStringToEncrypt
 }
 
 IByteWriterWithPosition* EncryptionHelper::CreateEncryptionStream(IByteWriterWithPosition* inToWrapStream) {
-	return  CreateEncryptionWriter(inToWrapStream, mXcryptStreams->GetCurrentObjectKey(),mXcryptStreams->GetIsUsingAES());
+	// MuhammaraJS: no stream xcryptor (Identity, missing or /CFM /None /StmF) writes the stream unencrypted, as EncryptString() does for strings
+	if (!mXcryptStreams)
+		return NULL;
+	return CreateEncryptionWriter(inToWrapStream, mXcryptStreams->GetCurrentObjectKey(),mXcryptStreams->GetIsUsingAES());
 }
 
 IByteWriterWithPosition* EncryptionHelper::CreateEncryptionWriter(IByteWriterWithPosition* inToWrapStream, const ByteList& inEncryptionKey, bool inIsUsingAES) {
