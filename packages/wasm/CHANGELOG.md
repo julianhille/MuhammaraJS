@@ -14,6 +14,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [GHSA-7rr8-wph2-845v](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-7rr8-wph2-845v)
 - Fix a security vulnerability
   [GHSA-mvmf-5vvf-74m7](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-mvmf-5vvf-74m7)
+- Fix a security vulnerability
+  [GHSA-32r6-f4hm-ccc4](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-32r6-f4hm-ccc4)
 
 ## [1.2.3] - 2026-10-27
 

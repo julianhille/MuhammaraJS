@@ -586,4 +586,53 @@ describe("parser security regressions", function () {
       reader.end();
     }
   });
+  // Port of tests/security/GHSA-32r6-f4hm-ccc4.js.
+  describe("GHSA-32r6-f4hm-ccc4", function () {
+    var muhammara;
+
+    before(async function () {
+      muhammara = await createMuhammaraWasm();
+      muhammara.registerFont(
+        "type2-undefined-div",
+        await readFile("tests/TestMaterials/fonts/Type2UndefinedDiv.otf"),
+      );
+    });
+
+    after(function () {
+      muhammara.unregisterFont("type2-undefined-div");
+    });
+
+    /**
+     * Writes `text` in the crafted font and ends the document. "A" divides
+     * by zero, "B" divides LONG_MIN by -1 on 32-bit `long`.
+     * @param {string} text - Text to write.
+     * @returns {Uint8Array} The produced PDF.
+     */
+    function writeWithFont(text) {
+      var writer = muhammara.createWriter();
+      var page = writer.createPage(0, 0, 595, 842);
+      writer.startPageContentContext(page).writeText(text, 10, 400, {
+        font: writer.getFontForBytes("type2-undefined-div"),
+        size: 20,
+      });
+      writer.writePage(page);
+      return writer.end();
+    }
+
+    it("fails to embed a Type 2 charstring that divides by zero", function () {
+      assert.throws(() => writeWithFont("A"), /Unable to finish PDF/);
+    });
+
+    it("fails to embed a Type 2 charstring that divides LONG_MIN by -1", function () {
+      assert.throws(() => writeWithFont("B"), /Unable to finish PDF/);
+    });
+
+    it("still embeds the glyphs of that font without a division", function () {
+      var pdf = writeWithFont("C");
+      var reader = muhammara.createReader(pdf);
+      assert.equal(reader.getPagesCount(), 1);
+      reader.end();
+      assert.ok(new TextDecoder("latin1").decode(pdf).includes("/FontFile3"));
+    });
+  });
 });

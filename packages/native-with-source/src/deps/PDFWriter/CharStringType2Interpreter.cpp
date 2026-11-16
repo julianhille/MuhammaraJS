@@ -22,6 +22,7 @@
 #include "Trace.h"
 #include <math.h>
 #include <stdlib.h>
+#include <limits.h>
  
 using namespace PDFHummus;
 
@@ -957,6 +958,11 @@ Byte* CharStringType2Interpreter::InterpretDiv(Byte* inProgramCounter, LongFileP
 	}
 	else
 	{
+		// MuhammaraJS: reject an undefined integer division, as CharStringType1Interpreter::InterpretDiv does
+		if(valueB.IntegerValue == 0 || (valueA.IntegerValue == LONG_MIN && valueB.IntegerValue == -1)) {
+			TRACE_LOG2("CharStringType2Interpreter::InterpretDiv, undefined division (numerator %ld, denominator %ld). Aborting", valueA.IntegerValue, valueB.IntegerValue);
+			return NULL;
+		}
 		newOperand.IsInteger = true;
 		newOperand.IntegerValue = valueA.IntegerValue / valueB.IntegerValue;
 	}
