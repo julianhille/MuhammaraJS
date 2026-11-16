@@ -14,5 +14,9 @@ Pass an `index` for a page in a multi-page TIFF or PDF. The optional
 box.
 
 `pdfWriter.getImageDimensions(path)` returns an object with `width` and
-`height`. Reusable JPG, PNG, and TIFF forms are covered in
-[Form XObjects](form-xobjects.md).
+`height`. An image it cannot read measures 0 by 0, while a PDF that opens but
+whose requested page is missing or cannot be read throws
+`Unable to read image dimensions`. For a password-protected PDF, pass
+`{ password }` as the third argument,
+`pdfWriter.getImageDimensions(path, index, { password })`. Reusable JPG, PNG,
+and TIFF forms are covered in [Form XObjects](form-xobjects.md).

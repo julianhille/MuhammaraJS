@@ -685,4 +685,38 @@ describe("parser security regressions", function () {
       assert.ok(new TextDecoder("latin1").decode(pdf).includes("/FontFile3"));
     });
   });
+  // Port of tests/security/GHSA-r4mx-qx34-mrx3.js.
+  it("measures a missing PDF page as unreadable instead of reading it", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = await readFile("tests/TestMaterials/NullKidsPage.pdf");
+    var writer = muhammara.createWriter();
+
+    assert.deepEqual(writer.getImageDimensions(source, 0), {
+      width: 200,
+      height: 200,
+    });
+    // The null Kids entry, and an index past the last page.
+    for (var index of [1, 5]) {
+      assert.throws(
+        () => writer.getImageDimensions(source, index),
+        /Unable to read image dimensions/,
+      );
+    }
+    // A page that cannot be read without the password.
+    var protectedPdf = await readFile("tests/TestMaterials/Protected.pdf");
+    assert.throws(
+      () => writer.getImageDimensions(protectedPdf, 0),
+      /Unable to read image dimensions/,
+    );
+    writer.end();
+
+    var reader = muhammara.createReader(source);
+    try {
+      assert.deepEqual(reader.getPageBox(0), [0, 0, 200, 200]);
+      assert.throws(() => reader.getPageInfo(1), RangeError);
+      assert.throws(() => reader.getPageBox(1), RangeError);
+    } finally {
+      reader.end();
+    }
+  });
 });

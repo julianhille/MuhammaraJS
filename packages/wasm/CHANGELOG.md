@@ -18,6 +18,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [GHSA-32r6-f4hm-ccc4](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-32r6-f4hm-ccc4)
 - Fix a security vulnerability
   [GHSA-fm69-f3cr-v22g](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-fm69-f3cr-v22g)
+- Fix a security vulnerability
+  [GHSA-r4mx-qx34-mrx3](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-r4mx-qx34-mrx3)
+- Throw `Unable to read image dimensions` from `getImageDimensions()` for a
+  password-protected PDF or a PDF without the requested page instead of
+  returning a made-up 595 by 842.
 
 ## [1.2.3] - 2026-10-27
 

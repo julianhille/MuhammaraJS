@@ -32,6 +32,11 @@ low-level RGB `color`, which native does not.
 String writers and `PDFWStreamForBuffer.write()` accept an array of byte
 values on both ends; Wasm throws a `TypeError` for an item that is not an
 integer from 0 to 255, where native coerces it to a byte.
+`getImageDimensions()` throws `Unable to read image dimensions` for every image
+it cannot read; native returns `{ width: 0, height: 0 }` for one, except for a
+PDF that opens but whose requested page is missing or cannot be read, where it
+throws like Wasm. Measure a password-protected PDF after decrypting it with
+`recrypt(bytes, { password })`.
 
 `Recipe.thirdPartyLicenses()` exists only in Wasm. It reads the notices embedded in
 `muhammara-wasm.wasm`, which bundlers copy without the package's other files.

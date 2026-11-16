@@ -16,6 +16,7 @@
 #include "PDFFormXObject.h"
 #include "PDFImageXObject.h"
 #include "PDFModifiedPage.h"
+#include "PDFParser.h"
 #include "PDFPageDriver.h"
 #include "PDFReaderDriver.h"
 #include "PDFRectangle.h"
@@ -1175,6 +1176,20 @@ void PDFWriterDriver::ReleaseLogProxy() {
   delete logProxy_;
   logProxy_ = nullptr;
 }
+// A PDF whose requested page is missing or cannot be read measures 0 by 0,
+// like an unreadable image. Tells them apart, so that only such a page throws.
+static bool IsMissingPDFPage(IByteReaderWithPosition *stream,
+                             unsigned long index,
+                             const PDFParsingOptions &options) {
+  LongFilePositionType position = stream->GetCurrentPosition();
+  PDFParser parser;
+  bool missing = parser.StartPDFParsing(stream, options) == eSuccess &&
+                 RefCountPtr<PDFDictionary>(parser.ParsePage(index)).GetPtr() ==
+                     nullptr;
+  stream->SetPosition(position);
+  return missing;
+}
+
 napi_value PDFWriterDriver::GetImageDimensions(const CallbackArgs &a) {
   if (a.Length() < 1 || a.Length() > 3 ||
       (!Type(a.Env(), a[0], napi_string) && !IsObject(a.Env(), a[0])) ||
@@ -1188,16 +1203,24 @@ napi_value PDFWriterDriver::GetImageDimensions(const CallbackArgs &a) {
   PDFParsingOptions p;
   if (a.Length() == 3)
     Password(a.Env(), a[2], p);
+  unsigned long index = a.Length() >= 2 ? ToUint32(a.Env(), a[1]) : 0;
   DoubleAndDoublePair dim;
+  bool missing = false;
   if (IsObject(a.Env(), a[0])) {
     ObjectByteReaderWithPosition r(a.Env(), a[0]);
-    dim = d->writer_.GetImageDimensions(
-        &r, a.Length() >= 2 ? ToUint32(a.Env(), a[1]) : 0, p);
-  } else
-    dim = d->writer_.GetImageDimensions(
-        LegacyString(a.Env(), a[0]),
-        a.Length() >= 2 ? ToUint32(a.Env(), a[1]) : 0,
-        p);
+    dim = d->writer_.GetImageDimensions(&r, index, p);
+    missing = dim.first == 0 && dim.second == 0 &&
+              IsMissingPDFPage(&r, index, p);
+  } else {
+    std::string path = LegacyString(a.Env(), a[0]);
+    dim = d->writer_.GetImageDimensions(path, index, p);
+    InputFile file;
+    missing = dim.first == 0 && dim.second == 0 &&
+              file.OpenFile(path) == eSuccess &&
+              IsMissingPDFPage(file.GetInputStream(), index, p);
+  }
+  if (missing)
+    return ThrowError(a.Env(), "Unable to read image dimensions");
   napi_value o = Object(a.Env());
   Set(a.Env(), o, "width", Number(a.Env(), dim.first));
   Set(a.Env(), o, "height", Number(a.Env(), dim.second));

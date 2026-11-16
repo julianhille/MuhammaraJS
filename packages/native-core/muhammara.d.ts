@@ -2939,6 +2939,7 @@ declare namespace muhammara {
      * @returns The width and height.
      * @throws {TypeError} If the arguments are wrong.
      * @throws {Error} If the writer has ended.
+     * @throws {Error} If the source is a PDF that opens but whose requested page is missing or cannot be read.
      */
     getImageDimensions(
       imagePath: FilePath | ReadStream,

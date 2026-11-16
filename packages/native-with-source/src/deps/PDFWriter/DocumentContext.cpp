@@ -3152,6 +3152,10 @@ DoubleAndDoublePair DocumentContext::GetImageDimensions(
 
       PDFPageInput helper(&pdfParser,pdfParser.ParsePage(inImageIndex));
 
+      // MuhammaraJS: a missing page has no dimensions, not the A4 default
+      if(!helper)
+        break;
+
       imageWidth = helper.GetMediaBox().GetWidth();
       imageHeight = helper.GetMediaBox().GetHeight();
 
@@ -3234,6 +3238,10 @@ DoubleAndDoublePair DocumentContext::GetImageDimensions(
 					break;
 
 				PDFPageInput helper(&pdfParser,pdfParser.ParsePage(inImageIndex));
+
+				// MuhammaraJS: a missing page has no dimensions, not the A4 default
+				if(!helper)
+					break;
 
 				imageWidth = helper.GetMediaBox().GetWidth();
 				imageHeight = helper.GetMediaBox().GetHeight();
