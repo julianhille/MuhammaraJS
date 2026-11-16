@@ -1,7 +1,9 @@
 const path = require("path");
 const fs = require("fs");
 const { writeOutput } = require("../helpers/testOutput");
-const Recipe = require("@muhammara/native-with-source").Recipe;
+const muhammara = require("@muhammara/native-with-source");
+const { expect } = require("chai");
+const Recipe = muhammara.Recipe;
 
 describe("Append Pages", () => {
   const taskAP = "Append pages from other pdf";
@@ -41,5 +43,20 @@ describe("Append Pages", () => {
     fs.unlinkSync(source);
     fs.unlinkSync(appended);
     fs.rmSync(output, { force: true });
+  });
+
+  it("appends a PDF with an empty user password to an existing PDF", () => {
+    const appended = path.join(__dirname, "../output/appendPages-owner.pdf");
+    const output = path.join(__dirname, "../output/appendPages-owner-out.pdf");
+    const writer = muhammara.createWriter(appended, {
+      userPassword: "",
+      ownerPassword: "owner",
+    });
+    writer.writePage(writer.createPage(0, 0, 300, 300));
+    writer.end();
+    const material = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
+    new Recipe(material, output).appendPage(appended).endPDF();
+    const pages = new Recipe(material).metadata.pages;
+    expect(new Recipe(output).metadata.pages).to.equal(pages + 1);
   });
 });

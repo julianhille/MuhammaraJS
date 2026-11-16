@@ -87,4 +87,21 @@ describe("Recipe appendPages", function () {
     assert.equal(reader.getPagesCount(), 3);
     reader.end();
   });
+
+  it("appends a PDF with an empty user password to an existing PDF", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter({
+      userPassword: "",
+      ownerPassword: "owner",
+    });
+    writer.writePage(writer.createPage(0, 0, 300, 300));
+    Recipe.registerPdf("owner-password-append", writer.end());
+    var source = new Recipe().createPage(100, 100).endPage().endPDF();
+    var bytes = new Recipe(source).appendPage("owner-password-append").endPDF();
+    writeOutput("appendPages-owner-password-append", bytes);
+    var reader = muhammara.createReader(bytes);
+    assert.equal(reader.getPagesCount(), 2);
+    reader.end();
+  });
 });

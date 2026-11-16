@@ -1,5 +1,6 @@
 const muhammara = require("@muhammara/native-with-source");
 const expect = require("chai").expect;
+const fs = require("fs");
 
 describe("AppendPagesTest", function () {
   it("should complete without error", function () {
@@ -67,6 +68,62 @@ describe("AppendPagesTest", function () {
     }
   });
 
+  it("copies a source with an empty user password decrypted", function () {
+    // RC4, AES-128 and AES-256.
+    for (var version of [
+      muhammara.ePDFVersion14,
+      muhammara.ePDFVersion16,
+      muhammara.ePDFVersion20,
+    ]) {
+      var sourcePath =
+        __dirname + "/output/AppendPagesOwnerPassword" + version + ".pdf";
+      var source = muhammara.createWriter(sourcePath, {
+        version: version,
+        compress: false,
+        userPassword: "",
+        ownerPassword: "owner",
+      });
+      var sourcePage = source.createPage(0, 0, 200, 200);
+      source.startPageContentContext(sourcePage).re(10, 10, 50, 50).f();
+      source.writePage(sourcePage);
+      source.end();
+      var content = "10 10 50 50 re";
+      expect(fs.readFileSync(sourcePath).includes(content)).to.equal(false);
+
+      var copies = {
+        append: (writer) => writer.appendPDFPagesFromPDF(sourcePath),
+        merge: (writer) => {
+          var page = writer.createPage(0, 0, 200, 200);
+          writer.mergePDFPagesToPage(page, sourcePath);
+          writer.writePage(page);
+        },
+        forms: (writer) => writer.createFormXObjectsFromPDF(sourcePath),
+        copyingContext: (writer) =>
+          writer.createPDFCopyingContext(sourcePath).appendPDFPageFromPDF(0),
+      };
+      for (var name of Object.keys(copies)) {
+        for (var modify of [false, true]) {
+          var output = new muhammara.PDFWStreamForBuffer();
+          var writer = modify
+            ? muhammara.createWriterToModify(
+                new muhammara.PDFRStreamForFile(
+                  __dirname + "/TestMaterials/Original.pdf",
+                ),
+                output,
+                { compress: false },
+              )
+            : muhammara.createWriter(output, { compress: false });
+          copies[name](writer);
+          writer.end();
+          expect(
+            Buffer.from(output.buffer).includes(content),
+            version + " " + name,
+          ).to.equal(true);
+        }
+      }
+    }
+  });
+
   it("keeps the writer usable when page ranges are outside the source", function () {
     var output = new muhammara.PDFWStreamForBuffer();
     var pdfWriter = muhammara.createWriter(output);
@@ -91,7 +148,7 @@ describe("AppendPagesTest", function () {
     );
     expect(
       pdfWriter.appendPDFPagesFromPDF(
-        new muhammara.PDFRStreamForBuffer(require("fs").readFileSync(source)),
+        new muhammara.PDFRStreamForBuffer(fs.readFileSync(source)),
         { type: muhammara.eRangeTypeSpecific, specificRanges: [[1, 1]] },
       ),
     ).to.have.length(1);

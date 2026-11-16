@@ -15,8 +15,9 @@ consume borrowed resources before ending their writer.
 
 `appendPDFPagesFromPDF` also ends a writer or modifier when copying pages
 fails; create a fresh writer and retry with valid source bytes. Source bytes
-that cannot be parsed, encrypted input, and page ranges outside the source are
-rejected before anything is written, so the writer stays usable.
+that cannot be parsed, encrypted input that needs a password, and page ranges
+outside the source are rejected before anything is written, so the writer
+stays usable.
 
 `createPDFDate()` and `createPDFTextString()` create independent values and
 remain usable after cleanup. `dispose()` is idempotent; Wasm `end()` still

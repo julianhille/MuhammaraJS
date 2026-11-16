@@ -47,6 +47,14 @@ XML-derived layout tree.
 Existing byte-backed PDFs can be read, modified, and copied, but persistent-file
 continuation and the path-based Recipe constructor are unavailable.
 
+Source PDFs for `appendPDFPagesFromPDF`, `mergePDFPagesToPage`,
+`createFormXObjectsFromPDF`, `createPDFCopyingContext`, and PDF images in
+`drawImage` take no `password` option (passing one throws a `TypeError`); a
+source that needs a password to open throws. As in native, a source with an
+empty user password is copied decrypted. Decrypt other sources with
+`recrypt(bytes, { password })` first; see
+[Change PDF Passwords](how-to/change-pdf-passwords.md).
+
 Appending or rebuilding an existing source page does not deep-copy that page's
 `/Annots` graph, although annotations created in the output are written
 normally.
