@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [GHSA-wj5h-wf8p-8vhv](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-wj5h-wf8p-8vhv)
 - Fix a security vulnerability
   [GHSA-fvpv-4wx7-85f6](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-fvpv-4wx7-85f6)
+- Fix a security vulnerability
+  [GHSA-7rr8-wph2-845v](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-7rr8-wph2-845v)
 
 ## [7.2.3] - 2026-10-27
 

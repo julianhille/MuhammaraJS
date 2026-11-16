@@ -63,7 +63,6 @@ OutputAESEncodeStream::OutputAESEncodeStream(
 	size_t i = 0;
 	for (; it != inEncryptionKey.end(); ++i, ++it)
 		mEncryptionKey[i] = *it;
-	mEncrypt.key(mEncryptionKey, mEncryptionKeyLength);
 
 	mWroteIV = false;
 	mFlushed = false;
@@ -82,6 +81,10 @@ EStatusCode OutputAESEncodeStream::EnsureIVWritten()
 {
 	if (mWroteIV)
 		return eSuccess;
+
+	// MuhammaraJS: AES rejects a key that is not 16, 24 or 32 bytes and leaves its context uninitialised; fail writing instead of encrypting with it
+	if (mEncrypt.key(mEncryptionKey, mEncryptionKeyLength) != EXIT_SUCCESS)
+		return eFailure;
 
 	if (RandomGenerator::FillBytes(mIV, AES_BLOCK_SIZE) != eSuccess)
 		return eFailure;

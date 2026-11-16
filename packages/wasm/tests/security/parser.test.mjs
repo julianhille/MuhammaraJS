@@ -73,6 +73,24 @@ function readStreamWithoutCrash(muhammara, bytes) {
   }
 }
 
+/**
+ * Reads a stream object of a PDF, decoded, as a latin1 string.
+ *
+ * @param {object} reader - A muhammara PDF reader.
+ * @param {number} id - The stream's object ID.
+ * @returns {string} The stream contents.
+ */
+function readStreamText(reader, id) {
+  var stream = reader.startReadingFromStream(
+    reader.parseNewObject(id).toPDFStream(),
+  );
+  var result = "";
+  while (stream.notEnded()) {
+    result += new TextDecoder("latin1").decode(stream.read(4096));
+  }
+  return result;
+}
+
 describe("parser security regressions", function () {
   it("handles malformed filter streams and bounded input", async function () {
     var muhammara = await createMuhammaraWasm();
@@ -323,4 +341,174 @@ describe("parser security regressions", function () {
     });
   });
   // GHSA-fvpv-4wx7-85f6 is native only: Wasm has no createWriterToContinue().
+  // Port of tests/security/GHSA-7rr8-wph2-845v.js.
+  it("decrypts an AESV2 crypt filter with a short /Length using a 128-bit key", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/EncryptedAESV2Length5.pdf"),
+    );
+    try {
+      assert.equal(
+        readStreamText(reader, 6),
+        "BT /F1 24 Tf 20 100 Td (Hello Secret) Tj ET",
+      );
+      assert.equal(
+        reader.parseNewObject(2).queryObject("Title").toText(),
+        "Secret Title",
+      );
+    } finally {
+      reader.end();
+    }
+  });
+  it("encrypts a modification with a 128-bit AESV2 key", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var modifier = muhammara.createWriterToModify(
+      await readFile("tests/TestMaterials/EncryptedAESV2Length5.pdf"),
+      { compress: false },
+    );
+    var pageModifier = modifier.createPageModifier(0, true).startContext();
+    pageModifier.getContext().q().re(7, 8, 9, 10).f().Q();
+    pageModifier.endContext().writePage();
+    var output = modifier.end();
+    writeOutput("GHSA-7rr8-wph2-845v", output);
+
+    var reader = muhammara.createReader(output);
+    try {
+      var streams = "";
+      for (var id = 1; id < reader.getXrefSize(); ++id) {
+        if (
+          reader.parseNewObject(id).getType() === muhammara.ePDFObjectStream
+        ) {
+          streams += readStreamText(reader, id);
+        }
+      }
+      assert.ok(streams.includes("Hello Secret"));
+      assert.ok(streams.includes("7 8 9 10 re"));
+    } finally {
+      reader.end();
+    }
+  });
+  // An AESV2 crypt filter without /Length under a top-level /Length 96.
+  // Keys of 11 bytes or more give 128-bit object keys, so it reads as in
+  // 1.2.3.
+  it("keeps an AESV2 file key of 96 bits", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/EncryptedAESV2TopLength96.pdf"),
+    );
+    try {
+      assert.equal(
+        reader.parseNewObject(2).queryObject("Title").toText(),
+        "Secret Title",
+      );
+      assert.deepEqual(
+        reader.extractPageText(0).map((item) => item.text),
+        ["Hello Secret", "Second Stream"],
+      );
+    } finally {
+      reader.end();
+    }
+  });
+  // Keys that reach AES unusable: object 11 runs through two /Crypt
+  // filters, an RC4 /Length 40 one and the AESV2 /StmCF; object 8 runs
+  // through one /Crypt without /DecodeParms, keyed by the RC4 /StmF but
+  // decrypted by the AESV2 filter named Identity; object 6 names an
+  // unused AESV3 filter whose /UE and /OE are 24 bytes, which AES-CBC
+  // cannot decrypt, so its file key was 24 bytes of leftover memory.
+  [
+    ["two /Crypt filters", "EncryptedTwoCryptFiltersMixed.pdf", 11],
+    [
+      "a crypt filter named Identity",
+      "EncryptedIdentityNamedCryptFilter.pdf",
+      8,
+    ],
+    ["a 24-byte /UE", "EncryptedAESV3UE24UnusedFilter.pdf", 6],
+  ].forEach(function ([name, fixture, id]) {
+    it(`reads nothing from an AES stream keyed by ${name}`, async function () {
+      var muhammara = await createMuhammaraWasm();
+      var reader = muhammara.createReader(
+        await readFile("tests/TestMaterials/" + fixture),
+      );
+      try {
+        var stream = reader.startReadingFromStream(
+          reader.parseNewObject(id).toPDFStream(),
+        );
+        assert.equal(stream.read(4096).length, 0);
+        assert.equal(stream.notEnded(), false);
+      } finally {
+        reader.end();
+      }
+    });
+  });
+  // An AESV2 document whose /CF also holds an unused AESV3 filter, /X3,
+  // which has no 256-bit key in a /V 4 file.
+  it("reads a document with an unused AESV3 crypt filter", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/EncryptedUnusedAESV3CryptFilter.pdf"),
+    );
+    try {
+      assert.equal(
+        reader.parseNewObject(2).queryObject("Title").toText(),
+        "Secret Title",
+      );
+      assert.equal(
+        readStreamText(reader, 7),
+        "BT /F1 12 Tf 10 10 Td (Stream0) Tj ET\n",
+      );
+    } finally {
+      reader.end();
+    }
+  });
+  ["/StrF", "/StmF"].forEach(function (entry) {
+    it(`fails a ${entry} crypt filter without a valid AES key`, async function () {
+      var muhammara = await createMuhammaraWasm();
+      var bytes = (
+        await readFile(
+          "tests/TestMaterials/EncryptedUnusedAESV3CryptFilter.pdf",
+        )
+      ).toString("latin1");
+      var patched = bytes.replace(`${entry} /StdCF`, `${entry} /X3   `);
+      assert.notEqual(patched, bytes);
+      assert.throws(
+        () => muhammara.recrypt(Buffer.from(patched, "latin1")),
+        /Unable to recrypt PDF/,
+      );
+    });
+  });
+  // A string written outside an indirect object has no object key, which
+  // AES rejects.
+  it("fails a string encrypted with AES outside an object", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter({
+      version: muhammara.ePDFVersion16,
+      userPassword: "user",
+    });
+    writer.writePage(writer.createPage(0, 0, 100, 100));
+    assert.throws(() => {
+      writer.getObjectsContext().writeLiteralString("outside an object");
+      writer.end();
+    });
+  });
+  // ProtectedAES256.pdf with its /UE cut to 17 bytes, offsets kept. A /UE
+  // that is not 32 bytes gives no AESV3 file key.
+  it("fails an AESV3 file key that is not 256 bits", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var shortUE = await readFile(
+      "tests/TestMaterials/EncryptedAESV3ShortUE.pdf",
+    );
+    assert.throws(
+      () => muhammara.recrypt(shortUE, { password: "user" }),
+      /Unable to recrypt PDF/,
+    );
+  });
+  // EncryptedAESV2Length5.pdf as /R 2, whose file key is 5 bytes whatever
+  // the /Length, with /U recomputed and offsets kept.
+  it("fails an AESV2 file key shorter than 88 bits", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var revision2 = await readFile(
+      "tests/TestMaterials/EncryptedAESV2Revision2.pdf",
+    );
+    assert.throws(() => muhammara.recrypt(revision2), /Unable to recrypt PDF/);
+  });
 });

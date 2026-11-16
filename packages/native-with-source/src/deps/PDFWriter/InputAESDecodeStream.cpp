@@ -45,7 +45,6 @@ InputAESDecodeStream::InputAESDecodeStream(
 	size_t i = 0;
 	for (; it != inKey.end(); ++i, ++it)
 		mKey[i] = *it;
-	mDecrypt.key(mKey, mKeyLength);
 	mIsInit = false; // first read flag. for reading initial IV and first block for decrypting
 	mOutLength = AES_BLOCK_SIZE; // initially, the length is constant AES_BLOCK_SIZE. when the underlying stream uses padding for the final block, this will be reduced by the padding length
 	mOutIndex = mOut + mOutLength; // mOutIndex placed at end of mOut to mark that there's no aviailable decrypted data yet
@@ -75,6 +74,14 @@ LongBufferSizeType InputAESDecodeStream::Read(IOBasicTypes::Byte* inBuffer, Long
 	// first read, this is special case where IV need to be read, followed by an initial block read
 	if (!mIsInit) {
 		mIsInit = true; // let's get the state change out of the way
+
+		// MuhammaraJS: AES rejects a key that is not 16, 24 or 32 bytes and leaves its context uninitialised; drop the source and end instead of decrypting with it
+		if (mDecrypt.key(mKey, mKeyLength) != EXIT_SUCCESS) {
+			delete mSourceStream;
+			mSourceStream = NULL;
+			mHitEnd = true;
+			return 0;
+		}
 
 		// read iv 
 		LongBufferSizeType ivRead = mSourceStream->Read(mIV, AES_BLOCK_SIZE);
