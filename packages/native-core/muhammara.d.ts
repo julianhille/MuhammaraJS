@@ -2345,8 +2345,10 @@ declare namespace muhammara {
      */
     endDictionary(dictionary: DictionaryContext): this;
     /**
-     * Writes the end of the current indirect object.
+     * Writes the end of the current indirect object. After `endPDFStream()`,
+     * which already ended it, this writes nothing.
      * @returns This context.
+     * @throws {Error} If no indirect object is open.
      */
     endIndirectObject(): this;
     /**
@@ -2366,6 +2368,9 @@ declare namespace muhammara {
      * @param objectId - A reserved object ID.
      * @returns The new object ID, or this context when objectId is given.
      * @throws {TypeError} If objectId is given and is not a number.
+     * @throws {RangeError} If objectId is 0.
+     * @throws {Error} If an indirect object is open or the object cannot be
+     * started, such as an ID that is already written.
      */
     startNewIndirectObject(objectId: FormXObjectId): this;
     startNewIndirectObject(): FormXObjectId;
@@ -2374,6 +2379,9 @@ declare namespace muhammara {
      * @param objectId - The object ID to replace.
      * @returns This context.
      * @throws {TypeError} If objectId is not a single number.
+     * @throws {RangeError} If objectId is 0.
+     * @throws {Error} If an indirect object is open or the object cannot be
+     * replaced.
      */
     startModifiedIndirectObject(objectId: FormXObjectId): this;
     /**

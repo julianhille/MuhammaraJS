@@ -390,7 +390,10 @@ describe("Xcryption", function () {
       var objects = pdfWriter.getObjectsContext();
       objects.startNewIndirectObject();
       var stream = objects.startPDFStream();
-      objects.startNewIndirectObject();
+      assert.throws(
+        () => objects.startNewIndirectObject(),
+        /Unable to start indirect object/,
+      );
       objects.endPDFStream(stream);
       assert.throws(
         () => objects.writeLiteralString("text"),

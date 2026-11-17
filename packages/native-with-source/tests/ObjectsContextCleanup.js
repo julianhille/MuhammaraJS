@@ -40,6 +40,58 @@ describe("ObjectsContextCleanup", function () {
     assert.equal(reader.getPagesCount(), 1);
   });
 
+  it("rejects unbalanced indirect object starts and ends", function () {
+    var output = new muhammara.PDFWStreamForBuffer();
+    var writer = muhammara.createWriter(output, {
+      userPassword: "user",
+      ownerPassword: "owner",
+      userProtectionFlag: 4,
+    });
+    var objects = writer.getObjectsContext();
+    assert.throws(
+      () => objects.endIndirectObject(),
+      /Unable to end indirect object/,
+    );
+    assert.throws(() => objects.startNewIndirectObject(0), {
+      name: "RangeError",
+      message: "Object ID must be positive",
+    });
+    assert.throws(() => objects.startModifiedIndirectObject(0), {
+      name: "RangeError",
+      message: "Object ID must be positive",
+    });
+    assert.throws(
+      () => objects.startModifiedIndirectObject(99999),
+      /Unable to start modified indirect object/,
+    );
+    var id = objects.startNewIndirectObject();
+    assert.throws(
+      () => objects.startNewIndirectObject(),
+      /Unable to start indirect object/,
+    );
+    // endPDFStream() ends the object, so this endIndirectObject() writes
+    // nothing, and the next one has no object to end.
+    objects.endPDFStream(objects.startPDFStream()).endIndirectObject();
+    assert.throws(
+      () => writer.getObjectsContext().endIndirectObject(),
+      /Unable to end indirect object/,
+    );
+    assert.throws(
+      () => objects.startNewIndirectObject(id),
+      /Unable to start indirect object/,
+    );
+    writer.writePage(writer.createPage(0, 0, 100, 100));
+    writer.end();
+    writeOutput("ObjectsContextCleanup-unbalanced-end", output.buffer);
+
+    assert.doesNotMatch(output.buffer.toString("latin1"), /endobj\s+endobj/);
+    var reader = muhammara.createReader(
+      new muhammara.PDFRStreamForBuffer(output.buffer),
+      { password: "user" },
+    );
+    assert.equal(reader.getPagesCount(), 1);
+  });
+
   it("releases open dictionaries on _abort() without writing them", function () {
     var output = new muhammara.PDFWStreamForBuffer();
     var writer = muhammara.createWriter(output);

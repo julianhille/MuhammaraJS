@@ -115,6 +115,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   copies that contain no strings, these calls used to succeed and now throw as
   well; call `startNewIndirectObject()` first
   [#1029](https://github.com/julianhille/MuhammaraJS/issues/1029)
+- `ObjectsContext.endIndirectObject()` throws `Unable to end indirect object`
+  when no indirect object is open, as `@muhammara/wasm` does. Before, it wrote
+  a stray `endobj`, and on a writer with a password it aborted the process
+  [#1030](https://github.com/julianhille/MuhammaraJS/issues/1030)
+- `ObjectsContext.endIndirectObject()` right after `endPDFStream()`, which
+  already ends the object, writes nothing. Before, it wrote a second `endobj`,
+  which also appeared in Recipe `replaceText()` output
+  [#1030](https://github.com/julianhille/MuhammaraJS/issues/1030)
+- `ObjectsContext.startNewIndirectObject()` and `startModifiedIndirectObject()`
+  throw `Unable to start indirect object` and
+  `Unable to start modified indirect object` while another indirect object is
+  open or when the object cannot be started, such as an ID that is already
+  written, and a `RangeError` `Object ID must be positive` for ID `0`, as
+  `@muhammara/wasm` does. Before, they wrote a nested object or failed
+  silently [#1030](https://github.com/julianhille/MuhammaraJS/issues/1030)
 - Recipe `editPage()` throws a `RangeError` for a page number that is not an
   existing page (such as `1.5`, `0`, a page past the end, or the string `"1"`),
   as `@muhammara/wasm` does, instead of an internal `TypeError`
