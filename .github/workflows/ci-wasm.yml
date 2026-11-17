@@ -198,6 +198,7 @@ jobs:
     needs: [test, sanitizer]
     if: startsWith(github.ref, 'refs/tags/wasm-v')
     runs-on: ubuntu-22.04
+    environment: npm
     permissions:
       contents: write
       id-token: write

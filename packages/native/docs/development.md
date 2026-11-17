@@ -116,8 +116,11 @@ prebuilds. Native packages use npm trusted publishing through GitHub Actions
 OIDC and do not require an npm token.
 
 Before the first native release, configure npm trusted publishers for all three
-scoped native packages. Each publisher must trust this repository's native
-release workflow and its release environment. After the first successful
+scoped native packages. Each publisher must trust this repository's
+`ci-native.yml` workflow and its `npm` environment. That GitHub environment
+only accepts `native-v*` and `wasm-v*` tags and requires a reviewer, so the
+publish job waits until a reviewer approves the pending deployment in the
+workflow run. After the first successful
 replacement release, deprecate every published unscoped version without
 publishing another `muhammara` package:
 
