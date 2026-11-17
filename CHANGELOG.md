@@ -99,6 +99,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   as stored, instead of decrypting it into unreadable bytes, so `recrypt()`
   keeps the packet intact
   [#1027](https://github.com/julianhille/MuhammaraJS/issues/1027)
+- Decrypt streams that name their own crypt filter (`/Filter /Crypt`) when
+  they are copied from an encrypted PDF (`appendPDFPagesFromPDF()`,
+  `mergePDFPagesToPage()`, `createFormXObjectsFromPDF()`,
+  `createPDFCopyingContext()`, `recrypt()`, Recipe `appendPage()`), and drop
+  that filter from the copy, instead of copying the encrypted bytes that
+  readers cannot decode
+  [#1028](https://github.com/julianhille/MuhammaraJS/issues/1028)
 - Recipe `editPage()` throws a `RangeError` for a page number that is not an
   existing page (such as `1.5`, `0`, a page past the end, or the string `"1"`),
   as `@muhammara/wasm` does, instead of an internal `TypeError`

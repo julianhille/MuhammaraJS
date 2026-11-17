@@ -107,6 +107,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   error is now thrown only for a source that needs a password. Recipe
   `appendPage()` on a Recipe created from PDF bytes copies such a PDF too
   [#1031](https://github.com/julianhille/MuhammaraJS/issues/1031)
+- Decrypt streams that name their own crypt filter (`/Filter /Crypt`) when
+  they are copied from an encrypted PDF (`appendPDFPagesFromPDF()`,
+  `mergePDFPagesToPage()`, `createFormXObjectsFromPDF()`,
+  `createPDFCopyingContext()`, `recrypt()`, Recipe `appendPage()`), and drop
+  that filter from the copy, instead of copying the encrypted bytes that
+  readers cannot decode
+  [#1028](https://github.com/julianhille/MuhammaraJS/issues/1028)
 - Decrypt strings and streams correctly when a PDF encrypted with RC4 or
   AES-128 (security handler revision 2 to 4) is opened with its owner password,
   instead of returning garbled text without an error. AES-256 was not affected

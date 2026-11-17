@@ -2046,6 +2046,94 @@ describe("Xcryption", function () {
     reader.end();
   });
 
+  describe("Copy streams with their own crypt filter", function () {
+    // The second content stream ([/Crypt /FlateDecode]) and the form XObject
+    // (/Crypt) of the page name their crypt filter in /DecodeParms (#1028).
+    var source = __dirname + "/TestMaterials/CryptFilterStreams.pdf";
+
+    /**
+     * Reads the decoded page content streams and form XObject of a copy of
+     * CryptFilterStreams.pdf, and asserts that the copy has no Crypt filter.
+     * @param {string} filePath Path of the copy.
+     * @param {string} [password] Password of an encrypted copy.
+     * @returns {string[]} The decoded streams as latin1 text.
+     */
+    function readCryptFilterStreams(filePath, password) {
+      var fs = require("fs");
+      assert.doesNotMatch(fs.readFileSync(filePath, "latin1"), /\/Crypt\b/);
+      var reader = muhammara.createReader(
+        filePath,
+        password ? { password } : {},
+      );
+      try {
+        var page = reader.parsePageDictionary(0);
+        var contents = reader.queryDictionaryObject(page, "Contents");
+        var xobjects = reader.queryDictionaryObject(
+          reader.queryDictionaryObject(page, "Resources"),
+          "XObject",
+        );
+        return [
+          reader.queryArrayObject(contents, 0),
+          reader.queryArrayObject(contents, 1),
+          reader.queryDictionaryObject(xobjects, "X1"),
+        ].map(function (stream) {
+          var input = reader.startReadingFromStream(stream.toPDFStream());
+          var bytes = [];
+          while (input.notEnded()) bytes.push(...input.read(4096));
+          return Buffer.from(bytes).toString("latin1");
+        });
+      } finally {
+        reader.end();
+      }
+    }
+
+    var expected = [
+      "BT /F1 12 Tf 20 150 Td (Default Stream) Tj ET",
+      "BT /F1 12 Tf 20 100 Td (Crypt Flate Stream) Tj ET /X1 Do",
+      "BT /F1 12 Tf 20 50 Td (Crypt Form) Tj ET",
+    ];
+
+    it("decrypts them when recrypt removes the password", function () {
+      var target = __dirname + "/output/CryptFilterStreamsDecrypted.pdf";
+      muhammara.recrypt(source, target, {});
+      assert.deepEqual(readCryptFilterStreams(target), expected);
+    });
+
+    it("encrypts them once when recrypt sets a password", function () {
+      var target = __dirname + "/output/CryptFilterStreamsRecrypted.pdf";
+      muhammara.recrypt(source, target, {
+        userPassword: "user",
+        ownerPassword: "owner",
+        version: muhammara.ePDFVersion17,
+      });
+      assert.deepEqual(readCryptFilterStreams(target, "user"), expected);
+    });
+
+    it("decrypts them when appending the pages", function () {
+      var target = __dirname + "/output/CryptFilterStreamsAppended.pdf";
+      var writer = muhammara.createWriter(target);
+      writer.appendPDFPagesFromPDF(source);
+      writer.end();
+      assert.deepEqual(readCryptFilterStreams(target), expected);
+    });
+
+    it("decrypts them when a copying context copies the page", function () {
+      var target = __dirname + "/output/CryptFilterStreamsCopied.pdf";
+      var writer = muhammara.createWriter(target);
+      var copying = writer.createPDFCopyingContext(source);
+      copying.appendPDFPageFromPDF(0);
+      copying.end();
+      writer.end();
+      assert.deepEqual(readCryptFilterStreams(target), expected);
+    });
+
+    it("decrypts them when Recipe appendPage() appends the page", function () {
+      var target = __dirname + "/output/CryptFilterStreamsRecipe.pdf";
+      new muhammara.Recipe("new", target).appendPage(source).endPDF();
+      assert.deepEqual(readCryptFilterStreams(target), expected);
+    });
+  });
+
   // The sanitizer CI job runs the tests with LeakSanitizer, which catches
   // the leak this test covers.
   it("frees the open dictionaries of a recrypt that fails", function () {

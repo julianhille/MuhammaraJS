@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import v8 from "node:v8";
 import vm from "node:vm";
-import { createMuhammaraWasm } from "../../index.js";
+import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import {
   recryptWorkerHost,
   workerWasmLocation,
@@ -1219,6 +1219,100 @@ describe("Xcryption", function () {
     assert.equal(reader.isEncrypted(), true);
     assert.equal(reader.getPagesCount(), 0);
     reader.end();
+  });
+
+  describe("Copy streams with their own crypt filter", function () {
+    // The second content stream ([/Crypt /FlateDecode]) and the form XObject
+    // (/Crypt) of the page name their crypt filter in /DecodeParms (#1028).
+    var source = malformed.material("CryptFilterStreams.pdf");
+    var expected = [
+      "BT /F1 12 Tf 20 150 Td (Default Stream) Tj ET",
+      "BT /F1 12 Tf 20 100 Td (Crypt Flate Stream) Tj ET /X1 Do",
+      "BT /F1 12 Tf 20 50 Td (Crypt Form) Tj ET",
+    ];
+
+    /**
+     * Reads the decoded page content streams and form XObject of a copy of
+     * CryptFilterStreams.pdf, and asserts that the copy has no Crypt filter.
+     * @param {object} muhammara The loaded Wasm module API.
+     * @param {Uint8Array} pdf The copy.
+     * @param {string} [password] Password of an encrypted copy.
+     * @returns {string[]} The decoded streams as latin1 text.
+     */
+    function readCryptFilterStreams(muhammara, pdf, password) {
+      assert.doesNotMatch(new TextDecoder("latin1").decode(pdf), /\/Crypt\b/);
+      var reader = muhammara.createReader(pdf, password ? { password } : {});
+      try {
+        var page = reader.parsePageDictionary(0);
+        var contents = reader.queryDictionaryObject(page, "Contents");
+        var xobjects = reader.queryDictionaryObject(
+          reader.queryDictionaryObject(page, "Resources"),
+          "XObject",
+        );
+        return [
+          reader.queryArrayObject(contents, 0),
+          reader.queryArrayObject(contents, 1),
+          reader.queryDictionaryObject(xobjects, "X1"),
+        ].map(function (stream) {
+          var input = reader.startReadingFromStream(stream.toPDFStream());
+          var bytes = [];
+          while (input.notEnded()) bytes.push(...input.read(4096));
+          return new TextDecoder("latin1").decode(new Uint8Array(bytes));
+        });
+      } finally {
+        reader.end();
+      }
+    }
+
+    it("decrypts them when recrypt removes the password", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var plain = muhammara.recrypt(source, {});
+      writeOutput("Xcryption-crypt-filter-streams-decrypted", plain);
+      assert.deepEqual(readCryptFilterStreams(muhammara, plain), expected);
+    });
+
+    it("encrypts them once when recrypt sets a password", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var encrypted = muhammara.recrypt(source, {
+        userPassword: "user",
+        ownerPassword: "owner",
+        version: muhammara.ePDFVersion17,
+      });
+      writeOutput("Xcryption-crypt-filter-streams-recrypted", encrypted);
+      assert.deepEqual(
+        readCryptFilterStreams(muhammara, encrypted, "user"),
+        expected,
+      );
+    });
+
+    it("decrypts them when appending the pages", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var writer = muhammara.createWriter();
+      writer.appendPDFPagesFromPDF(source);
+      var copy = writer.end();
+      writeOutput("Xcryption-crypt-filter-streams-appended", copy);
+      assert.deepEqual(readCryptFilterStreams(muhammara, copy), expected);
+    });
+
+    it("decrypts them when a copying context copies the page", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var writer = muhammara.createWriter();
+      var copying = writer.createPDFCopyingContext(source);
+      copying.appendPDFPageFromPDF(0);
+      copying.end();
+      var copy = writer.end();
+      writeOutput("Xcryption-crypt-filter-streams-copied", copy);
+      assert.deepEqual(readCryptFilterStreams(muhammara, copy), expected);
+    });
+
+    it("decrypts them when Recipe appendPage() appends the page", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var Recipe = await createRecipe();
+      Recipe.registerPdf("crypt-filter-streams", source);
+      var copy = new Recipe().appendPage("crypt-filter-streams").endPDF();
+      writeOutput("Xcryption-crypt-filter-streams-recipe", copy);
+      assert.deepEqual(readCryptFilterStreams(muhammara, copy), expected);
+    });
   });
 
   it("frees the open dictionaries of a recrypt that fails", async function () {
