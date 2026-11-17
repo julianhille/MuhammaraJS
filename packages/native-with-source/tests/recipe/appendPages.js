@@ -59,4 +59,37 @@ describe("Append Pages", () => {
     const pages = new Recipe(material).metadata.pages;
     expect(new Recipe(output).metadata.pages).to.equal(pages + 1);
   });
+
+  it("rejects a PDF that needs a password", () => {
+    const appended = path.join(__dirname, "../output/appendPages-user.pdf");
+    const writer = muhammara.createWriter(appended, {
+      userPassword: "user",
+      ownerPassword: "owner",
+      userProtectionFlag: 4,
+    });
+    writer.writePage(writer.createPage(0, 0, 300, 300));
+    writer.end();
+    const material = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
+    const outputs = [1, 2, 3].map((index) =>
+      path.join(__dirname, `../output/appendPages-user-${index}.pdf`),
+    );
+    [
+      new Recipe("new", outputs[0]).createPage(100, 100),
+      new Recipe(material, outputs[1]),
+    ].forEach((recipe) => {
+      expect(() => recipe.appendPage(appended)).to.throw(
+        "unable to create copying context",
+      );
+      expect(() => recipe.appendPage(appended, 1)).to.throw(
+        "unable to create copying context",
+      );
+      recipe.endPDF();
+    });
+    expect(
+      outputs.slice(0, 2).map((output) => new Recipe(output).metadata.pages),
+    ).to.deep.equal([1, new Recipe(material).metadata.pages]);
+    expect(() =>
+      new Recipe(material, outputs[2]).insertPage(1, appended, 1).endPDF(),
+    ).to.throw("unable to create copying context");
+  });
 });

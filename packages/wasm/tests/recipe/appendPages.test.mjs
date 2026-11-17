@@ -104,4 +104,38 @@ describe("Recipe appendPages", function () {
     assert.equal(reader.getPagesCount(), 2);
     reader.end();
   });
+
+  it("rejects a PDF that needs a password", async function () {
+    var Recipe = await getRecipe();
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter({
+      userPassword: "user",
+      ownerPassword: "owner",
+      userProtectionFlag: 4,
+    });
+    writer.writePage(writer.createPage(0, 0, 300, 300));
+    Recipe.registerPdf("user-password-append", writer.end());
+    var error = {
+      name: "Error",
+      message: "Encrypted PDF input is not supported in Wasm",
+    };
+    var source = new Recipe().createPage(100, 100).endPage().endPDF();
+    [new Recipe().createPage(100, 100), new Recipe(source)].forEach(
+      (recipe) => {
+        assert.throws(() => recipe.appendPage("user-password-append"), error);
+        assert.throws(
+          () => recipe.appendPage("user-password-append", 1),
+          error,
+        );
+        var reader = muhammara.createReader(recipe.endPDF());
+        assert.equal(reader.getPagesCount(), 1);
+        reader.end();
+      },
+    );
+    assert.throws(
+      () =>
+        new Recipe(source).insertPage(1, "user-password-append", 1).endPDF(),
+      error,
+    );
+  });
 });

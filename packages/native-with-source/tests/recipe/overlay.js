@@ -1,7 +1,9 @@
 const path = require("path");
 const fs = require("fs");
+const { expect } = require("chai");
 const { writeOutput } = require("../helpers/testOutput");
-const Recipe = require("@muhammara/native-with-source").Recipe;
+const muhammara = require("@muhammara/native-with-source");
+const Recipe = muhammara.Recipe;
 
 describe("Modify", () => {
   it("Add Overlay from other PDF", (done) => {
@@ -269,5 +271,64 @@ describe("Modify", () => {
     fs.unlinkSync(source);
     fs.unlinkSync(overlaid);
     fs.rmSync(output, { force: true });
+  });
+
+  it("overlays a PDF with an empty user password and rejects one that needs a password", () => {
+    /**
+     * Returns the path of a file in the test output folder.
+     * @param {string} name - File name without extension.
+     * @returns {string} The PDF path.
+     */
+    const output = (name) => path.join(__dirname, `../output/${name}.pdf`);
+    /**
+     * Writes a one-page encrypted PDF.
+     * @param {string} name - Output file name without extension.
+     * @param {object} options - createWriter encryption options.
+     * @returns {string} The PDF path.
+     */
+    const writePdf = (name, options) => {
+      const writer = muhammara.createWriter(output(name), options);
+      writer.writePage(writer.createPage(0, 0, 100, 100));
+      writer.end();
+      return output(name);
+    };
+    /**
+     * Counts the form XObjects in a written PDF.
+     * @param {string} name - Output file name without extension.
+     * @returns {number} The number of form XObjects.
+     */
+    const forms = (name) =>
+      (fs.readFileSync(output(name), "latin1").match(/\/Subtype \/Form/g) || [])
+        .length;
+    const ownerOnlyPdf = writePdf("overlay-owner-password", {
+      userPassword: "",
+      ownerPassword: "owner",
+    });
+    const userPasswordPdf = writePdf("overlay-user-password", {
+      userPassword: "user",
+      ownerPassword: "owner",
+      userProtectionFlag: 4,
+    });
+    new Recipe("new", output("overlay-password-source"))
+      .createPage(100, 100)
+      .endPage()
+      .endPDF();
+    [
+      (name) => new Recipe("new", output(name)).createPage(100, 100),
+      (name) =>
+        new Recipe(output("overlay-password-source"), output(name)).editPage(1),
+    ].forEach((start, index) => {
+      const recipe = start(`overlay-owner-password-${index + 1}`);
+      expect(() => recipe.overlay(userPasswordPdf)).to.throw(
+        "Unable to read/edit PDF file",
+      );
+      recipe.overlay(ownerOnlyPdf).endPage().endPDF();
+      start(`overlay-without-${index + 1}`)
+        .endPage()
+        .endPDF();
+      expect(forms(`overlay-owner-password-${index + 1}`)).to.be.above(
+        forms(`overlay-without-${index + 1}`),
+      );
+    });
   });
 });
