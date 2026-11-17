@@ -1,3 +1,4 @@
+/// <reference types="node" />
 declare namespace muhammara {
   type EventEmitter = import("events").EventEmitter;
   export type PosX = number;

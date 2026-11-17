@@ -249,6 +249,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `Cannot read properties of undefined (reading 'getType')`; trailer entries
   the PDF lacks are skipped
   [#1008](https://github.com/julianhille/MuhammaraJS/issues/1008)
+- Reference the Node.js types from the native type declarations, so TypeScript
+  6 and later resolve `Buffer`, `EventEmitter` and `NodeJS` in
+  `@muhammara/native` without `"node"` in `compilerOptions.types`
 
 ### Changed
 
