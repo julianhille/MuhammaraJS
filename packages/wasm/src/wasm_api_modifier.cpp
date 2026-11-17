@@ -93,14 +93,8 @@ WASM_EXPORT int muhammara_wasm_modifier_set_info(WasmModifier* modifier,
                                                   const char* key, const char* value) {
   if (modifier == nullptr || modifier->finished || key == nullptr || value == nullptr) return 0;
   InfoDictionary& info = modifier->writer.GetDocumentContext().GetTrailerInformation().GetInfo();
-  std::string property(key);
-  if (property == "title") info.Title.FromUTF8(value);
-  else if (property == "author") info.Author.FromUTF8(value);
-  else if (property == "subject") info.Subject.FromUTF8(value);
-  else if (property == "keywords") info.Keywords.FromUTF8(value);
-  else if (property == "creator") info.Creator.FromUTF8(value);
-  else if (property == "producer") info.Producer.FromUTF8(value);
-  else info.AddAdditionalInfoEntry(property, PDFTextString().FromUTF8(value));
+  if (!SetInfoTextField(info, key, value))
+    info.AddAdditionalInfoEntry(key, PDFTextString().FromUTF8(value));
   return 1;
 }
 
@@ -163,9 +157,8 @@ WASM_EXPORT int muhammara_wasm_modifier_set_info_date(WasmModifier* modifier,
   if (modifier == nullptr || modifier->finished || value == nullptr) return 0;
   PDFDate date;
   date.ParseString(value);
-  InfoDictionary& info = modifier->writer.GetDocumentContext().GetTrailerInformation().GetInfo();
-  if (modificationDate) info.ModDate = date;
-  else info.CreationDate = date;
+  SetInfoDate(modifier->writer.GetDocumentContext().GetTrailerInformation().GetInfo(),
+              modificationDate, date);
   return 1;
 }
 
@@ -173,8 +166,8 @@ WASM_EXPORT int muhammara_wasm_modifier_set_info_trapped(WasmModifier* modifier,
                                                           int trapped) {
   if (modifier == nullptr || modifier->finished || trapped < EInfoTrappedTrue ||
       trapped > EInfoTrappedUnknown) return 0;
-  modifier->writer.GetDocumentContext().GetTrailerInformation().GetInfo().Trapped =
-      static_cast<EInfoTrapped>(trapped);
+  SetInfoTrapped(modifier->writer.GetDocumentContext().GetTrailerInformation().GetInfo(),
+                 static_cast<EInfoTrapped>(trapped));
   return 1;
 }
 

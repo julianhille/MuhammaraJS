@@ -1000,21 +1000,8 @@ int muhammara_wasm_recipe_set_info(WasmRecipe* recipe, const char* key,
   InfoDictionary& info = recipe->writer.GetDocumentContext()
                              .GetTrailerInformation()
                              .GetInfo();
-  std::string property(key);
-  if (property == "title") {
-    info.Title.FromUTF8(value);
-  } else if (property == "author") {
-    info.Author.FromUTF8(value);
-  } else if (property == "subject") {
-    info.Subject.FromUTF8(value);
-  } else if (property == "keywords") {
-    info.Keywords.FromUTF8(value);
-  } else if (property == "creator") {
-    info.Creator.FromUTF8(value);
-  } else if (property == "producer") {
-    info.Producer.FromUTF8(value);
-  } else {
-    info.AddAdditionalInfoEntry(property, PDFTextString().FromUTF8(value));
+  if (!SetInfoTextField(info, key, value)) {
+    info.AddAdditionalInfoEntry(key, PDFTextString().FromUTF8(value));
   }
   return 1;
 }
@@ -1060,14 +1047,8 @@ WASM_EXPORT int muhammara_wasm_recipe_set_info_date(WasmRecipe* recipe,
   }
   PDFDate date;
   date.ParseString(value);
-  InfoDictionary& info = recipe->writer.GetDocumentContext()
-                             .GetTrailerInformation()
-                             .GetInfo();
-  if (modificationDate) {
-    info.ModDate = date;
-  } else {
-    info.CreationDate = date;
-  }
+  SetInfoDate(recipe->writer.GetDocumentContext().GetTrailerInformation().GetInfo(),
+              modificationDate, date);
   return 1;
 }
 
@@ -1077,8 +1058,8 @@ WASM_EXPORT int muhammara_wasm_recipe_set_info_trapped(WasmRecipe* recipe,
       trapped > EInfoTrappedUnknown) {
     return 0;
   }
-  recipe->writer.GetDocumentContext().GetTrailerInformation().GetInfo().Trapped =
-      static_cast<EInfoTrapped>(trapped);
+  SetInfoTrapped(recipe->writer.GetDocumentContext().GetTrailerInformation().GetInfo(),
+                 static_cast<EInfoTrapped>(trapped));
   return 1;
 }
 

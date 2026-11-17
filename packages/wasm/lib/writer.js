@@ -757,7 +757,7 @@ export function createWriterFactory({
        * Sets a custom Info dictionary entry. Under the key of a field (Title,
        * Author, Subject, Keywords, Creator, Producer, CreationDate, ModDate,
        * Trapped) the entry replaces that field, which stays cleared if the
-       * entry is removed.
+       * entry is removed; setting the field afterwards replaces the entry.
        * @param {string} key - Entry name without the leading slash.
        * @param {string} value - Text value.
        * @returns {void}
@@ -858,6 +858,8 @@ export function createWriterFactory({
             throw new Error("Unable to set creation date");
           }
         });
+        // it takes the place of a custom entry of that name, as in C++
+        additionalInfo.delete("CreationDate");
       },
       /**
        * Sets `/ModDate`.
@@ -878,6 +880,7 @@ export function createWriterFactory({
             throw new Error("Unable to set modification date");
           }
         });
+        additionalInfo.delete("ModDate");
       },
     };
     Object.keys(fields).forEach((name) => {
@@ -913,6 +916,7 @@ export function createWriterFactory({
               }
             }),
           );
+          additionalInfo.delete(name);
         },
       });
     });
@@ -946,6 +950,7 @@ export function createWriterFactory({
           throw new Error("Unable to set trapped");
         }
         trapped = value;
+        additionalInfo.delete("Trapped");
       },
     });
     var documentContext = {

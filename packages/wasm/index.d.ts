@@ -2158,7 +2158,8 @@ export interface InfoDictionary {
   /**
    * Sets a custom Info entry. Under the key of a field (Title, Author, Subject,
    * Keywords, Creator, Producer, CreationDate, ModDate, Trapped) the entry
-   * replaces that field, which stays cleared if the entry is removed.
+   * replaces that field, which stays cleared if the entry is removed; setting
+   * the field afterwards replaces the entry.
    */
   addAdditionalInfoEntry(key: string, value: string): void;
   removeAdditionalInfoEntry(key: string): void;

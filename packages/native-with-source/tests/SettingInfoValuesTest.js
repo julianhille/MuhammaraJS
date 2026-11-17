@@ -161,6 +161,81 @@ describe("SettingInfoValues", function () {
     });
   });
 
+  it("writes a field set after a custom entry under its Info key in place of the entry", function () {
+    var source = new muhammara.PDFWStreamForBuffer();
+    var sourceWriter = muhammara.createWriter(source);
+    sourceWriter.writePage(sourceWriter.createPage(0, 0, 10, 10));
+    sourceWriter.end();
+    var texts = [
+      "Title",
+      "Author",
+      "Subject",
+      "Keywords",
+      "Creator",
+      "Producer",
+    ];
+    var keys = texts.concat("CreationDate", "ModDate", "Trapped", "Department");
+    var date = "D:20200102030405Z";
+    /**
+     * Sets every field after a custom entry under its Info key.
+     * @param {boolean} modify - Whether to modify a PDF.
+     * @param {boolean} clear - Whether to clear the fields.
+     * @returns {Object<string, string>} The Info entries a reader sees.
+     */
+    function write(modify, clear) {
+      var stream = new muhammara.PDFWStreamForBuffer();
+      var writer = modify
+        ? muhammara.createWriterToModify(
+            new muhammara.PDFRStreamForBuffer(source.buffer),
+            stream,
+          )
+        : muhammara.createWriter(stream);
+      var info = writer.getDocumentContext().getInfoDictionary();
+      keys.forEach(function (key) {
+        info.addAdditionalInfoEntry(key, "custom");
+      });
+      // each setter takes only the entry under its own key
+      texts.forEach(function (key, index) {
+        info[key.toLowerCase()] = clear ? "" : "field";
+        assert.equal(info.getAdditionalInfoEntry(keys[index + 1]), "custom");
+      });
+      info.setCreationDate(clear ? null : date);
+      assert.equal(info.getAdditionalInfoEntry("ModDate"), "custom");
+      info.setModDate(clear ? null : date);
+      // and a set that throws takes none
+      assert.throws(function () {
+        info.trapped = "True";
+      });
+      assert.equal(info.getAdditionalInfoEntry("Trapped"), "custom");
+      info.trapped = clear
+        ? muhammara.EInfoTrappedUnknown
+        : muhammara.EInfoTrappedTrue;
+      assert.deepEqual(info.getAdditionalInfoEntries(), {
+        Department: "custom",
+      });
+      if (!modify) writer.writePage(writer.createPage(0, 0, 10, 10));
+      writer.end();
+      return readInfo(stream.buffer);
+    }
+    [false, true].forEach(function (modify) {
+      // each key once, with the field's value
+      assert.deepEqual(write(modify, false), {
+        Title: "field",
+        Author: "field",
+        Subject: "field",
+        Keywords: "field",
+        Creator: "field",
+        Producer: "field",
+        CreationDate: date,
+        ModDate: date,
+        Trapped: "True",
+        Department: "custom",
+      });
+      // a field cleared last takes the entry with it
+      assert.deepEqual(write(modify, true), { Department: "custom" });
+    });
+  });
+
   it("removes a date set to null", function () {
     var stream = new muhammara.PDFWStreamForBuffer();
     var writer = muhammara.createWriter(stream);

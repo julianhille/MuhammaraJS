@@ -16,7 +16,12 @@
 // the fields first and the custom entries after them, so a custom entry under
 // the key of a field repeated that key; the repeated key was refused but its
 // value still written, which left the Info dictionary unreadable.
+//
+// SetInfoTextField(), SetInfoDate(), SetInfoTrapped(): how every writer sets a
+// field. The other way round, the field set last takes the place of a custom
+// entry under its key, also when it clears the field.
 
+#include <cctype>
 #include <string>
 
 #include "InfoDictionary.h"
@@ -60,6 +65,31 @@ inline void AddCustomInfoEntry(InfoDictionary &inInfo, const std::string &inKey,
   else if (inKey == "Trapped")
     inInfo.Trapped = EInfoTrappedUnknown;
   inInfo.AddAdditionalInfoEntry(inKey, inValue);
+}
+
+// Sets the text field of a setter name, such as title, whose Info key is the
+// name capitalized. False for a name that is no text field.
+inline bool SetInfoTextField(InfoDictionary &inInfo, const std::string &inName,
+                             const std::string &inValue) {
+  std::string key = inName;
+  key[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(key[0])));
+  PDFTextString *field = InfoTextField(inInfo, key);
+  if (!field)
+    return false;
+  field->FromUTF8(inValue);
+  inInfo.RemoveAdditionalInfoEntry(key);
+  return true;
+}
+
+inline void SetInfoDate(InfoDictionary &inInfo, bool inModDate,
+                        const PDFDate &inDate) {
+  (inModDate ? inInfo.ModDate : inInfo.CreationDate) = inDate;
+  inInfo.RemoveAdditionalInfoEntry(inModDate ? "ModDate" : "CreationDate");
+}
+
+inline void SetInfoTrapped(InfoDictionary &inInfo, EInfoTrapped inTrapped) {
+  inInfo.Trapped = inTrapped;
+  inInfo.RemoveAdditionalInfoEntry("Trapped");
 }
 
 inline void CopyModifiedFileInfo(PDFWriter &inWriter) {
