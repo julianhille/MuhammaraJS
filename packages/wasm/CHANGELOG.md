@@ -98,6 +98,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   `Muhammara WebAssembly operation failed`. Decrypt such a PDF with
   `recrypt(bytes, { password })` first
   [#1040](https://github.com/julianhille/MuhammaraJS/issues/1040)
+- Throw `Encrypted PDF input is not supported in Wasm` from Recipe
+  `splitPdf()` for a registered PDF that needs a password, and from `split()`
+  of a Recipe whose output needs one, instead of returning an empty array as
+  for a PDF without pages. Decrypt such a PDF with
+  `recrypt(bytes, { password })` first, and split a Recipe without `encrypt()`,
+  then encrypt the parts
+  [#1054](https://github.com/julianhille/MuhammaraJS/issues/1054)
 - Decrypt PDFs whose crypt filter selects RC4 with `/CFM /V2`, the name the
   PDF specification uses. Their strings and streams were returned still
   encrypted, and `recrypt()` wrote them out unchanged

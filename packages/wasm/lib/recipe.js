@@ -924,10 +924,10 @@ export function createRecipeFactory({
     permission,
     thirdPartyLicenses,
     splitPdf: createSplitPdf({
-      module,
       pdfs,
       withString,
       call,
+      inspectPdf,
       /**
        * Creates a Recipe for each split page.
        * @param {RecipeOptions} options - Recipe options.
@@ -1059,7 +1059,8 @@ export function createRecipeFactory({
        * @memberof Recipe#
        * @param {string} [prefix="page"] - Prefix for each output filename.
        * @returns {RecipeSplitResult[]} One result per page in source order.
-       * @throws {Error} If the Recipe cannot be finished or split.
+       * @throws {Error} If the Recipe cannot be finished or split, or its output
+       *   needs a password to open.
        */
       split: function (prefix = "page") {
         var name = `split-${state.nextPdf++}`;
