@@ -4,6 +4,22 @@ import { endActivePage } from "./page.js";
 import { unknownAsset } from "./registration.js";
 
 /**
+ * Inspects a registered PDF whose pages Recipe copies.
+ * @param {Function} inspectPdf - Recipe.inspectPdf.
+ * @param {string} name - Registered PDF name.
+ * @returns {RecipePdfInspection} The inspection result.
+ * @throws {Error} If the PDF needs a password to open.
+ */
+function inspectSource(inspectPdf, name) {
+  var source = inspectPdf(name);
+  // The parser reads no pages of a PDF it cannot open without a password.
+  if (source.encrypted && !source.pages) {
+    throw new Error("Encrypted PDF input is not supported in Wasm");
+  }
+  return source;
+}
+
+/**
  * Creates Recipe methods for composing registered PDF files.
  * @param {object} dependencies - Module, PDF registry, and export helpers.
  * @returns {object} Methods mixed into Recipe.prototype.
@@ -33,7 +49,8 @@ export function createCompositionMethods({
      * array of page numbers and inclusive ranges. Ranges must be nested, so
      * `[1, 3]` selects pages 1 and 3 while `[[1, 3]]` selects pages 1 through 3.
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If no PDF is registered under `name` or appending fails.
+     * @throws {Error} If no PDF is registered under `name`, the PDF needs a
+     * password to open, or appending fails.
      * @throws {RangeError} If a selection is not a positive integer or a
      * two-value range in ascending order.
      */
@@ -43,7 +60,7 @@ export function createCompositionMethods({
       }
       var path = pdfs.get(name);
       if (!path) throw unknownAsset("Unknown PDF", name);
-      var source = inspectPdf(name);
+      var source = inspectSource(inspectPdf, name);
       if (!Array.isArray(pages)) pages = [pages];
       var ranges = pages.map((page) => {
         var range = Array.isArray(page) ? page : [page, page];
@@ -129,7 +146,8 @@ export function createCompositionMethods({
      * @param {RecipeOverlayOptions} [options={}] Source page, scale, aspect
      * ratio, and page-fitting options. Source page numbers are one-based.
      * @returns {Recipe} The Recipe instance.
-     * @throws {Error} If no PDF is registered under `name` or drawing fails.
+     * @throws {Error} If no PDF is registered under `name`, the PDF needs a
+     * password to open, or drawing fails.
      */
     overlay: function (name, x = 0, y = 0, options = {}) {
       if (typeof x === "object") {
@@ -143,7 +161,7 @@ export function createCompositionMethods({
       var path = pdfs.get(name);
       if (!path) throw unknownAsset("Unknown PDF", name);
       var page = options.page || 1;
-      var source = inspectPdf(name);
+      var source = inspectSource(inspectPdf, name);
       if (!Number.isInteger(page) || page < 1 || page > source.pages) page = 1;
       var dimensions = source[page];
       var scale = options.scale || 1;
@@ -275,9 +293,8 @@ export function createEndPDF({
    * @returns {Uint8Array} Finished PDF bytes.
    * @throws {TypeError} If `callback` is supplied but is not a function.
    * @throws {Error} If a page is still active while pages are marked for
-   * deletion, the source needs a password to open, a PDF/A-4f document has
-   * no attached file, or a PDF operation
-   * fails.
+   * deletion, the source or a PDF passed to insertPage() needs a password to
+   * open, a PDF/A-4f document has no attached file, or a PDF operation fails.
    */
   return function (callback) {
     if (callback !== undefined && typeof callback !== "function") {
@@ -336,14 +353,15 @@ export function createEndPDF({
 
 /**
  * Creates a function that splits a registered PDF into one-page outputs.
- * @param {object} dependencies - Module, PDF registry, and Recipe factory.
+ * @param {object} dependencies - PDF registry, export, inspection, and Recipe
+ * factory helpers.
  * @returns {Function} The split method.
  */
 export function createSplitPdf({
-  module,
   pdfs,
   withString,
   call,
+  inspectPdf,
   createRecipe,
 }) {
   /**
@@ -359,21 +377,12 @@ export function createSplitPdf({
    * @param {string} [prefix="page"] Prefix used for each output filename.
    * @returns {RecipeSplitResult[]} One result per source page, in page order.
    * @throws {Error} If no PDF is registered under `name`, the PDF cannot be
-   * parsed, or an output PDF cannot be created.
+   * parsed or needs a password to open, or an output PDF cannot be created.
    */
   return function splitPdf(name, prefix = "page") {
     var path = pdfs.get(name);
     if (!path) throw unknownAsset("Unknown PDF", name);
-    var reader = withString(path, (pathPointer) =>
-      module._muhammara_wasm_reader_create(pathPointer),
-    );
-    if (!reader) throw new Error("Unable to parse PDF");
-    var pages;
-    try {
-      pages = module._muhammara_wasm_reader_get_pages_count(reader);
-    } finally {
-      module._muhammara_wasm_reader_destroy(reader);
-    }
+    var pages = inspectSource(inspectPdf, name).pages;
     var output = [];
     for (var index = 0; index < pages; index += 1) {
       var recipe = createRecipe();

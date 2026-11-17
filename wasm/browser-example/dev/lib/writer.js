@@ -743,9 +743,21 @@ export function createWriterFactory({
     }
 
     var additionalInfo = new Map();
+    // the text fields by their Info key
+    var fields = {
+      Title: "",
+      Author: "",
+      Subject: "",
+      Keywords: "",
+      Creator: "",
+      Producer: "",
+    };
     var infoDictionary = {
       /**
-       * Sets a custom Info dictionary entry.
+       * Sets a custom Info dictionary entry. Under the key of a field (Title,
+       * Author, Subject, Keywords, Creator, Producer, CreationDate, ModDate,
+       * Trapped) the entry replaces that field, which stays cleared if the
+       * entry is removed; setting the field afterwards replaces the entry.
        * @param {string} key - Entry name without the leading slash.
        * @param {string} value - Text value.
        * @returns {void}
@@ -771,6 +783,9 @@ export function createWriterFactory({
           }),
         );
         additionalInfo.set(key, value);
+        // it takes the place of the field of that name, as in C++
+        if (Object.hasOwn(fields, key)) fields[key] = "";
+        if (key === "Trapped") trapped = constants.EInfoTrappedUnknown;
       },
       /**
        * Removes a custom Info dictionary entry.
@@ -843,6 +858,8 @@ export function createWriterFactory({
             throw new Error("Unable to set creation date");
           }
         });
+        // it takes the place of a custom entry of that name, as in C++
+        additionalInfo.delete("CreationDate");
       },
       /**
        * Sets `/ModDate`.
@@ -863,45 +880,46 @@ export function createWriterFactory({
             throw new Error("Unable to set modification date");
           }
         });
+        additionalInfo.delete("ModDate");
       },
     };
-    ["title", "author", "subject", "keywords", "creator", "producer"].forEach(
-      (key) => {
-        var value = "";
-        Object.defineProperty(infoDictionary, key, {
-          /**
-           * Reads the text entry.
-           * @returns {string} The value, or an empty string when unset.
-           */
-          get: function () {
-            return value;
-          },
-          /**
-           * Writes the text entry.
-           * @param {string} nextValue - New value; other values are converted with `String()`.
-           * @returns {void}
-           * @throws {Error} If the writer has ended or the entry cannot be set.
-           */
-          set: function (nextValue) {
-            requireOpenWriter();
-            value = String(nextValue);
-            withString(key, (keyPointer) =>
-              withString(value, (valuePointer) => {
-                if (
-                  !module._muhammara_wasm_recipe_set_info(
-                    recipe,
-                    keyPointer,
-                    valuePointer,
-                  )
-                ) {
-                  throw new Error(`Unable to set ${key}`);
-                }
-              }),
-            );
-          },
-        });
-      },
-    );
+    Object.keys(fields).forEach((name) => {
+      var key = name.toLowerCase();
+      Object.defineProperty(infoDictionary, key, {
+        /**
+         * Reads the text entry.
+         * @returns {string} The value, or an empty string when unset.
+         */
+        get: function () {
+          return fields[name];
+        },
+        /**
+         * Writes the text entry.
+         * @param {string} nextValue - New value; other values are converted with `String()`.
+         * @returns {void}
+         * @throws {Error} If the writer has ended or the entry cannot be set.
+         */
+        set: function (nextValue) {
+          requireOpenWriter();
+          var value = String(nextValue);
+          fields[name] = value;
+          withString(key, (keyPointer) =>
+            withString(value, (valuePointer) => {
+              if (
+                !module._muhammara_wasm_recipe_set_info(
+                  recipe,
+                  keyPointer,
+                  valuePointer,
+                )
+              ) {
+                throw new Error(`Unable to set ${key}`);
+              }
+            }),
+          );
+          additionalInfo.delete(name);
+        },
+      });
+    });
     var TRAPPED_VALUES = [
       constants.EInfoTrappedTrue,
       constants.EInfoTrappedFalse,
@@ -932,6 +950,7 @@ export function createWriterFactory({
           throw new Error("Unable to set trapped");
         }
         trapped = value;
+        additionalInfo.delete("Trapped");
       },
     });
     var documentContext = {
