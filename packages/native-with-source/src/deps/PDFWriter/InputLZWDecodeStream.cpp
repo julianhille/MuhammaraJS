@@ -143,7 +143,8 @@ bool InputLZWDecodeStream::ProcessNextCode()
 			}
 			seqBuf[0] = j;
 		}
-		else if (code == nextCode) 
+		// MuhammaraJS: the first code after a clear has no previous sequence to extend, so it must be a literal
+		else if (code == nextCode && !first) 
 		{
 			if (seqLength >= LZW_TABLE_SIZE)
 			{

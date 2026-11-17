@@ -75,23 +75,16 @@ LongBufferSizeType InputAESDecodeStream::Read(IOBasicTypes::Byte* inBuffer, Long
 	if (!mIsInit) {
 		mIsInit = true; // let's get the state change out of the way
 
-		// MuhammaraJS: AES rejects a key that is not 16, 24 or 32 bytes and leaves its context uninitialised; drop the source and end instead of decrypting with it
-		if (mDecrypt.key(mKey, mKeyLength) != EXIT_SUCCESS) {
+		// set the key, read iv, and first block for decryption
+		// MuhammaraJS: AES rejects a key that is not 16, 24 or 32 bytes and leaves its context uninitialised, and data shorter than the IV and one block has nothing to decrypt; drop the source and end instead of decrypting either
+		if (mDecrypt.key(mKey, mKeyLength) != EXIT_SUCCESS ||
+			mSourceStream->Read(mIV, AES_BLOCK_SIZE) < AES_BLOCK_SIZE ||
+			mSourceStream->Read(mInNext, AES_BLOCK_SIZE) < AES_BLOCK_SIZE) {
 			delete mSourceStream;
 			mSourceStream = NULL;
 			mHitEnd = true;
 			return 0;
 		}
-
-		// read iv 
-		LongBufferSizeType ivRead = mSourceStream->Read(mIV, AES_BLOCK_SIZE);
-		if (ivRead < AES_BLOCK_SIZE)
-			return 0;
-
-		// read first block for decryption
-		LongBufferSizeType firstBlockLength = mSourceStream->Read(mInNext, AES_BLOCK_SIZE);
-		if (firstBlockLength < AES_BLOCK_SIZE)
-			return 0;
 	}
 
 
