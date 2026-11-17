@@ -44,6 +44,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   once the object streams read list more objects than twice the
   cross-reference table size plus 1,048,576, or when its object stream header
   did not parse before
+- Fix a security vulnerability
+  [GHSA-qv8r-jpjv-7hx2](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-qv8r-jpjv-7hx2):
+  an object that can only be parsed after more than 31 other objects, each
+  needed by the one before, fails to parse, a page tree more than 1024 levels
+  deep fails to open, and copying pages that reference a long chain of
+  objects no longer overflows the stack
 - Throw `Unable to read image dimensions` from `getImageDimensions()` for a
   password-protected PDF or a PDF without the requested page instead of
   returning a made-up 595 by 842.

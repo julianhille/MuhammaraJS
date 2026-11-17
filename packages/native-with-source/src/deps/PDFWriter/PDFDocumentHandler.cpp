@@ -516,23 +516,29 @@ EStatusCode PDFDocumentHandler::WriteNewObjects(const ObjectIDTypeList& inSource
 EStatusCode PDFDocumentHandler::WriteNewObjects(const ObjectIDTypeList& inSourceObjectIDs,ObjectIDTypeSet& ioCopiedObjects)
 {
 
-	ObjectIDTypeList::const_iterator itNewObjects = inSourceObjectIDs.begin();
+	// MuhammaraJS: copy from a work list instead of recursing once per object of a reference chain, which
+	// overflowed the stack. The objects an object references go first, so the order stays depth-first.
+	ObjectIDTypeList pending(inSourceObjectIDs);
 	EStatusCode status = PDFHummus::eSuccess;
 
-	for(; itNewObjects != inSourceObjectIDs.end() && PDFHummus::eSuccess == status; ++itNewObjects)
+	while(!pending.empty() && PDFHummus::eSuccess == status)
 	{
+		ObjectIDType sourceObjectID = pending.front();
+		pending.pop_front();
 		// theoretically speaking, it could be that while one object was copied, another one in this array is already
 		// copied, so make sure to check that these objects are still required for copying
-		if(ioCopiedObjects.find(*itNewObjects) == ioCopiedObjects.end())
+		if(ioCopiedObjects.find(sourceObjectID) == ioCopiedObjects.end())
 		{
-			ObjectIDTypeToObjectIDTypeMap::iterator it = mSourceToTarget.find(*itNewObjects);
+			ObjectIDTypeToObjectIDTypeMap::iterator it = mSourceToTarget.find(sourceObjectID);
 			if(it == mSourceToTarget.end())
 			{
 				ObjectIDType newObjectID = mObjectsContext->GetInDirectObjectsRegistry().AllocateNewObjectID();
-				it = mSourceToTarget.insert(ObjectIDTypeToObjectIDTypeMap::value_type(*itNewObjects,newObjectID)).first;
+				it = mSourceToTarget.insert(ObjectIDTypeToObjectIDTypeMap::value_type(sourceObjectID,newObjectID)).first;
 			}
-			ioCopiedObjects.insert(*itNewObjects);
-			status = CopyInDirectObject(*itNewObjects,it->second,ioCopiedObjects);
+			ioCopiedObjects.insert(sourceObjectID);
+			ObjectIDTypeList newObjectsToWrite;
+			status = CopyInDirectObject(sourceObjectID,it->second,newObjectsToWrite);
+			pending.splice(pending.begin(),newObjectsToWrite);
 		}
 	}
 	return status;
@@ -587,12 +593,14 @@ void PDFDocumentHandler::RegisterInDirectObjects(PDFArray* inArray,ObjectIDTypeL
 
 EStatusCode PDFDocumentHandler::CopyInDirectObject(ObjectIDType inSourceObjectID,ObjectIDType inTargetObjectID)
 {
-	ObjectIDTypeSet ioCopiedObjects;
-	return CopyInDirectObject(inSourceObjectID,inTargetObjectID,ioCopiedObjects);
+	// MuhammaraJS: copy the objects it references through the work list of WriteNewObjects()
+	ObjectIDTypeList newObjectsToWrite;
+	EStatusCode status = CopyInDirectObject(inSourceObjectID,inTargetObjectID,newObjectsToWrite);
+	return PDFHummus::eSuccess == status ? WriteNewObjects(newObjectsToWrite) : status;
 }
 
 
-EStatusCode PDFDocumentHandler::CopyInDirectObject(ObjectIDType inSourceObjectID,ObjectIDType inTargetObjectID,ObjectIDTypeSet& ioCopiedObjects)
+EStatusCode PDFDocumentHandler::CopyInDirectObject(ObjectIDType inSourceObjectID,ObjectIDType inTargetObjectID,ObjectIDTypeList& outNewObjectsToWrite)
 {
 	// CopyInDirectObject will do this (lissen up)
 	// Start a new object with the input ID
@@ -600,8 +608,8 @@ EStatusCode PDFDocumentHandler::CopyInDirectObject(ObjectIDType inSourceObjectID
 	// if you got it in the map already, just write down the new ID. if not register the ID, with a new ID already allocated at this point.
 	// Once done. loop what you registered, using CopyInDirectObject in the same manner. This should maintain that each object is written separately
 	EStatusCode status;
-	ObjectIDTypeList newObjectsToWrite;
-	OutWritingPolicy writingPolicy(this, newObjectsToWrite);
+	// MuhammaraJS: collect the objects it references for the caller to copy, instead of copying them here
+	OutWritingPolicy writingPolicy(this, outNewObjectsToWrite);
 
 	RefCountPtr<PDFObject> sourceObject = mParser->ParseNewObject(inSourceObjectID);
 	if(!sourceObject)
@@ -637,10 +645,8 @@ EStatusCode PDFDocumentHandler::CopyInDirectObject(ObjectIDType inSourceObjectID
 	{
 		if (sourceObject->GetType() != PDFObject::ePDFObjectStream) // write indirect object end for non streams only...cause they take care of writing their own
 			mObjectsContext->EndIndirectObject();
-		return WriteNewObjects(newObjectsToWrite,ioCopiedObjects);
 	}
-	else
-		return status;
+	return status; // MuhammaraJS: the caller copies outNewObjectsToWrite
 }
 
 EStatusCode PDFDocumentHandler::OnResourcesWrite(

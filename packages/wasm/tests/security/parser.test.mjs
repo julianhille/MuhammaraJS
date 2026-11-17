@@ -230,6 +230,119 @@ function prevChain(sections, size) {
   return text(pdf + "startxref\n" + position + "\n%%EOF\n");
 }
 
+/**
+ * Builds a PDF of object streams 3, 5, 7 and so on that each hold the object
+ * numbered one higher, 4, 6, 8 and so on, of value 17, and take their /Length
+ * from the object of the next one, so parsing object 4 parses them all,
+ * `levels` object streams deep.
+ *
+ * @param {number} levels - Number of object streams.
+ * @returns {Uint8Array} The PDF bytes.
+ */
+function lengthChain(levels) {
+  var pdf =
+    "%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
+    "2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\n";
+  var xref = xrefEntry(0, 0, 65535) + xrefEntry(1, 9, 0) + xrefEntry(1, 58, 0);
+  for (var level = 0; level < levels; ++level) {
+    var id = 3 + 2 * level;
+    xref += xrefEntry(1, pdf.length, 0) + xrefEntry(2, id, 0);
+    pdf +=
+      id +
+      " 0 obj\n<< /Type /ObjStm /N 1 /First 10 /Length " +
+      (level === levels - 1 ? "17" : id + 3 + " 0 R") +
+      " >>\nstream\n" +
+      String(id + 1).padStart(7, "0") +
+      " 0 0000017\nendstream\nendobj\n";
+  }
+  var size = 3 + 2 * levels + 1;
+  var position = pdf.length;
+  xref += xrefEntry(1, position, 0);
+  pdf +=
+    size -
+    1 +
+    " 0 obj\n<< /Type /XRef /Size " +
+    size +
+    " /W [1 4 2] /Root 1 0 R /Filter /ASCIIHexDecode /Length " +
+    (xref.length + 1) +
+    " >>\nstream\n" +
+    xref +
+    ">\nendstream\nendobj\nstartxref\n" +
+    position +
+    "\n%%EOF\n";
+  return text(pdf);
+}
+
+/**
+ * Builds a PDF whose page tree is a chain of /Pages nodes above one page.
+ *
+ * @param {number} depth - Number of nodes from the root to the page.
+ * @returns {Uint8Array} The PDF bytes.
+ */
+function pageTreeChain(depth) {
+  var pdf = "%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n";
+  var offsets = [9];
+  for (var id = 2; id <= depth + 1; ++id) {
+    offsets.push(pdf.length);
+    pdf +=
+      id +
+      " 0 obj\n" +
+      (id === depth + 1
+        ? "<< /Type /Page /MediaBox [0 0 10 10] >>"
+        : "<< /Type /Pages /Kids [" + (id + 1) + " 0 R] /Count 1 >>") +
+      "\nendobj\n";
+  }
+  var position = pdf.length;
+  pdf +=
+    "xref\n0 " +
+    (depth + 2) +
+    "\n0000000000 65535 f \n" +
+    offsets
+      .map((offset) => String(offset).padStart(10, "0") + " 00000 n \n")
+      .join("") +
+    "trailer\n<< /Size " +
+    (depth + 2) +
+    " /Root 1 0 R >>\nstartxref\n" +
+    position +
+    "\n%%EOF\n";
+  return text(pdf);
+}
+
+/**
+ * Builds a one-page PDF whose page resources start a chain of objects, each
+ * a dictionary that references the next one.
+ *
+ * @param {number} length - Number of objects in the chain.
+ * @returns {Uint8Array} The PDF bytes.
+ */
+function referenceChain(length) {
+  var objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 10 10] " +
+      "/Resources << /Font << /F1 4 0 R >> >> >>",
+  ];
+  for (var id = 4; id < 3 + length; ++id) {
+    objects.push("<< /Next " + (id + 1) + " 0 R >>");
+  }
+  objects.push("<< >>");
+  var pdf = "%PDF-1.7\n";
+  var xref = "xref\n0 " + (objects.length + 1) + "\n0000000000 65535 f \n";
+  objects.forEach(function (body, index) {
+    xref += String(pdf.length).padStart(10, "0") + " 00000 n \n";
+    pdf += index + 1 + " 0 obj\n" + body + "\nendobj\n";
+  });
+  return text(
+    pdf +
+      xref +
+      "trailer\n<< /Size " +
+      (objects.length + 1) +
+      " /Root 1 0 R >>\nstartxref\n" +
+      pdf.length +
+      "\n%%EOF\n",
+  );
+}
+
 describe("parser security regressions", function () {
   it("handles malformed filter streams and bounded input", async function () {
     var muhammara = await createMuhammaraWasm();
@@ -1243,5 +1356,71 @@ describe("parser security regressions", function () {
       () => muhammara.createReader(prevChain(100, 8388601)),
       /Unable to parse PDF/,
     );
+  });
+  // Port of tests/security/GHSA-qv8r-jpjv-7hx2.js. Objects 4, 6, 8 and so on
+  // stay open while the next one is parsed, as does the last object stream,
+  // so 31 object streams take the 32 objects the parser may have open at once.
+  it("fails to parse an object behind 32 object streams", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(lengthChain(31));
+    try {
+      assert.equal(reader.parseNewObject(4).toNumber(), 17);
+    } finally {
+      reader.end();
+    }
+    reader = muhammara.createReader(lengthChain(32));
+    try {
+      assert.throws(() => reader.parseNewObject(4), /Unable to read object/);
+    } finally {
+      reader.end();
+    }
+  });
+  // Sanitizer builds take the JavaScript stack at every allocation, which
+  // costs its whole depth under mocha's unlimited Error.stackTraceLimit.
+  it("fails to open a page tree more than 1024 levels deep", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var stackTraceLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 10;
+    try {
+      var reader = muhammara.createReader(pageTreeChain(1024));
+      try {
+        assert.equal(reader.getPageObjectID(0), 1025);
+      } finally {
+        reader.end();
+      }
+      assert.throws(
+        () => muhammara.createReader(pageTreeChain(1025)),
+        /Unable to parse PDF/,
+      );
+    } finally {
+      Error.stackTraceLimit = stackTraceLimit;
+    }
+  });
+  // Copying an object copied the objects it references one call deeper
+  // each, so a chain of about 5000 objects overflowed the JavaScript stack,
+  // which left the Wasm stack pointer behind, and the next deep call on the
+  // instance, such as opening a page tree at the limit, overwrote its data.
+  it("copies the pages of a PDF with a reference chain of 10000 objects", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var stackTraceLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 10;
+    try {
+      var writer = muhammara.createWriter();
+      writer.appendPDFPagesFromPDF(referenceChain(10000));
+      var reader = muhammara.createReader(writer.end());
+      try {
+        assert.ok(reader.getXrefSize() > 10000);
+      } finally {
+        reader.end();
+      }
+      reader = muhammara.createReader(pageTreeChain(1024));
+      try {
+        assert.equal(reader.getPageObjectID(0), 1025);
+      } finally {
+        reader.end();
+      }
+    } finally {
+      Error.stackTraceLimit = stackTraceLimit;
+    }
   });
 });

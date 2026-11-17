@@ -54,6 +54,12 @@ using namespace PDFHummus;
 // the table to it
 #define MAX_XREF_SIZE 8388608LL
 #define MAX_HEADER_SCAN_POSITION 1024
+// MuhammaraJS: how many objects ParseNewObject() may have open at once, and how deep a page tree may be, as in PDFium.
+// Parsing an object can parse others first, such as its object stream and that stream's indirect /Length, which can be
+// in another object stream, and each page tree level is one call deeper. The 64 KiB default Wasm stack held about 330
+// such objects or 800 levels; the Wasm build's stack is sized for both limits (packages/wasm/CMakeLists.txt)
+#define MAX_NEW_OBJECT_DEPTH 32
+#define MAX_PAGE_TREE_DEPTH 1024
 
 static const XrefEntryInput scEmptyEntry;
 
@@ -787,6 +793,13 @@ PDFObject* PDFParser::ParseNewObject(ObjectIDType inObjectId)
 		return NULL;
 	}
 
+	// MuhammaraJS: bound the objects open at once
+	if(mNewObjectParsingPath.GetDepth() >= MAX_NEW_OBJECT_DEPTH)
+	{
+		TRACE_LOG2("PDFParser::ParseNewObject, cannot parse object %ld, as %d objects are being parsed already",inObjectId,MAX_NEW_OBJECT_DEPTH);
+		return NULL;
+	}
+
 	// cycle check in
 	if(mNewObjectParsingPath.EnterObject(inObjectId) != eSuccess)
 		return NULL;
@@ -995,6 +1008,14 @@ EStatusCode PDFParser::ParsePagesIDs(
 
 	do
 	{
+		// MuhammaraJS: bound the page tree depth
+		if(ioParsingPath.GetDepth() >= MAX_PAGE_TREE_DEPTH)
+		{
+			TRACE_LOG1("PDFParser::ParsePagesIDs, the page tree is more than %d levels deep",MAX_PAGE_TREE_DEPTH);
+			status = PDFHummus::eFailure;
+			break;
+		}
+
 		// add object to parsing path, checking for cycles
 		if(ioParsingPath.EnterObject(inNodeObjectID) != eSuccess) {
 			status = PDFHummus::eFailure;

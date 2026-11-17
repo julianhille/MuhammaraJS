@@ -37,6 +37,8 @@ public:
 
     PDFHummus::EStatusCode EnterObject(ObjectIDType inObjectId);
     PDFHummus::EStatusCode ExitObject(ObjectIDType inObjectId);
+    // MuhammaraJS: how many objects the path holds
+    size_t GetDepth() const { return mObjectsPath.size(); }
 
     void Reset();
 private:
