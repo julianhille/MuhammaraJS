@@ -43,6 +43,7 @@ ObjectsContext::ObjectsContext(void)
 	mCompressStreams = true;
 	mExtender = NULL;
 	mEncryptionHelper = NULL;
+	mOpenIndirectObjects = 0;
 }
 
 ObjectsContext::~ObjectsContext(void)
@@ -353,6 +354,7 @@ ObjectIDType ObjectsContext::StartNewIndirectObject()
 
 	if(IsEncrypting()) {
 		mEncryptionHelper->OnObjectStart((long long)newObjectID, 0);
+		++mOpenIndirectObjects;
 	}
 
 	return newObjectID;
@@ -372,6 +374,7 @@ EStatusCode ObjectsContext::StartNewIndirectObject(ObjectIDType inObjectID)
 
 	if (IsEncrypting()) {
 		mEncryptionHelper->OnObjectStart((long long)inObjectID, 0);
+		++mOpenIndirectObjects;
 	}
 	return status;
 }
@@ -390,6 +393,7 @@ EStatusCode ObjectsContext::StartModifiedIndirectObject(ObjectIDType inObjectID)
 
 	if (IsEncrypting()) {
 		mEncryptionHelper->OnObjectStart((long long)inObjectID, 0);
+		++mOpenIndirectObjects;
 	}
 
 	return status;
@@ -402,6 +406,8 @@ void ObjectsContext::EndIndirectObject()
 
 	if (IsEncrypting()) {
 		mEncryptionHelper->OnObjectEnd();
+		if (mOpenIndirectObjects > 0)
+			--mOpenIndirectObjects;
 	}
 }
 
@@ -674,12 +680,18 @@ bool ObjectsContext::HasOpenDictionaries() const
 	return !mDictionaryStack.empty();
 }
 
+bool ObjectsContext::IsEncryptingOutsideIndirectObject()
+{
+	return mOpenIndirectObjects == 0 && IsEncrypting();
+}
+
 void ObjectsContext::Cleanup()
 {
 	mOutputStream = NULL;
 	mCompressStreams = true;
 	mExtender = NULL;
 	mEncryptionHelper = NULL;
+	mOpenIndirectObjects = 0;
 
 	mSubsetFontsNamesSequance.Reset();
 	mReferencesRegistry.Reset();

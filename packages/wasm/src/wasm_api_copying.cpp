@@ -289,6 +289,14 @@ static bool isActiveCopyingContext(WasmCopyingContext* context) {
          (context->modifier == nullptr || !context->modifier->finished);
 }
 
+WASM_EXPORT int muhammara_wasm_copying_context_is_encrypting_outside_indirect_object(
+    WasmCopyingContext* context) {
+  if (!isActiveCopyingContext(context)) return 0;
+  PDFWriter& writer = context->recipe != nullptr ? context->recipe->writer
+                                                 : context->modifier->writer;
+  return writer.GetObjectsContext().IsEncryptingOutsideIndirectObject();
+}
+
 WASM_EXPORT int muhammara_wasm_copying_context_copy_object(
     WasmCopyingContext* context, unsigned long sourceObjectId,
     unsigned long* copiedObjectId) {

@@ -1,6 +1,7 @@
 #include "DictionaryContextDriver.h"
 
 #include "DictionaryContext.h"
+#include "ObjectsContextDriver.h"
 #include "PDFRectangle.h"
 
 using namespace muhammara::napi;
@@ -113,7 +114,9 @@ DictionaryContextDriver::WriteLiteralStringValue(const CallbackArgs &args) {
   if (!driver)
     return nullptr;
   std::string value;
-  if (!StringOrBytes(args, args[0], value))
+  if (!StringOrBytes(args, args[0], value) ||
+      !RequireIndirectObjectToEncrypt(
+          args.Env(), driver->DictionaryContextInstance->GetObjectsContext()))
     return nullptr;
   driver->DictionaryContextInstance->WriteLiteralStringValue(value);
   return args.This();

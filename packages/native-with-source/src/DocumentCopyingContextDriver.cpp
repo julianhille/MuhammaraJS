@@ -3,6 +3,7 @@
 #include "ByteReaderWithPositionDriver.h"
 #include "ConstructorsHolder.h"
 #include "FormXObjectDriver.h"
+#include "ObjectsContextDriver.h"
 #include "PDFDocumentCopyingContext.h"
 #include "PDFObjectDriver.h"
 #include "PDFPageDriver.h"
@@ -22,7 +23,8 @@ bool Active(const CallbackArgs &a, const char *msg) {
 }
 } // namespace
 DocumentCopyingContextDriver::DocumentCopyingContextDriver()
-    : CopyingContext(nullptr), ReadStreamProxy(nullptr), holder(nullptr),
+    : CopyingContext(nullptr), TargetObjectsContext(nullptr),
+      ReadStreamProxy(nullptr), holder(nullptr),
       mLifecycle(new DriverLifecycleState("PDF copying context has ended")) {}
 DocumentCopyingContextDriver::~DocumentCopyingContextDriver() {
   mLifecycle->End();
@@ -203,6 +205,8 @@ DocumentCopyingContextDriver::CopyDirectObjectAsIs(const CallbackArgs &a) {
     return ThrowTypeError(
         a.Env(),
         "Wrong arguments. provide 1 argument, which is PDFObject to copy");
+  if (!RequireIndirectObjectToEncrypt(a.Env(), D(a)->TargetObjectsContext))
+    return nullptr;
   if (D(a)->CopyingContext->CopyDirectObjectAsIs(
           ObjectWrap::Unwrap<PDFObjectDriver>(a.Env(), a[0])->GetObject()) !=
       eSuccess)
@@ -232,6 +236,8 @@ napi_value DocumentCopyingContextDriver::CopyDirectObjectWithDeepCopy(
     return ThrowTypeError(
         a.Env(),
         "Wrong arguments. provide 1 argument, which is PDFObject to copy");
+  if (!RequireIndirectObjectToEncrypt(a.Env(), D(a)->TargetObjectsContext))
+    return nullptr;
   auto r = D(a)->CopyingContext->CopyDirectObjectWithDeepCopy(
       ObjectWrap::Unwrap<PDFObjectDriver>(a.Env(), a[0])->GetObject());
   if (r.first != eSuccess)

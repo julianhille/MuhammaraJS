@@ -8,6 +8,10 @@ class ObjectsContext;
 class ConstructorsHolder;
 struct OpenContent;
 
+// Throws and returns false when `context` encrypts and has no indirect object
+// open, as strings and streams of an encrypted PDF are written inside one.
+bool RequireIndirectObjectToEncrypt(napi_env env, ObjectsContext *context);
+
 class ObjectsContextDriver : public muhammara::napi::ObjectWrap {
 public:
   ObjectsContextDriver();

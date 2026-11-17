@@ -5,6 +5,7 @@
 
 #include <vector>
 class PDFDocumentCopyingContext;
+class ObjectsContext;
 class IByteReaderWithPosition;
 class ConstructorsHolder;
 class DocumentCopyingContextDriver : public muhammara::napi::ObjectWrap {
@@ -13,6 +14,8 @@ public:
   ~DocumentCopyingContextDriver() override;
   static bool Init(muhammara::napi::ModuleState &, napi_value);
   PDFDocumentCopyingContext *CopyingContext;
+  // The target writer's objects context, which direct copies write into.
+  ObjectsContext *TargetObjectsContext;
   IByteReaderWithPosition *ReadStreamProxy;
   ConstructorsHolder *holder;
   bool IsActive();

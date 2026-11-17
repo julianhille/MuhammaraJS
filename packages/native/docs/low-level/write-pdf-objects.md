@@ -13,6 +13,13 @@ PDF streams require a dictionary context and an indirect object. Start a
 dictionary, pass it to `startPDFStream`, write to the returned stream, and end
 it with `endPDFStream`. `endPDFStream` completes the surrounding object.
 
+A writer created with a password writes strings and streams only inside an
+indirect object, as each is encrypted for the object that holds it. Outside
+one, `writeLiteralString()`, `writeHexString()`, `startPDFStream()`,
+`startUnfilteredPDFStream()`, a dictionary's `writeLiteralStringValue()` and a
+copying context's `copyDirectObjectAsIs()` and
+`copyDirectObjectWithDeepCopy()` throw an `Error`.
+
 `pdfWriter.getEvents()` provides writer events. The supported, tested events
 are `OnPageWrite` and `OnCatalogWrite`; their handlers can add entries to the
 respective dictionary contexts.

@@ -100,6 +100,14 @@ writer.writePage(page);
 var pdfBytes = writer.end();
 ```
 
+A writer created with a password writes strings and streams only inside an
+indirect object, as each is encrypted for the object that holds it, matching
+native. Outside one, the objects context's `writeLiteralString()`,
+`writeHexString()`, `startPDFStream()` and `startUnfilteredPDFStream()`, a
+dictionary's `writeLiteralStringValue()` and `writeHexStringValue()`, and a
+copying context's `copyDirectObjectAsIs()` and
+`copyDirectObjectWithDeepCopy()` throw an `Error`.
+
 `createReader(bytes)` exposes page counts, page information, PDF objects,
 streams, xref data, and text extraction with each operation's decoded Unicode
 text and raw character codes. Call `end()` when the reader is no longer needed;

@@ -65,6 +65,9 @@ public:
 	// Release without writing the closing ">>", for cleanup after the output
 	// stream may already be gone.
 	void Discard();
+
+	// MuhammaraJS: the objects context the dictionary writes through
+	ObjectsContext* GetObjectsContext() { return mObjectsContext; }
 private:
 
 	ObjectsContext* mObjectsContext;

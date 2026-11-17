@@ -177,6 +177,69 @@ describe("Xcryption", function () {
     );
   });
 
+  describe("Write strings and streams outside an indirect object", function () {
+    it("throws on an encrypted writer and writes inside an object", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var outside =
+        /Strings and streams of an encrypted PDF must be written inside an indirect object\. Call startNewIndirectObject\(\) first/;
+      var source = fs.readFileSync("tests/TestMaterials/AddedPage.pdf");
+      for (var version of [
+        muhammara.ePDFVersion13,
+        muhammara.ePDFVersion16,
+        muhammara.ePDFVersion20,
+      ]) {
+        var writer = muhammara.createWriter({
+          userPassword: "user",
+          ownerPassword: "owner",
+          userProtectionFlag: 4,
+          version,
+        });
+        var objects = writer.getObjectsContext();
+        var copying = writer.createPDFCopyingContext(source);
+        var parser = copying.getSourceDocumentParser();
+        var info = parser.queryDictionaryObject(parser.getTrailer(), "Info");
+        var dictionary = objects.startDictionary();
+        for (var write of [
+          () => objects.writeLiteralString("text"),
+          () => objects.writeHexString("text"),
+          () => objects.startPDFStream(),
+          () => objects.startUnfilteredPDFStream(),
+          () => dictionary.writeLiteralStringValue("text"),
+          () => dictionary.writeHexStringValue("text"),
+          () => copying.copyDirectObjectAsIs(info),
+          () => copying.copyDirectObjectWithDeepCopy(info),
+        ])
+          assert.throws(write, outside);
+        objects.endDictionary(dictionary);
+
+        var stringId = objects.startNewIndirectObject();
+        objects.writeLiteralString("inside");
+        objects.endIndirectObject();
+        objects.startNewIndirectObject();
+        var stream = objects.startPDFStream();
+        stream.getWriteStream().write(new Uint8Array([0x41]));
+        objects.endPDFStream(stream);
+        assert.throws(() => objects.writeLiteralString("text"), outside);
+        copying.end();
+        writer.writePage(writer.createPage(0, 0, 10, 10));
+        var pdf = writer.end();
+        writeOutput("Xcryption-outside-object-" + version, pdf);
+
+        var reader = muhammara.createReader(pdf, { password: "user" });
+        assert.equal(reader.parseNewObject(stringId).toString(), "inside");
+        reader.end();
+      }
+    });
+
+    it("still writes a string outside an object on an unencrypted writer", async function () {
+      var muhammara = await createMuhammaraWasm();
+      var writer = muhammara.createWriter();
+      writer.getObjectsContext().writeLiteralString("text");
+      var pdf = writer.end();
+      assert.ok(new TextDecoder("latin1").decode(pdf).includes("(text)"));
+    });
+  });
+
   it("keeps the native recrypt option defaults", async function () {
     var muhammara = await createMuhammaraWasm();
     var source = muhammara.createBlankPdf(100, 100);

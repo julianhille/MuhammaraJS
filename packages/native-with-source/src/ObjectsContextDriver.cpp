@@ -26,6 +26,15 @@ bool OneNumber(const CallbackArgs &args, const char *error) {
 }
 } // namespace
 
+bool RequireIndirectObjectToEncrypt(napi_env env, ObjectsContext *context) {
+  if (!context->IsEncryptingOutsideIndirectObject())
+    return true;
+  ThrowError(env, "Strings and streams of an encrypted PDF must be written "
+                  "inside an indirect object. Call startNewIndirectObject() "
+                  "first");
+  return false;
+}
+
 ObjectsContextDriver::ObjectsContextDriver()
     : ObjectsContextInstance(nullptr), holder(nullptr) {}
 
@@ -200,7 +209,9 @@ napi_value ObjectsContextDriver::WriteLiteralString(const CallbackArgs &a) {
     return ThrowTypeError(a.Env(), "wrong arguments, pass 1 argument that is a "
                                    "literal string (string) or an array");
   std::string value;
-  if (!StringOrBytes(a, value))
+  if (!StringOrBytes(a, value) ||
+      !RequireIndirectObjectToEncrypt(a.Env(),
+                                      Driver(a)->ObjectsContextInstance))
     return nullptr;
   Driver(a)->ObjectsContextInstance->WriteLiteralString(value);
   return a.This();
@@ -211,7 +222,9 @@ napi_value ObjectsContextDriver::WriteHexString(const CallbackArgs &a) {
     return ThrowTypeError(a.Env(), "wrong arguments, pass 1 argument that is a "
                                    "literal string (string) or an array");
   std::string value;
-  if (!StringOrBytes(a, value))
+  if (!StringOrBytes(a, value) ||
+      !RequireIndirectObjectToEncrypt(a.Env(),
+                                      Driver(a)->ObjectsContextInstance))
     return nullptr;
   Driver(a)->ObjectsContextInstance->WriteHexString(value);
   return a.This();
@@ -239,6 +252,8 @@ static napi_value StartStream(const CallbackArgs &a, bool filtered) {
     return ThrowTypeError(a.Env(),
                           "wrong arguments, please provide no arguments "
                           "or an optional stream dictionary");
+  if (!RequireIndirectObjectToEncrypt(a.Env(), d->ObjectsContextInstance))
+    return nullptr;
   DictionaryContext *dict =
       a.Length() ? ObjectWrap::Unwrap<DictionaryContextDriver>(a.Env(), a[0])
                        ->DictionaryContextInstance

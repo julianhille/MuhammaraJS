@@ -319,6 +319,94 @@ describe("Xcryption", function () {
     });
   });
 
+  describe("Write strings and streams outside an indirect object", function () {
+    it("throws on an encrypted writer and writes inside an object", function () {
+      var outside =
+        /Strings and streams of an encrypted PDF must be written inside an indirect object\. Call startNewIndirectObject\(\) first/;
+      for (var version of [
+        muhammara.ePDFVersion13,
+        muhammara.ePDFVersion16,
+        muhammara.ePDFVersion20,
+      ]) {
+        var output = __dirname + "/output/EncryptedOutsideObject.pdf";
+        var pdfWriter = muhammara.createWriter(output, {
+          userPassword: "user",
+          ownerPassword: "owner",
+          userProtectionFlag: 4,
+          version,
+        });
+        var objects = pdfWriter.getObjectsContext();
+        var copying = pdfWriter.createPDFCopyingContext(
+          __dirname + "/TestMaterials/AddedPage.pdf",
+        );
+        var parser = copying.getSourceDocumentParser();
+        var info = parser.queryDictionaryObject(parser.getTrailer(), "Info");
+        var dictionary = objects.startDictionary();
+        for (var write of [
+          () => objects.writeLiteralString("text"),
+          () => objects.writeHexString("text"),
+          () => objects.startPDFStream(),
+          () => objects.startUnfilteredPDFStream(),
+          () => dictionary.writeLiteralStringValue("text"),
+          () => copying.copyDirectObjectAsIs(info),
+          () => copying.copyDirectObjectWithDeepCopy(info),
+        ])
+          assert.throws(write, outside);
+        objects.endDictionary(dictionary);
+
+        var stringId = objects.startNewIndirectObject();
+        objects.writeLiteralString("inside");
+        objects.endIndirectObject();
+        objects.startNewIndirectObject();
+        var stream = objects.startPDFStream();
+        stream.getWriteStream().write([0x41]);
+        objects.endPDFStream(stream);
+        assert.throws(() => objects.writeLiteralString("text"), outside);
+        copying.end();
+        // A writer event runs inside the page object the writer started.
+        pdfWriter.getEvents().on("OnPageWrite", function (params) {
+          params.pageDictionaryContext
+            .writeKey("Label")
+            .writeLiteralStringValue("page");
+        });
+        pdfWriter.writePage(pdfWriter.createPage(0, 0, 10, 10));
+        pdfWriter.end();
+
+        var reader = muhammara.createReader(output, { password: "user" });
+        assert.equal(reader.parseNewObject(stringId).toString(), "inside");
+        assert.equal(
+          reader.parsePageDictionary(0).queryObject("Label").toString(),
+          "page",
+        );
+        reader.end();
+      }
+    });
+
+    it("does not count an object started inside a stream as open", function () {
+      var pdfWriter = muhammara.createWriter(
+        new muhammara.PDFWStreamForBuffer(),
+        { userPassword: "user", version: muhammara.ePDFVersion20 },
+      );
+      var objects = pdfWriter.getObjectsContext();
+      objects.startNewIndirectObject();
+      var stream = objects.startPDFStream();
+      objects.startNewIndirectObject();
+      objects.endPDFStream(stream);
+      assert.throws(
+        () => objects.writeLiteralString("text"),
+        /must be written inside an indirect object/,
+      );
+    });
+
+    it("still writes a string outside an object on an unencrypted writer", function () {
+      var buffer = new muhammara.PDFWStreamForBuffer();
+      var pdfWriter = muhammara.createWriter(buffer);
+      pdfWriter.getObjectsContext().writeLiteralString("text");
+      pdfWriter.end();
+      assert.ok(buffer.buffer.toString("latin1").includes("(text)"));
+    });
+  });
+
   describe("Decrypt PDF via Appending Pages to New PDF", function () {
     it("should complete without error", function () {
       var pdfWriter = muhammara.createWriter(

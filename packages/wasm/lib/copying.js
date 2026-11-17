@@ -1,3 +1,5 @@
+import { requireIndirectObjectToEncrypt } from "./raw-objects.js";
+
 /**
  * Creates low-level helpers for copying objects between PDF documents.
  * @param {{module: object}} dependencies - Emscripten module.
@@ -38,7 +40,43 @@ export function createCopyingHelpers({ module }) {
       }
     }
 
+    /**
+     * Rejects a direct copy outside an indirect object of an encrypting writer.
+     * @returns {void}
+     * @throws {Error} If the writer encrypts and no indirect object is open.
+     */
+    function requireEncryptionObject() {
+      requireIndirectObjectToEncrypt(
+        module._muhammara_wasm_copying_context_is_encrypting_outside_indirect_object(
+          copying,
+        ),
+      );
+    }
+
     return {
+      /**
+       * Writes a source object into the current output object unchanged.
+       * @param {PDFObject} object - Object from this context's source parser.
+       * @returns {this} The copying context.
+       * @throws {TypeError} If `object` is from another source.
+       * @throws {Error} If the context ended, the writer was created with a
+       *   password and no indirect object is open, or the object cannot be
+       *   copied.
+       */
+      copyDirectObjectAsIs: function (object) {
+        requireCopying();
+        requireSourceObject(object);
+        requireEncryptionObject();
+        if (
+          !module._muhammara_wasm_copying_context_copy_direct_object_as_is(
+            copying,
+            object._handle,
+          )
+        ) {
+          throw new Error("Unable to copy PDF object");
+        }
+        return this;
+      },
       /**
        * Copies a source object, and the objects it references, into the output.
        * @param {number} sourceObjectId - Object ID in the source document.
@@ -71,11 +109,14 @@ export function createCopyingHelpers({ module }) {
        * @param {PDFObject} object - Object parsed by this copying context's source parser.
        * @returns {number[]} Source object IDs still to copy with `copyNewObjectsForDirectObject()`.
        * @throws {TypeError} If the object comes from another parser.
-       * @throws {Error} If the context has ended or the object cannot be copied.
+       * @throws {Error} If the context has ended, the writer was created with a
+       *   password and no indirect object is open, or the object cannot be
+       *   copied.
        */
       copyDirectObjectWithDeepCopy: function (object) {
         requireCopying();
         requireSourceObject(object);
+        requireEncryptionObject();
         var countPointer = module._malloc(4);
         var idsPointerPointer = module._malloc(4);
         try {
