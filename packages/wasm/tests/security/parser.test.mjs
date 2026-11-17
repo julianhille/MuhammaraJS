@@ -1,7 +1,7 @@
 // Byte-first ports of tests/security/GHSA-*.js, GH-518.js and GH-917.js.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { createMuhammaraWasm } from "../../index.js";
+import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
 var encoder = new TextEncoder();
@@ -915,5 +915,49 @@ describe("parser security regressions", function () {
     );
     modifier.writePage(modifier.createPage(0, 0, 100, 100));
     assert.throws(() => modifier.end(), /Unable to finish modified PDF/);
+  });
+  // Port of tests/security/GHSA-3p2c-cw9w-9746.js. Wasm ended these objects
+  // once already.
+  ["OwnerOnlyRC4.pdf", "OwnerOnlyAES128.pdf"].forEach(function (fixture) {
+    [
+      [
+        "replaceText",
+        (recipe) => recipe.replaceText("Before", "Bore", 1),
+        "Bore",
+      ],
+      ["removeText", (recipe) => recipe.removeText(1), ""],
+    ].forEach(function ([method, edit, expected]) {
+      it(`${method}() writes an encrypted ${fixture}`, async function () {
+        var muhammara = await createMuhammaraWasm();
+        var Recipe = await createRecipe();
+        var recipe = new Recipe(
+          await readFile("tests/TestMaterials/" + fixture),
+        );
+        edit(recipe);
+        var output = recipe.endPDF();
+        writeOutput(
+          `GHSA-3p2c-cw9w-9746-${method}-${fixture.slice(0, -4)}`,
+          output,
+        );
+
+        assert.doesNotMatch(
+          new TextDecoder("latin1").decode(output),
+          /endobj\s+endobj/,
+        );
+        var reader = muhammara.createReader(output);
+        try {
+          assert.ok(reader.isEncrypted());
+          assert.equal(
+            reader
+              .extractPageText(0)
+              .map((item) => item.text)
+              .join(""),
+            expected,
+          );
+        } finally {
+          reader.end();
+        }
+      });
+    });
   });
 });

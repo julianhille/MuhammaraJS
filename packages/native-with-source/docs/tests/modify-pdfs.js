@@ -161,9 +161,10 @@ describe("Documentation examples", function () {
     var replacement = objectsContext.startPDFStream();
 
     replacement.getWriteStream().write(Buffer.from("BT ET"));
-    objectsContext.endPDFStream(replacement).endIndirectObject();
+    objectsContext.endPDFStream(replacement);
     writer.replaceObject(0, contentsId, replacementId);
     writer.end();
+    assert.notMatch(fs.readFileSync(outputPath, "latin1"), /endobj\s+endobj/);
 
     var reader = muhammara.createReader(outputPath);
 

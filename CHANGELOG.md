@@ -49,6 +49,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   of crashing the process on an `LZWDecode` stream.
 - Fix a security vulnerability
   [GHSA-6rw3-h5pc-hc2x](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-6rw3-h5pc-hc2x)
+- Fix a security vulnerability
+  [GHSA-3p2c-cw9w-9746](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-3p2c-cw9w-9746)
 
 ## [7.2.3] - 2026-10-27
 
