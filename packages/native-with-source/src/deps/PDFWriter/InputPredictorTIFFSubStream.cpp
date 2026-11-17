@@ -69,7 +69,8 @@ LongBufferSizeType InputPredictorTIFFSubStream::Read(Byte* inBuffer,LongBufferSi
 	// now repeatedly read bytes from the input stream, and decode
 	while(readBytes < inBufferSize && mSourceStream->NotEnded())
 	{
-		if(mSourceStream->Read(mRowBuffer,(mColumns*mColors*mBitsPerComponent)/8) != (mColumns*mColors*mBitsPerComponent)/8)
+		// MuhammaraJS: a row is whole bytes, so read the padding bits of a row that does not end on a byte, too
+		if(mSourceStream->Read(mRowBuffer,(mColumns*mColors*mBitsPerComponent + 7)/8) != (mColumns*mColors*mBitsPerComponent + 7)/8)
 		{
 			TRACE_LOG("InputPredictorPNGSubStream::Read, problem, expected columns*colors*bitspercomponent/8 number read. didn't make it");
 			readBytes = 0;
@@ -149,7 +150,8 @@ void InputPredictorTIFFSubStream::Assign(IByteReader* inSourceStream,
 
 	mRowBuffer = new Byte[bufferSize];
 
-	mReadColorsCount = colorsTimesColumns;
+	// MuhammaraJS: hold the colors of the row's whole bytes, the padding of a row that does not end on a byte included, so reading a byte's worth of colors stays inside the array
+	mReadColorsCount = bufferSize * 8 / inBitsPerComponent;
 	// only the sub-byte path in DecodeBufferToColors can leave cells unwritten when
 	// the defensive bounds check trips. value-initialize in that case so unwritten
 	// cells read as 0 instead of uninitialized heap memory. the 8 and >8 bpc paths

@@ -749,4 +749,39 @@ describe("parser security regressions", function () {
     );
     writer.end();
   });
+  // Port of tests/security/GHSA-rw6g-24h2-52ch.js. Each row 0x12 decodes to
+  // 0x13, as the predictor runs over the padding nibble too and adds its 2
+  // to the color 1 before it; readers ignore padding bits. Read a byte at a
+  // time, as a read that reaches the end of the Flate data drops what it
+  // decoded.
+  it("decodes TIFF predictor rows shorter than a byte", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/TIFFPredictorRowUnderOneByte.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(6).toPDFStream(),
+      );
+      var parts = [];
+      for (var reads = 0; stream.notEnded() && reads < 100; ++reads) {
+        parts.push(stream.read(1));
+      }
+      assert.deepEqual(joinBytes(parts), new Uint8Array([0x13, 0x13]));
+      assert.equal(stream.notEnded(), false);
+    } finally {
+      reader.end();
+    }
+  });
+  it("extracts the text of a page with TIFF predictor rows shorter than a byte", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/TIFFPredictorEndlessHang.pdf"),
+    );
+    try {
+      assert.deepEqual(reader.extractPageText(0), []);
+    } finally {
+      reader.end();
+    }
+  });
 });
