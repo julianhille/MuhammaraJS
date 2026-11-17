@@ -2223,6 +2223,8 @@ declare namespace muhammara {
      * @param key - The key, without a leading slash.
      * @returns This dictionary context.
      * @throws {TypeError} If key is not a single string.
+     * @throws {Error} If the dictionary was passed to endDictionary(),
+     *   startPDFStream() or startUnfilteredPDFStream().
      */
     writeKey(key: string): DictionaryContext;
     /**
@@ -2230,6 +2232,8 @@ declare namespace muhammara {
      * @param nameValue - The name, without a leading slash.
      * @returns This dictionary context.
      * @throws {TypeError} If nameValue is not a single string.
+     * @throws {Error} If the dictionary was passed to endDictionary(),
+     *   startPDFStream() or startUnfilteredPDFStream().
      */
     writeNameValue(nameValue: string): this;
     /**
@@ -2237,6 +2241,8 @@ declare namespace muhammara {
      * @param values - The rectangle [left, bottom, right, top].
      * @returns This dictionary context.
      * @throws {TypeError} If the arguments are not an array of 4 numbers or 4 numbers.
+     * @throws {Error} If the dictionary was passed to endDictionary(),
+     *   startPDFStream() or startUnfilteredPDFStream().
      */
     writeRectangleValue(values: Array<number>): this;
     writeRectangleValue(a: number, b: number, c: number, d: number): this;
@@ -2247,6 +2253,8 @@ declare namespace muhammara {
      * @throws {TypeError} If literal is not a single string or array.
      * @throws {Error} If the writer was created with a password and no indirect
      *   object is open.
+     * @throws {Error} If the dictionary was passed to endDictionary(),
+     *   startPDFStream() or startUnfilteredPDFStream().
      */
     writeLiteralStringValue(literal: Array<number> | string): this;
     /**
@@ -2254,6 +2262,8 @@ declare namespace muhammara {
      * @param boolValue - The value.
      * @returns This dictionary context.
      * @throws {TypeError} If boolValue is not a single boolean.
+     * @throws {Error} If the dictionary was passed to endDictionary(),
+     *   startPDFStream() or startUnfilteredPDFStream().
      */
     writeBooleanValue(boolValue: boolean): this;
     /**
@@ -2261,6 +2271,8 @@ declare namespace muhammara {
      * @param value - The number.
      * @returns This dictionary context.
      * @throws {TypeError} If value is not a single number.
+     * @throws {Error} If the dictionary was passed to endDictionary(),
+     *   startPDFStream() or startUnfilteredPDFStream().
      */
     writeNumberValue(value: number): this;
     /**
@@ -2268,6 +2280,8 @@ declare namespace muhammara {
      * @param objectId - The object ID.
      * @returns This dictionary context.
      * @throws {TypeError} If objectId is not a single number.
+     * @throws {Error} If the dictionary was passed to endDictionary(),
+     *   startPDFStream() or startUnfilteredPDFStream().
      */
     writeObjectReferenceValue(objectId: number): this;
   }
@@ -2450,7 +2464,9 @@ declare namespace muhammara {
      * @param dictionaryContext - A started stream dictionary to add Length and
      *   Filter to; a new one when omitted.
      * @returns The stream; write to its write stream, then call endPDFStream().
-     * @throws {TypeError} If dictionaryContext is given and is not a dictionary context.
+     * @throws {TypeError} If dictionaryContext is given and is not a dictionary context,
+     *   or is no longer active: already ended, of a writer event that has
+     *   returned, or of another writer that has ended.
      * @throws {Error} If the writer was created with a password and no indirect
      *   object is open.
      */
@@ -2460,7 +2476,9 @@ declare namespace muhammara {
      * @param dictionaryContext - A started stream dictionary to add Length to;
      *   a new one when omitted.
      * @returns The stream; write to its write stream, then call endPDFStream().
-     * @throws {TypeError} If dictionaryContext is given and is not a dictionary context.
+     * @throws {TypeError} If dictionaryContext is given and is not a dictionary context,
+     *   or is no longer active: already ended, of a writer event that has
+     *   returned, or of another writer that has ended.
      * @throws {Error} If the writer was created with a password and no indirect
      *   object is open.
      */

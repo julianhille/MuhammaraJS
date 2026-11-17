@@ -11,9 +11,7 @@ DictionaryContextDriver *GetDriver(const CallbackArgs &args) {
   auto *driver =
       ObjectWrap::Unwrap<DictionaryContextDriver>(args.Env(), args.This());
   if (!driver->DictionaryContextInstance) {
-    ThrowTypeError(args.Env(),
-                   "dictinoarycontext object not initialized, create "
-                   "using objectscontext.startDictionary");
+    ThrowError(args.Env(), "Dictionary context is no longer active");
     return nullptr;
   }
   return driver;

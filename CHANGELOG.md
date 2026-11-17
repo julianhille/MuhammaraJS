@@ -90,6 +90,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- A dictionary's `writeKey()` and `write*Value()` methods throw
+  `Dictionary context is no longer active` after the dictionary was passed to
+  `ObjectsContext.endDictionary()`, `startPDFStream()` or
+  `startUnfilteredPDFStream()`. Passing such a dictionary, or one of another
+  writer that has ended, to `startPDFStream()` or `startUnfilteredPDFStream()`
+  throws a `TypeError` `Provide the active dictionary context`, as
+  `@muhammara/wasm` does; so does a dictionary of a writer event that has
+  returned. Before, these calls terminated the process or wrote after the
+  dictionary's end
+  [#1039](https://github.com/julianhille/MuhammaraJS/issues/1039)
 - Decrypt PDFs whose crypt filter selects RC4 with `/CFM /V2`, the name the
   PDF specification uses. Their strings and streams were returned still
   encrypted, and `recrypt()` wrote them out unchanged
