@@ -2155,6 +2155,11 @@ export interface InfoDictionary {
   creator: string;
   producer: string;
   trapped: EInfoTrapped;
+  /**
+   * Sets a custom Info entry. Under the key of a field (Title, Author, Subject,
+   * Keywords, Creator, Producer, CreationDate, ModDate, Trapped) the entry
+   * replaces that field, which stays cleared if the entry is removed.
+   */
   addAdditionalInfoEntry(key: string, value: string): void;
   removeAdditionalInfoEntry(key: string): void;
   clearAdditionalInfoEntries(): void;

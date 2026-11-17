@@ -1165,7 +1165,60 @@ export function createWriterToModifyFactory({
       return context;
     }
 
-    var additionalInfo = new Map();
+    /**
+     * Reads the C++ Info dictionary, which starts with the entries of the
+     * source PDF (InfoEntries.h), so that the getters report them as native
+     * does.
+     * @returns {{fields: Record<string, string>, trapped: EInfoTrapped, custom: Map<string, string>}}
+     *   The text fields by their Info key, the trapped state and the custom
+     *   entries.
+     * @throws {Error} If the dictionary cannot be read.
+     */
+    function readInfo() {
+      var lengthPointer = module._malloc(4);
+      try {
+        var pointer = module._muhammara_wasm_modifier_get_info(
+          modifier,
+          lengthPointer,
+        );
+        if (!pointer) throw new Error("Unable to read the Info dictionary");
+        var bytes = module.HEAPU8.slice(
+          pointer,
+          pointer + module.HEAPU32[lengthPointer >>> 2],
+        );
+        module._muhammara_wasm_free(pointer);
+      } finally {
+        module._free(lengthPointer);
+      }
+      // each value is UTF-8 after its byte length
+      var view = new DataView(bytes.buffer);
+      var values = [];
+      for (var offset = 0; offset < bytes.length;) {
+        var length = view.getUint32(offset, true);
+        values.push(
+          new TextDecoder().decode(
+            bytes.subarray(offset + 4, offset + 4 + length),
+          ),
+        );
+        offset += 4 + length;
+      }
+      var custom = new Map();
+      for (var index = 7; index < values.length; index += 2)
+        custom.set(values[index], values[index + 1]);
+      return {
+        fields: {
+          Title: values[1],
+          Author: values[2],
+          Subject: values[3],
+          Keywords: values[4],
+          Creator: values[5],
+          Producer: values[6],
+        },
+        trapped: Number(values[0]),
+        custom,
+      };
+    }
+    var { fields, trapped, custom: additionalInfo } = readInfo();
     /**
      * Writes a text Info dictionary entry.
      * @param {string} key - Entry name, or a field name such as `title`.
@@ -1195,7 +1248,10 @@ export function createWriterToModifyFactory({
     }
     var infoDictionary = {
       /**
-       * Sets a custom Info dictionary entry.
+       * Sets a custom Info dictionary entry. Under the key of a field (Title,
+       * Author, Subject, Keywords, Creator, Producer, CreationDate, ModDate,
+       * Trapped) the entry replaces that field, which stays cleared if the
+       * entry is removed.
        * @param {string} key - Entry name without the leading slash.
        * @param {string} value - Text value.
        * @returns {void}
@@ -1205,6 +1261,9 @@ export function createWriterToModifyFactory({
       addAdditionalInfoEntry: function (key, value) {
         setInfo(key, value, true);
         additionalInfo.set(key, value);
+        // it takes the place of the field of that name, as in C++
+        if (Object.hasOwn(fields, key)) fields[key] = "";
+        if (key === "Trapped") trapped = constants.EInfoTrappedUnknown;
       },
       /**
        * Removes a custom Info dictionary entry.
@@ -1295,37 +1354,34 @@ export function createWriterToModifyFactory({
         });
       },
     };
-    ["title", "author", "subject", "keywords", "creator", "producer"].forEach(
-      (key) => {
-        var value = "";
-        Object.defineProperty(infoDictionary, key, {
-          /**
-           * Reads the text entry.
-           * @returns {string} The value, or an empty string when unset.
-           */
-          get: function () {
-            return value;
-          },
-          /**
-           * Writes the text entry.
-           * @param {string} nextValue - New value; other values are converted with `String()`.
-           * @returns {void}
-           * @throws {Error} If the modifier has ended or the entry cannot be set.
-           */
-          set: function (nextValue) {
-            nextValue = String(nextValue);
-            setInfo(key, nextValue);
-            value = nextValue;
-          },
-        });
-      },
-    );
+    Object.keys(fields).forEach((name) => {
+      var key = name.toLowerCase();
+      Object.defineProperty(infoDictionary, key, {
+        /**
+         * Reads the text entry.
+         * @returns {string} The value, or an empty string when unset.
+         */
+        get: function () {
+          return fields[name];
+        },
+        /**
+         * Writes the text entry.
+         * @param {string} nextValue - New value; other values are converted with `String()`.
+         * @returns {void}
+         * @throws {Error} If the modifier has ended or the entry cannot be set.
+         */
+        set: function (nextValue) {
+          nextValue = String(nextValue);
+          setInfo(key, nextValue);
+          fields[name] = nextValue;
+        },
+      });
+    });
     var TRAPPED_VALUES = [
       constants.EInfoTrappedTrue,
       constants.EInfoTrappedFalse,
       constants.EInfoTrappedUnknown,
     ];
-    var trapped = constants.EInfoTrappedUnknown;
     Object.defineProperty(infoDictionary, "trapped", {
       /**
        * Reads `/Trapped`.

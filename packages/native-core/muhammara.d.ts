@@ -1985,7 +1985,9 @@ declare namespace muhammara {
 
   export interface InfoDictionary {
     /**
-     * Sets a custom info entry.
+     * Sets a custom info entry. Under the key of a field (Title, Author,
+     * Subject, Keywords, Creator, Producer, CreationDate, ModDate, Trapped) the
+     * entry replaces that field, which stays cleared if the entry is removed.
      * @param key - The entry key.
      * @param value - The entry text.
      * @throws {TypeError} If key and value are not two strings.

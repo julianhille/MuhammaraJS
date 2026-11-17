@@ -1,5 +1,6 @@
 var muhammara = require("@muhammara/native-with-source");
 var assert = require("chai").assert;
+var fs = require("fs");
 
 /**
  * Creates a Date that reports its local time in a fixed UTC offset, such as
@@ -20,6 +21,27 @@ function zonedDate(time, offset) {
   date.getMinutes = () => local.getUTCMinutes();
   date.getSeconds = () => local.getUTCSeconds();
   return date;
+}
+
+/**
+ * Reads the Info dictionary a reader follows: strings as their bytes, in
+ * latin1, so that a changed encoding shows, and names as their value.
+ * @param {Buffer} pdf - The PDF.
+ * @returns {Object<string, string>} The entries by key.
+ */
+function readInfo(pdf) {
+  var reader = muhammara.createReader(new muhammara.PDFRStreamForBuffer(pdf));
+  var info = reader
+    .queryDictionaryObject(reader.getTrailer(), "Info")
+    .toJSObject();
+  var entries = {};
+  Object.keys(info).forEach(function (key) {
+    entries[key] = info[key].toBytesArray
+      ? Buffer.from(info[key].toBytesArray()).toString("latin1")
+      : info[key].value;
+  });
+  reader.end();
+  return entries;
 }
 
 describe("SettingInfoValues", function () {
@@ -103,6 +125,42 @@ describe("SettingInfoValues", function () {
     assert.include(pdf, "/title (custom)");
   });
 
+  it("writes a custom entry under a field's Info key in place of the field", function () {
+    var source = new muhammara.PDFWStreamForBuffer();
+    var sourceWriter = muhammara.createWriter(source);
+    sourceWriter.writePage(sourceWriter.createPage(0, 0, 10, 10));
+    sourceWriter.end();
+    var keys = ["Title", "Trapped", "CreationDate", "ModDate"];
+    [false, true].forEach(function (modify) {
+      var stream = new muhammara.PDFWStreamForBuffer();
+      var writer = modify
+        ? muhammara.createWriterToModify(
+            new muhammara.PDFRStreamForBuffer(source.buffer),
+            stream,
+          )
+        : muhammara.createWriter(stream);
+      var info = writer.getDocumentContext().getInfoDictionary();
+      info.title = "field";
+      info.trapped = muhammara.EInfoTrappedTrue;
+      info.setCreationDate("D:20200102030405Z");
+      info.setModDate("D:20200102030405Z");
+      keys.forEach(function (key) {
+        info.addAdditionalInfoEntry(key, "custom");
+      });
+      assert.equal(info.title, "");
+      assert.equal(info.trapped, muhammara.EInfoTrappedUnknown);
+      if (!modify) writer.writePage(writer.createPage(0, 0, 10, 10));
+      writer.end();
+      var pdf = stream.buffer.toString("latin1");
+      // each key once, with the custom value
+      keys.forEach(function (key) {
+        assert.deepEqual(pdf.match(new RegExp("/" + key + " .*", "g")), [
+          "/" + key + " (custom)",
+        ]);
+      });
+    });
+  });
+
   it("removes a date set to null", function () {
     var stream = new muhammara.PDFWStreamForBuffer();
     var writer = muhammara.createWriter(stream);
@@ -129,5 +187,84 @@ describe("SettingInfoValues", function () {
       assert.equal(writer.createPDFDate(date).toString(), expected);
       assert.equal(new muhammara.PDFDate(date).toString(), expected);
     });
+  });
+
+  it("keeps the source Info entries when modifying a PDF", function () {
+    var sourcePath = __dirname + "/TestMaterials/InfoEntries.pdf";
+    var modifiedPath = __dirname + "/output/InfoEntriesModified.pdf";
+    var stream = new muhammara.PDFWStreamForBuffer();
+    [
+      muhammara.createWriterToModify(sourcePath, {
+        modifiedFilePath: modifiedPath,
+      }),
+      muhammara.createWriterToModify(
+        new muhammara.PDFRStreamForBuffer(fs.readFileSync(sourcePath)),
+        stream,
+      ),
+    ].forEach(function (writer) {
+      var info = writer.getDocumentContext().getInfoDictionary();
+      assert.equal(info.title, "Snowman \u2603");
+      assert.equal(info.author, "Indirect author");
+      assert.equal(info.subject, "Caf\u00e9");
+      assert.equal(info.keywords, "source, keywords");
+      assert.equal(info.creator, "Source Creator");
+      assert.equal(info.producer, "Source Producer");
+      assert.equal(info.trapped, muhammara.EInfoTrappedFalse);
+      assert.deepEqual(info.getAdditionalInfoEntries(), {
+        Department: "Typesetting",
+      });
+      writer.end();
+    });
+
+    [fs.readFileSync(modifiedPath), stream.buffer].forEach(function (pdf) {
+      var info = readInfo(pdf);
+      // the date of this update
+      assert.match(info.ModDate, /^D:\d{14}/);
+      assert.notEqual(info.ModDate, "D:20200102030405Z");
+      delete info.ModDate;
+      // the text entries with the bytes of the source, the indirect one
+      // resolved, and the Trapped name; /Revision 3 and /Status /Final are
+      // left out, since the Info dictionary holds no numbers or other names
+      assert.deepEqual(info, {
+        Title: "\xfe\xff\0S\0n\0o\0w\0m\0a\0n\0 \x26\x03",
+        Author: "Indirect author",
+        Subject: "Caf\xe9",
+        Keywords: "source, keywords",
+        Creator: "Source Creator",
+        Producer: "Source Producer",
+        CreationDate: "D:20200102030405Z",
+        Trapped: "False",
+        Department: "Typesetting",
+      });
+    });
+  });
+
+  it("writes the Info values set on a modified PDF over the source ones", function () {
+    var stream = new muhammara.PDFWStreamForBuffer();
+    var writer = muhammara.createWriterToModify(
+      new muhammara.PDFRStreamForBuffer(
+        fs.readFileSync(__dirname + "/TestMaterials/InfoEntries.pdf"),
+      ),
+      stream,
+    );
+    var info = writer.getDocumentContext().getInfoDictionary();
+    info.title = "New title";
+    info.subject = "";
+    info.setCreationDate(null);
+    info.trapped = muhammara.EInfoTrappedTrue;
+    info.addAdditionalInfoEntry("Department", "Layout");
+    // takes the place of the copied Author
+    info.addAdditionalInfoEntry("Author", "Custom author");
+    assert.equal(info.author, "");
+    writer.end();
+
+    var modified = readInfo(stream.buffer);
+    assert.equal(modified.Title, "New title");
+    assert.notProperty(modified, "Subject");
+    assert.notProperty(modified, "CreationDate");
+    assert.equal(modified.Trapped, "True");
+    assert.equal(modified.Department, "Layout");
+    assert.equal(modified.Author, "Custom author");
+    assert.equal(modified.Keywords, "source, keywords");
   });
 });

@@ -262,6 +262,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Reference the Node.js types from the native type declarations, so TypeScript
   6 and later resolve `Buffer`, `EventEmitter` and `NodeJS` in
   `@muhammara/native` without `"node"` in `compilerOptions.types`
+- Keep the Info entries of the source, such as `Title`, `Author` and custom
+  entries, in a PDF modified with the low-level `createWriterToModify()`, and
+  start the writer's `getDocumentContext().getInfoDictionary()` with them, so
+  that set values replace them. The update wrote an Info dictionary with only a
+  new `ModDate`, and readers showed none of the others
+  [#1053](https://github.com/julianhille/MuhammaraJS/issues/1053)
+- Let a custom Info entry added with `addAdditionalInfoEntry()` under the key
+  of a field (`Title`, `Author`, `Subject`, `Keywords`, `Creator`, `Producer`,
+  `CreationDate`, `ModDate` or `Trapped`) replace that field, on every writer,
+  including `createWriter()`. With the field already set, the repeated key was
+  refused but its value still written, so the Info dictionary could not be read
+  and readers showed none of its entries
+  [#1053](https://github.com/julianhille/MuhammaraJS/issues/1053)
 
 ### Changed
 

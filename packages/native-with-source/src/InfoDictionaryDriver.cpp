@@ -2,6 +2,7 @@
 
 #include "ConstructorsHolder.h"
 #include "InfoDictionary.h"
+#include "InfoEntries.h"
 #include "PDFDateDriver.h"
 #include "PDFTextString.h"
 #include <cstring>
@@ -144,8 +145,8 @@ InfoDictionaryDriver::AddAdditionalInfoEntry(const CallbackArgs &args) {
         "wrong arguments. please provide two strings - key and value ");
   PDFTextString value;
   value.FromUTF8(LegacyString(args.Env(), args[1]));
-  d->InfoDictionaryInstance->AddAdditionalInfoEntry(
-      LegacyString(args.Env(), args[0]), value);
+  AddCustomInfoEntry(*d->InfoDictionaryInstance,
+                     LegacyString(args.Env(), args[0]), value);
   return Undefined(args.Env());
 }
 napi_value
