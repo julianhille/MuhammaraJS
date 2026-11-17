@@ -121,6 +121,8 @@ void InputPredictorPNGOptimumStream::DecodeNextByte(Byte& outDecodedByte)
 	switch(mFunctionType)
 	{
 		case 0:
+		// MuhammaraJS: an unknown row filter type predicts nothing, as xpdf does, instead of leaving the output byte unwritten
+		default:
 			outDecodedByte = *mIndex;
 			break;
 		case 1:

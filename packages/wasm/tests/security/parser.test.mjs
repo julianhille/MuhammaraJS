@@ -784,4 +784,20 @@ describe("parser security regressions", function () {
       reader.end();
     }
   });
+  // Port of tests/security/GHSA-7gx7-f7mg-m8w6.js.
+  it("decodes a PNG predictor row of an unknown type as is", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/PNGPredictorUnknownRowType.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(6).toPDFStream(),
+      );
+      assert.equal(new TextDecoder("latin1").decode(stream.read(4096)), "ABCD");
+      assert.deepEqual(reader.extractPageText(0), []);
+    } finally {
+      reader.end();
+    }
+  });
 });
