@@ -36,7 +36,9 @@
     "test:pdfa": "node scripts/validate-pdfa.mjs"
   },
   "overrides": {
-    "serialize-javascript": "^7.0.5"
+    "serialize-javascript": "^7.0.5",
+    "glob": "^14.0.6",
+    "minimatch": "^11.0.5"
   },
   "devDependencies": {
     "js-yaml": "^5.5.0"
