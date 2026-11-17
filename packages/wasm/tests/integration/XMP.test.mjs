@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import { buildXmpPacket, pdfDateToXmp } from "../../lib/xmp.js";
+import { createReaderCountingRecipe } from "../recipe/recipe.mjs";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("XMP metadata", function () {
@@ -216,6 +217,30 @@ describe("XMP metadata", function () {
       assert.equal(recipe.xmp(), before);
     });
 
+    it("reads the packet after a failed endPDF", async function () {
+      var source = create("XMPAfterFailedEnd", { xmp: true });
+      // the modifier output is larger than its source
+      var LimitedRecipe = await createRecipe({
+        limits: { maxOutputBytes: source.length },
+      });
+      var recipe = new LimitedRecipe(source);
+      var before = recipe.xmp();
+      assert.ok(before.includes("<?xpacket"));
+      assert.throws(() => recipe.endPDF(), /exceeds maxOutputBytes/);
+      assert.equal(recipe.xmp(), before);
+    });
+
+    it("reads the packet through the modifier's parser before endPDF", async function () {
+      // A second reader would parse the source again next to the modifier.
+      var counting = await createReaderCountingRecipe();
+      var source = create("XMPModifierParser", { xmp: true });
+      var recipe = new counting.Recipe(source);
+      var created = counting.readers.created;
+      assert.ok(recipe.xmp().includes("<?xpacket"));
+      assert.equal(counting.readers.created, created);
+      recipe.dispose();
+    });
+
     it("writes no packet by default or when false", function () {
       assert.equal(xmpOf(create("XMPOff")), undefined);
       assert.equal(xmpOf(create("XMPFalse", { xmp: false })), undefined);
@@ -276,7 +301,20 @@ describe("XMP metadata", function () {
       var recipe = new Recipe(source, { xmp: true });
       assert.equal(recipe.info().title, "Plain");
       assert.match(recipe.xmp(), />Plain<\/rdf:li>/);
-      assert.throws(() => recipe.endPDF(), { message });
+      var first;
+      assert.throws(
+        () => recipe.endPDF(),
+        (error) => {
+          first = error;
+          return error.message === message;
+        },
+      );
+      // a failure before the write retires the Recipe too
+      assert.throws(
+        () => recipe.endPDF(),
+        (error) => error === first,
+      );
+      assert.throws(() => recipe.info({ title: "T" }), /PDF writer has ended/);
     });
 
     it("replaces the packet of an edited PDF with the xmp option", function () {

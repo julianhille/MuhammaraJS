@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
-import { recipeFixture } from "./recipe.mjs";
+import { createReaderCountingRecipe, recipeFixture } from "./recipe.mjs";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe encryption", function () {
@@ -16,20 +16,36 @@ describe("Recipe encryption", function () {
     assert.deepEqual(recipe.info(), {});
     assert.equal(recipe.xmp(), undefined);
     // the writer would encrypt new entries with a key that does not match
-    assert.throws(() => recipe.endPDF(), {
-      message:
-        "Editing a password-protected source is unsupported; decrypt it with recrypt() first",
-    });
+    var first;
+    assert.throws(
+      () => recipe.endPDF(),
+      (error) => {
+        first = error;
+        return (
+          error.message ===
+          "Editing a password-protected source is unsupported; decrypt it with recrypt() first"
+        );
+      },
+    );
+    // as on native, the failure retires the Recipe
+    assert.throws(
+      () => recipe.endPDF(),
+      (error) => error === first,
+    );
+    assert.throws(() => recipe.formFields(), /released by endPDF\(\)/);
     recipe.dispose();
   });
 
   it("reads and edits the Info of a source only an owner password protects", async function () {
-    var Recipe = await createRecipe();
+    var { Recipe, readers } = await createReaderCountingRecipe();
     // a new Recipe encrypts through recrypt(), which drops the Info
     var source = new Uint8Array(
       readFileSync("tests/TestMaterials/recipe/xmp-plain-metadata.pdf"),
     );
     var recipe = new Recipe(source, { password: "owner" });
+    // one reader inspects the pages; the Info is read without the password
+    // through the modifier's parser
+    assert.equal(readers.created, 1);
     assert.equal(recipe.info().title, "Plain");
     var edited = recipe.info({ author: "A" }).endPDF();
     var muhammara = await createMuhammaraWasm();

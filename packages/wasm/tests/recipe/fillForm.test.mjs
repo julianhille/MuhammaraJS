@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createMuhammaraWasm } from "../../index.js";
-import { getRecipe, recipeFixture } from "./recipe.mjs";
+import { createMuhammaraWasm, createRecipe } from "../../index.js";
+import {
+  createReaderCountingRecipe,
+  getRecipe,
+  recipeFixture,
+} from "./recipe.mjs";
 
 // Mirrors the native fillForm tests.
 
@@ -138,6 +142,16 @@ describe("fillForm", function () {
     // The field's /DA is left as it is.
     var da = (pdf) => pdf.parseNewObject(9).toJSObject().DA.toText();
     assert.equal(da(reader), da(readerOf(recipeFixture("AcroFormPdfLib"))));
+  });
+
+  it("reads the form through the modifier's parser", async function () {
+    // A second reader would parse the source again next to the modifier.
+    var { Recipe: CountingRecipe, readers } =
+      await createReaderCountingRecipe();
+    var recipe = new CountingRecipe(recipeFixture("AcroFormPdfLib"));
+    var created = readers.created;
+    recipe.fillForm({ "person.name": "Filled" }).endPDF();
+    assert.equal(readers.created, created);
   });
 
   it("fills AcroFormLibreOffice by on-state, label and export value", function () {
@@ -531,13 +545,22 @@ describe("fillForm", function () {
     assert.throws(() => recipe.fillForm({ agree: true }), message);
   });
 
-  it("does not fill a new document, an ended Recipe or a protected source", function () {
+  it("does not fill a new document, an ended Recipe or a protected source", async function () {
     assert.throws(() => new Recipe().fillForm({}), {
       message: "fillForm() needs a source PDF with a form",
     });
     var ended = new Recipe(recipeFixture("AcroFormPdfLib"));
     ended.endPDF();
     assert.throws(() => ended.fillForm({}), {
+      message: "Cannot fill a form after endPDF",
+    });
+    // nor one whose endPDF() failed
+    var LimitedRecipe = await createRecipe({
+      limits: { maxOutputBytes: 1000 },
+    });
+    var failed = new LimitedRecipe(recipeFixture("AcroFormPdfLib"));
+    assert.throws(() => failed.endPDF(), /exceeds maxOutputBytes/);
+    assert.throws(() => failed.fillForm({}), {
       message: "Cannot fill a form after endPDF",
     });
     assert.throws(

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createRecipe } from "../../index.js";
+import { recipeFixture } from "./recipe.mjs";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe endPDF called twice", function () {
@@ -31,6 +32,25 @@ describe("Recipe endPDF called twice", function () {
     assert.throws(
       () => recipe.endPDF(),
       (error) => error === finalizationError,
+    );
+  });
+
+  it("retires a Recipe of PDF bytes and rethrows the original error after a failed write", async function () {
+    var Recipe = await createRecipe({ limits: { maxOutputBytes: 1000 } });
+    var recipe = new Recipe(recipeFixture("AcroFormPdfLib"));
+
+    var writeError;
+    assert.throws(
+      () => recipe.endPDF(),
+      (error) => {
+        writeError = error;
+        return error.message === "PDF output exceeds maxOutputBytes";
+      },
+    );
+    // the original error, not that the writer has ended
+    assert.throws(
+      () => recipe.endPDF(),
+      (error) => error === writeError,
     );
   });
 });

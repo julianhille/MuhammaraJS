@@ -281,9 +281,10 @@ export function createEndPDF({
   /**
    * Finishes the Recipe and returns its PDF bytes.
    * An active page is finished first, so a forgotten {@link Recipe#endPage}
-   * does not cost that page. Deferred page insertions rebuild the document and
-   * configured encryption is applied. Repeated calls return cached finished
-   * bytes.
+   * does not cost that page. If writing the document then fails, the Recipe
+   * is retired and later calls rethrow the original error. Deferred page
+   * insertions rebuild the written document and configured encryption is
+   * applied. Repeated calls return cached finished bytes.
    *
    * @name endPDF
    * @function
@@ -299,12 +300,6 @@ export function createEndPDF({
   return function (callback) {
     if (callback !== undefined && typeof callback !== "function") {
       throw new TypeError("endPDF callback must be a function");
-    }
-    if (this._sourceNeedsPassword) {
-      // As on native, a source that needs a password to open is read-only.
-      throw new Error(
-        "Editing a password-protected source is unsupported; decrypt it with recrypt() first",
-      );
     }
     var bytes = endPDF(this);
     if (!this._insertions || this._rebuiltBytes) {

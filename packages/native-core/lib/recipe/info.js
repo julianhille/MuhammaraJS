@@ -234,11 +234,9 @@ exports._readInfo = function _readInfo() {
 };
 
 /**
- * Open a reader on the source for its Info and XMP, without a password: it
- * decrypts a PDF that only an owner password protects with the right key. A
- * PDF that needs its user password is not read, since the reader cannot tell
- * whether a given password is the user or the owner one, and decrypts with
- * the wrong key for an owner password.
+ * Open a reader on the source for its Info and XMP without a password: a PDF
+ * that only an owner password protects is read, and a PDF that needs its user
+ * password, which Recipe cannot edit, is not.
  * @private
  * @param {Recipe} recipe - The recipe.
  * @returns {Object|null} The reader, which the caller ends, or null for a

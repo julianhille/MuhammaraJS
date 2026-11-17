@@ -250,6 +250,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   still written after the field, so the Info dictionary could not be read and
   readers showed none of its entries
   [#1056](https://github.com/julianhille/MuhammaraJS/issues/1056)
+- Retire a Recipe created from PDF bytes when `endPDF()` fails to write it,
+  as native does, not only when pages were marked for deletion: a later
+  `endPDF()` rethrows the original error, such as
+  `PDF output exceeds maxOutputBytes`, instead of `PDF writer has ended`
+  [#1068](https://github.com/julianhille/MuhammaraJS/issues/1068)
 
 ### Changed
 

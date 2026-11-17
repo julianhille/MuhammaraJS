@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
-import { createMuhammaraWasm } from "../../index.js";
-import { getRecipe, recipeFixture } from "./recipe.mjs";
+import { createMuhammaraWasm, createRecipe } from "../../index.js";
+import {
+  createReaderCountingRecipe,
+  getRecipe,
+  recipeFixture,
+} from "./recipe.mjs";
 
-// Expected fields per fixture, kept identical to the Wasm test.
+// Expected fields per fixture, kept identical to the native test.
 var EXPECTED = {
   // Written by LibreOffice Writer: its checkbox /V is Yes, the on-state is
   // the export value.
@@ -365,6 +369,16 @@ describe("formFields", function () {
     );
   });
 
+  it("reads the fields through the modifier's parser", async function () {
+    // A second reader would parse the source again next to the modifier.
+    var { Recipe, readers } = await createReaderCountingRecipe();
+    var recipe = new Recipe(recipeFixture("AcroFormPdfLib"));
+    var created = readers.created;
+    assert.deepEqual(recipe.formFields(), EXPECTED.AcroFormPdfLib);
+    assert.equal(readers.created, created);
+    recipe.dispose();
+  });
+
   it("identifies each field and widget by its object ID", async function () {
     var Recipe = await getRecipe();
     var muhammara = await createMuhammaraWasm();
@@ -421,9 +435,17 @@ describe("formFields", function () {
     var Recipe = await getRecipe();
     var recipe = new Recipe(recipeFixture("AcroFormPdfLib"));
     recipe.endPDF();
-    assert.throws(() => recipe.formFields(), {
+    var released = {
       message:
         "The source PDF reader has been released by endPDF(). Read the source before ending the document.",
+    };
+    assert.throws(() => recipe.formFields(), released);
+    // a failed endPDF() releases it too
+    var LimitedRecipe = await createRecipe({
+      limits: { maxOutputBytes: 1000 },
     });
+    var failed = new LimitedRecipe(recipeFixture("AcroFormPdfLib"));
+    assert.throws(() => failed.endPDF(), /exceeds maxOutputBytes/);
+    assert.throws(() => failed.formFields(), released);
   });
 });

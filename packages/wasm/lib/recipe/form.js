@@ -901,24 +901,27 @@ function writeFormFills(recipe, fontFor) {
 }
 
 /**
- * Read the form of a Recipe's source with the Recipe password, so an
- * encrypted source decrypts; the modifier opens it without one.
+ * Read the form of a Recipe's source through the modifier's parser, so that
+ * the source is not parsed twice. The modifier opens without a password, so a
+ * source that needs one is read with the Recipe password instead.
  * @private
  * @param {Recipe} recipe - The Recipe.
  * @param {Function} createReader - Opens PDF bytes for reading.
  * @param {boolean} [forFill=false] - Passed to readForm().
  * @returns {object} The result of readForm().
- * @throws {Error} If endPDF() already finished the source document.
+ * @throws {Error} If the source reader was released by endPDF().
  */
 function readSourceForm(recipe, createReader, forFill = false) {
-  if (recipe._endedBytes) {
+  if (recipe._endedBytes || recipe._endError) {
     throw new Error(
       "The source PDF reader has been released by endPDF(). Read the source before ending the document.",
     );
   }
-  var parser = createReader(recipe._sourceBytes, {
-    password: recipe._getEncryptOptions(recipe.options).password,
-  });
+  var parser = recipe._sourceNeedsPassword
+    ? createReader(recipe._sourceBytes, {
+        password: recipe._getEncryptOptions(recipe.options).password,
+      })
+    : recipe.writer.getModifiedFileParser();
   try {
     return readForm(parser, forFill);
   } finally {
@@ -945,7 +948,7 @@ export function createFormMethods({ createReader, resolveFont }) {
      * @function
      * @memberof Recipe#
      * @returns {RecipeFormField[]} The form fields, in field tree order.
-     * @throws {Error} If endPDF() already finished the source document.
+     * @throws {Error} If the source reader was released by endPDF().
      * @example
      * const recipe = new Recipe(formBytes);
      * for (const field of recipe.formFields()) {
@@ -989,7 +992,7 @@ export function createFormMethods({ createReader, resolveFont }) {
       if (!this._sourceMode) {
         throw new Error("fillForm() needs a source PDF with a form");
       }
-      if (this._endedBytes) {
+      if (this._endedBytes || this._endError) {
         throw new Error("Cannot fill a form after endPDF");
       }
       if (this._sourceNeedsPassword) {
