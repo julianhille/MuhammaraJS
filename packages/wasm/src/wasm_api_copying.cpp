@@ -91,7 +91,7 @@ WASM_EXPORT unsigned long* muhammara_wasm_writer_create_forms_from_pdf(
 // Append error codes. Only a failure while appending leaves a partial page
 // tree behind; the writer is released for it.
 static const int kAppendFailed = 1;
-static const int kAppendEncrypted = 2;
+static const int kAppendNeedsPassword = 2;
 static const int kAppendRejected = 3;
 
 // This deliberately uses PDFWriter's stream overload instead of creating a
@@ -118,8 +118,8 @@ WASM_EXPORT unsigned long* muhammara_wasm_writer_append_pages_from_pdf(
     if (parser.StartPDFParsing(&inspectionStream) != PDFHummus::eSuccess) {
       return nullptr;
     }
-    if (parser.IsEncrypted()) {
-      *errorCode = kAppendEncrypted;
+    if (parser.IsEncrypted() && !parser.IsEncryptionSupported()) {
+      *errorCode = kAppendNeedsPassword;
       return nullptr;
     }
     pageCount = parser.GetPagesCount();
@@ -175,8 +175,8 @@ WASM_EXPORT int muhammara_wasm_writer_merge_pages_to_page_from_pdf(
     if (parser.StartPDFParsing(&inspectionStream) != PDFHummus::eSuccess) {
       return 0;
     }
-    if (parser.IsEncrypted()) {
-      *errorCode = 2;
+    if (parser.IsEncrypted() && !parser.IsEncryptionSupported()) {
+      *errorCode = kAppendNeedsPassword;
       return 0;
     }
   }

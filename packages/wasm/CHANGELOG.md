@@ -100,6 +100,13 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   as stored, instead of decrypting it into unreadable bytes, so `recrypt()`
   keeps the packet intact
   [#1027](https://github.com/julianhille/MuhammaraJS/issues/1027)
+- Copy a source PDF with an empty user password, decrypted, in
+  `appendPDFPagesFromPDF()` and `mergePDFPagesToPage()`, as native does and as
+  `createFormXObjectsFromPDF()` and `createPDFCopyingContext()` already did,
+  instead of throwing `Encrypted PDF input is not supported in Wasm`; that
+  error is now thrown only for a source that needs a password. Recipe
+  `appendPage()` on a Recipe created from PDF bytes copies such a PDF too
+  [#1031](https://github.com/julianhille/MuhammaraJS/issues/1031)
 - Decrypt strings and streams correctly when a PDF encrypted with RC4 or
   AES-128 (security handler revision 2 to 4) is opened with its owner password,
   instead of returning garbled text without an error. AES-256 was not affected

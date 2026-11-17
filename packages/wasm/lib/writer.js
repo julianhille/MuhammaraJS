@@ -3171,8 +3171,8 @@ export function createWriterFactory({
      * @throws {TypeError} If `options` is not an object or holds a password.
      * @throws {RangeError} If `type` is not an ERangeType constant, or
      * `specificRanges` is empty for a specific range or holds an invalid range.
-     * @throws {Error} If a page is active, the writer ended, or the source is encrypted
-     * or unreadable; a failed append disposes the writer.
+     * @throws {Error} If a page is active, the writer ended, or the source needs
+     * a password or is unreadable; a failed append disposes the writer.
      */
     function appendPDFPagesFromPDF(source, options = {}) {
       requireOpenWriter();
@@ -3250,8 +3250,8 @@ export function createWriterFactory({
      * @throws {TypeError} If the page, options, or callback is invalid, or a password is given.
      * @throws {RangeError} If `type` is not an ERangeType constant, or
      * `specificRanges` is empty for a specific range or holds an invalid range.
-     * @throws {Error} If another page is active, the writer ended, or the source is
-     * encrypted or unreadable.
+     * @throws {Error} If another page is active, the writer ended, or the source
+     * needs a password or is unreadable.
      */
     function mergePDFPagesToPage(targetPage, source, options, callback) {
       requireOpenWriter();
@@ -3356,8 +3356,8 @@ export function createWriterFactory({
        * @throws {TypeError} If `options` is not an object or holds a password.
        * @throws {RangeError} If `type` is not an ERangeType constant, or
        * `specificRanges` is empty for a specific range or holds an invalid range.
-       * @throws {Error} If a page is active, the writer ended, or the source is encrypted
-       * or unreadable; a failed append disposes the writer.
+       * @throws {Error} If a page is active, the writer ended, or the source needs
+       * a password or is unreadable; a failed append disposes the writer.
        */
       appendPDFPagesFromPDF: function (source, options) {
         return appendPDFPagesFromPDF(source, options);

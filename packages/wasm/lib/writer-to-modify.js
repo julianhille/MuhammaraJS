@@ -1360,8 +1360,8 @@ export function createWriterToModifyFactory({
        * @throws {TypeError} If `options` is not an object or holds a password.
        * @throws {RangeError} If `type` is not an ERangeType constant, or
        * `specificRanges` is empty for a specific range or holds an invalid range.
-       * @throws {Error} If a page is active, the modifier ended, or the source is encrypted
-       * or unreadable; a failed append disposes the modifier.
+       * @throws {Error} If a page is active, the modifier ended, or the source needs
+       * a password or is unreadable; a failed append disposes the modifier.
        */
       appendPDFPagesFromPDF: function (source, options = {}) {
         requireOpen();

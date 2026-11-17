@@ -124,6 +124,59 @@ describe("AppendPagesTest", function () {
     );
   });
 
+  it("copies a source with an empty user password decrypted", function () {
+    var content = "10 10 50 50 re";
+    var text = (bytes) => new TextDecoder("latin1").decode(bytes);
+    // RC4, AES-128 and AES-256.
+    for (var version of [
+      muhammara.ePDFVersion14,
+      muhammara.ePDFVersion16,
+      muhammara.ePDFVersion20,
+    ]) {
+      var source = muhammara.createWriter({
+        version,
+        compress: false,
+        userPassword: "",
+        ownerPassword: "owner",
+      });
+      var sourcePage = source.createPage(0, 0, 200, 200);
+      source.startPageContentContext(sourcePage).re(10, 10, 50, 50).f();
+      source.writePage(sourcePage);
+      var sourceBytes = source.end();
+      writeOutput(
+        `AppendPagesTest-owner-password-source-${version}`,
+        sourceBytes,
+      );
+      assert.ok(!text(sourceBytes).includes(content));
+
+      var copies = {
+        append: (writer) => writer.appendPDFPagesFromPDF(sourceBytes),
+        merge: (writer) => {
+          var page = writer.createPage(0, 0, 200, 200);
+          writer.mergePDFPagesToPage(page, sourceBytes);
+          writer.writePage(page);
+        },
+        forms: (writer) => writer.createFormXObjectsFromPDF(sourceBytes),
+        copyingContext: (writer) =>
+          writer.createPDFCopyingContext(sourceBytes).appendPDFPageFromPDF(0),
+      };
+      for (var [name, copy] of Object.entries(copies)) {
+        for (var writer of [
+          muhammara.createWriter({ compress: false }),
+          muhammara.createWriterToModify(sourcePdf(1), { compress: false }),
+        ]) {
+          copy(writer);
+          var output = writer.end();
+          writeOutput(
+            `AppendPagesTest-owner-password-${version}-${name}`,
+            output,
+          );
+          assert.ok(text(output).includes(content), `${version} ${name}`);
+        }
+      }
+    }
+  });
+
   /**
    * Asserts that a source rejected before anything is appended leaves the
    * modifier usable. The modified source PDF is written to the test output as

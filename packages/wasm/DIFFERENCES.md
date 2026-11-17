@@ -15,8 +15,9 @@ bytes with `recrypt`.
 option; Wasm throws a `TypeError` for one that is not a string. Source PDFs
 for `appendPDFPagesFromPDF`, `mergePDFPagesToPage`,
 `createFormXObjectsFromPDF`, `createPDFCopyingContext`, and PDF images in
-`drawImage` cannot be encrypted:
-a source `password` throws a `TypeError`. Decrypt the source with
+`drawImage` take no `password` option (passing one throws a `TypeError`);
+a source that needs a password to open throws. As in native, a source with
+an empty user password is copied decrypted. Decrypt other sources with
 `recrypt(bytes, { password })` first.
 Wasm `recryptAsync()` returns a promise like native's. Native recrypts on a
 libuv pool thread; Wasm has no thread pool, so it recrypts in a worker it starts
