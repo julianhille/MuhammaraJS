@@ -53,6 +53,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [GHSA-3p2c-cw9w-9746](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-3p2c-cw9w-9746)
 - Fix a security vulnerability
   [GHSA-7q35-5h53-wm34](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-7q35-5h53-wm34)
+- Fix a security vulnerability
+  [GHSA-h459-gv45-xfgv](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-h459-gv45-xfgv):
+  progressive or multi-scan JPEGs whose coefficients need more than 256 MiB
+  read as empty, and are copied empty when streams are not compressed
 
 ## [7.2.3] - 2026-10-27
 

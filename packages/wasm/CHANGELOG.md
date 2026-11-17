@@ -32,6 +32,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   filters fails to read
 - Fix a security vulnerability
   [GHSA-7q35-5h53-wm34](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-7q35-5h53-wm34)
+- Fix a security vulnerability
+  [GHSA-h459-gv45-xfgv](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-h459-gv45-xfgv):
+  progressive or multi-scan JPEGs whose coefficients need more than 256 MiB
+  read as empty, and are copied empty when streams are not compressed
 - Throw `Unable to read image dimensions` from `getImageDimensions()` for a
   password-protected PDF or a PDF without the requested page instead of
   returning a made-up 595 by 842.

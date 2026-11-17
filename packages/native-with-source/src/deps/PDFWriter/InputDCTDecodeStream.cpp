@@ -201,6 +201,16 @@ EStatusCode InputDCTDecodeStream::StartRead()
 
     {
         jpeg_read_header(&mJPGState, TRUE);
+        // MuhammaraJS: a progressive or multi-scan JPEG keeps the coefficients of the whole image, sized by its header alone, so bound them.
+        // max_memory_to_use would not do: libjpeg sums them in a long, which wraps where long is 32-bit (Windows, Wasm)
+        if(jpeg_has_multiple_scans(&mJPGState))
+        {
+            unsigned long long coefficientBytes = 0;
+            for(int i = 0; i < mJPGState.num_components; ++i)
+                coefficientBytes += (unsigned long long)mJPGState.comp_info[i].width_in_blocks * mJPGState.comp_info[i].height_in_blocks * sizeof(JBLOCK);
+            if(coefficientBytes > 256ULL * 1024 * 1024)
+                return eFailure;
+        }
         jpeg_start_decompress(&mJPGState);
     
         int row_stride = mJPGState.output_width * mJPGState.output_components;

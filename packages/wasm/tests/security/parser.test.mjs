@@ -977,4 +977,24 @@ describe("parser security regressions", function () {
       reader.end();
     }
   });
+  // Port of tests/security/GHSA-h459-gv45-xfgv.js. extractPageText() aborted
+  // Wasm on object 4.
+  it("reads nothing from progressive JPEGs that ask for too much memory", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/ProgressiveDCTAllocation.pdf"),
+    );
+    try {
+      for (var id = 4; id <= 5; ++id) {
+        var stream = reader.startReadingFromStream(
+          reader.parseNewObject(id).toPDFStream(),
+        );
+        assert.equal(stream.read(4096).length, 0);
+        assert.equal(stream.notEnded(), false);
+      }
+      assert.deepEqual(reader.extractPageText(0), []);
+    } finally {
+      reader.end();
+    }
+  });
 });
