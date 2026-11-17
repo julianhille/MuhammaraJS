@@ -221,6 +221,20 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Turn a rotated Recipe `polygon()` without `rotationOrigin` around the center
   of its bounding box, as native does, instead of its first point. Pass
   `rotationOrigin: coordinates[0]` to keep the old pivot [#924](https://github.com/julianhille/MuhammaraJS/issues/924)
+- Keep the Info entries of the source, such as `Title`, `Author` and custom
+  entries, in a PDF modified with the low-level `createWriterToModify()`,
+  `createWriterToModifyAsync()` or `createModifier()`, and start the
+  `getDocumentContext().getInfoDictionary()` of a `createWriterToModify()`
+  modifier with them, so that set values replace them. The update wrote an Info dictionary with only a new `ModDate`,
+  and readers showed none of the others
+  [#1053](https://github.com/julianhille/MuhammaraJS/issues/1053)
+- Let a custom Info entry added with `addAdditionalInfoEntry()` under the key
+  of a field (`Title`, `Author`, `Subject`, `Keywords`, `Creator`, `Producer`,
+  `CreationDate`, `ModDate` or `Trapped`) replace that field, on every writer,
+  including `createWriter()`. With the field already set, the repeated key was
+  refused but its value still written, so the Info dictionary could not be read
+  and readers showed none of its entries
+  [#1053](https://github.com/julianhille/MuhammaraJS/issues/1053)
 
 ### Changed
 

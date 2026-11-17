@@ -1,4 +1,5 @@
 #include "wasm_api_internal.h"
+#include "../../native-with-source/src/InfoEntries.h"
 
 extern "C" {
 
@@ -23,6 +24,7 @@ WasmModifier* muhammara_wasm_modifier_create(const char* path, int version,
     delete modifier;
     return nullptr;
   }
+  CopyModifiedFileInfo(modifier->writer);
   modifier->writer.GetDocumentContext().AddDocumentContextExtender(
       &modifier->catalogUpdate);
   return modifier;
@@ -108,9 +110,36 @@ WASM_EXPORT int muhammara_wasm_modifier_add_info_entry(WasmModifier* modifier,
                                                        const char* key,
                                                        const char* value) {
   if (modifier == nullptr || modifier->finished || key == nullptr || value == nullptr) return 0;
-  modifier->writer.GetDocumentContext().GetTrailerInformation().GetInfo()
-      .AddAdditionalInfoEntry(key, PDFTextString().FromUTF8(value));
+  AddCustomInfoEntry(
+      modifier->writer.GetDocumentContext().GetTrailerInformation().GetInfo(), key,
+      PDFTextString().FromUTF8(value));
   return 1;
+}
+
+// The Info dictionary as its getters report it, each value UTF-8 after its
+// byte length (4 bytes, little endian): the trapped state, the title, author,
+// subject, keywords, creator and producer, then each custom entry's key and
+// value.
+WASM_EXPORT unsigned char* muhammara_wasm_modifier_get_info(WasmModifier* modifier,
+                                                            unsigned int* outputLength) {
+  if (modifier == nullptr || modifier->finished) return nullptr;
+  InfoDictionary& info = modifier->writer.GetDocumentContext().GetTrailerInformation().GetInfo();
+  std::string result;
+  auto append = [&result](const std::string& value) {
+    uint32_t length = static_cast<uint32_t>(value.size());
+    result.append(reinterpret_cast<const char*>(&length), sizeof(length));
+    result += value;
+  };
+  append(std::to_string(info.Trapped));
+  for (const PDFTextString* field : {&info.Title, &info.Author, &info.Subject,
+                                     &info.Keywords, &info.Creator, &info.Producer})
+    append(field->ToUTF8String());
+  MapIterator<StringToPDFTextString> it = info.GetAdditionaEntriesIterator();
+  while (it.MoveNext()) {
+    append(it.GetKey());
+    append(it.GetValue().ToUTF8String());
+  }
+  return copyObjectString(result, outputLength);
 }
 
 WASM_EXPORT int muhammara_wasm_modifier_remove_info(WasmModifier* modifier,

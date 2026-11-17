@@ -1,5 +1,6 @@
 // Ports tests/SettingInfoValuesTest.js and tests/PDFTextString.js.
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
@@ -31,6 +32,28 @@ function zonedDate(time, offset) {
   date.getMinutes = () => local.getUTCMinutes();
   date.getSeconds = () => local.getUTCSeconds();
   return date;
+}
+
+/**
+ * Reads the Info dictionary a reader follows: strings as their bytes, in
+ * latin1, so that a changed encoding shows, and names as their value.
+ * @param {object} muhammara - The Wasm API.
+ * @param {Uint8Array} pdf - The PDF.
+ * @returns {Record<string, string>} The entries by key.
+ */
+function readInfo(muhammara, pdf) {
+  var reader = muhammara.createReader(pdf);
+  var info = reader
+    .queryDictionaryObject(reader.getTrailer(), "Info")
+    .toJSObject();
+  var entries = {};
+  Object.keys(info).forEach(function (key) {
+    entries[key] = info[key].toBytesArray
+      ? String.fromCharCode(...info[key].toBytesArray())
+      : info[key].value;
+  });
+  reader.end();
+  return entries;
 }
 
 describe("SettingInfoValuesTest", function () {
@@ -143,6 +166,32 @@ describe("SettingInfoValuesTest", function () {
     assert.ok(pdf.includes("/title (custom)"));
   });
 
+  it("writes a custom entry under a field's Info key in place of the field", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var keys = ["Title", "Trapped", "CreationDate", "ModDate"];
+    for (var modify of [false, true]) {
+      var writer = modify
+        ? muhammara.createWriterToModify(muhammara.createBlankPdf(10, 10))
+        : muhammara.createWriter();
+      var info = writer.getDocumentContext().getInfoDictionary();
+      info.title = "field";
+      info.trapped = muhammara.EInfoTrappedTrue;
+      info.setCreationDate("D:20200102030405Z");
+      info.setModDate("D:20200102030405Z");
+      for (var key of keys) info.addAdditionalInfoEntry(key, "custom");
+      assert.equal(info.title, "");
+      assert.equal(info.trapped, muhammara.EInfoTrappedUnknown);
+      if (!modify) writer.writePage(writer.createPage(0, 0, 10, 10));
+      var pdf = new TextDecoder("latin1").decode(writer.end());
+      // each key once, with the custom value
+      for (var key of keys) {
+        assert.deepEqual(pdf.match(new RegExp(`/${key} .*`, "g")), [
+          `/${key} (custom)`,
+        ]);
+      }
+    }
+  });
+
   it("removes a date set to null", async function () {
     var muhammara = await createMuhammaraWasm();
     var writer = muhammara.createWriter();
@@ -171,5 +220,82 @@ describe("SettingInfoValuesTest", function () {
       assert.equal(writer.createPDFDate(date).toString(), expected);
       assert.equal(new muhammara.PDFDate(date).toString(), expected);
     });
+  });
+
+  it("keeps the source Info entries when modifying a PDF", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = new Uint8Array(
+      await readFile("tests/TestMaterials/InfoEntries.pdf"),
+    );
+    var outputs = [];
+    for (var writer of [
+      muhammara.createWriterToModify(source),
+      await muhammara.createWriterToModifyAsync(new Blob([source])),
+    ]) {
+      var info = writer.getDocumentContext().getInfoDictionary();
+      assert.equal(info.title, "Snowman \u2603");
+      assert.equal(info.author, "Indirect author");
+      assert.equal(info.subject, "Caf\u00e9");
+      assert.equal(info.keywords, "source, keywords");
+      assert.equal(info.creator, "Source Creator");
+      assert.equal(info.producer, "Source Producer");
+      assert.equal(info.trapped, muhammara.EInfoTrappedFalse);
+      assert.deepEqual(info.getAdditionalInfoEntries(), {
+        Department: "Typesetting",
+      });
+      outputs.push(writer.end());
+    }
+    // the compact modifier keeps them too
+    outputs.push(muhammara.createModifier(source).end());
+    writeOutput("InfoEntriesModified", outputs[0]);
+
+    for (var pdf of outputs) {
+      var modified = readInfo(muhammara, pdf);
+      // the date of this update
+      assert.match(modified.ModDate, /^D:\d{14}/);
+      assert.notEqual(modified.ModDate, "D:20200102030405Z");
+      delete modified.ModDate;
+      // the text entries with the bytes of the source, the indirect one
+      // resolved, and the Trapped name; /Revision 3 and /Status /Final are
+      // left out, since the Info dictionary holds no numbers or other names
+      assert.deepEqual(modified, {
+        Title: "\xfe\xff\0S\0n\0o\0w\0m\0a\0n\0 \x26\x03",
+        Author: "Indirect author",
+        Subject: "Caf\xe9",
+        Keywords: "source, keywords",
+        Creator: "Source Creator",
+        Producer: "Source Producer",
+        CreationDate: "D:20200102030405Z",
+        Trapped: "False",
+        Department: "Typesetting",
+      });
+    }
+  });
+
+  it("writes the Info values set on a modified PDF over the source ones", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriterToModify(
+      await readFile("tests/TestMaterials/InfoEntries.pdf"),
+    );
+    var info = writer.getDocumentContext().getInfoDictionary();
+    info.title = "New title";
+    info.subject = "";
+    info.setCreationDate(null);
+    info.trapped = muhammara.EInfoTrappedTrue;
+    info.addAdditionalInfoEntry("Department", "Layout");
+    // takes the place of the copied Author
+    info.addAdditionalInfoEntry("Author", "Custom author");
+    assert.equal(info.author, "");
+    var pdf = writer.end();
+    writeOutput("InfoEntriesModifiedValues", pdf);
+
+    var modified = readInfo(muhammara, pdf);
+    assert.equal(modified.Title, "New title");
+    assert.ok(!("Subject" in modified));
+    assert.ok(!("CreationDate" in modified));
+    assert.equal(modified.Trapped, "True");
+    assert.equal(modified.Department, "Layout");
+    assert.equal(modified.Author, "Custom author");
+    assert.equal(modified.Keywords, "source, keywords");
   });
 });

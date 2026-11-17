@@ -1,4 +1,5 @@
 #include "wasm_api_internal.h"
+#include "../../native-with-source/src/InfoEntries.h"
 
 extern "C" {
 
@@ -1026,8 +1027,9 @@ WASM_EXPORT int muhammara_wasm_recipe_add_info_entry(WasmRecipe* recipe,
   if (recipe == nullptr || key == nullptr || value == nullptr || recipe->finished) {
     return 0;
   }
-  recipe->writer.GetDocumentContext().GetTrailerInformation().GetInfo()
-      .AddAdditionalInfoEntry(key, PDFTextString().FromUTF8(value));
+  AddCustomInfoEntry(
+      recipe->writer.GetDocumentContext().GetTrailerInformation().GetInfo(), key,
+      PDFTextString().FromUTF8(value));
   return 1;
 }
 

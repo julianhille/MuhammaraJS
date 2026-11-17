@@ -182,8 +182,8 @@ class Recipe {
       } catch (err) {
         throw new Error(err);
       }
-      // the fields and custom entries of the source, once, so that low-level
-      // changes to the Info dictionary stick, as on Wasm
+      // createWriterToModify() copied the source's fields and custom entries
+      // as their bytes; Recipe writes them as text, which re-encodes them
       const source = this._readInfo();
       const infoDictionary = this.writer
         .getDocumentContext()
@@ -401,11 +401,6 @@ class Recipe {
       this._deletePages();
       this._writeInfo();
       this._writeFormFills();
-      // the annotation pass writes a new Info dictionary: carry the fields
-      // and custom entries over
-      const info = this.writer.getDocumentContext().getInfoDictionary();
-      const fields = standardInfoKeys.map((key) => [key, info[key]]);
-      const customInfo = info.getAdditionalInfoEntries();
       this.writer.end();
       // This is a temporary work around for copying context will overwrite the current one
       // write annotations at the end.
@@ -439,15 +434,6 @@ class Recipe {
           );
         }
 
-        const infoDictionary = this.writer
-          .getDocumentContext()
-          .getInfoDictionary();
-        fields.forEach(([key, value]) => {
-          if (value) infoDictionary[key] = value;
-        });
-        Object.entries(customInfo).forEach(([key, value]) =>
-          infoDictionary.addAdditionalInfoEntry(key, value),
-        );
         this._writeAnnotations();
         this._writeInfo();
         this.writer.end();

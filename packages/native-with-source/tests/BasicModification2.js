@@ -10,6 +10,12 @@ function testBasicFileModification(inFileName, throws) {
         var protectedWriter = muhammara.createWriterToModify(sourcePath, {
           modifiedFilePath: outputPath,
         });
+        // the Info of a source it cannot read is left out
+        var info = protectedWriter.getDocumentContext().getInfoDictionary();
+        assert.equal(info.creator, "");
+        assert.equal(info.producer, "");
+        assert.equal(info.trapped, muhammara.EInfoTrappedUnknown);
+        assert.deepEqual(info.getAdditionalInfoEntries(), {});
         var protectedPage = protectedWriter.createPage(0, 0, 595, 842);
         protectedWriter.writePage(protectedPage);
         assert.throws(function () {

@@ -13,6 +13,7 @@
 #include "ImageXObjectDriver.h"
 #include "InfoDictionary.h"
 #include "InfoDictionaryDriver.h"
+#include "InfoEntries.h"
 #include "InputFileDriver.h"
 #include "ObjectByteReaderWithPosition.h"
 #include "ObjectByteWriterWithPosition.h"
@@ -228,6 +229,8 @@ napi_value CreateWriterToModify(const CallbackArgs &args) {
           ? d->ModifyPDF(args.Env(), args[0], args[1], version, log, creation)
           : d->ModifyPDF(LegacyString(args.Env(), args[0]), version, alternative,
                          log, creation);
+  if (status == eSuccess)
+    CopyModifiedFileInfo(*d->GetWriter());
   return status == eSuccess
              ? instance
              : ThrowTypeError(

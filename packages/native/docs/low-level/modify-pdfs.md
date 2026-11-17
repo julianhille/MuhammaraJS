@@ -13,6 +13,17 @@ To add content to an existing page, use `PDFPageModifier`, start its context,
 draw content, end the context, and write the page. Passing `true` as the third
 constructor argument isolates new graphics from the existing graphics state.
 
+The modified PDF keeps the Info dictionary of the source.
+`writer.getDocumentContext().getInfoDictionary()` starts with its text entries,
+such as the title, author and custom entries, its creation date and its
+`trapped` state, and `ModDate` is set to the time of the edit. Values set there
+replace those of the source, as on Wasm; a custom entry added under the key of
+a field, such as `Title`, takes that field's place. Entries the Info dictionary
+cannot hold are left out: values that are not text strings, such as numbers,
+names and arrays, apart from the `Trapped` name; a `Trapped` that is not a name,
+or is `Unknown`, which is the default anyway; and a `CreationDate` that is not a
+PDF date.
+
 ## Replace an Indirect Object
 
 `replaceObject(pageIndex, sourceObjectId, replacementObjectId, options)` rewrites

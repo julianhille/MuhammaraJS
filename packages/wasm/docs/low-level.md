@@ -123,6 +123,17 @@ page through `createPageModifier(index?, ensureContentEncapsulation?)`. Its
 `end()` returns a new `Uint8Array`. `createModifier(bytes)` is the compact
 drawing facade.
 
+A PDF modified with either keeps the Info dictionary of its source. The
+`getDocumentContext().getInfoDictionary()` of a `createWriterToModify` modifier
+starts with its text entries, such as the title, author and custom entries, its
+creation date and its `trapped` state, and `ModDate` is set to the time of the
+edit. Values set there replace those of the source, as on native; a custom
+entry added under the key of a field, such as `Title`, takes that field's
+place. Entries the Info dictionary cannot hold are left out: values that are
+not text strings, such as numbers, names and arrays, apart from the `Trapped`
+name; a `Trapped` that is not a name, or is `Unknown`, which is the default
+anyway; and a `CreationDate` that is not a PDF date.
+
 A writer created with `createWriterToModify` also exposes
 `replaceObject(pageIndex, sourceObjectId, replacementObjectId, options?)`, which
 repoints every direct reference to `sourceObjectId` in the zero-based page's
