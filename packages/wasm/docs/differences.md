@@ -54,6 +54,14 @@ source that needs a password to open throws. As in native, a source with an
 empty user password is copied decrypted. Decrypt other sources with
 `recrypt(bytes, { password })` first; see
 [Change PDF Passwords](how-to/change-pdf-passwords.md).
+Recipe `appendPage()`, `overlay()` and `splitPdf()` with a registered PDF that
+needs a password, and `endPDF()` after `insertPage()` with one, throw
+`Encrypted PDF input is not supported in Wasm`; native Recipe rejects such a
+PDF too, with `unable to create copying context` (a `TypeError`) or
+`Unable to read/edit PDF file`. On both ends, decrypt it with
+`recrypt(bytes, { password })` first. `split()` of a Recipe whose output needs a
+password throws the same error, where native `split()` splits its source pages;
+split a Recipe without `encrypt()` and encrypt the parts instead.
 
 Appending or rebuilding an existing source page does not deep-copy that page's
 `/Annots` graph, although annotations created in the output are written

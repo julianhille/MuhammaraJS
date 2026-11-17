@@ -103,6 +103,11 @@ describe("Recipe appendPages", function () {
     var reader = muhammara.createReader(bytes);
     assert.equal(reader.getPagesCount(), 2);
     reader.end();
+    var split = Recipe.splitPdf("owner-password-append");
+    assert.equal(split.length, 1);
+    reader = muhammara.createReader(split[0].bytes);
+    assert.equal(reader.getPagesCount(), 1);
+    reader.end();
   });
 
   it("rejects a PDF that needs a password", async function () {
@@ -135,6 +140,14 @@ describe("Recipe appendPages", function () {
     assert.throws(
       () =>
         new Recipe(source).insertPage(1, "user-password-append", 1).endPDF(),
+      error,
+    );
+    assert.throws(() => Recipe.splitPdf("user-password-append"), error);
+    assert.throws(
+      () =>
+        new Recipe(source)
+          .encrypt({ userPassword: "user", ownerPassword: "owner" })
+          .split(),
       error,
     );
   });
