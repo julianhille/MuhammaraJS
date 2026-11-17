@@ -17,6 +17,7 @@ var {
   writeOutputIntents,
 } = require("../pdfa");
 var { attachment, writeAttachments } = require("../attachments");
+var { readStreamString } = require("../content-stream");
 
 var PLAIN_METADATA =
   "Recipe cannot write the XMP of a PDF whose metadata is not encrypted";
@@ -138,12 +139,11 @@ exports.xmp = function xmp() {
     if (!metadata || metadata.getType() !== this.muhammara.ePDFObjectStream) {
       return undefined;
     }
-    // the reader decodes the stream filters
-    const input = parser.startReadingFromStream(metadata.toPDFStream());
-    const chunks = [];
-    while (input.notEnded()) chunks.push(Buffer.from(input.read(4096)));
-    // without a byte order mark, as Wasm reads it
-    return new TextDecoder().decode(Buffer.concat(chunks));
+    // decoded through the stream filters by a reader it disposes, and without
+    // a byte order mark, as Wasm reads it
+    return new TextDecoder().decode(
+      Buffer.from(readStreamString(parser, metadata.toPDFStream()), "latin1"),
+    );
   } finally {
     parser.end();
   }

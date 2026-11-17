@@ -216,6 +216,41 @@ describe("XMP metadata", function () {
       assert.equal(recipe.xmp(), before);
     });
 
+    it("disposes the stream reader it reads the packet with", function () {
+      var recipe = new Recipe(
+        create("XMPDispose", { xmp: true }),
+        out("XMPDisposeEdit"),
+      );
+      var disposed = 0;
+      // native byte readers keep their decoders until disposed, even after
+      // their reader ends
+      recipe.muhammara = Object.create(muhammara, {
+        createReader: {
+          value: function () {
+            var reader = muhammara.createReader.apply(muhammara, arguments);
+            var startReadingFromStream = reader.startReadingFromStream;
+            reader.startReadingFromStream = function (stream) {
+              var input = startReadingFromStream.call(this, stream);
+              var dispose = input.dispose;
+              input.dispose = function () {
+                ++disposed;
+                return dispose.call(this);
+              };
+              return input;
+            };
+            return reader;
+          },
+        },
+      });
+      try {
+        assert.ok(recipe.xmp().includes("<?xpacket"));
+      } finally {
+        delete recipe.muhammara;
+        recipe.endPDF();
+      }
+      assert.strictEqual(disposed, 1);
+    });
+
     it("writes no packet by default or when false", function () {
       assert.strictEqual(xmpOf(create("XMPOff")), undefined);
       assert.strictEqual(xmpOf(create("XMPFalse", { xmp: false })), undefined);
