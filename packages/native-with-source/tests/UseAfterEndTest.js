@@ -469,6 +469,19 @@ describe("UseAfterEndTest", function () {
       assertEnded("PDF writer event has ended", function () {
         pageDictionary.writeKey("Late");
       });
+      var objects = writer.getObjectsContext();
+      objects.startNewIndirectObject();
+      ["startPDFStream", "startUnfilteredPDFStream"].forEach(function (method) {
+        assert.throws(
+          function () {
+            objects[method](pageDictionary);
+          },
+          TypeError,
+          /^Provide the active dictionary context$/,
+          method,
+        );
+      });
+      objects.endIndirectObject();
       writer.end();
     });
 

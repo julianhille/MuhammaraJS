@@ -14,7 +14,10 @@ dictionary, pass it to `startPDFStream`, write to the returned stream, and end
 it with `endPDFStream`. `endPDFStream` completes the surrounding object; a
 following `endIndirectObject()` is ignored. `endIndirectObject()` without
 an open object throws `Unable to end indirect object`, and starting an object
-while one is open throws `Unable to start indirect object`.
+while one is open throws `Unable to start indirect object`. A dictionary passed
+to `endDictionary()`, `startPDFStream()` or `startUnfilteredPDFStream()` is
+finished: its methods throw `Dictionary context is no longer active`, and
+starting a stream with it throws `Provide the active dictionary context`.
 
 A writer created with a password writes strings and streams only inside an
 indirect object, as each is encrypted for the object that holds it. Outside

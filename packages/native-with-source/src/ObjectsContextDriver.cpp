@@ -146,6 +146,8 @@ napi_value ObjectsContextDriver::EndDictionary(const CallbackArgs &a) {
     return ThrowTypeError(a.Env(),
                           "Inconsistent ending of dictionary. Wrong "
                           "nesting of startDictionary and endDictionary");
+  // Ending released the dictionary, so its methods must throw from now on.
+  dict->DictionaryContextInstance = nullptr;
   return a.This();
 }
 napi_value ObjectsContextDriver::EndIndirectObject(const CallbackArgs &a) {
@@ -272,12 +274,16 @@ static napi_value StartStream(const CallbackArgs &a, bool filtered) {
     return ThrowTypeError(a.Env(),
                           "wrong arguments, please provide no arguments "
                           "or an optional stream dictionary");
+  auto *wrapper =
+      a.Length() ? ObjectWrap::Unwrap<DictionaryContextDriver>(a.Env(), a[0])
+                 : nullptr;
+  if (wrapper &&
+      (!wrapper->DictionaryContextInstance || wrapper->EndedOwner()))
+    return ThrowTypeError(a.Env(), "Provide the active dictionary context");
   if (!RequireIndirectObjectToEncrypt(a.Env(), d->ObjectsContextInstance))
     return nullptr;
   DictionaryContext *dict =
-      a.Length() ? ObjectWrap::Unwrap<DictionaryContextDriver>(a.Env(), a[0])
-                       ->DictionaryContextInstance
-                 : nullptr;
+      wrapper ? wrapper->DictionaryContextInstance : nullptr;
   napi_value value = d->holder->GetNewPDFStream();
   PDFStreamDriver *sd = nullptr;
   if (!ObjectWrap::UnwrapNew(a.Env(), value, &sd))
@@ -293,6 +299,9 @@ static napi_value StartStream(const CallbackArgs &a, bool filtered) {
   if (sd->PDFStreamInstance) {
     d->openContent->streams.insert(sd->PDFStreamInstance);
     sd->openContent = d->openContent;
+    // Starting the stream ended and released its dictionary.
+    if (wrapper)
+      wrapper->DictionaryContextInstance = nullptr;
   }
   return value;
 }

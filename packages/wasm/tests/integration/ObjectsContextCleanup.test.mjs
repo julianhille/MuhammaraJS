@@ -31,6 +31,66 @@ describe("ObjectsContextCleanup", function () {
     reader.end();
   });
 
+  it("rejects a dictionary that endDictionary() or a stream start ended", function () {
+    var writer = muhammara.createWriter();
+    var objects = writer.getObjectsContext();
+    // Each entry ends the dictionary and returns what closes its object.
+    [
+      (dictionary) => {
+        objects.endDictionary(dictionary);
+        return () => objects.endIndirectObject();
+      },
+      (dictionary) => {
+        var stream = objects.startPDFStream(dictionary);
+        return () => objects.endPDFStream(stream);
+      },
+      (dictionary) => {
+        var stream = objects.startUnfilteredPDFStream(dictionary);
+        return () => objects.endPDFStream(stream);
+      },
+    ].forEach(function (end) {
+      objects.startNewIndirectObject();
+      var dictionary = objects.startDictionary();
+      var close = end(dictionary);
+
+      [
+        ["writeKey", ["Late"]],
+        ["writeNameValue", ["Late"]],
+        ["writeLiteralStringValue", ["Late"]],
+        ["writeBooleanValue", [true]],
+        ["writeNumberValue", [1]],
+        ["writeObjectReferenceValue", [1]],
+        ["writeRectangleValue", [0, 0, 1, 1]],
+      ].forEach(function ([method, args]) {
+        assert.throws(
+          () => dictionary[method](...args),
+          { name: "Error", message: "Dictionary context is no longer active" },
+          method,
+        );
+      });
+      assert.throws(
+        () => objects.endDictionary(dictionary),
+        /Inconsistent ending of dictionary/,
+      );
+      ["startPDFStream", "startUnfilteredPDFStream"].forEach(function (method) {
+        assert.throws(
+          () => objects[method](dictionary),
+          {
+            name: "TypeError",
+            message: "Provide the active dictionary context",
+          },
+          method,
+        );
+      });
+      close();
+    });
+    writer.writePage(writer.createPage(0, 0, 100, 100));
+    var bytes = writer.end();
+    writeOutput("ObjectsContextCleanup-ended-dictionary", bytes);
+
+    assert.doesNotMatch(Buffer.from(bytes).toString("latin1"), /Late/);
+  });
+
   it("rejects unbalanced indirect object starts and ends", function () {
     var writer = muhammara.createWriter({
       userPassword: "user",
@@ -87,8 +147,20 @@ describe("ObjectsContextCleanup", function () {
     var writer = muhammara.createWriter();
     var objects = writer.getObjectsContext();
     objects.startNewIndirectObject();
-    objects.startDictionary().writeKey("Open");
+    var dictionary = objects.startDictionary().writeKey("Open");
     writer.dispose();
     assert.throws(() => writer.end(), /writer/);
+
+    var other = muhammara.createWriter();
+    var otherObjects = other.getObjectsContext();
+    otherObjects.startNewIndirectObject();
+    ["startPDFStream", "startUnfilteredPDFStream"].forEach(function (method) {
+      assert.throws(
+        () => otherObjects[method](dictionary),
+        { name: "TypeError", message: "Provide the active dictionary context" },
+        method,
+      );
+    });
+    other.dispose();
   });
 });
