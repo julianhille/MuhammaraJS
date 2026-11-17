@@ -272,6 +272,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update the documentation-build dependency `mkdocs-material` from 9.7.7 to
   9.8.1. Only the repository's documentation site uses it; installed
   packages are unaffected.
+- Update the test dependencies `minimatch` to 11.0.9 and `glob` to 14.0.6
+  (pulled in by `mocha` and `jest`) for the minimatch security fix
+  GHSA-g3hv-75wg-m249. Only the repository's tests use them; installed
+  packages are unaffected.
+  [#1057](https://github.com/julianhille/MuhammaraJS/issues/1057)
 
 ## [7.2.3] - 2026-10-27
 
