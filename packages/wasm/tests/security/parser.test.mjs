@@ -960,4 +960,21 @@ describe("parser security regressions", function () {
       });
     });
   });
+  // Port of tests/security/GHSA-7q35-5h53-wm34.js.
+  it("reads nothing from a stream with a negative /Length", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/NegativeLengthLZW.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(4).toPDFStream(),
+      );
+      assert.deepEqual(stream.read(4096), new Uint8Array(0));
+      assert.equal(stream.notEnded(), false);
+      assert.deepEqual(reader.extractPageText(0), []);
+    } finally {
+      reader.end();
+    }
+  });
 });

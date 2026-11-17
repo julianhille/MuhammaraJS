@@ -30,6 +30,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   [GHSA-rw3m-455p-xvhr](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-rw3m-455p-xvhr):
   predictor rows over 1 MiB read as empty, and a stream with more than eight
   filters fails to read
+- Fix a security vulnerability
+  [GHSA-7q35-5h53-wm34](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-7q35-5h53-wm34)
 - Throw `Unable to read image dimensions` from `getImageDimensions()` for a
   password-protected PDF or a PDF without the requested page instead of
   returning a made-up 595 by 842.

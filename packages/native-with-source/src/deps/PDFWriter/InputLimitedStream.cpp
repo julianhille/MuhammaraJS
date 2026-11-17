@@ -52,6 +52,10 @@ void InputLimitedStream::Assign(IByteReader* inSourceStream,LongFilePositionType
 
 LongBufferSizeType InputLimitedStream::Read(Byte* inBuffer,LongBufferSizeType inBufferSize)
 {
+	// MuhammaraJS: a negative /Length leaves a negative limit, which the cast below turned into an unbounded read
+	if(mMoreToRead <= 0)
+		return 0;
+
 	LongBufferSizeType readBytes = mStream->Read(inBuffer,(LongBufferSizeType)std::min<LongFilePositionType>((LongFilePositionType)inBufferSize,mMoreToRead));
 
 	mMoreToRead -= readBytes;
