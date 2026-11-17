@@ -192,6 +192,69 @@ describe("SettingInfoValuesTest", function () {
     }
   });
 
+  it("writes a field set after a custom entry under its Info key in place of the entry", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var texts = [
+      "Title",
+      "Author",
+      "Subject",
+      "Keywords",
+      "Creator",
+      "Producer",
+    ];
+    var keys = texts.concat("CreationDate", "ModDate", "Trapped", "Department");
+    var date = "D:20200102030405Z";
+    /**
+     * Sets every field after a custom entry under its Info key.
+     * @param {boolean} modify - Whether to modify a PDF.
+     * @param {boolean} clear - Whether to clear the fields.
+     * @returns {Record<string, string>} The Info entries a reader sees.
+     */
+    function write(modify, clear) {
+      var writer = modify
+        ? muhammara.createWriterToModify(muhammara.createBlankPdf(10, 10))
+        : muhammara.createWriter();
+      var info = writer.getDocumentContext().getInfoDictionary();
+      for (var key of keys) info.addAdditionalInfoEntry(key, "custom");
+      // each setter takes only the entry under its own key
+      texts.forEach((text, index) => {
+        info[text.toLowerCase()] = clear ? "" : "field";
+        assert.equal(info.getAdditionalInfoEntry(keys[index + 1]), "custom");
+      });
+      info.setCreationDate(clear ? null : date);
+      assert.equal(info.getAdditionalInfoEntry("ModDate"), "custom");
+      info.setModDate(clear ? null : date);
+      // and a set that throws takes none
+      assert.throws(() => (info.trapped = "True"), RangeError);
+      assert.equal(info.getAdditionalInfoEntry("Trapped"), "custom");
+      info.trapped = clear
+        ? muhammara.EInfoTrappedUnknown
+        : muhammara.EInfoTrappedTrue;
+      assert.deepEqual(info.getAdditionalInfoEntries(), {
+        Department: "custom",
+      });
+      if (!modify) writer.writePage(writer.createPage(0, 0, 10, 10));
+      return readInfo(muhammara, writer.end());
+    }
+    for (var modify of [false, true]) {
+      // each key once, with the field's value
+      assert.deepEqual(write(modify, false), {
+        Title: "field",
+        Author: "field",
+        Subject: "field",
+        Keywords: "field",
+        Creator: "field",
+        Producer: "field",
+        CreationDate: date,
+        ModDate: date,
+        Trapped: "True",
+        Department: "custom",
+      });
+      // a field cleared last takes the entry with it
+      assert.deepEqual(write(modify, true), { Department: "custom" });
+    }
+  });
+
   it("removes a date set to null", async function () {
     var muhammara = await createMuhammaraWasm();
     var writer = muhammara.createWriter();

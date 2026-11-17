@@ -242,6 +242,14 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   refused but its value still written, so the Info dictionary could not be read
   and readers showed none of its entries
   [#1053](https://github.com/julianhille/MuhammaraJS/issues/1053)
+- Let an Info field set after a custom entry under its key replace that entry,
+  on every writer: `title`, `author`, `subject`, `keywords`, `creator`,
+  `producer`, `trapped`, `setCreationDate()` and `setModDate()` after
+  `addAdditionalInfoEntry()` with the field's key, such as `Title`, also when
+  they clear the field; clearing used to keep the entry. The custom value was
+  still written after the field, so the Info dictionary could not be read and
+  readers showed none of its entries
+  [#1056](https://github.com/julianhille/MuhammaraJS/issues/1056)
 
 ### Changed
 

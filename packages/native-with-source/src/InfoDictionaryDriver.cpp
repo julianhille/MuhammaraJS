@@ -73,9 +73,8 @@ napi_value InfoDictionaryDriver::SetText(const CallbackArgs &args) {
   std::string value = LegacyString(args.Env(), args[0]);
   if (HasPendingException(args.Env()))
     return nullptr;
-  TextField(driver->InfoDictionaryInstance,
-            static_cast<const char *>(args.Data()))
-      ->FromUTF8(value);
+  SetInfoTextField(*driver->InfoDictionaryInstance,
+                   static_cast<const char *>(args.Data()), value);
   return Undefined(args.Env());
 }
 napi_value InfoDictionaryDriver::GetTrapped(const CallbackArgs &args) {
@@ -88,8 +87,11 @@ napi_value InfoDictionaryDriver::SetTrapped(const CallbackArgs &args) {
   auto *driver = Driver(args);
   if (!driver->InfoDictionaryInstance)
     return ThrowTypeError(args.Env(), kUninitialized);
-  driver->InfoDictionaryInstance->Trapped =
-      static_cast<EInfoTrapped>(ToUint32(args.Env(), args[0]));
+  uint32_t trapped = ToUint32(args.Env(), args[0]);
+  if (HasPendingException(args.Env()))
+    return nullptr;
+  SetInfoTrapped(*driver->InfoDictionaryInstance,
+                 static_cast<EInfoTrapped>(trapped));
   return Undefined(args.Env());
 }
 static napi_value SetDate(const CallbackArgs &args, bool creation) {
@@ -100,10 +102,7 @@ static napi_value SetDate(const CallbackArgs &args, bool creation) {
     // null removes the date, as the Wasm writer does
     PDFDate none;
     none.ParseString("");
-    if (creation)
-      driver->InfoDictionaryInstance->CreationDate = none;
-    else
-      driver->InfoDictionaryInstance->ModDate = none;
+    SetInfoDate(*driver->InfoDictionaryInstance, !creation, none);
     return Undefined(args.Env());
   }
   PDFDateDriver *dateDriver = nullptr;
@@ -120,11 +119,8 @@ static napi_value SetDate(const CallbackArgs &args, bool creation) {
     if (!ObjectWrap::UnwrapNew(args.Env(), value, &dateDriver))
       return nullptr;
   }
-  PDFDate date = *dateDriver->getInstance();
-  if (creation)
-    driver->InfoDictionaryInstance->CreationDate = date;
-  else
-    driver->InfoDictionaryInstance->ModDate = date;
+  SetInfoDate(*driver->InfoDictionaryInstance, !creation,
+              *dateDriver->getInstance());
   return Undefined(args.Env());
 }
 napi_value InfoDictionaryDriver::SetCreationDate(const CallbackArgs &args) {
