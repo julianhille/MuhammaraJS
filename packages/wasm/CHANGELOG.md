@@ -220,6 +220,9 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 - Update the test dependency `undici` (pulled in by `jsdom`) from 7.30.0 to
   7.30.2 for its security fixes. Only the repository's tests use it; the
   installed package is unaffected.
+- Update the documentation-build dependency `mkdocs-material` from 9.7.7 to
+  9.8.1. Only the repository's documentation site uses it; the installed
+  package is unaffected.
 
 ## [1.2.3] - 2026-10-27
 

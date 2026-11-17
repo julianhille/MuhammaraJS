@@ -266,6 +266,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Check the npm, GitHub Actions, and docs requirements dependencies weekly
   with Dependabot
   [#867](https://github.com/julianhille/MuhammaraJS/issues/867)
+- Update the documentation-build dependency `mkdocs-material` from 9.7.7 to
+  9.8.1. Only the repository's documentation site uses it; installed
+  packages are unaffected.
 
 ## [7.2.3] - 2026-10-27
 
