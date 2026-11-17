@@ -57,6 +57,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [GHSA-h459-gv45-xfgv](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-h459-gv45-xfgv):
   progressive or multi-scan JPEGs whose coefficients need more than 256 MiB
   read as empty, and are copied empty when streams are not compressed
+- Fix a security vulnerability
+  [GHSA-pvfx-h82v-pxjj](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-pvfx-h82v-pxjj):
+  a PDF with an object number over 8,388,607, or whose `/Prev`
+  cross-reference sections or cross-reference stream entries add up to more
+  than 16 tables of that size, fails to open, and an object fails to parse
+  once the object streams read list more objects than twice the
+  cross-reference table size plus 1,048,576, or when its object stream header
+  did not parse before
 
 ## [7.2.3] - 2026-10-27
 

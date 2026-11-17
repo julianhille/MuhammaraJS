@@ -1,6 +1,7 @@
 // Byte-first ports of tests/security/GHSA-*.js, GH-518.js and GH-917.js.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import zlib from "node:zlib";
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
@@ -89,6 +90,144 @@ function readStreamText(reader, id) {
     result += new TextDecoder("latin1").decode(stream.read(4096));
   }
   return result;
+}
+
+/**
+ * Formats a cross-reference stream entry of widths [1 4 2] in hexadecimal.
+ *
+ * @param {number} type - The entry type.
+ * @param {number} second - An offset, or an object stream number.
+ * @param {number} third - A generation, or an index in the object stream.
+ * @returns {string} The entry's 14 hexadecimal digits.
+ */
+function xrefEntry(type, second, third) {
+  return [
+    [type, 2],
+    [second, 8],
+    [third, 4],
+  ]
+    .map(([value, digits]) => value.toString(16).padStart(digits, "0"))
+    .join("");
+}
+
+/**
+ * Builds a PDF of object streams 3, 4 and so on whose headers each say they
+ * list `size` objects, as many as the cross-reference table has entries, of
+ * which each object stream holds the first, of value 17: object stream 3
+ * holds object 3 + `streams`, and so on.
+ *
+ * @param {number} streams - Number of object streams.
+ * @param {number} size - The table size, at least 4 + 2 * `streams`.
+ * @param {number} pairs - Number of objects each header actually lists.
+ * @returns {Uint8Array} The PDF bytes.
+ */
+function objectStreams(streams, size, pairs) {
+  var pdf = text(
+    "%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
+      "2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\n",
+  );
+  var xref = xrefEntry(0, 0, 65535) + xrefEntry(1, 9, 0) + xrefEntry(1, 58, 0);
+  var held = "";
+  for (var id = 3; id < 3 + streams; ++id) {
+    var header = id + streams + " 0" + " 0 0".repeat(pairs - 1) + "\n";
+    var data = zlib.deflateSync(header + "17");
+    xref += xrefEntry(1, pdf.length, 0);
+    held += xrefEntry(2, id, 0);
+    pdf = joinBytes([
+      pdf,
+      text(
+        id +
+          " 0 obj\n<< /Type /ObjStm /N " +
+          size +
+          " /First " +
+          header.length +
+          " /Filter /FlateDecode /Length " +
+          data.length +
+          " >>\nstream\n",
+      ),
+      data,
+      text("\nendstream\nendobj\n"),
+    ]);
+  }
+  var position = pdf.length;
+  xref += held + xrefEntry(1, position, 0);
+  return joinBytes([
+    pdf,
+    text(
+      size -
+        1 +
+        " 0 obj\n<< /Type /XRef /Size " +
+        size +
+        " /Index [0 " +
+        (3 + 2 * streams) +
+        " " +
+        (size - 1) +
+        " 1] /W [1 4 2] /Root 1 0 R /Filter /ASCIIHexDecode /Length " +
+        (xref.length + 1) +
+        " >>\nstream\n" +
+        xref +
+        ">\nendstream\nendobj\nstartxref\n" +
+        position +
+        "\n%%EOF\n",
+    ),
+  ]);
+}
+
+/**
+ * Builds a PDF whose cross-reference stream has entries of no bytes, /W
+ * [0 0 0], in `sections` /Index sections of objects 3 to 1048578, above a
+ * classic section with the catalog and page tree.
+ *
+ * @param {number} sections - Number of /Index sections.
+ * @returns {Uint8Array} The PDF bytes.
+ */
+function emptyXrefEntries(sections) {
+  var pdf =
+    "%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
+    "2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\n";
+  var prev = pdf.length;
+  pdf +=
+    "xref\n0 3\n0000000000 65535 f \n0000000009 00000 n \n" +
+    "0000000058 00000 n \ntrailer\n<< /Size 3 /Root 1 0 R >>\n";
+  var position = pdf.length;
+  pdf +=
+    "3 0 obj\n<< /Type /XRef /Size 1048579 /W [0 0 0] /Index [" +
+    Array(sections).fill("3 1048576").join(" ") +
+    "] /Root 1 0 R /Prev " +
+    prev +
+    " /Length 1 >>\nstream\n\0\nendstream\nendobj\nstartxref\n" +
+    position +
+    "\n%%EOF\n";
+  return text(pdf);
+}
+
+/**
+ * Builds a PDF whose classic cross-reference sections form a /Prev chain.
+ *
+ * @param {number} sections - Number of sections.
+ * @param {number} size - The /Size of each section, which also lists its last
+ * object when that is past the catalog and page tree, objects 1 and 2.
+ * @returns {Uint8Array} The PDF bytes.
+ */
+function prevChain(sections, size) {
+  var pdf =
+    "%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
+    "2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\n";
+  var prev = "";
+  for (var i = 0; i < sections; ++i) {
+    var position = pdf.length;
+    pdf +=
+      "xref\n0 3\n0000000000 65535 f \n0000000009 00000 n \n" +
+      "0000000058 00000 n \n" +
+      (size > 3 ? size - 1 + " 1\n0000000000 00000 f \n" : "") +
+      "trailer\n<< /Size " +
+      size +
+      " /Root 1 0 R" +
+      prev +
+      " >>\n";
+    prev = " /Prev " + position;
+  }
+  return text(pdf + "startxref\n" + position + "\n%%EOF\n");
 }
 
 describe("parser security regressions", function () {
@@ -996,5 +1135,113 @@ describe("parser security regressions", function () {
     } finally {
       reader.end();
     }
+  });
+  // Port of tests/security/GHSA-pvfx-h82v-pxjj.js. The first and the third
+  // aborted Wasm; the second threw its C++ exception out as a bare number.
+  it("fails to open a classic cross-reference section past 8388608 entries", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = await readFile(
+      "tests/TestMaterials/XrefTableSectionStart.pdf",
+    );
+    assert.throws(() => muhammara.createReader(source), /Unable to parse PDF/);
+    assert.throws(
+      () => muhammara.createReader(prevChain(1, 8388609)),
+      /Unable to parse PDF/,
+    );
+  });
+  it("fails to open a cross-reference stream section past 8388608 entries", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = await readFile("tests/TestMaterials/XrefStreamIndexStart.pdf");
+    assert.throws(() => muhammara.createReader(source), /Unable to parse PDF/);
+  });
+  it("fails to open cross-reference streams that list over 16 tables of entries", async function () {
+    var muhammara = await createMuhammaraWasm();
+    assert.throws(
+      () => muhammara.createReader(emptyXrefEntries(129)),
+      /Unable to parse PDF/,
+    );
+  });
+  // Ten headers of 131072 objects reach the bound, and an eleventh passes
+  // it. The LeakSanitizer build takes about 15 seconds per 262144 objects,
+  // even with the stack trace limit of the page tree test below.
+  it("fails to read object streams that list over twice the table and 1048576 objects", async function () {
+    this.timeout(180000);
+    var muhammara = await createMuhammaraWasm();
+    var stackTraceLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 10;
+    var reader = muhammara.createReader(objectStreams(11, 131072, 131072));
+    try {
+      for (var id = 14; id < 24; ++id) {
+        assert.equal(reader.parseNewObject(id).toNumber(), 17);
+      }
+      assert.throws(() => reader.parseNewObject(24), /Unable to read object/);
+    } finally {
+      reader.end();
+      Error.stackTraceLimit = stackTraceLimit;
+    }
+  });
+  it("fails the objects of an object stream whose header does not parse without parsing it again", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(objectStreams(1, 65536, 65535));
+    try {
+      var start = performance.now();
+      assert.throws(() => reader.parseNewObject(4), /Unable to read object/);
+      var first = performance.now() - start;
+      start = performance.now();
+      for (var i = 0; i < 10; ++i) {
+        assert.throws(() => reader.parseNewObject(4), /Unable to read object/);
+      }
+      var again = performance.now() - start;
+      assert.ok(
+        again < first,
+        `10 more reads took ${again} ms, the first ${first} ms`,
+      );
+    } finally {
+      reader.end();
+    }
+  });
+  it("opens a /Prev chain of sections within the limit", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/XrefPrevChain.pdf"),
+    );
+    try {
+      assert.equal(reader.getXrefSize(), 8388608);
+    } finally {
+      reader.end();
+    }
+  });
+  it("modifies a PDF with sections at the last object number", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var modifier = muhammara.createWriterToModify(
+      await readFile("tests/TestMaterials/XrefPrevChain.pdf"),
+    );
+    assert.ok(modifier.end().length > 0);
+  });
+  // Recursing once per section overflowed the 256 KiB stack at about 3400
+  // sections (4000 to 5000 on the LeakSanitizer build), so 8000 go red
+  // without the loop. The stack trace limit halves the time sanitizer builds
+  // take here, as in the page tree test below.
+  it("opens a /Prev chain of 8000 sections", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var stackTraceLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 10;
+    try {
+      var reader = muhammara.createReader(prevChain(8000, 3));
+      try {
+        assert.equal(reader.getXrefSize(), 3);
+      } finally {
+        reader.end();
+      }
+    } finally {
+      Error.stackTraceLimit = stackTraceLimit;
+    }
+  });
+  it("fails to open a /Prev chain of 100 sections at object 8388600", async function () {
+    var muhammara = await createMuhammaraWasm();
+    assert.throws(
+      () => muhammara.createReader(prevChain(100, 8388601)),
+      /Unable to parse PDF/,
+    );
   });
 });

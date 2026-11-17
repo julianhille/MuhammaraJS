@@ -19,6 +19,9 @@ if(MUHAMMARA_WASM_SANITIZER STREQUAL "address")
 elseif(MUHAMMARA_WASM_SANITIZE)
   add_compile_options("-fsanitize=leak")
   add_link_options("-fsanitize=leak" "-sEXIT_RUNTIME=1")
+  # Its allocator runs out of the release limit modifying a PDF at the
+  # cross-reference size limit, which a release build does within it.
+  set(MUHAMMARA_WASM_MAXIMUM_MEMORY 2147483648)
 endif()
 if(NOT DEFINED MUHAMMARA_WASM_MAXIMUM_MEMORY)
   set(MUHAMMARA_WASM_MAXIMUM_MEMORY 536870912)
