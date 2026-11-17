@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { createMuhammaraWasm, createRecipe } from "../../index.js";
 
 async function usesNodeCompatibleTypes() {
