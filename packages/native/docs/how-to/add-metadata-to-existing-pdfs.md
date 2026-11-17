@@ -83,9 +83,9 @@ schemas) and a PDF/A identification, so a PDF/A document is no longer marked as
 one afterwards. A new PDF gets a packet that mirrors its Info values with
 `new Recipe("new", output, { xmp: true })`.
 
-An encrypted PDF that keeps its metadata unencrypted (`/EncryptMetadata false`)
-is not supported: `recipe.xmp()` and `endPDF()` with `xmp: true` throw for it,
-since the packet would be decrypted and encrypted like any other stream.
+`recipe.xmp()` also reads the packet of an encrypted PDF that keeps its metadata
+unencrypted (`/EncryptMetadata false`), but `endPDF()` with `xmp: true` throws
+for it: Recipe cannot write the XMP of such a PDF.
 
 See [Metadata And Custom Data](../recipe/metadata-and-custom-data.md) for metadata on
 newly created documents.

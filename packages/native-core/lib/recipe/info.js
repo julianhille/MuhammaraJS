@@ -19,7 +19,7 @@ var {
 var { attachment, writeAttachments } = require("../attachments");
 
 var PLAIN_METADATA =
-  "Recipe cannot read or write the XMP of a PDF whose metadata is not encrypted";
+  "Recipe cannot write the XMP of a PDF whose metadata is not encrypted";
 
 // Source Info dictionary keys that _readInfo() keeps as raw values.
 var PdfInfoKey = Object.freeze({
@@ -125,8 +125,7 @@ function setInfoValue(recipe, key, value) {
  * @memberof Recipe#
  * @function
  * @returns {string|undefined} The XMP packet as text, or undefined for a new PDF, a source without one, or a source that needs its user password. After endPDF(), a path source edited in place is the output.
- * @throws {Error} If the source cannot be read, or keeps its metadata
- *   unencrypted (`/EncryptMetadata false`).
+ * @throws {Error} If the source cannot be read.
  */
 exports.xmp = function xmp() {
   if (this.isNewPDF) return undefined;
@@ -134,7 +133,6 @@ exports.xmp = function xmp() {
   const parser = openSourceReader(this);
   if (!parser) return undefined;
   try {
-    if (hasPlainMetadata(parser)) throw new Error(PLAIN_METADATA);
     const root = parser.queryDictionaryObject(parser.getTrailer(), "Root");
     const metadata = root && parser.queryDictionaryObject(root, "Metadata");
     if (!metadata || metadata.getType() !== this.muhammara.ePDFObjectStream) {
@@ -280,7 +278,6 @@ exports._writeInfo = function _writeInfo() {
       "Editing a password-protected source is unsupported; decrypt it with recrypt() first",
     );
   }
-  // the writer would encrypt the packet
   if (this.options.xmp && this.sourcePlainMetadata_) {
     throw new Error(PLAIN_METADATA);
   }

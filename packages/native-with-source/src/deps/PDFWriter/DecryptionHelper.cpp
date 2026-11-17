@@ -25,6 +25,7 @@ limitations under the License.
 #include "PDFArray.h"
 #include "PDFObject.h"
 #include "PDFName.h"
+#include "PDFIndirectObjectReference.h"
 #include "PDFBoolean.h"
 #include "PDFStreamInput.h"
 #include "InputStringStream.h"
@@ -102,6 +103,7 @@ EStatusCode DecryptionHelper::Setup(PDFParser* inParser, const string& inPasswor
 	mFailedPasswordVerification = false;
 	mDidSucceedOwnerPasswordVerification = false;
 	mParser = inParser;
+	mMetadataObjectID = -1;
 
 	// setup encrypted flag through the existance of encryption dict
 	PDFObjectCastPtr<PDFDictionary> encryptionDictionary(inParser->QueryDictionaryObject(inParser->GetTrailer(), "Encrypt"));
@@ -491,6 +493,8 @@ std::string DecryptionHelper::DecryptString(const std::string& inStringToDecrypt
 }
 
 void DecryptionHelper::OnObjectStart(long long inObjectID, long long inGenerationNumber) {
+	// MuhammaraJS: a stack, as an object may be parsed while another one is, such as an indirect /Length
+	mObjectIDs.push_back(inObjectID);
 	StringToXCryptorMap::iterator it = mXcrypts.begin();
 	for (; it != mXcrypts.end(); ++it) {
 		it->second->OnObjectStart(inObjectID, inGenerationNumber);
@@ -498,7 +502,7 @@ void DecryptionHelper::OnObjectStart(long long inObjectID, long long inGeneratio
 }
 
 
-XCryptor* DecryptionHelper::GetCryptForStream(PDFStreamInput* inStream) {
+XCryptor* DecryptionHelper::GetCryptForStream(PDFStreamInput* inStream, long long inObjectID) {
 	// Get crypt for stream will return the right crypt filter thats supposed to be used for stream
 	// whether its the default stream encryption or a specific filter defined in the stream
 	// not the assumption (well, one that's all over) that if the name is not found in the CF dict, it
@@ -549,17 +553,34 @@ XCryptor* DecryptionHelper::GetCryptForStream(PDFStreamInput* inStream) {
 			return mXcryptStreams; // ???
 	}
 	else {
+		// MuhammaraJS: with /EncryptMetadata false (V 4 and 5), the document metadata stream is stored unencrypted
+		if (mV >= 4 && !mEncryptMetaData) {
+			if (mMetadataObjectID < 0) {
+				// looked up once. The catalog is not found while it is being parsed, such as for the
+				// object stream that holds it; the next stream looks it up again
+				PDFObjectCastPtr<PDFDictionary> catalog(mParser->QueryDictionaryObject(mParser->GetTrailer(), "Root"));
+				if (catalog.GetPtr()) {
+					PDFObjectCastPtr<PDFIndirectObjectReference> metadata(catalog->QueryDirectObject("Metadata"));
+					mMetadataObjectID = metadata.GetPtr() ? (long long)metadata->mObjectID : 0;
+				}
+			}
+			if (inObjectID == mMetadataObjectID)
+				return NULL;
+		}
 		return mXcryptStreams;
 	}
 }
 
 void DecryptionHelper::OnObjectEnd(PDFObject* inObject) {
+	// MuhammaraJS: the parser pairs every OnObjectEnd() with an OnObjectStart()
+	long long objectID = mObjectIDs.back();
+	mObjectIDs.pop_back();
 	if (inObject == NULL)
 		return;
 	
 	// for streams, retain the encryption key with them, so i can later decrypt them when needed
 	if ((inObject->GetType() == PDFObject::ePDFObjectStream) && IsDecrypting()) {
-		XCryptor* streamCryptFilter = GetCryptForStream((PDFStreamInput*)inObject);
+		XCryptor* streamCryptFilter = GetCryptForStream((PDFStreamInput*)inObject, objectID);
 		if (streamCryptFilter) {
 			ByteList* savedKey = new ByteList(streamCryptFilter->GetCurrentObjectKey());
 			inObject->SetMetadata(scEcnryptionKeyMetadataKey,new Deletable<ByteList>(savedKey));
