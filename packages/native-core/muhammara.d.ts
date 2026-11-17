@@ -2467,10 +2467,12 @@ declare namespace muhammara {
      *   Filter to; a new one when omitted.
      * @returns The stream; write to its write stream, then call endPDFStream().
      * @throws {TypeError} If dictionaryContext is given and is not a dictionary context,
-     *   or is no longer active: already ended, of a writer event that has
-     *   returned, or of another writer that has ended.
+     *   or is not the innermost open dictionary that startDictionary() opened: already ended,
+     *   of a writer event (during or after it), of another writer, or started
+     *   before another dictionary that is still open.
      * @throws {Error} If the writer was created with a password and no indirect
-     *   object is open.
+     *   object is open, or dictionaryContext already has the Length key, or the
+     *   Filter key while compression is on.
      */
     startPDFStream(dictionaryContext?: DictionaryContext): PDFStream;
     /**
@@ -2479,10 +2481,11 @@ declare namespace muhammara {
      *   a new one when omitted.
      * @returns The stream; write to its write stream, then call endPDFStream().
      * @throws {TypeError} If dictionaryContext is given and is not a dictionary context,
-     *   or is no longer active: already ended, of a writer event that has
-     *   returned, or of another writer that has ended.
+     *   or is not the innermost open dictionary that startDictionary() opened: already ended,
+     *   of a writer event (during or after it), of another writer, or started
+     *   before another dictionary that is still open.
      * @throws {Error} If the writer was created with a password and no indirect
-     *   object is open.
+     *   object is open, or dictionaryContext already has the Length key.
      */
     startUnfilteredPDFStream(dictionaryContext?: DictionaryContext): PDFStream;
     /**

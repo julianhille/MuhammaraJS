@@ -16,8 +16,17 @@ following `endIndirectObject()` is ignored. `endIndirectObject()` without
 an open object throws `Unable to end indirect object`, and starting an object
 while one is open throws `Unable to start indirect object`. A dictionary passed
 to `endDictionary()`, `startPDFStream()` or `startUnfilteredPDFStream()` is
-finished: its methods throw `Dictionary context is no longer active`, and
-starting a stream with it throws `Provide the active dictionary context`.
+finished: its methods throw `Dictionary context is no longer active`. Only the
+innermost dictionary that `startDictionary()` opened, and that is not ended
+yet, starts a stream; a finished one, one of another writer or of a writer
+event, or an outer one while an inner one is open throws
+`Provide the active dictionary context`. `startPDFStream()` adds `/Length`,
+and `/Filter` while compression is on, to the dictionary, so one that already
+has such a key throws `Unable to start PDF stream`; `startUnfilteredPDFStream()`
+adds only `/Length` and, for that key, throws
+`Unable to start unfiltered PDF stream`. When a stream start throws, the
+dictionary stays open, though a failed `startPDFStream()` may already have added
+`/Filter` to it.
 
 A writer created with a password writes strings and streams only inside an
 indirect object, as each is encrypted for the object that holds it. Outside

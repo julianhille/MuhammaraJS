@@ -91,6 +91,56 @@ describe("ObjectsContextCleanup", function () {
     assert.doesNotMatch(Buffer.from(bytes).toString("latin1"), /Late/);
   });
 
+  it("rejects an open dictionary that is not the innermost one for a stream", function () {
+    var writer = muhammara.createWriter();
+    var objects = writer.getObjectsContext();
+    objects.startNewIndirectObject();
+    var dictionary = objects.startDictionary();
+    var other = muhammara.createWriter();
+    var otherObjects = other.getObjectsContext();
+    otherObjects.startNewIndirectObject();
+    // Only one dictionary is open at a time, so only the dictionary of another
+    // writer applies.
+    ["startPDFStream", "startUnfilteredPDFStream"].forEach(function (method) {
+      assert.throws(
+        () => otherObjects[method](dictionary),
+        { name: "TypeError", message: "Provide the active dictionary context" },
+        method,
+      );
+    });
+    other.dispose();
+
+    // The dictionary stays open and starts a stream in its writer.
+    objects.endPDFStream(objects.startPDFStream(dictionary));
+    writer.writePage(writer.createPage(0, 0, 100, 100));
+    var bytes = writer.end();
+    writeOutput("ObjectsContextCleanup-inactive-dictionary", bytes);
+  });
+
+  it("throws when the stream dictionary already has a /Length key", function () {
+    var writer = muhammara.createWriter();
+    var objects = writer.getObjectsContext();
+    objects.startNewIndirectObject();
+    var dictionary = objects.startDictionary();
+    dictionary.writeKey("Length").writeNumberValue(1);
+    [
+      ["startPDFStream", "Unable to start PDF stream"],
+      ["startUnfilteredPDFStream", "Unable to start unfiltered PDF stream"],
+    ].forEach(function ([method, message]) {
+      assert.throws(
+        () => objects[method](dictionary),
+        { name: "Error", message },
+        method,
+      );
+    });
+
+    // The dictionary stays open.
+    objects.endDictionary(dictionary).endIndirectObject();
+    writer.writePage(writer.createPage(0, 0, 100, 100));
+    var bytes = writer.end();
+    writeOutput("ObjectsContextCleanup-stream-length-key", bytes);
+  });
+
   it("rejects unbalanced indirect object starts and ends", function () {
     var writer = muhammara.createWriter({
       userPassword: "user",

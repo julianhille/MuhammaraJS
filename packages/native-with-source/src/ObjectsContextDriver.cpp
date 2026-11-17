@@ -97,6 +97,7 @@ napi_value ObjectsContextDriver::StartDictionary(const CallbackArgs &a) {
     return nullptr;
   driver->DictionaryContextInstance =
       d->ObjectsContextInstance->StartDictionary();
+  d->openContent->dictionaries.push_back(driver->DictionaryContextInstance);
   driver->AddOwner(d->Lifecycle());
   return value;
 }
@@ -147,6 +148,7 @@ napi_value ObjectsContextDriver::EndDictionary(const CallbackArgs &a) {
                           "Inconsistent ending of dictionary. Wrong "
                           "nesting of startDictionary and endDictionary");
   // Ending released the dictionary, so its methods must throw from now on.
+  d->openContent->dictionaries.remove(dict->DictionaryContextInstance);
   dict->DictionaryContextInstance = nullptr;
   return a.This();
 }
@@ -277,8 +279,13 @@ static napi_value StartStream(const CallbackArgs &a, bool filtered) {
   auto *wrapper =
       a.Length() ? ObjectWrap::Unwrap<DictionaryContextDriver>(a.Env(), a[0])
                  : nullptr;
-  if (wrapper &&
-      (!wrapper->DictionaryContextInstance || wrapper->EndedOwner()))
+  // Only the innermost dictionary that startDictionary() opened, and that is
+  // not ended yet, starts a stream. The native start would add /Filter and
+  // /Length to any other, then fail to end it or end one the writer still
+  // writes.
+  auto &open = d->openContent->dictionaries;
+  if (wrapper && (wrapper->EndedOwner() || open.empty() ||
+                  open.back() != wrapper->DictionaryContextInstance))
     return ThrowTypeError(a.Env(), "Provide the active dictionary context");
   if (!RequireIndirectObjectToEncrypt(a.Env(), d->ObjectsContextInstance))
     return nullptr;
@@ -294,14 +301,18 @@ static napi_value StartStream(const CallbackArgs &a, bool filtered) {
                   : d->ObjectsContextInstance->StartPDFStream())
           : (dict ? d->ObjectsContextInstance->StartUnfilteredPDFStream(dict)
                   : d->ObjectsContextInstance->StartUnfilteredPDFStream());
+  if (!sd->PDFStreamInstance)
+    return ThrowError(a.Env(), filtered
+                                   ? "Unable to start PDF stream"
+                                   : "Unable to start unfiltered PDF stream");
   sd->mOwns = true;
   sd->AddOwner(d->Lifecycle());
-  if (sd->PDFStreamInstance) {
-    d->openContent->streams.insert(sd->PDFStreamInstance);
-    sd->openContent = d->openContent;
-    // Starting the stream ended and released its dictionary.
-    if (wrapper)
-      wrapper->DictionaryContextInstance = nullptr;
+  d->openContent->streams.insert(sd->PDFStreamInstance);
+  sd->openContent = d->openContent;
+  // Starting the stream ended and released its dictionary.
+  if (wrapper) {
+    open.pop_back();
+    wrapper->DictionaryContextInstance = nullptr;
   }
   return value;
 }

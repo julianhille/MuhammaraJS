@@ -44,6 +44,9 @@ struct OpenContent {
   // opened. After endPDFStream() ended it, the following endIndirectObject()
   // writes nothing.
   enum { None, Open, EndedByStream } indirectObject = None;
+  // The dictionaries that objectsContext.startDictionary() opened and that
+  // are not ended yet, innermost last. A stream starts only with the last.
+  DictionaryContextList dictionaries;
 };
 
 class PDFWriterDriver : public muhammara::napi::ObjectWrap,

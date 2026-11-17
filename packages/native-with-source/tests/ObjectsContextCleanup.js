@@ -101,6 +101,74 @@ describe("ObjectsContextCleanup", function () {
     assert.doesNotMatch(output.buffer.toString("latin1"), /Late/);
   });
 
+  it("rejects an open dictionary that is not the innermost one for a stream", function () {
+    var output = new muhammara.PDFWStreamForBuffer();
+    var writer = muhammara.createWriter(output);
+    var objects = writer.getObjectsContext();
+    var [outer, inner] = openNestedDictionaries(writer);
+    var other = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
+    var otherObjects = other.getObjectsContext();
+    otherObjects.startNewIndirectObject();
+    // The outer dictionary while the inner one is open, and the inner one in
+    // another writer.
+    [
+      [objects, outer],
+      [otherObjects, inner],
+    ].forEach(function ([context, dictionary]) {
+      ["startPDFStream", "startUnfilteredPDFStream"].forEach(function (method) {
+        assert.throws(
+          () => context[method](dictionary),
+          {
+            name: "TypeError",
+            message: "Provide the active dictionary context",
+          },
+          method,
+        );
+      });
+    });
+    other._abort();
+
+    // Both stay open, and the outer one starts a stream once the inner ends.
+    objects.endDictionary(inner);
+    objects.endPDFStream(objects.startPDFStream(outer));
+    // A stream started with the inner one ends it as well.
+    [outer, inner] = openNestedDictionaries(writer);
+    assert.throws(() => objects.endDictionary(outer), /Inconsistent ending/);
+    objects.endPDFStream(objects.startUnfilteredPDFStream(inner));
+    objects.endPDFStream(objects.startPDFStream(outer));
+    writer.writePage(writer.createPage(0, 0, 100, 100));
+    writer.end();
+    writeOutput("ObjectsContextCleanup-inactive-dictionary", output.buffer);
+
+    // Nothing was added to the inner dictionary.
+    assert.match(output.buffer.toString("latin1"), /\/Inner <<\s*>>/);
+  });
+
+  it("throws when the stream dictionary already has a /Length key", function () {
+    var output = new muhammara.PDFWStreamForBuffer();
+    var writer = muhammara.createWriter(output);
+    var objects = writer.getObjectsContext();
+    objects.startNewIndirectObject();
+    var dictionary = objects.startDictionary();
+    dictionary.writeKey("Length").writeNumberValue(1);
+    [
+      ["startPDFStream", "Unable to start PDF stream"],
+      ["startUnfilteredPDFStream", "Unable to start unfiltered PDF stream"],
+    ].forEach(function ([method, message]) {
+      assert.throws(
+        () => objects[method](dictionary),
+        { name: "Error", message },
+        method,
+      );
+    });
+
+    // The dictionary stays open.
+    objects.endDictionary(dictionary).endIndirectObject();
+    writer.writePage(writer.createPage(0, 0, 100, 100));
+    writer.end();
+    writeOutput("ObjectsContextCleanup-stream-length-key", output.buffer);
+  });
+
   it("rejects unbalanced indirect object starts and ends", function () {
     var output = new muhammara.PDFWStreamForBuffer();
     var writer = muhammara.createWriter(output, {
