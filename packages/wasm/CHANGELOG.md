@@ -91,6 +91,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Decrypt PDFs whose crypt filter selects RC4 with `/CFM /V2`, the name the
+  PDF specification uses. Their strings and streams were returned still
+  encrypted, and `recrypt()` wrote them out unchanged
+  [#1026](https://github.com/julianhille/MuhammaraJS/issues/1026)
 - Decrypt strings and streams correctly when a PDF encrypted with RC4 or
   AES-128 (security handler revision 2 to 4) is opened with its owner password,
   instead of returning garbled text without an error. AES-256 was not affected
