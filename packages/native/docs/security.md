@@ -83,17 +83,6 @@ When updating PDFWriter, reapply these four changes with the others in
 `packages/native-with-source/tests/Xcryption.js` and the sanitizer CI job
 passing.
 
-## Unchecked Lookups Guarded By Their Callers
-
-PDFWriter dereferences a few lookups without a null check, relying on code
-that runs earlier. No input reaches them today, so MuhammaraJS leaves the
-upstream code unchanged. Recheck them when updating PDFWriter, or when changing
-the callers named below; a change there can turn one into a null dereference.
-
-| Function                                   | Unchecked                                                          | Kept unreachable by                                                                                                                                                                                                              |
-| ------------------------------------------ | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DocumentContext::WriteCombinedPageTree()` | The original document's page tree root is parsed and dereferenced. | Opening a PDF for modification fails unless `ParsePagesObjectIDs()` reads the same `/Root` → `/Pages` dictionary. Writing a combined tree for a parser that skipped that, for example one opened more leniently, would reach it. |
-
 ## Reporting A Defect
 
 For a suspected defect in the PDF processing engine, first check the

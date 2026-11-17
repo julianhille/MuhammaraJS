@@ -47,6 +47,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   buffer for 2 GiB or more and reading a negative amount as about 4 GiB.
 - Return an empty `Buffer` from a byte reader's `read(0)`, as on Wasm, instead
   of crashing the process on an `LZWDecode` stream.
+- Fix a security vulnerability
+  [GHSA-6rw3-h5pc-hc2x](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-6rw3-h5pc-hc2x)
 
 ## [7.2.3] - 2026-10-27
 

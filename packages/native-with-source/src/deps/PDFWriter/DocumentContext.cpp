@@ -2789,6 +2789,11 @@ ObjectIDType DocumentContext::WriteCombinedPageTree(PDFParser* inModifiedFilePar
     ObjectReference originalTreeRoot = GetOriginalDocumentPageTreeRoot(inModifiedFileParser);
 
     PDFObjectCastPtr<PDFDictionary> originalTreeRootObject = inModifiedFileParser->ParseNewObject(originalTreeRoot.ObjectID);
+    // MuhammaraJS: fail when the original page tree root does not parse or is not a dictionary, as in an object stream that cannot be decrypted, instead of reading through NULL
+    if (!originalTreeRootObject) {
+        TRACE_LOG1("DocumentContext::WriteCombinedPageTree, Unable to parse original page tree root %ld", originalTreeRoot.ObjectID);
+        return 0;
+    }
 
     EStatusCode status = mObjectsContext->StartModifiedIndirectObject(originalTreeRoot.ObjectID);
 

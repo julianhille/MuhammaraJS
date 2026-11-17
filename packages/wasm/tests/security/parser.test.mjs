@@ -907,4 +907,13 @@ describe("parser security regressions", function () {
       reader.end();
     }
   });
+  // Port of tests/security/GHSA-6rw3-h5pc-hc2x.js.
+  it("fails to add a page to a PDF whose page tree it cannot read", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var modifier = muhammara.createWriterToModify(
+      await readFile("tests/TestMaterials/EncryptedObjectStreamPageTree.pdf"),
+    );
+    modifier.writePage(modifier.createPage(0, 0, 100, 100));
+    assert.throws(() => modifier.end(), /Unable to finish modified PDF/);
+  });
 });
