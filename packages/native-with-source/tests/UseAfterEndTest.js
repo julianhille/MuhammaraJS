@@ -457,12 +457,20 @@ describe("UseAfterEndTest", function () {
       writer.end();
     });
 
-    it("rejects dictionaries of a writer event after the event", function () {
+    it("rejects dictionaries of a writer event for streams and after the event", function () {
       var writer = muhammara.createWriter(new muhammara.PDFWStreamForBuffer());
       var pageDictionary;
       writer.getEvents().on("OnPageWrite", function (event) {
         pageDictionary = event.pageDictionaryContext;
         pageDictionary.writeKey("PieceInfo").writeNameValue("Test");
+        // The writer is still writing the page dictionary.
+        assert.throws(
+          function () {
+            writer.getObjectsContext().startPDFStream(pageDictionary);
+          },
+          TypeError,
+          /^Provide the active dictionary context$/,
+        );
       });
       writer.writePage(writer.createPage(0, 0, 100, 100));
 

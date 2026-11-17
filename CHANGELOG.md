@@ -100,6 +100,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   returned. Before, these calls terminated the process or wrote after the
   dictionary's end
   [#1039](https://github.com/julianhille/MuhammaraJS/issues/1039)
+- `ObjectsContext.startPDFStream()` and `startUnfilteredPDFStream()` throw a
+  `TypeError` `Provide the active dictionary context` for an open dictionary
+  that is not the innermost one `startDictionary()` opened: an outer
+  dictionary while an inner one is open, a dictionary of another writer, or a
+  writer event's dictionary while the event runs. `startPDFStream()` throws
+  `Unable to start PDF stream` for a dictionary that already has the `/Length`
+  key, or the `/Filter` key while compression is on, and
+  `startUnfilteredPDFStream()` throws `Unable to start unfiltered PDF stream`
+  for one that has `/Length`. The errors match `@muhammara/wasm`.
+  Before, the returned stream terminated the process on use, and a writer
+  event's dictionary made `writePage()` fail or wrote an unreadable PDF
+  [#1055](https://github.com/julianhille/MuhammaraJS/issues/1055)
 - Decrypt PDFs whose crypt filter selects RC4 with `/CFM /V2`, the name the
   PDF specification uses. Their strings and streams were returned still
   encrypted, and `recrypt()` wrote them out unchanged
