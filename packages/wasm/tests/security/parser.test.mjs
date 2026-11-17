@@ -800,4 +800,111 @@ describe("parser security regressions", function () {
       reader.end();
     }
   });
+  // Port of tests/security/GHSA-rw3m-455p-xvhr.js. Objects 5, 7, 8 and 9
+  // aborted Wasm, whose memory is capped at 512 MiB; the 2^53 columns of
+  // objects 4 and 6 wrap to 0 in its 32-bit sizes, which it already rejected.
+  it("reads nothing from predictor streams that ask for too much memory", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/PredictorAllocation.pdf"),
+    );
+    try {
+      for (var id = 4; id <= 9; ++id) {
+        var stream = reader.startReadingFromStream(
+          reader.parseNewObject(id).toPDFStream(),
+        );
+        assert.deepEqual(stream.read(4096), new Uint8Array(0));
+        assert.equal(stream.notEnded(), false);
+      }
+      assert.deepEqual(reader.extractPageText(0), []);
+    } finally {
+      reader.end();
+    }
+  });
+  it("disposes stream readers, also the ones extractPageText() opens", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/PredictorAllocation.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(9).toPDFStream(),
+      );
+      assert.equal(stream.dispose(), stream);
+      assert.equal(stream.dispose(), stream);
+      assert.throws(() => stream.read(1), /PDF byte reader has ended/);
+      assert.throws(() => stream.notEnded(), /PDF byte reader has ended/);
+    } finally {
+      reader.end();
+    }
+    reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/Original.pdf"),
+    );
+    var opened = [];
+    var startReadingFromStream = reader.startReadingFromStream;
+    reader.startReadingFromStream = function (stream) {
+      var streamReader = startReadingFromStream.call(this, stream);
+      opened.push(streamReader);
+      return streamReader;
+    };
+    try {
+      // Decoding the text reads the font's ToUnicode stream.
+      assert.equal(reader.extractPageText(0)[0].text, "1");
+      assert.equal(opened.length, 1);
+      assert.throws(() => opened[0].notEnded(), /PDF byte reader has ended/);
+    } finally {
+      reader.end();
+    }
+  });
+  it("rejects a read amount that is not an integer from 0 to 2^31 - 1", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/PredictorAllocation.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(9).toPDFStream(),
+      );
+      for (var amount of [1.5, -1, 2 ** 31, NaN]) {
+        assert.throws(() => stream.read(amount), {
+          name: "RangeError",
+          message: "read requires a non-negative integer",
+        });
+      }
+    } finally {
+      reader.end();
+    }
+  });
+  it("reads nothing for a read amount of 0", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/LZWStream.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(3).toPDFStream(),
+      );
+      assert.deepEqual(stream.read(0), new Uint8Array(0));
+      assert.equal(new TextDecoder("latin1").decode(stream.read(1)), "h");
+    } finally {
+      reader.end();
+    }
+  });
+  it("fails to read a stream with more than eight filters", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/PredictorAllocation.pdf"),
+    );
+    try {
+      assert.throws(
+        () =>
+          reader.startReadingFromStream(
+            reader.parseNewObject(10).toPDFStream(),
+          ),
+        /Unable to read PDF stream/,
+      );
+    } finally {
+      reader.end();
+    }
+  });
 });

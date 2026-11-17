@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Add `dispose()` to the byte readers of `startReadingFromStream()` and
+  `startReadingFromStreamForPlainCopying()`, as on Wasm, to release a stream's
+  decoders without waiting for garbage collection
+  [GHSA-rw3m-455p-xvhr](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-rw3m-455p-xvhr)
+
 ### Fixed
 
 - Fix a security vulnerability
@@ -31,6 +38,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [GHSA-rw6g-24h2-52ch](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-rw6g-24h2-52ch)
 - Fix a security vulnerability
   [GHSA-7gx7-f7mg-m8w6](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-7gx7-f7mg-m8w6)
+- Fix a security vulnerability
+  [GHSA-rw3m-455p-xvhr](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-rw3m-455p-xvhr):
+  predictor rows over 1 MiB read as empty, and a stream with more than eight
+  filters fails to read
+- Throw a `RangeError` from a byte reader's `read(amount)` when `amount` is not
+  an integer from 0 to 2^31 - 1, as on Wasm, instead of overflowing the read
+  buffer for 2 GiB or more and reading a negative amount as about 4 GiB.
+- Return an empty `Buffer` from a byte reader's `read(0)`, as on Wasm, instead
+  of crashing the process on an `LZWDecode` stream.
 
 ## [7.2.3] - 2026-10-27
 

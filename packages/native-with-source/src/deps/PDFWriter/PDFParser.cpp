@@ -2099,6 +2099,13 @@ IByteReader* PDFParser::CreateInputStreamReader(PDFStreamInput* inStream)
 		if(filterObject->GetType() == PDFObject::ePDFObjectArray)
 		{
 			PDFArray* filterObjectArray = (PDFArray*)filterObject.GetPtr();
+			// MuhammaraJS: every decoder of a chain allocates its own buffers, so bound the chain; real streams use one to three filters
+			if(filterObjectArray->GetLength() > 8)
+			{
+				TRACE_LOG("PDFParser::CreateInputStreamReader, more than 8 filters. failing");
+				status = PDFHummus::eFailure;
+				break;
+			}
 			PDFObjectCastPtr<PDFArray> decodeParams(QueryDictionaryObject(streamDictionary.GetPtr(),"DecodeParms"));
 			for(unsigned long i=0; i < filterObjectArray->GetLength() && eSuccess == status;++i)
 			{

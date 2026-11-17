@@ -1506,15 +1506,26 @@ declare namespace muhammara {
      * @param length - The maximum number of bytes to read.
      * @returns The bytes read; shorter than requested at the end.
      * @throws {TypeError} If length is not a single number.
-     * @throws {Error} If the reader has no stream.
+     * @throws {RangeError} If length is not an integer from 0 to 2^31 - 1.
+     * @throws {Error} If this byte reader is disposed, or called from a stream
+     * callback while it is reading.
      */
     read(length: number): Buffer;
     /**
      * Tells whether bytes remain.
      * @returns True while the end has not been reached.
-     * @throws {Error} If the reader has no stream.
+     * @throws {Error} If this byte reader is disposed, or called from a stream
+     * callback while it is reading.
      */
     notEnded(): boolean;
+    /**
+     * Immediately releases this stream reader without ending its parent PDF
+     * reader. Calling it again does nothing.
+     * @returns This byte reader.
+     * @throws {Error} If called from a stream callback while this byte reader
+     * is reading.
+     */
+    dispose(): this;
   }
 
   export interface ByteReaderWithPosition {
