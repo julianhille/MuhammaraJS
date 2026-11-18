@@ -637,6 +637,7 @@ jobs:
       ]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/native-v')
+    environment: npm
     permissions:
       contents: write
       id-token: write

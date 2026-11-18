@@ -130,8 +130,10 @@ the runtime package contents and an npm publish dry run, publishes to npm, and
 only then creates the GitHub release.
 
 Before the first Wasm release, configure an npm trusted publisher for
-`@muhammara/wasm` that trusts this repository's Wasm release workflow and
-release environment.
+`@muhammara/wasm` that trusts this repository's `ci-wasm.yml` workflow and its
+`npm` environment. That GitHub environment only accepts `native-v*` and
+`wasm-v*` tags and requires a reviewer, so the publish job waits until a
+reviewer approves the pending deployment in the workflow run.
 
 ```sh
 # WebAssembly release example.
