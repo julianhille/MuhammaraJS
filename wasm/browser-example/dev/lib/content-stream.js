@@ -419,7 +419,7 @@ function readStreamString(reader, stream, maxBytes) {
       }
     }
   } finally {
-    if (typeof streamReader.dispose === "function") streamReader.dispose();
+    streamReader.dispose();
   }
   return source;
 }

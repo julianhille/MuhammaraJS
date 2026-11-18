@@ -287,7 +287,7 @@ function rewriteStream(writer, copyingContext, parser, objectId, content) {
 
   var stream = objectsContext.startUnfilteredPDFStream(dictionary);
   stream.getWriteStream().write(latin1Bytes(content));
-  objectsContext.endPDFStream(stream).endIndirectObject();
+  objectsContext.endPDFStream(stream);
 }
 
 /**
@@ -419,7 +419,7 @@ export function createReplaceTextMethods() {
       var replacementObjectId = objectsContext.startNewIndirectObject();
       var replacementStream = objectsContext.startUnfilteredPDFStream();
       replacementStream.getWriteStream().write(latin1Bytes(replaced));
-      objectsContext.endPDFStream(replacementStream).endIndirectObject();
+      objectsContext.endPDFStream(replacementStream);
       this.writer.replaceObject(
         pageNumber - 1,
         contentsObjectId,
