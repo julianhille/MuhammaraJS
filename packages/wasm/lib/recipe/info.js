@@ -351,7 +351,13 @@ export function createInfoMethods({
      */
     xmp: function () {
       if (!this._sourceMode || this._sourceNeedsPassword) return undefined;
-      var reader = createReader(this._sourceBytes);
+      // the modifier's parser while it is open, so that the source is not
+      // parsed twice; its own reader after endPDF(), so that the packet stays
+      // readable then, as on native
+      var reader =
+        this._endedBytes || this._endError
+          ? createReader(this._sourceBytes)
+          : this.writer.getModifiedFileParser();
       try {
         var root = reader.queryDictionaryObject(reader.getTrailer(), "Root");
         var metadata = root && reader.queryDictionaryObject(root, "Metadata");

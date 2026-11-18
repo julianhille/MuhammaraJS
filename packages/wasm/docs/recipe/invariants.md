@@ -21,13 +21,13 @@
   nonzero-generation rewrites are validated by `deletePage()`; a failed call
   leaves the queued deletions unchanged. A page edited after `deletePage()` is
   validated again during `endPDF()`. `pruneReferences: true` removes retained
-  references to deleted pages instead of refusing the deletion. If
-  finalization fails, the Recipe releases its resources and remains ended;
-  create a new Recipe to retry.
+  references to deleted pages instead of refusing the deletion.
 - `insertPage()` and `appendPage()` throw synchronously for invalid or missing
   arguments; neither silently no-ops.
 - `endPDF()` returns an owned `Uint8Array`; repeated calls return the cached
-  result. It never writes a path or stream.
+  result. It never writes a path or stream. If writing the document fails, the
+  Recipe releases its resources and later `endPDF()` calls rethrow the error;
+  create a new Recipe to retry.
 - `read()` and `readAsync()` inspect their argument without replacing Recipe's
   output state.
 - `info()` returns the document metadata known to Recipe. `getPageInfo()` is the
