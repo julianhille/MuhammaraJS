@@ -34,6 +34,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Recipe `info(options)` after `endPDF()` throws `PDF writer has ended`, as
   `@muhammara/wasm` does, instead of ignoring the values; set them before
   `endPDF()` [#996](https://github.com/julianhille/MuhammaraJS/issues/996)
+- The native packages need Node.js 20.19 or later on the 20 line, or 22.12 or
+  later on the 22 line. The line-breaking dependency `linebreak` 2.0.0 is
+  ESM-only, so an older Node.js fails `require("@muhammara/native")` with
+  `ERR_REQUIRE_ESM`. Upgrade Node.js; see
+  [Breaking Changes](packages/native/docs/breaking-changes.md#version-7x)
 
 ### Added
 

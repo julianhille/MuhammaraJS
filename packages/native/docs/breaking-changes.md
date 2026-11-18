@@ -25,6 +25,10 @@ for the upgrade steps. Each change below names the step that covers it.
   no longer supported and npm warns or refuses to install on them. Upgrade to a
   supported Node.js release; see
   [Confirm Prebuilt Coverage](getting-started/migrate-from-v6.md#5-confirm-prebuilt-coverage).
+- Node.js 20 below 20.19 and Node.js 22 below 22.12 can no longer load the
+  native packages. The Recipe's line-breaking dependency `linebreak` 2.0.0 is
+  ESM-only, so `require("@muhammara/native")` fails with `ERR_REQUIRE_ESM`
+  there. Upgrade to Node.js 20.19, 22.12, or a later release.
 - Windows win32 (32-bit) prebuilds and build tooling were removed. Windows x64
   is the current prebuilt target; Windows arm64 is not part of the prebuilt
   matrix. See [Confirm Prebuilt Coverage](getting-started/migrate-from-v6.md#5-confirm-prebuilt-coverage).

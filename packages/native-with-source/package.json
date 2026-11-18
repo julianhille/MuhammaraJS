@@ -53,6 +53,7 @@
     "@muhammara/native-core": "7.2.3"
   },
   "devDependencies": {
+    "@babel/plugin-transform-modules-commonjs": "7.29.7",
     "@types/node": "^26.6.6",
     "chai": "^6.3.0",
     "docdash": "^2.0.1",
