@@ -1,4 +1,4 @@
-const LineBreaker = require("linebreak");
+const { LineBreaker } = require("linebreak");
 const { Word, Line, Column } = require("./text.helper");
 const { htmlToTextObjects, HtmlTag } = require("./htmlToTextObjects");
 const { Color, xObjectForm } = require("./xObjectForm");
