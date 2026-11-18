@@ -324,7 +324,10 @@ std::string EncryptionHelper::EncryptString(const std::string& inStringToEncrypt
 }
 
 IByteWriterWithPosition* EncryptionHelper::CreateEncryptionStream(IByteWriterWithPosition* inToWrapStream) {
-	return  CreateEncryptionWriter(inToWrapStream, mXcryptStreams->GetCurrentObjectKey(),mXcryptStreams->GetIsUsingAES());
+	// MuhammaraJS: no stream xcryptor (Identity, missing or /CFM /None /StmF) writes the stream unencrypted, as EncryptString() does for strings
+	if (!mXcryptStreams)
+		return NULL;
+	return CreateEncryptionWriter(inToWrapStream, mXcryptStreams->GetCurrentObjectKey(),mXcryptStreams->GetIsUsingAES());
 }
 
 IByteWriterWithPosition* EncryptionHelper::CreateEncryptionWriter(IByteWriterWithPosition* inToWrapStream, const ByteList& inEncryptionKey, bool inIsUsingAES) {
@@ -449,6 +452,23 @@ EStatusCode EncryptionHelper::WriteEncryptionDictionary(ObjectsContext* inObject
 	return inObjectsContext->EndDictionary(encryptContext);
 }
 
+// MuhammaraJS: the state keeps the stream and the string xcryptor, whatever their crypt filter names
+static const string scStreamsEncryption = "StreamsEncryption";
+static const string scStringsEncryption = "StringsEncryption";
+
+static void WriteXCryptorState(ObjectsContext* inStateWriter, DictionaryContext* inEncryptionObject, const string& inKey, XCryptor* inXCryptor)
+{
+	if (!inXCryptor)
+		return;
+	inEncryptionObject->WriteKey(inKey);
+	DictionaryContext* xcryptorObject = inStateWriter->StartDictionary();
+	xcryptorObject->WriteKey("XCryptorAlgo");
+	xcryptorObject->WriteIntegerValue(inXCryptor->GetExcryptorAlgo());
+	xcryptorObject->WriteKey("FileEncryptionKey");
+	xcryptorObject->WriteLiteralStringValue(ByteListToString(inXCryptor->GetFileEncryptionKey()));
+	inStateWriter->EndDictionary(xcryptorObject);
+}
+
 EStatusCode EncryptionHelper::WriteState(ObjectsContext* inStateWriter, ObjectIDType inObjectID)
 {
 	EStatusCode status = inStateWriter->StartNewIndirectObject(inObjectID);
@@ -500,24 +520,40 @@ EStatusCode EncryptionHelper::WriteState(ObjectsContext* inStateWriter, ObjectID
 	encryptionObject->WriteKey("mPerms");
 	encryptionObject->WriteLiteralStringValue(ByteListToString(mPerms));
 
-	StringToXCryptorMap::const_iterator it = mXcrypts.find(scStdCF);
-	XCryptor* defaultEncryption = (it == mXcrypts.end()) ? NULL: it->second;
-
-	if(defaultEncryption)
-	{
-		encryptionObject->WriteKey("DefaultEncryption");
-		DictionaryContext* defaultEncryptionObject = inStateWriter->StartDictionary();
-		defaultEncryptionObject->WriteKey("XCryptorAlgo");
-		defaultEncryptionObject->WriteIntegerValue(defaultEncryption->GetExcryptorAlgo());
-		defaultEncryptionObject->WriteKey("FileEncryptionKey");
-		defaultEncryptionObject->WriteLiteralStringValue(ByteListToString(defaultEncryption->GetFileEncryptionKey()));
-		inStateWriter->EndDictionary(defaultEncryptionObject);
-	}
+	WriteXCryptorState(inStateWriter, encryptionObject, scStreamsEncryption, mXcryptStreams);
+	WriteXCryptorState(inStateWriter, encryptionObject, scStringsEncryption, mXcryptStrings);
 
 	inStateWriter->EndDictionary(encryptionObject);
 	inStateWriter->EndIndirectObject();
 
 	return status;
+}
+
+// MuhammaraJS: read one xcryptor of the state, rejecting an unknown algorithm or an AES key of the wrong length
+static EStatusCode ReadXCryptorState(PDFDictionary* inEncryptionObjectState, const string& inKey, StringToXCryptorMap& ioXcrypts, XCryptor*& outXCryptor)
+{
+	outXCryptor = NULL;
+	PDFObjectCastPtr<PDFDictionary> xcryptorObject = inEncryptionObjectState->QueryDirectObject(inKey);
+	if (!xcryptorObject)
+		return eSuccess;
+
+	PDFObjectCastPtr<PDFInteger> xCryptorAlgoObject = xcryptorObject->QueryDirectObject("XCryptorAlgo");
+	PDFObjectCastPtr<PDFLiteralString> fileEncryptionKeyObject = xcryptorObject->QueryDirectObject("FileEncryptionKey");
+	if (!xCryptorAlgoObject || !fileEncryptionKeyObject)
+		return eFailure;
+
+	long long xCryptorAlgoValue = xCryptorAlgoObject->GetValue();
+	if (xCryptorAlgoValue < eRC4 || xCryptorAlgoValue > eAESV3)
+		return eFailure;
+
+	ByteList fileEncryptionKey = stringToByteList(fileEncryptionKeyObject->GetValue());
+	// MuhammaraJS: an AESV2 key under 88 bits gives object keys under 128 bits, which AES rejects, and AESV3 keys must be 256 bits per the spec; fail reading the state, so continuing throws instead of writing what these keys cannot encrypt
+	if ((xCryptorAlgoValue == eAESV2 && fileEncryptionKey.size() < 11) || (xCryptorAlgoValue == eAESV3 && fileEncryptionKey.size() != 32))
+		return eFailure;
+
+	outXCryptor = new XCryptor((EXCryptorAlgo)xCryptorAlgoValue, fileEncryptionKey);
+	ioXcrypts.insert(StringToXCryptorMap::value_type(inKey, outXCryptor));
+	return eSuccess;
 }
 
 PDFHummus::EStatusCode EncryptionHelper::ReadState(PDFParser* inStateReader, ObjectIDType inObjectID)
@@ -557,28 +593,15 @@ PDFHummus::EStatusCode EncryptionHelper::ReadState(PDFParser* inStateReader, Obj
 	mUE = stringToByteList(uE->GetValue());	
 	mPerms = stringToByteList(perms->GetValue());
 
-	// setup default encryption
-	PDFObjectCastPtr<PDFDictionary> defaultEncryptionObject = encryptionObjectState->QueryDirectObject("DefaultEncryption");
-	if(!!defaultEncryptionObject) {
-		PDFObjectCastPtr<PDFInteger> xCryptorAlgoObject = defaultEncryptionObject->QueryDirectObject("XCryptorAlgo");
-		if(!xCryptorAlgoObject)
+	if (ReadXCryptorState(encryptionObjectState.GetPtr(), scStreamsEncryption, mXcrypts, mXcryptStreams) != eSuccess ||
+		ReadXCryptorState(encryptionObjectState.GetPtr(), scStringsEncryption, mXcrypts, mXcryptStrings) != eSuccess)
+		return eFailure;
+
+	// MuhammaraJS: a state written by MuhammaraJS 7.2.3 or earlier keeps one StdCF xcryptor for both
+	if (!mXcryptStreams && !mXcryptStrings) {
+		if (ReadXCryptorState(encryptionObjectState.GetPtr(), "DefaultEncryption", mXcrypts, mXcryptStreams) != eSuccess)
 			return eFailure;
-
-		long long xCryptorAlgoValue = xCryptorAlgoObject->GetValue();
-		if(xCryptorAlgoValue < eRC4 || xCryptorAlgoValue > eAESV3)
-			return eFailure;
-		EXCryptorAlgo xCryptorAlgo = (EXCryptorAlgo)xCryptorAlgoValue;
-
-		PDFObjectCastPtr<PDFLiteralString> fileEncryptionKeyObject = defaultEncryptionObject->QueryDirectObject("FileEncryptionKey");
-		if(!fileEncryptionKeyObject)
-			return eFailure;
-
-		ByteList fileEncryptionKey = stringToByteList(fileEncryptionKeyObject->GetValue());
-
-		XCryptor* defaultEncryption = new XCryptor(xCryptorAlgo, fileEncryptionKey);
-		mXcrypts.insert(StringToXCryptorMap::value_type(scStdCF, defaultEncryption));
-		mXcryptStreams = defaultEncryption;
-		mXcryptStrings = defaultEncryption;
+		mXcryptStrings = mXcryptStreams;
 	}
 
 	return eSuccess;

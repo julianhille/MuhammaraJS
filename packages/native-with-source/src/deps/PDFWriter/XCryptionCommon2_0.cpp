@@ -373,6 +373,9 @@ static ByteList createHash(const ByteList& inKey, const ByteList& inTrimmedPassw
 }
 
 static ByteList decryptKeyCBCZeroIV(const ByteList& inKey, const ByteList& inEncryptedKey) {
+    // MuhammaraJS: /UE and /OE are 32 bytes; AES-CBC rejects a length that is not a multiple of 16 and leaves the output uninitialised, which became the file key
+    if (inEncryptedKey.size() != 32)
+        return ByteList();
     unsigned char iv[AES_BLOCK_SIZE_BYTES] = { // this is NOT a const. IV is used internally by AESdecrypt, so it needs to be mutable
         0,0,0,0,
         0,0,0,0,

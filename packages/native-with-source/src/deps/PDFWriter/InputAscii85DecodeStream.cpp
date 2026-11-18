@@ -90,7 +90,9 @@ void InputAscii85DecodeStream::ReadNextBuffer()
 
 	while(readIndex < 5 && mSourceStream->NotEnded())
 	{
-		mSourceStream->Read(&aByte,1);
+		// MuhammaraJS: a source can end without a byte, as an AES stream that reads nothing does; stop instead of decoding the uninitialised byte
+		if(mSourceStream->Read(&aByte,1) != 1)
+			break;
 
 		if(33 <= aByte && aByte<= 117)
 		{

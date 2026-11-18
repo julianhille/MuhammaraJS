@@ -1,7 +1,8 @@
 // Byte-first ports of tests/security/GHSA-*.js, GH-518.js and GH-917.js.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { createMuhammaraWasm } from "../../index.js";
+import zlib from "node:zlib";
+import { createMuhammaraWasm, createRecipe } from "../../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
 var encoder = new TextEncoder();
@@ -71,6 +72,275 @@ function readStreamWithoutCrash(muhammara, bytes) {
   } finally {
     reader.end();
   }
+}
+
+/**
+ * Reads a stream object of a PDF, decoded, as a latin1 string.
+ *
+ * @param {object} reader - A muhammara PDF reader.
+ * @param {number} id - The stream's object ID.
+ * @returns {string} The stream contents.
+ */
+function readStreamText(reader, id) {
+  var stream = reader.startReadingFromStream(
+    reader.parseNewObject(id).toPDFStream(),
+  );
+  var result = "";
+  while (stream.notEnded()) {
+    result += new TextDecoder("latin1").decode(stream.read(4096));
+  }
+  return result;
+}
+
+/**
+ * Formats a cross-reference stream entry of widths [1 4 2] in hexadecimal.
+ *
+ * @param {number} type - The entry type.
+ * @param {number} second - An offset, or an object stream number.
+ * @param {number} third - A generation, or an index in the object stream.
+ * @returns {string} The entry's 14 hexadecimal digits.
+ */
+function xrefEntry(type, second, third) {
+  return [
+    [type, 2],
+    [second, 8],
+    [third, 4],
+  ]
+    .map(([value, digits]) => value.toString(16).padStart(digits, "0"))
+    .join("");
+}
+
+/**
+ * Builds a PDF of object streams 3, 4 and so on whose headers each say they
+ * list `size` objects, as many as the cross-reference table has entries, of
+ * which each object stream holds the first, of value 17: object stream 3
+ * holds object 3 + `streams`, and so on.
+ *
+ * @param {number} streams - Number of object streams.
+ * @param {number} size - The table size, at least 4 + 2 * `streams`.
+ * @param {number} pairs - Number of objects each header actually lists.
+ * @returns {Uint8Array} The PDF bytes.
+ */
+function objectStreams(streams, size, pairs) {
+  var pdf = text(
+    "%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
+      "2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\n",
+  );
+  var xref = xrefEntry(0, 0, 65535) + xrefEntry(1, 9, 0) + xrefEntry(1, 58, 0);
+  var held = "";
+  for (var id = 3; id < 3 + streams; ++id) {
+    var header = id + streams + " 0" + " 0 0".repeat(pairs - 1) + "\n";
+    var data = zlib.deflateSync(header + "17");
+    xref += xrefEntry(1, pdf.length, 0);
+    held += xrefEntry(2, id, 0);
+    pdf = joinBytes([
+      pdf,
+      text(
+        id +
+          " 0 obj\n<< /Type /ObjStm /N " +
+          size +
+          " /First " +
+          header.length +
+          " /Filter /FlateDecode /Length " +
+          data.length +
+          " >>\nstream\n",
+      ),
+      data,
+      text("\nendstream\nendobj\n"),
+    ]);
+  }
+  var position = pdf.length;
+  xref += held + xrefEntry(1, position, 0);
+  return joinBytes([
+    pdf,
+    text(
+      size -
+        1 +
+        " 0 obj\n<< /Type /XRef /Size " +
+        size +
+        " /Index [0 " +
+        (3 + 2 * streams) +
+        " " +
+        (size - 1) +
+        " 1] /W [1 4 2] /Root 1 0 R /Filter /ASCIIHexDecode /Length " +
+        (xref.length + 1) +
+        " >>\nstream\n" +
+        xref +
+        ">\nendstream\nendobj\nstartxref\n" +
+        position +
+        "\n%%EOF\n",
+    ),
+  ]);
+}
+
+/**
+ * Builds a PDF whose cross-reference stream has entries of no bytes, /W
+ * [0 0 0], in `sections` /Index sections of objects 3 to 1048578, above a
+ * classic section with the catalog and page tree.
+ *
+ * @param {number} sections - Number of /Index sections.
+ * @returns {Uint8Array} The PDF bytes.
+ */
+function emptyXrefEntries(sections) {
+  var pdf =
+    "%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
+    "2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\n";
+  var prev = pdf.length;
+  pdf +=
+    "xref\n0 3\n0000000000 65535 f \n0000000009 00000 n \n" +
+    "0000000058 00000 n \ntrailer\n<< /Size 3 /Root 1 0 R >>\n";
+  var position = pdf.length;
+  pdf +=
+    "3 0 obj\n<< /Type /XRef /Size 1048579 /W [0 0 0] /Index [" +
+    Array(sections).fill("3 1048576").join(" ") +
+    "] /Root 1 0 R /Prev " +
+    prev +
+    " /Length 1 >>\nstream\n\0\nendstream\nendobj\nstartxref\n" +
+    position +
+    "\n%%EOF\n";
+  return text(pdf);
+}
+
+/**
+ * Builds a PDF whose classic cross-reference sections form a /Prev chain.
+ *
+ * @param {number} sections - Number of sections.
+ * @param {number} size - The /Size of each section, which also lists its last
+ * object when that is past the catalog and page tree, objects 1 and 2.
+ * @returns {Uint8Array} The PDF bytes.
+ */
+function prevChain(sections, size) {
+  var pdf =
+    "%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
+    "2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\n";
+  var prev = "";
+  for (var i = 0; i < sections; ++i) {
+    var position = pdf.length;
+    pdf +=
+      "xref\n0 3\n0000000000 65535 f \n0000000009 00000 n \n" +
+      "0000000058 00000 n \n" +
+      (size > 3 ? size - 1 + " 1\n0000000000 00000 f \n" : "") +
+      "trailer\n<< /Size " +
+      size +
+      " /Root 1 0 R" +
+      prev +
+      " >>\n";
+    prev = " /Prev " + position;
+  }
+  return text(pdf + "startxref\n" + position + "\n%%EOF\n");
+}
+
+/**
+ * Builds a PDF of object streams 3, 5, 7 and so on that each hold the object
+ * numbered one higher, 4, 6, 8 and so on, of value 17, and take their /Length
+ * from the object of the next one, so parsing object 4 parses them all,
+ * `levels` object streams deep.
+ *
+ * @param {number} levels - Number of object streams.
+ * @returns {Uint8Array} The PDF bytes.
+ */
+function lengthChain(levels) {
+  var pdf =
+    "%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
+    "2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\n";
+  var xref = xrefEntry(0, 0, 65535) + xrefEntry(1, 9, 0) + xrefEntry(1, 58, 0);
+  for (var level = 0; level < levels; ++level) {
+    var id = 3 + 2 * level;
+    xref += xrefEntry(1, pdf.length, 0) + xrefEntry(2, id, 0);
+    pdf +=
+      id +
+      " 0 obj\n<< /Type /ObjStm /N 1 /First 10 /Length " +
+      (level === levels - 1 ? "17" : id + 3 + " 0 R") +
+      " >>\nstream\n" +
+      String(id + 1).padStart(7, "0") +
+      " 0 0000017\nendstream\nendobj\n";
+  }
+  var size = 3 + 2 * levels + 1;
+  var position = pdf.length;
+  xref += xrefEntry(1, position, 0);
+  pdf +=
+    size -
+    1 +
+    " 0 obj\n<< /Type /XRef /Size " +
+    size +
+    " /W [1 4 2] /Root 1 0 R /Filter /ASCIIHexDecode /Length " +
+    (xref.length + 1) +
+    " >>\nstream\n" +
+    xref +
+    ">\nendstream\nendobj\nstartxref\n" +
+    position +
+    "\n%%EOF\n";
+  return text(pdf);
+}
+
+/**
+ * Builds a PDF whose page tree is a chain of /Pages nodes above one page.
+ *
+ * @param {number} depth - Number of nodes from the root to the page.
+ * @returns {Uint8Array} The PDF bytes.
+ */
+function pageTreeChain(depth) {
+  var pdf = "%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n";
+  var offsets = [9];
+  for (var id = 2; id <= depth + 1; ++id) {
+    offsets.push(pdf.length);
+    pdf +=
+      id +
+      " 0 obj\n" +
+      (id === depth + 1
+        ? "<< /Type /Page /MediaBox [0 0 10 10] >>"
+        : "<< /Type /Pages /Kids [" + (id + 1) + " 0 R] /Count 1 >>") +
+      "\nendobj\n";
+  }
+  var position = pdf.length;
+  pdf +=
+    "xref\n0 " +
+    (depth + 2) +
+    "\n0000000000 65535 f \n" +
+    offsets
+      .map((offset) => String(offset).padStart(10, "0") + " 00000 n \n")
+      .join("") +
+    "trailer\n<< /Size " +
+    (depth + 2) +
+    " /Root 1 0 R >>\nstartxref\n" +
+    position +
+    "\n%%EOF\n";
+  return text(pdf);
+}
+
+/**
+ * Builds a one-page PDF whose page resources start a chain of objects, each
+ * a dictionary that references the next one.
+ *
+ * @param {number} length - Number of objects in the chain.
+ * @returns {Uint8Array} The PDF bytes.
+ */
+function referenceChain(length) {
+  var objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 10 10] " +
+      "/Resources << /Font << /F1 4 0 R >> >> >>",
+  ];
+  for (var id = 4; id < 3 + length; ++id) {
+    objects.push("<< /Next " + (id + 1) + " 0 R >>");
+  }
+  objects.push("<< >>");
+  var pdf = "%PDF-1.7\n";
+  var xref = "xref\n0 " + (objects.length + 1) + "\n0000000000 65535 f \n";
+  objects.forEach(function (body, index) {
+    xref += String(pdf.length).padStart(10, "0") + " 00000 n \n";
+    pdf += index + 1 + " 0 obj\n" + body + "\nendobj\n";
+  });
+  return text(
+    pdf +
+      xref +
+      "trailer\n<< /Size " +
+      (objects.length + 1) +
+      " /Root 1 0 R >>\nstartxref\n" +
+      pdf.length +
+      "\n%%EOF\n",
+  );
 }
 
 describe("parser security regressions", function () {
@@ -222,6 +492,935 @@ describe("parser security regressions", function () {
       assert.equal(stream.notEnded(), false);
     } finally {
       reader.end();
+    }
+  });
+  // Port of tests/security/GHSA-6qj6-hc67-3vfp.js.
+  [
+    ["RC4 (/V 2)", "RC4XrefAtString.pdf"],
+    ["an RC4 crypt filter (/V 4)", "RC4CryptFilterXrefAtString.pdf"],
+    ["an AESV2 crypt filter (/V 4)", "AESXrefAtString.pdf"],
+  ].forEach(function ([name, file]) {
+    it(`fails objects that start with a string under ${name}`, async function () {
+      var muhammara = await createMuhammaraWasm();
+      var reader = muhammara.createReader(
+        await readFile(`tests/TestMaterials/${file}`),
+      );
+      try {
+        assert.ok(reader.isEncrypted());
+        var info = reader.parseNewObject(2);
+        assert.equal(
+          reader.queryDictionaryObject(info, "Title").toText(),
+          "Plain",
+        );
+        assert.throws(() => reader.parseNewObject(7), /Unable to read object/);
+        assert.throws(() => reader.parseNewObject(8), /Unable to read object/);
+      } finally {
+        reader.end();
+      }
+    });
+
+    it(`fails a root that starts with a string under ${name}`, async function () {
+      var muhammara = await createMuhammaraWasm();
+      var bytes = await readFile(`tests/TestMaterials/${file}`);
+      var rootAtString = Uint8Array.from(bytes);
+      rootAtString[bytes.indexOf("/Root 1 0 R") + 6] = "7".charCodeAt(0);
+      assert.throws(
+        () => muhammara.createReader(rootAtString),
+        /Unable to parse PDF/,
+      );
+    });
+  });
+  // An AESV2 document whose content stream, object 6, runs through two
+  // /Crypt filters: an unused AESV3 one, whose file key is empty in a /V 4
+  // file, then an RC4 one. Both got the first filter's empty object key,
+  // and RC4 divided by zero setting it up.
+  it("reads a stream whose RC4 crypt filter gets an empty key", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/RC4EmptyKeyTwoCryptFilters.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(6).toPDFStream(),
+      );
+      for (var reads = 0; stream.notEnded() && reads < 100; ++reads) {
+        stream.read(4096);
+      }
+      assert.equal(stream.notEnded(), false);
+      assert.deepEqual(reader.extractPageText(0), []);
+    } finally {
+      reader.end();
+    }
+  });
+  // Port of tests/security/GHSA-wj5h-wf8p-8vhv.js.
+  [
+    ["/StmF /Identity", "EncryptedStmFIdentity.pdf"],
+    ["/CFM /None", "EncryptedCFMNone.pdf"],
+  ].forEach(function ([name, fixture]) {
+    it(`modifies an encrypted PDF with ${name}`, async function () {
+      var muhammara = await createMuhammaraWasm();
+      var modifier = muhammara.createWriterToModify(
+        await readFile("tests/TestMaterials/" + fixture),
+        { compress: false },
+      );
+      var pageModifier = modifier.createPageModifier(0, true).startContext();
+      pageModifier.getContext().q().re(7, 8, 9, 10).f().Q();
+      pageModifier.endContext().writePage();
+      var output = modifier.end();
+      writeOutput("GHSA-wj5h-wf8p-8vhv-" + fixture.slice(0, -4), output);
+
+      var reader = muhammara.createReader(output);
+      try {
+        assert.equal(reader.isEncrypted(), true);
+        var streams = "";
+        for (var id = 1; id < reader.getXrefSize(); ++id) {
+          var object = reader.parseNewObject(id);
+          if (object.getType() !== muhammara.ePDFObjectStream) continue;
+          var stream = reader.startReadingFromStream(object.toPDFStream());
+          while (stream.notEnded()) {
+            streams += new TextDecoder("latin1").decode(stream.read(4096));
+          }
+        }
+        assert.ok(streams.includes("Hello Secret"));
+        assert.ok(streams.includes("7 8 9 10 re"));
+        assert.equal(
+          reader.parseNewObject(2).queryObject("Title").toText(),
+          "Secret Title",
+        );
+      } finally {
+        reader.end();
+      }
+    });
+  });
+  // GHSA-fvpv-4wx7-85f6 is native only: Wasm has no createWriterToContinue().
+  // Port of tests/security/GHSA-7rr8-wph2-845v.js.
+  it("decrypts an AESV2 crypt filter with a short /Length using a 128-bit key", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/EncryptedAESV2Length5.pdf"),
+    );
+    try {
+      assert.equal(
+        readStreamText(reader, 6),
+        "BT /F1 24 Tf 20 100 Td (Hello Secret) Tj ET",
+      );
+      assert.equal(
+        reader.parseNewObject(2).queryObject("Title").toText(),
+        "Secret Title",
+      );
+    } finally {
+      reader.end();
+    }
+  });
+  it("encrypts a modification with a 128-bit AESV2 key", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var modifier = muhammara.createWriterToModify(
+      await readFile("tests/TestMaterials/EncryptedAESV2Length5.pdf"),
+      { compress: false },
+    );
+    var pageModifier = modifier.createPageModifier(0, true).startContext();
+    pageModifier.getContext().q().re(7, 8, 9, 10).f().Q();
+    pageModifier.endContext().writePage();
+    var output = modifier.end();
+    writeOutput("GHSA-7rr8-wph2-845v", output);
+
+    var reader = muhammara.createReader(output);
+    try {
+      var streams = "";
+      for (var id = 1; id < reader.getXrefSize(); ++id) {
+        if (
+          reader.parseNewObject(id).getType() === muhammara.ePDFObjectStream
+        ) {
+          streams += readStreamText(reader, id);
+        }
+      }
+      assert.ok(streams.includes("Hello Secret"));
+      assert.ok(streams.includes("7 8 9 10 re"));
+    } finally {
+      reader.end();
+    }
+  });
+  // An AESV2 crypt filter without /Length under a top-level /Length 96.
+  // Keys of 11 bytes or more give 128-bit object keys, so it reads as in
+  // 1.2.3.
+  it("keeps an AESV2 file key of 96 bits", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/EncryptedAESV2TopLength96.pdf"),
+    );
+    try {
+      assert.equal(
+        reader.parseNewObject(2).queryObject("Title").toText(),
+        "Secret Title",
+      );
+      assert.deepEqual(
+        reader.extractPageText(0).map((item) => item.text),
+        ["Hello Secret", "Second Stream"],
+      );
+    } finally {
+      reader.end();
+    }
+  });
+  // Keys that reach AES unusable: object 11 runs through two /Crypt
+  // filters, an RC4 /Length 40 one and the AESV2 /StmCF; object 8 runs
+  // through one /Crypt without /DecodeParms, keyed by the RC4 /StmF but
+  // decrypted by the AESV2 filter named Identity; object 6 names an
+  // unused AESV3 filter whose /UE and /OE are 24 bytes, which AES-CBC
+  // cannot decrypt, so its file key was 24 bytes of leftover memory.
+  [
+    ["two /Crypt filters", "EncryptedTwoCryptFiltersMixed.pdf", 11],
+    [
+      "a crypt filter named Identity",
+      "EncryptedIdentityNamedCryptFilter.pdf",
+      8,
+    ],
+    ["a 24-byte /UE", "EncryptedAESV3UE24UnusedFilter.pdf", 6],
+  ].forEach(function ([name, fixture, id]) {
+    it(`reads nothing from an AES stream keyed by ${name}`, async function () {
+      var muhammara = await createMuhammaraWasm();
+      var reader = muhammara.createReader(
+        await readFile("tests/TestMaterials/" + fixture),
+      );
+      try {
+        var stream = reader.startReadingFromStream(
+          reader.parseNewObject(id).toPDFStream(),
+        );
+        assert.equal(stream.read(4096).length, 0);
+        assert.equal(stream.notEnded(), false);
+      } finally {
+        reader.end();
+      }
+    });
+  });
+  // An AESV2 document whose /CF also holds an unused AESV3 filter, /X3,
+  // which has no 256-bit key in a /V 4 file.
+  it("reads a document with an unused AESV3 crypt filter", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/EncryptedUnusedAESV3CryptFilter.pdf"),
+    );
+    try {
+      assert.equal(
+        reader.parseNewObject(2).queryObject("Title").toText(),
+        "Secret Title",
+      );
+      assert.equal(
+        readStreamText(reader, 7),
+        "BT /F1 12 Tf 10 10 Td (Stream0) Tj ET\n",
+      );
+    } finally {
+      reader.end();
+    }
+  });
+  ["/StrF", "/StmF"].forEach(function (entry) {
+    it(`fails a ${entry} crypt filter without a valid AES key`, async function () {
+      var muhammara = await createMuhammaraWasm();
+      var bytes = (
+        await readFile(
+          "tests/TestMaterials/EncryptedUnusedAESV3CryptFilter.pdf",
+        )
+      ).toString("latin1");
+      var patched = bytes.replace(`${entry} /StdCF`, `${entry} /X3   `);
+      assert.notEqual(patched, bytes);
+      assert.throws(
+        () => muhammara.recrypt(Buffer.from(patched, "latin1")),
+        /Unable to recrypt PDF/,
+      );
+    });
+  });
+  // A string written outside an indirect object has no object key, which
+  // AES rejects.
+  it("fails a string encrypted with AES outside an object", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var writer = muhammara.createWriter({
+      version: muhammara.ePDFVersion16,
+      userPassword: "user",
+    });
+    writer.writePage(writer.createPage(0, 0, 100, 100));
+    assert.throws(() => {
+      writer.getObjectsContext().writeLiteralString("outside an object");
+      writer.end();
+    });
+  });
+  // ProtectedAES256.pdf with its /UE cut to 17 bytes, offsets kept. A /UE
+  // that is not 32 bytes gives no AESV3 file key.
+  it("fails an AESV3 file key that is not 256 bits", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var shortUE = await readFile(
+      "tests/TestMaterials/EncryptedAESV3ShortUE.pdf",
+    );
+    assert.throws(
+      () => muhammara.recrypt(shortUE, { password: "user" }),
+      /Unable to recrypt PDF/,
+    );
+  });
+  // EncryptedAESV2Length5.pdf as /R 2, whose file key is 5 bytes whatever
+  // the /Length, with /U recomputed and offsets kept.
+  it("fails an AESV2 file key shorter than 88 bits", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var revision2 = await readFile(
+      "tests/TestMaterials/EncryptedAESV2Revision2.pdf",
+    );
+    assert.throws(() => muhammara.recrypt(revision2), /Unable to recrypt PDF/);
+  });
+  // Port of tests/security/GHSA-mvmf-5vvf-74m7.js.
+  [
+    ["the IV and one block", "<< /Length 16 >>"],
+    // Half the IV; the same byte length keeps the offsets.
+    ["the IV", "<< /Length 8  >>"],
+  ].forEach(function ([name, length]) {
+    it(`ends an AES stream shorter than ${name}`, async function () {
+      // 128 encrypted readers take about 20 s on the Wasm ASan build.
+      this.timeout(60000);
+      var muhammara = await createMuhammaraWasm();
+      var bytes = (
+        await readFile(
+          "tests/TestMaterials/EncryptedAESStreamShorterThanBlock.pdf",
+        )
+      )
+        .toString("latin1")
+        .replace("<< /Length 16 >>", length);
+      // Decrypting the never-read block gives a padding byte under 16, so a
+      // non-empty read, for one high nibble of the IV's last byte. Sweep the
+      // nibbles eight times, as that block is whatever the heap held.
+      var last = bytes.indexOf("\nendstream") - 1;
+      for (var nibble = 0; nibble < 128; ++nibble) {
+        var variant =
+          bytes.slice(0, last) +
+          String.fromCharCode((nibble % 16) << 4) +
+          bytes.slice(last + 1);
+        var reader = muhammara.createReader(Buffer.from(variant, "latin1"));
+        try {
+          var stream = reader.startReadingFromStream(
+            reader.parseNewObject(8).toPDFStream(),
+          );
+          assert.equal(stream.read(4096).length, 0);
+          assert.equal(stream.notEnded(), false);
+        } finally {
+          reader.end();
+        }
+      }
+    });
+  });
+  // Object 6 runs through an AESV3 /Crypt filter whose empty key the AES
+  // key setup rejects, so it reads nothing, then an RC4 one. RC4 decrypted
+  // its uninitialised read buffer and returned that byte.
+  it("ends an RC4 stream whose source reads nothing", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/RC4EmptyKeyTwoCryptFilters.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(6).toPDFStream(),
+      );
+      assert.equal(stream.read(4096).length, 0);
+      assert.equal(stream.notEnded(), false);
+    } finally {
+      reader.end();
+    }
+  });
+  // Object 6 is LZW data whose first code after the clear-table code is the
+  // next table entry, which repeats the first byte of a previous sequence
+  // that does not exist. It decoded to that never-written byte.
+  it("ends an LZW stream whose first code is not a literal", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/LZWFirstCodeNotLiteral.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(6).toPDFStream(),
+      );
+      assert.equal(stream.read(4096).length, 0);
+      assert.equal(stream.notEnded(), false);
+    } finally {
+      reader.end();
+    }
+  });
+  // Port of tests/security/GHSA-32r6-f4hm-ccc4.js.
+  describe("GHSA-32r6-f4hm-ccc4", function () {
+    var muhammara;
+
+    before(async function () {
+      muhammara = await createMuhammaraWasm();
+      muhammara.registerFont(
+        "type2-undefined-div",
+        await readFile("tests/TestMaterials/fonts/Type2UndefinedDiv.otf"),
+      );
+    });
+
+    after(function () {
+      muhammara.unregisterFont("type2-undefined-div");
+    });
+
+    /**
+     * Writes `text` in the crafted font and ends the document. "A" divides
+     * by zero, "B" divides LONG_MIN by -1 on 32-bit `long`.
+     * @param {string} text - Text to write.
+     * @returns {Uint8Array} The produced PDF.
+     */
+    function writeWithFont(text) {
+      var writer = muhammara.createWriter();
+      var page = writer.createPage(0, 0, 595, 842);
+      writer.startPageContentContext(page).writeText(text, 10, 400, {
+        font: writer.getFontForBytes("type2-undefined-div"),
+        size: 20,
+      });
+      writer.writePage(page);
+      return writer.end();
+    }
+
+    it("fails to embed a Type 2 charstring that divides by zero", function () {
+      assert.throws(() => writeWithFont("A"), /Unable to finish PDF/);
+    });
+
+    it("fails to embed a Type 2 charstring that divides LONG_MIN by -1", function () {
+      assert.throws(() => writeWithFont("B"), /Unable to finish PDF/);
+    });
+
+    it("still embeds the glyphs of that font without a division", function () {
+      var pdf = writeWithFont("C");
+      var reader = muhammara.createReader(pdf);
+      assert.equal(reader.getPagesCount(), 1);
+      reader.end();
+      assert.ok(new TextDecoder("latin1").decode(pdf).includes("/FontFile3"));
+    });
+  });
+  // Port of tests/security/GHSA-fm69-f3cr-v22g.js.
+  describe("GHSA-fm69-f3cr-v22g", function () {
+    var muhammara;
+
+    before(async function () {
+      muhammara = await createMuhammaraWasm();
+      muhammara.registerFont(
+        "type2-roll-out-of-range",
+        await readFile("tests/TestMaterials/fonts/Type2RollOutOfRange.otf"),
+      );
+    });
+
+    after(function () {
+      muhammara.unregisterFont("type2-roll-out-of-range");
+    });
+
+    /**
+     * Writes `text` in the crafted font and ends the document. "A" runs
+     * `1 roll`, "B" `0 5 1 roll`, "C" shifts one item about 2^30 times.
+     * @param {string} text - Text to write.
+     * @returns {Uint8Array} The produced PDF.
+     */
+    function writeWithFont(text) {
+      var writer = muhammara.createWriter();
+      var page = writer.createPage(0, 0, 595, 842);
+      writer.startPageContentContext(page).writeText(text, 10, 400, {
+        font: writer.getFontForBytes("type2-roll-out-of-range"),
+        size: 20,
+      });
+      writer.writePage(page);
+      return writer.end();
+    }
+
+    it("fails to embed a Type 2 roll with fewer than two operands", function () {
+      assert.throws(() => writeWithFont("A"), /Unable to finish PDF/);
+    });
+
+    it("fails to embed a Type 2 roll of more items than on the stack", function () {
+      assert.throws(() => writeWithFont("B"), /Unable to finish PDF/);
+    });
+
+    it("embeds a Type 2 roll with a huge shift amount", function () {
+      this.timeout(10000);
+      var pdf = writeWithFont("C");
+      var reader = muhammara.createReader(pdf);
+      assert.equal(reader.getPagesCount(), 1);
+      reader.end();
+      assert.ok(new TextDecoder("latin1").decode(pdf).includes("/FontFile3"));
+    });
+  });
+  // Port of tests/security/GHSA-r4mx-qx34-mrx3.js.
+  it("measures a missing PDF page as unreadable instead of reading it", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = await readFile("tests/TestMaterials/NullKidsPage.pdf");
+    var writer = muhammara.createWriter();
+
+    assert.deepEqual(writer.getImageDimensions(source, 0), {
+      width: 200,
+      height: 200,
+    });
+    // The null Kids entry, and an index past the last page.
+    for (var index of [1, 5]) {
+      assert.throws(
+        () => writer.getImageDimensions(source, index),
+        /Unable to read image dimensions/,
+      );
+    }
+    // A page that cannot be read without the password.
+    var protectedPdf = await readFile("tests/TestMaterials/Protected.pdf");
+    assert.throws(
+      () => writer.getImageDimensions(protectedPdf, 0),
+      /Unable to read image dimensions/,
+    );
+    writer.end();
+
+    var reader = muhammara.createReader(source);
+    try {
+      assert.deepEqual(reader.getPageBox(0), [0, 0, 200, 200]);
+      assert.throws(() => reader.getPageInfo(1), RangeError);
+      assert.throws(() => reader.getPageBox(1), RangeError);
+    } finally {
+      reader.end();
+    }
+  });
+  // Port of tests/security/GHSA-7pgh-4m9g-9wrj.js.
+  it("reads pages missing from Kids as null pages", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = await readFile("tests/TestMaterials/KidsUnderCount.pdf");
+    // The missing page IDs were whatever the instance's memory held before,
+    // so read the file again after earlier reads left data behind.
+    for (var round = 0; round < 3; ++round) {
+      var reader = muhammara.createReader(source);
+      try {
+        assert.equal(reader.getPagesCount(), 40);
+        assert.equal(reader.getPageObjectID(0), 3);
+        assert.equal(
+          reader.parsePageDictionary(0).toJSObject().Type.value,
+          "Page",
+        );
+        for (var index = 1; index < 40; ++index) {
+          assert.throws(() => reader.getPageObjectID(index), RangeError);
+          assert.throws(() => reader.parsePageDictionary(index), RangeError);
+        }
+      } finally {
+        reader.end();
+      }
+    }
+    var writer = muhammara.createWriter();
+    assert.throws(
+      () => writer.getImageDimensions(source, 1),
+      /Unable to read image dimensions/,
+    );
+    writer.end();
+  });
+  // Port of tests/security/GHSA-rw6g-24h2-52ch.js. Each row 0x12 decodes to
+  // 0x13, as the predictor runs over the padding nibble too and adds its 2
+  // to the color 1 before it; readers ignore padding bits. Read a byte at a
+  // time, as a read that reaches the end of the Flate data drops what it
+  // decoded.
+  it("decodes TIFF predictor rows shorter than a byte", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/TIFFPredictorRowUnderOneByte.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(6).toPDFStream(),
+      );
+      var parts = [];
+      for (var reads = 0; stream.notEnded() && reads < 100; ++reads) {
+        parts.push(stream.read(1));
+      }
+      assert.deepEqual(joinBytes(parts), new Uint8Array([0x13, 0x13]));
+      assert.equal(stream.notEnded(), false);
+    } finally {
+      reader.end();
+    }
+  });
+  it("extracts the text of a page with TIFF predictor rows shorter than a byte", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/TIFFPredictorEndlessHang.pdf"),
+    );
+    try {
+      assert.deepEqual(reader.extractPageText(0), []);
+    } finally {
+      reader.end();
+    }
+  });
+  // Port of tests/security/GHSA-7gx7-f7mg-m8w6.js.
+  it("decodes a PNG predictor row of an unknown type as is", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/PNGPredictorUnknownRowType.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(6).toPDFStream(),
+      );
+      assert.equal(new TextDecoder("latin1").decode(stream.read(4096)), "ABCD");
+      assert.deepEqual(reader.extractPageText(0), []);
+    } finally {
+      reader.end();
+    }
+  });
+  // Port of tests/security/GHSA-rw3m-455p-xvhr.js. Objects 5, 7, 8 and 9
+  // aborted Wasm, whose memory is capped at 512 MiB; the 2^53 columns of
+  // objects 4 and 6 wrap to 0 in its 32-bit sizes, which it already rejected.
+  it("reads nothing from predictor streams that ask for too much memory", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/PredictorAllocation.pdf"),
+    );
+    try {
+      for (var id = 4; id <= 9; ++id) {
+        var stream = reader.startReadingFromStream(
+          reader.parseNewObject(id).toPDFStream(),
+        );
+        assert.deepEqual(stream.read(4096), new Uint8Array(0));
+        assert.equal(stream.notEnded(), false);
+      }
+      assert.deepEqual(reader.extractPageText(0), []);
+    } finally {
+      reader.end();
+    }
+  });
+  it("disposes stream readers, also the ones extractPageText() opens", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/PredictorAllocation.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(9).toPDFStream(),
+      );
+      assert.equal(stream.dispose(), stream);
+      assert.equal(stream.dispose(), stream);
+      assert.throws(() => stream.read(1), /PDF byte reader has ended/);
+      assert.throws(() => stream.notEnded(), /PDF byte reader has ended/);
+    } finally {
+      reader.end();
+    }
+    reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/Original.pdf"),
+    );
+    var opened = [];
+    var startReadingFromStream = reader.startReadingFromStream;
+    reader.startReadingFromStream = function (stream) {
+      var streamReader = startReadingFromStream.call(this, stream);
+      opened.push(streamReader);
+      return streamReader;
+    };
+    try {
+      // Decoding the text reads the font's ToUnicode stream.
+      assert.equal(reader.extractPageText(0)[0].text, "1");
+      assert.equal(opened.length, 1);
+      assert.throws(() => opened[0].notEnded(), /PDF byte reader has ended/);
+    } finally {
+      reader.end();
+    }
+  });
+  it("rejects a read amount that is not an integer from 0 to 2^31 - 1", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/PredictorAllocation.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(9).toPDFStream(),
+      );
+      for (var amount of [1.5, -1, 2 ** 31, NaN]) {
+        assert.throws(() => stream.read(amount), {
+          name: "RangeError",
+          message: "read requires a non-negative integer",
+        });
+      }
+    } finally {
+      reader.end();
+    }
+  });
+  it("reads nothing for a read amount of 0", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/LZWStream.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(3).toPDFStream(),
+      );
+      assert.deepEqual(stream.read(0), new Uint8Array(0));
+      assert.equal(new TextDecoder("latin1").decode(stream.read(1)), "h");
+    } finally {
+      reader.end();
+    }
+  });
+  it("fails to read a stream with more than eight filters", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/PredictorAllocation.pdf"),
+    );
+    try {
+      assert.throws(
+        () =>
+          reader.startReadingFromStream(
+            reader.parseNewObject(10).toPDFStream(),
+          ),
+        /Unable to read PDF stream/,
+      );
+    } finally {
+      reader.end();
+    }
+  });
+  // Port of tests/security/GHSA-6rw3-h5pc-hc2x.js.
+  it("fails to add a page to a PDF whose page tree it cannot read", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var modifier = muhammara.createWriterToModify(
+      await readFile("tests/TestMaterials/EncryptedObjectStreamPageTree.pdf"),
+    );
+    modifier.writePage(modifier.createPage(0, 0, 100, 100));
+    assert.throws(() => modifier.end(), /Unable to finish modified PDF/);
+  });
+  // Port of tests/security/GHSA-3p2c-cw9w-9746.js. Wasm ended these objects
+  // once already.
+  ["OwnerOnlyRC4.pdf", "OwnerOnlyAES128.pdf"].forEach(function (fixture) {
+    [
+      [
+        "replaceText",
+        (recipe) => recipe.replaceText("Before", "Bore", 1),
+        "Bore",
+      ],
+      ["removeText", (recipe) => recipe.removeText(1), ""],
+    ].forEach(function ([method, edit, expected]) {
+      it(`${method}() writes an encrypted ${fixture}`, async function () {
+        var muhammara = await createMuhammaraWasm();
+        var Recipe = await createRecipe();
+        var recipe = new Recipe(
+          await readFile("tests/TestMaterials/" + fixture),
+        );
+        edit(recipe);
+        var output = recipe.endPDF();
+        writeOutput(
+          `GHSA-3p2c-cw9w-9746-${method}-${fixture.slice(0, -4)}`,
+          output,
+        );
+
+        assert.doesNotMatch(
+          new TextDecoder("latin1").decode(output),
+          /endobj\s+endobj/,
+        );
+        var reader = muhammara.createReader(output);
+        try {
+          assert.ok(reader.isEncrypted());
+          assert.equal(
+            reader
+              .extractPageText(0)
+              .map((item) => item.text)
+              .join(""),
+            expected,
+          );
+        } finally {
+          reader.end();
+        }
+      });
+    });
+  });
+  // Port of tests/security/GHSA-7q35-5h53-wm34.js.
+  it("reads nothing from a stream with a negative /Length", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/NegativeLengthLZW.pdf"),
+    );
+    try {
+      var stream = reader.startReadingFromStream(
+        reader.parseNewObject(4).toPDFStream(),
+      );
+      assert.deepEqual(stream.read(4096), new Uint8Array(0));
+      assert.equal(stream.notEnded(), false);
+      assert.deepEqual(reader.extractPageText(0), []);
+    } finally {
+      reader.end();
+    }
+  });
+  // Port of tests/security/GHSA-h459-gv45-xfgv.js. extractPageText() aborted
+  // Wasm on object 4.
+  it("reads nothing from progressive JPEGs that ask for too much memory", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/ProgressiveDCTAllocation.pdf"),
+    );
+    try {
+      for (var id = 4; id <= 5; ++id) {
+        var stream = reader.startReadingFromStream(
+          reader.parseNewObject(id).toPDFStream(),
+        );
+        assert.equal(stream.read(4096).length, 0);
+        assert.equal(stream.notEnded(), false);
+      }
+      assert.deepEqual(reader.extractPageText(0), []);
+    } finally {
+      reader.end();
+    }
+  });
+  // Port of tests/security/GHSA-pvfx-h82v-pxjj.js. The first and the third
+  // aborted Wasm; the second threw its C++ exception out as a bare number.
+  it("fails to open a classic cross-reference section past 8388608 entries", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = await readFile(
+      "tests/TestMaterials/XrefTableSectionStart.pdf",
+    );
+    assert.throws(() => muhammara.createReader(source), /Unable to parse PDF/);
+    assert.throws(
+      () => muhammara.createReader(prevChain(1, 8388609)),
+      /Unable to parse PDF/,
+    );
+  });
+  it("fails to open a cross-reference stream section past 8388608 entries", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var source = await readFile("tests/TestMaterials/XrefStreamIndexStart.pdf");
+    assert.throws(() => muhammara.createReader(source), /Unable to parse PDF/);
+  });
+  it("fails to open cross-reference streams that list over 16 tables of entries", async function () {
+    var muhammara = await createMuhammaraWasm();
+    assert.throws(
+      () => muhammara.createReader(emptyXrefEntries(129)),
+      /Unable to parse PDF/,
+    );
+  });
+  // Ten headers of 131072 objects reach the bound, and an eleventh passes
+  // it. The LeakSanitizer build takes about 15 seconds per 262144 objects,
+  // even with the stack trace limit of the page tree test below.
+  it("fails to read object streams that list over twice the table and 1048576 objects", async function () {
+    this.timeout(180000);
+    var muhammara = await createMuhammaraWasm();
+    var stackTraceLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 10;
+    var reader = muhammara.createReader(objectStreams(11, 131072, 131072));
+    try {
+      for (var id = 14; id < 24; ++id) {
+        assert.equal(reader.parseNewObject(id).toNumber(), 17);
+      }
+      assert.throws(() => reader.parseNewObject(24), /Unable to read object/);
+    } finally {
+      reader.end();
+      Error.stackTraceLimit = stackTraceLimit;
+    }
+  });
+  it("fails the objects of an object stream whose header does not parse without parsing it again", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(objectStreams(1, 65536, 65535));
+    try {
+      var start = performance.now();
+      assert.throws(() => reader.parseNewObject(4), /Unable to read object/);
+      var first = performance.now() - start;
+      start = performance.now();
+      for (var i = 0; i < 10; ++i) {
+        assert.throws(() => reader.parseNewObject(4), /Unable to read object/);
+      }
+      var again = performance.now() - start;
+      assert.ok(
+        again < first,
+        `10 more reads took ${again} ms, the first ${first} ms`,
+      );
+    } finally {
+      reader.end();
+    }
+  });
+  it("opens a /Prev chain of sections within the limit", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(
+      await readFile("tests/TestMaterials/XrefPrevChain.pdf"),
+    );
+    try {
+      assert.equal(reader.getXrefSize(), 8388608);
+    } finally {
+      reader.end();
+    }
+  });
+  it("modifies a PDF with sections at the last object number", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var modifier = muhammara.createWriterToModify(
+      await readFile("tests/TestMaterials/XrefPrevChain.pdf"),
+    );
+    assert.ok(modifier.end().length > 0);
+  });
+  // Recursing once per section overflowed the 256 KiB stack at about 3400
+  // sections (4000 to 5000 on the LeakSanitizer build), so 8000 go red
+  // without the loop. The stack trace limit halves the time sanitizer builds
+  // take here, as in the page tree test below.
+  it("opens a /Prev chain of 8000 sections", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var stackTraceLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 10;
+    try {
+      var reader = muhammara.createReader(prevChain(8000, 3));
+      try {
+        assert.equal(reader.getXrefSize(), 3);
+      } finally {
+        reader.end();
+      }
+    } finally {
+      Error.stackTraceLimit = stackTraceLimit;
+    }
+  });
+  it("fails to open a /Prev chain of 100 sections at object 8388600", async function () {
+    var muhammara = await createMuhammaraWasm();
+    assert.throws(
+      () => muhammara.createReader(prevChain(100, 8388601)),
+      /Unable to parse PDF/,
+    );
+  });
+  // Port of tests/security/GHSA-qv8r-jpjv-7hx2.js. Objects 4, 6, 8 and so on
+  // stay open while the next one is parsed, as does the last object stream,
+  // so 31 object streams take the 32 objects the parser may have open at once.
+  it("fails to parse an object behind 32 object streams", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(lengthChain(31));
+    try {
+      assert.equal(reader.parseNewObject(4).toNumber(), 17);
+    } finally {
+      reader.end();
+    }
+    reader = muhammara.createReader(lengthChain(32));
+    try {
+      assert.throws(() => reader.parseNewObject(4), /Unable to read object/);
+    } finally {
+      reader.end();
+    }
+  });
+  // Sanitizer builds take the JavaScript stack at every allocation, which
+  // costs its whole depth under mocha's unlimited Error.stackTraceLimit.
+  it("fails to open a page tree more than 1024 levels deep", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var stackTraceLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 10;
+    try {
+      var reader = muhammara.createReader(pageTreeChain(1024));
+      try {
+        assert.equal(reader.getPageObjectID(0), 1025);
+      } finally {
+        reader.end();
+      }
+      assert.throws(
+        () => muhammara.createReader(pageTreeChain(1025)),
+        /Unable to parse PDF/,
+      );
+    } finally {
+      Error.stackTraceLimit = stackTraceLimit;
+    }
+  });
+  // Copying an object copied the objects it references one call deeper
+  // each, so a chain of about 5000 objects overflowed the JavaScript stack,
+  // which left the Wasm stack pointer behind, and the next deep call on the
+  // instance, such as opening a page tree at the limit, overwrote its data.
+  it("copies the pages of a PDF with a reference chain of 10000 objects", async function () {
+    var muhammara = await createMuhammaraWasm();
+    var stackTraceLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 10;
+    try {
+      var writer = muhammara.createWriter();
+      writer.appendPDFPagesFromPDF(referenceChain(10000));
+      var reader = muhammara.createReader(writer.end());
+      try {
+        assert.ok(reader.getXrefSize() > 10000);
+      } finally {
+        reader.end();
+      }
+      reader = muhammara.createReader(pageTreeChain(1024));
+      try {
+        assert.equal(reader.getPageObjectID(0), 1025);
+      } finally {
+        reader.end();
+      }
+    } finally {
+      Error.stackTraceLimit = stackTraceLimit;
     }
   });
 });

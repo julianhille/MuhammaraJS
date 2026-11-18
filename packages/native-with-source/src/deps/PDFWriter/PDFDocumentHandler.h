@@ -250,7 +250,8 @@ private:
 	void RegisterInDirectObjects(PDFArray* inArray,ObjectIDTypeList& outNewObjects);
 	PDFHummus::EStatusCode WriteNewObjects(const ObjectIDTypeList& inSourceObjectIDs);
 	PDFHummus::EStatusCode WriteNewObjects(const ObjectIDTypeList& inSourceObjectIDs,ObjectIDTypeSet& ioCopiedObjects);
-	PDFHummus::EStatusCode CopyInDirectObject(ObjectIDType inSourceObjectID,ObjectIDType inTargetObjectID,ObjectIDTypeSet& ioCopiedObjects);
+	// MuhammaraJS: collects the objects it references in outNewObjectsToWrite instead of copying them
+	PDFHummus::EStatusCode CopyInDirectObject(ObjectIDType inSourceObjectID,ObjectIDType inTargetObjectID,ObjectIDTypeList& outNewObjectsToWrite);
 	EStatusCodeAndObjectIDTypeList CreateFormXObjectsFromPDF(const std::string& inPDFFilePath,
 															const PDFParsingOptions& inParsingOptions,
 															const PDFPageRange& inPageRange,

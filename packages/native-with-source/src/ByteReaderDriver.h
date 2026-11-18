@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CallbackDepth.h"
 #include "napi/NapiSupport.h"
 
 class IByteReader;
@@ -13,10 +14,15 @@ public:
 
 private:
   ByteReaderDriver();
+  static ByteReaderDriver *
+  GetIdleDriver(const muhammara::napi::CallbackArgs &args);
   static napi_value New(const muhammara::napi::CallbackArgs &args);
   static napi_value Read(const muhammara::napi::CallbackArgs &args);
   static napi_value NotEnded(const muhammara::napi::CallbackArgs &args);
+  static napi_value Dispose(const muhammara::napi::CallbackArgs &args);
 
   IByteReader *mInstance;
   bool mOwns;
+  // Counts the read() and notEnded() calls running on this byte reader.
+  CallbackDepth mReading;
 };

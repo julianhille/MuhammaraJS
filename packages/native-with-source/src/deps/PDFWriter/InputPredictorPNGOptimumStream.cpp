@@ -67,8 +67,16 @@ InputPredictorPNGOptimumStream::InputPredictorPNGOptimumStream(IByteReader* inSo
 
 LongBufferSizeType InputPredictorPNGOptimumStream::Read(Byte* inBuffer,LongBufferSizeType inBufferSize)
 {
-	if(!mSourceStream || !mBuffer)
+	// MuhammaraJS: Assign() leaves mBufferSize 0 when it rejects the parameters
+	if(!mSourceStream || !mBufferSize)
 		return 0;
+	// MuhammaraJS: allocate the rows on the first read, not in Assign(), so a chain of filters being set up holds none of them
+	if(!mBuffer)
+	{
+		mBuffer = new Byte[mBufferSize]();
+		mUpValues = new Byte[mBufferSize]();
+		mIndex = mBuffer + mBufferSize;
+	}
 
 	LongBufferSizeType readBytes = 0;
 
@@ -108,9 +116,10 @@ LongBufferSizeType InputPredictorPNGOptimumStream::Read(Byte* inBuffer,LongBuffe
 
 bool InputPredictorPNGOptimumStream::NotEnded()
 {
-	if(!mSourceStream || !mBuffer)
+	// MuhammaraJS: Assign() leaves mBufferSize 0 when it rejects the parameters, and mBuffer is NULL until the first Read()
+	if(!mSourceStream || !mBufferSize)
 		return false;
-	return mSourceStream->NotEnded() || (LongBufferSizeType)(mIndex - mBuffer) < mBufferSize;
+	return mSourceStream->NotEnded() || (mBuffer && (LongBufferSizeType)(mIndex - mBuffer) < mBufferSize);
 }
 
 void InputPredictorPNGOptimumStream::DecodeNextByte(Byte& outDecodedByte)
@@ -121,6 +130,8 @@ void InputPredictorPNGOptimumStream::DecodeNextByte(Byte& outDecodedByte)
 	switch(mFunctionType)
 	{
 		case 0:
+		// MuhammaraJS: an unknown row filter type predicts nothing, as xpdf does, instead of leaving the output byte unwritten
+		default:
 			outDecodedByte = *mIndex;
 			break;
 		case 1:
@@ -159,6 +170,10 @@ void InputPredictorPNGOptimumStream::Assign(IByteReader* inSourceStream,
 											IOBasicTypes::Byte inBitsPerComponent,
 											IOBasicTypes::LongBufferSizeType inColumns)
 {
+	// MuhammaraJS: take ownership of the source stream first, as InputPredictorTIFFSubStream does, so rejected parameters no longer leak it
+	delete mSourceStream;
+	mSourceStream = inSourceStream;
+
 	delete[] mBuffer;
 	delete[] mUpValues;
 	mBuffer = NULL;
@@ -198,20 +213,20 @@ void InputPredictorPNGOptimumStream::Assign(IByteReader* inSourceStream,
 		return;
 	}
 
-	// All validation passed - now update member state
-	mSourceStream = inSourceStream;
+	// MuhammaraJS: reject a row over 1 MiB (65536 pixels of four 16-bit colors take 512 KiB) instead of allocating whatever /Columns asks for
+	if((totalBits + 7) / 8 > (1 << 20))
+	{
+		TRACE_LOG("InputPredictorPNGOptimumStream::Assign, row over 1 MiB");
+		return;
+	}
 
+	// All validation passed - now update member state
 	mBytesPerPixel = (inColors * inBitsPerComponent + 7) / 8;
 	if(mBytesPerPixel == 0)
 		mBytesPerPixel = 1;
 
 	// Rows may contain empty bits at end
 	mBufferSize = (totalBits + 7) / 8 + 1;
-	mBuffer = new Byte[mBufferSize];
-	memset(mBuffer,0,mBufferSize);
-	mUpValues = new Byte[mBufferSize];
-	memset(mUpValues,0,mBufferSize); // that's less important
-	mIndex = mBuffer + mBufferSize;
 }
 
 char InputPredictorPNGOptimumStream::PaethPredictor(char inLeft,char inUp,char inUpLeft)

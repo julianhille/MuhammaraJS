@@ -97,6 +97,14 @@ XCryptor* GetFilterForName(const StringToXCryptorMap& inXcryptions, const string
 		return it->second;
 }
 
+// MuhammaraJS: an AESV2 file key under 88 bits gives object keys under 128 bits, which AES rejects (a /R 2 key is 5 bytes), and AESV3 keys must be 256 bits per the spec (a /UE or /OE that is not 32 bytes gives none); fail the setup, so recrypt and modify throw instead of producing empty output
+static bool HasInvalidAESKey(const XCryptor* inXcryptor) {
+	if (!inXcryptor)
+		return false;
+	size_t keySize = inXcryptor->GetFileEncryptionKey().size();
+	return (inXcryptor->GetExcryptorAlgo() == eAESV2 && keySize < 11) || (inXcryptor->GetExcryptorAlgo() == eAESV3 && keySize != 32);
+}
+
 static const string scStdCF = "StdCF";
 EStatusCode DecryptionHelper::Setup(PDFParser* inParser, const string& inPassword) {
 	mSupportsDecryption = false;
@@ -308,6 +316,9 @@ EStatusCode DecryptionHelper::Setup(PDFParser* inParser, const string& inPasswor
 							continue; // probably "None"". could also be unsupported. in any case, ignore and this means that this crypt filter will not encrypt
 						}
 						EXCryptorAlgo xCryptorAlgo = cfmName == "AESV3" ? eAESV3 : (cfmName == "AESV2" ? eAESV2 : eRC4);
+						// MuhammaraJS: a /Length under 11 bytes gives AESV2 object keys AES rejects, so the file would not decrypt; use 128 bits
+						if (xCryptorAlgo == eAESV2 && cryptLength < 11)
+							cryptLength = 16;
 
 						// retrieve encryption key, based on this crypt filter params
 						ByteList fileEncryptionKey;
@@ -353,6 +364,11 @@ EStatusCode DecryptionHelper::Setup(PDFParser* inParser, const string& inPasswor
 				PDFObjectCastPtr<PDFName> stringsFilterName(inParser->QueryDictionaryObject(encryptionDictionary.GetPtr(), "StrF"));
 				mXcryptStreams = GetFilterForName(mXcrypts, !streamsFilterName ? "Identity": streamsFilterName->GetValue());
 				mXcryptStrings = GetFilterForName(mXcrypts, !stringsFilterName ? "Identity" : stringsFilterName->GetValue());
+				// MuhammaraJS: fail the stream and string crypt filters, not an unused one, if their AES key is invalid
+				if (HasInvalidAESKey(mXcryptStreams) || HasInvalidAESKey(mXcryptStrings)) {
+					TRACE_LOG("DecryptionHelper::Setup, AES file encryption key has an invalid length. breaking");
+					break;
+				}
 			}
 
 		} else {

@@ -53,9 +53,18 @@ InputPredictorTIFFSubStream::~InputPredictorTIFFSubStream(void)
 
 LongBufferSizeType InputPredictorTIFFSubStream::Read(Byte* inBuffer,LongBufferSizeType inBufferSize)
 {
-	// MuhammaraJS: Assign() leaves mRowBuffer NULL when it rejects the parameters
-	if(!mSourceStream || !mRowBuffer)
+	// MuhammaraJS: Assign() leaves mReadColorsCount 0 when it rejects the parameters
+	if(!mSourceStream || !mReadColorsCount)
 		return 0;
+	// MuhammaraJS: a row is whole bytes, so read the padding bits of a row that does not end on a byte, too
+	LongBufferSizeType rowSize = (mColumns*mColors*mBitsPerComponent + 7)/8;
+	// MuhammaraJS: allocate the row on the first read, not in Assign(), so a chain of filters being set up holds none of them
+	if(!mRowBuffer)
+	{
+		mRowBuffer = new Byte[rowSize];
+		mReadColors = new unsigned short[mReadColorsCount]();
+		mReadColorsIndex = mReadColors + mReadColorsCount; // assign to end of array so will know that should read new buffer
+	}
 
 	LongBufferSizeType readBytes = 0;
 
@@ -69,7 +78,7 @@ LongBufferSizeType InputPredictorTIFFSubStream::Read(Byte* inBuffer,LongBufferSi
 	// now repeatedly read bytes from the input stream, and decode
 	while(readBytes < inBufferSize && mSourceStream->NotEnded())
 	{
-		if(mSourceStream->Read(mRowBuffer,(mColumns*mColors*mBitsPerComponent)/8) != (mColumns*mColors*mBitsPerComponent)/8)
+		if(mSourceStream->Read(mRowBuffer,rowSize) != rowSize)
 		{
 			TRACE_LOG("InputPredictorPNGSubStream::Read, problem, expected columns*colors*bitspercomponent/8 number read. didn't make it");
 			readBytes = 0;
@@ -88,10 +97,10 @@ LongBufferSizeType InputPredictorTIFFSubStream::Read(Byte* inBuffer,LongBufferSi
 
 bool InputPredictorTIFFSubStream::NotEnded()
 {
-	// MuhammaraJS: Assign() leaves mRowBuffer NULL when it rejects the parameters
-	if(!mSourceStream || !mRowBuffer)
+	// MuhammaraJS: Assign() leaves mReadColorsCount 0 when it rejects the parameters, and mReadColors is NULL until the first Read()
+	if(!mSourceStream || !mReadColorsCount)
 		return false;
-	return mSourceStream->NotEnded() || (LongBufferSizeType)(mReadColorsIndex - mReadColors) < mReadColorsCount;
+	return mSourceStream->NotEnded() || (mReadColors && (LongBufferSizeType)(mReadColorsIndex - mReadColors) < mReadColorsCount);
 }
 
 void InputPredictorTIFFSubStream::Assign(IByteReader* inSourceStream,
@@ -142,23 +151,20 @@ void InputPredictorTIFFSubStream::Assign(IByteReader* inSourceStream,
 	}
 	LongBufferSizeType bufferSize = (totalBits + 7) / 8;
 
+	// MuhammaraJS: reject a row over 1 MiB (65536 pixels of four 16-bit colors take 512 KiB), whose colors take up to 16 times that, instead of allocating whatever /Columns asks for
+	if(bufferSize > (1 << 20))
+	{
+		TRACE_LOG("InputPredictorTIFFSubStream::Assign, row over 1 MiB");
+		return;
+	}
+
 	// All validation passed - update remaining member state
 	mColors = inColors;
 	mBitsPerComponent = inBitsPerComponent;
 	mColumns = inColumns;
 
-	mRowBuffer = new Byte[bufferSize];
-
-	mReadColorsCount = colorsTimesColumns;
-	// only the sub-byte path in DecodeBufferToColors can leave cells unwritten when
-	// the defensive bounds check trips. value-initialize in that case so unwritten
-	// cells read as 0 instead of uninitialized heap memory. the 8 and >8 bpc paths
-	// fully overwrite the buffer and don't need the extra zero pass.
-	if(inBitsPerComponent < 8)
-		mReadColors = new unsigned short[mReadColorsCount]();
-	else
-		mReadColors = new unsigned short[mReadColorsCount];
-	mReadColorsIndex = mReadColors + mReadColorsCount; // assign to end of array so will know that should read new buffer
+	// MuhammaraJS: hold the colors of the row's whole bytes, the padding of a row that does not end on a byte included, so reading a byte's worth of colors stays inside the array
+	mReadColorsCount = bufferSize * 8 / inBitsPerComponent;
 	mIndexInColor = 0;
 
 	mBitMask = 0;
@@ -219,7 +225,7 @@ void InputPredictorTIFFSubStream::DecodeBufferToColors()
 				// counts that don't divide evenly, the computed index could in principle
 				// land outside the mReadColors array. break out of both loops, since
 				// writeIndex grows monotonically with i and would keep tripping; unfilled
-				// cells were zero-initialized in Assign(), so downstream reads see 0.
+				// cells were zero-initialized in Read(), so downstream reads see 0.
 				if(writeIndex >= mReadColorsCount)
 				{
 					TRACE_LOG3("InputPredictorTIFFSubStream::DecodeBufferToColors, write index %zu out of bounds (count=%zu, bpc=%u), aborting decode",

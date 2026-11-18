@@ -260,6 +260,60 @@ All notable changes to `@muhammara/wasm` are documented in this file.
   9.8.1. Only the repository's documentation site uses it; the installed
   package is unaffected.
 
+## [1.2.4] - 2026-11-18
+
+### Fixed
+
+- Fix a security vulnerability
+  [GHSA-6qj6-hc67-3vfp](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-6qj6-hc67-3vfp)
+- Fix a security vulnerability
+  [GHSA-wj5h-wf8p-8vhv](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-wj5h-wf8p-8vhv)
+- Fix a security vulnerability
+  [GHSA-7rr8-wph2-845v](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-7rr8-wph2-845v)
+- Fix a security vulnerability
+  [GHSA-mvmf-5vvf-74m7](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-mvmf-5vvf-74m7)
+- Fix a security vulnerability
+  [GHSA-32r6-f4hm-ccc4](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-32r6-f4hm-ccc4)
+- Fix a security vulnerability
+  [GHSA-fm69-f3cr-v22g](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-fm69-f3cr-v22g)
+- Fix a security vulnerability
+  [GHSA-r4mx-qx34-mrx3](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-r4mx-qx34-mrx3)
+- Fix a security vulnerability
+  [GHSA-7pgh-4m9g-9wrj](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-7pgh-4m9g-9wrj)
+- Fix a security vulnerability
+  [GHSA-rw6g-24h2-52ch](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-rw6g-24h2-52ch)
+- Fix a security vulnerability
+  [GHSA-7gx7-f7mg-m8w6](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-7gx7-f7mg-m8w6)
+- Fix a security vulnerability
+  [GHSA-rw3m-455p-xvhr](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-rw3m-455p-xvhr):
+  predictor rows over 1 MiB read as empty, and a stream with more than eight
+  filters fails to read
+- Fix a security vulnerability
+  [GHSA-7q35-5h53-wm34](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-7q35-5h53-wm34)
+- Fix a security vulnerability
+  [GHSA-h459-gv45-xfgv](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-h459-gv45-xfgv):
+  progressive or multi-scan JPEGs whose coefficients need more than 256 MiB
+  read as empty, and are copied empty when streams are not compressed
+- Fix a security vulnerability
+  [GHSA-pvfx-h82v-pxjj](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-pvfx-h82v-pxjj):
+  a PDF with an object number over 8,388,607, or whose `/Prev`
+  cross-reference sections or cross-reference stream entries add up to more
+  than 16 tables of that size, fails to open, and an object fails to parse
+  once the object streams read list more objects than twice the
+  cross-reference table size plus 1,048,576, or when its object stream header
+  did not parse before
+- Fix a security vulnerability
+  [GHSA-qv8r-jpjv-7hx2](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-qv8r-jpjv-7hx2):
+  an object that can only be parsed after more than 31 other objects, each
+  needed by the one before, fails to parse, a page tree more than 1024 levels
+  deep fails to open, and copying pages that reference a long chain of
+  objects no longer overflows the stack
+- Throw `Unable to read image dimensions` from `getImageDimensions()` for a
+  password-protected PDF or a PDF without the requested page instead of
+  returning a made-up 595 by 842.
+- Throw `Unable to finish PDF` instead of a spurious `maxOutputBytes`
+  `RangeError` when `end()` cannot finish a PDF.
+
 ## [1.2.3] - 2026-10-27
 
 ### Fixed
@@ -852,7 +906,8 @@ function or function signature mismatch` and later calls read freed
   runtime use, and Emscripten output is cached per build configuration [#568](https://github.com/julianhille/MuhammaraJS/issues/568)
   [#684](https://github.com/julianhille/MuhammaraJS/issues/684) [#690](https://github.com/julianhille/MuhammaraJS/issues/690) [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.3...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.4...HEAD
+[1.2.4]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.3...wasm-v1.2.4
 [1.2.3]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.2...wasm-v1.2.3
 [1.2.2]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.1...wasm-v1.2.2
 [1.2.1]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.0...wasm-v1.2.1

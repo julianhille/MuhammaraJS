@@ -1892,6 +1892,8 @@ EStatusCode DocumentContext::ReadState(PDFParser* inStateReader,ObjectIDType inO
 	PDFObjectCastPtr<PDFIndirectObjectReference> encrytpionStateID(documentState->QueryDirectObject("mEncryptionHelper"));
 	if(!encrytpionStateID)
 		return eFailure;
+	// MuhammaraJS: encrypt what the continued writer writes, as the other setup paths do
+	mObjectsContext->SetEncryptionHelper(&mEncryptionHelper);
 	return mEncryptionHelper.ReadState(inStateReader, encrytpionStateID->mObjectID);
 }
 
@@ -2787,6 +2789,11 @@ ObjectIDType DocumentContext::WriteCombinedPageTree(PDFParser* inModifiedFilePar
     ObjectReference originalTreeRoot = GetOriginalDocumentPageTreeRoot(inModifiedFileParser);
 
     PDFObjectCastPtr<PDFDictionary> originalTreeRootObject = inModifiedFileParser->ParseNewObject(originalTreeRoot.ObjectID);
+    // MuhammaraJS: fail when the original page tree root does not parse or is not a dictionary, as in an object stream that cannot be decrypted, instead of reading through NULL
+    if (!originalTreeRootObject) {
+        TRACE_LOG1("DocumentContext::WriteCombinedPageTree, Unable to parse original page tree root %ld", originalTreeRoot.ObjectID);
+        return 0;
+    }
 
     EStatusCode status = mObjectsContext->StartModifiedIndirectObject(originalTreeRoot.ObjectID);
 
@@ -3150,6 +3157,10 @@ DoubleAndDoublePair DocumentContext::GetImageDimensions(
 
       PDFPageInput helper(&pdfParser,pdfParser.ParsePage(inImageIndex));
 
+      // MuhammaraJS: a missing page has no dimensions, not the A4 default
+      if(!helper)
+        break;
+
       imageWidth = helper.GetMediaBox().GetWidth();
       imageHeight = helper.GetMediaBox().GetHeight();
 
@@ -3232,6 +3243,10 @@ DoubleAndDoublePair DocumentContext::GetImageDimensions(
 					break;
 
 				PDFPageInput helper(&pdfParser,pdfParser.ParsePage(inImageIndex));
+
+				// MuhammaraJS: a missing page has no dimensions, not the A4 default
+				if(!helper)
+					break;
 
 				imageWidth = helper.GetMediaBox().GetWidth();
 				imageHeight = helper.GetMediaBox().GetHeight();

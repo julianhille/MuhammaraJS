@@ -57,7 +57,9 @@ LongBufferSizeType InputRC4XcodeStream::Read(IOBasicTypes::Byte* inBuffer, LongB
 
 	while (NotEnded() && mCurrentIndex < inBufferSize)
 	{
-		mSourceStream->Read(&buffer, 1);
+		// MuhammaraJS: a source can end without a byte, as an AES stream that reads nothing does; stop instead of decrypting the uninitialised buffer
+		if (mSourceStream->Read(&buffer, 1) != 1)
+			break;
 		inBuffer[mCurrentIndex] = mRC4.DecodeNextByte(buffer);
 		++mCurrentIndex;
 	}

@@ -29,6 +29,7 @@
 #include "ObjectsBasicTypes.h"
 #include "IOBasicTypes.h"
 #include <vector>
+#include <deque>
 #include <utility>
 
 using namespace IOBasicTypes;
@@ -59,7 +60,9 @@ struct ObjectWriteInformation
 };
 
 typedef std::pair<bool,ObjectWriteInformation> GetObjectWriteInformationResult;
-typedef std::vector<ObjectWriteInformation> ObjectWriteInformationVector;
+// MuhammaraJS: a deque, which grows without moving its entries, so the registry of a modified file near the xref size
+// limit is not held twice while it grows
+typedef std::deque<ObjectWriteInformation> ObjectWriteInformationVector;
 
 class IndirectObjectsReferenceRegistry
 {

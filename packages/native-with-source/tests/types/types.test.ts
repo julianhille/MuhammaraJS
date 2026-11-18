@@ -912,6 +912,8 @@ void pdfStreamBytes;
 // @ts-expect-error PDF stream readers return Buffers, not number arrays.
 var pdfStreamByteArray: number[] = pdfStreamReader.read(16);
 void pdfStreamByteArray;
+var disposedStreamReader: muhammara.ByteReader = pdfStreamReader.dispose();
+void disposedStreamReader;
 
 // Built-in write streams still accept arrays of byte values from direct callers.
 const builtInWriteStream = new muhammara.PDFWStreamForBuffer();

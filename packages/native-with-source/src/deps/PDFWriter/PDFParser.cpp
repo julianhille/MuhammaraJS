@@ -50,8 +50,16 @@
 #include <cstdlib>
 using namespace PDFHummus;
 
-#define MAX_XREF_SIZE 9999999999LL
+// MuhammaraJS: object numbers up to 8,388,607, the PDF 1.7 limit on indirect objects (Annex C); a section start grows
+// the table to it
+#define MAX_XREF_SIZE 8388608LL
 #define MAX_HEADER_SCAN_POSITION 1024
+// MuhammaraJS: how many objects ParseNewObject() may have open at once, and how deep a page tree may be, as in PDFium.
+// Parsing an object can parse others first, such as its object stream and that stream's indirect /Length, which can be
+// in another object stream, and each page tree level is one call deeper. The 64 KiB default Wasm stack held about 330
+// such objects or 800 levels; the Wasm build's stack is sized for both limits (packages/wasm/CMakeLists.txt)
+#define MAX_NEW_OBJECT_DEPTH 32
+#define MAX_PAGE_TREE_DEPTH 1024
 
 static const XrefEntryInput scEmptyEntry;
 
@@ -60,6 +68,8 @@ PDFParser::PDFParser(void)
 	mTrailer = NULL;
 	mPagesObjectIDs = NULL;
 	mParserExtender = NULL;
+	mObjectStreamsCacheEntries = 0; // MuhammaraJS: see ParseExistingInDirectStreamObject()
+	mXrefStreamEntriesRead = 0; // MuhammaraJS: see ReadXrefStreamSegment()
     mAllowExtendingSegments = true; // Gal 19.9.2013: here's some policy changer. basically i'm supposed to ignore all segments that declare objects past the trailer
                                     // declared size. but i would like to allow files that do extend. as this is incompatible with the specs, i'll make
                                     // this boolean dendent. i will sometimes make it public so ppl can actually modify this policy. for now, it's internal
@@ -84,6 +94,8 @@ void PDFParser::ResetParser()
 	for(; it != mObjectStreamsCache.end();++it)
 		delete[] it->second;
 	mObjectStreamsCache.clear();
+	mObjectStreamsCacheEntries = 0; // MuhammaraJS: see ParseExistingInDirectStreamObject()
+	mXrefStreamEntriesRead = 0; // MuhammaraJS: see ReadXrefStreamSegment()
 	mDecryptionHelper.Reset();
 	mParsedXrefs.clear();
 	mNewObjectParsingPath.Reset();
@@ -583,6 +595,9 @@ EStatusCode PDFParser::ExtendXrefToSize(XrefEntryInputVector& inXrefTable, Objec
 		return eFailure;
 	}
 
+	// MuhammaraJS: double the capacity as insert() would, but not past MAX_XREF_SIZE
+	if(inXrefSize > inXrefTable.capacity())
+		inXrefTable.reserve(std::min<size_t>(std::max<size_t>(2 * inXrefTable.capacity(), inXrefSize), MAX_XREF_SIZE));
 	inXrefTable.insert(inXrefTable.end(), inXrefSize-inXrefTable.size(), scEmptyEntry);
 	return eSuccess;
 }
@@ -778,6 +793,13 @@ PDFObject* PDFParser::ParseNewObject(ObjectIDType inObjectId)
 		return NULL;
 	}
 
+	// MuhammaraJS: bound the objects open at once
+	if(mNewObjectParsingPath.GetDepth() >= MAX_NEW_OBJECT_DEPTH)
+	{
+		TRACE_LOG2("PDFParser::ParseNewObject, cannot parse object %ld, as %d objects are being parsed already",inObjectId,MAX_NEW_OBJECT_DEPTH);
+		return NULL;
+	}
+
 	// cycle check in
 	if(mNewObjectParsingPath.EnterObject(inObjectId) != eSuccess)
 		return NULL;
@@ -950,7 +972,8 @@ EStatusCode PDFParser::ParsePagesObjectIDs()
 
 		// safe: bounded above by actualXrefSize (an ObjectIDType) by the check above
 		mPagesCount = (unsigned long)pagesCountValue;
-		mPagesObjectIDs = new ObjectIDType[mPagesCount];
+		// MuhammaraJS: zero-fill, so pages /Kids does not list are null pages, not heap garbage
+		mPagesObjectIDs = new ObjectIDType[mPagesCount]();
 
 		// now iterate through pages objects, and fill up the IDs [don't really need the object ID for the root pages tree...but whatever
 		status = ParsePagesIDs(pages.GetPtr(),pagesReference->mObjectID);
@@ -985,6 +1008,14 @@ EStatusCode PDFParser::ParsePagesIDs(
 
 	do
 	{
+		// MuhammaraJS: bound the page tree depth
+		if(ioParsingPath.GetDepth() >= MAX_PAGE_TREE_DEPTH)
+		{
+			TRACE_LOG1("PDFParser::ParsePagesIDs, the page tree is more than %d levels deep",MAX_PAGE_TREE_DEPTH);
+			status = PDFHummus::eFailure;
+			break;
+		}
+
 		// add object to parsing path, checking for cycles
 		if(ioParsingPath.EnterObject(inNodeObjectID) != eSuccess) {
 			status = PDFHummus::eFailure;
@@ -1114,7 +1145,8 @@ PDFDictionary* PDFParser::ParsePage(unsigned long inPageIndex)
 
 	PDFObjectCastPtr<PDFName> objectType(pageObject->QueryDirectObject("Type"));
 
-	if(scPage == objectType->GetValue())
+	// MuhammaraJS: a page object without a /Type name is not a page
+	if(!!objectType && scPage == objectType->GetValue())
 	{
 		pageObject->AddRef();
 		return pageObject.GetPtr();
@@ -1232,56 +1264,61 @@ PDFObject* PDFParser::QueryArrayObject(PDFArray* inArray,unsigned long inIndex)
 
 EStatusCode PDFParser::ParsePreviousXrefs(PDFDictionary* inTrailer)
 {
-	PDFObjectCastPtr<PDFInteger> previousPositionObject(inTrailer->QueryDirectObject("Prev"));
-	if(!previousPositionObject)
-	{
-		TRACE_LOG("PDFParser::ParsePreviousXrefs, unexpected, prev is not integer");
-		return PDFHummus::eFailure;
-	}
-
-	LongFilePositionType previousPosition = previousPositionObject->GetValue();
-
-	if(previousPosition < 0)
-	{
-		// Standard: "The byte offset from the beginning of the PDF file", thus can not be negative
-		TRACE_LOG1("PDFParser::ParsePreviousXrefs, unexpected, /prev is negative: %ld.",previousPosition);
-		return PDFHummus::eFailure;
-    }
-
-	if(mParsedXrefs.find(previousPosition) != mParsedXrefs.end()) {
-		// safeguard against orcish mischief, trying to get the parser to endlessly loop between prevs
-		TRACE_LOG("PDFParser::ParsePreviousXrefs, unexpected, previous table position has already been parsed. possible malicious read loop attempt");
-		return PDFHummus::eFailure;
-	}
-
-	// introduce previousPosition to parsed xref to avoid attempted reparses in prevs of prev
-	mParsedXrefs.insert(previousPosition);
-
-
-	EStatusCode status;
-
+	// MuhammaraJS: follow the /Prev chain in a loop instead of recursing once per section, which overflowed the stack
+	// of a long chain, and merge each table before reading the older ones, which then only fill what it left undefined,
+	// so the chain reuses one table instead of holding one per section
+	EStatusCode status = PDFHummus::eSuccess;
 	XrefEntryInputVector aTable;
-	do
+	RefCountPtr<PDFDictionary> trailer;
+	PDFDictionary* currentTrailer = inTrailer;
+	unsigned long long previousEntries = 0;
+	while(PDFHummus::eSuccess == status && currentTrailer->Exists("Prev"))
 	{
-		PDFDictionary* trailerP = NULL;
+		PDFObjectCastPtr<PDFInteger> previousPositionObject(currentTrailer->QueryDirectObject("Prev"));
+		if(!previousPositionObject)
+		{
+			TRACE_LOG("PDFParser::ParsePreviousXrefs, unexpected, prev is not integer");
+			return PDFHummus::eFailure;
+		}
 
-        XrefEntryInput* extendedTable = NULL;
-        ObjectIDType readTableSize;
+		LongFilePositionType previousPosition = previousPositionObject->GetValue();
+
+		if(previousPosition < 0)
+		{
+			// Standard: "The byte offset from the beginning of the PDF file", thus can not be negative
+			TRACE_LOG1("PDFParser::ParsePreviousXrefs, unexpected, /prev is negative: %ld.",previousPosition);
+			return PDFHummus::eFailure;
+		}
+
+		if(mParsedXrefs.find(previousPosition) != mParsedXrefs.end()) {
+			// safeguard against orcish mischief, trying to get the parser to endlessly loop between prevs
+			TRACE_LOG("PDFParser::ParsePreviousXrefs, unexpected, previous table position has already been parsed. possible malicious read loop attempt");
+			return PDFHummus::eFailure;
+		}
+
+		// introduce previousPosition to parsed xref to avoid attempted reparses in prevs of prev
+		mParsedXrefs.insert(previousPosition);
+
+		PDFDictionary* trailerP = NULL;
+		ObjectIDType readTableSize;
+		aTable.clear();
 		status = ParsePreviousFileDirectory(previousPosition,aTable,mXrefSize,&trailerP,&readTableSize);
 		if(status != PDFHummus::eSuccess)
 			break;
-		RefCountPtr<PDFDictionary> trailer(trailerP);
+		trailer = RefCountPtr<PDFDictionary>(trailerP);
+		currentTrailer = trailer.GetPtr();
 
-		if(trailer->Exists("Prev"))
+		// MuhammaraJS: reading and merging a section takes time for every entry of its table, up to its highest
+		// object number, however few it lists, so bound the sum over the chain to 16 tables of the largest size
+		previousEntries += aTable.size();
+		if(previousEntries > 16 * MAX_XREF_SIZE)
 		{
-			status = ParsePreviousXrefs(trailer.GetPtr());
-			if(status != PDFHummus::eSuccess)
-				break;
+			TRACE_LOG("PDFParser::ParsePreviousXrefs, the /Prev chain sections exceed 16 times the maximum xref size");
+			return PDFHummus::eFailure;
 		}
 
-        status = MergeXrefWithMainXref(aTable,readTableSize);
+		status = MergeXrefWithMainXref(aTable,readTableSize);
 	}
-	while(false);
 	return status;
 }
 
@@ -1420,7 +1457,8 @@ EStatusCode PDFParser::MergeXrefWithMainXref(XrefEntryInputVector& inTableToMerg
 
 	for(ObjectIDType i = 0; i < inTableToMerge.size(); ++i) // iterate by input table size which is what we actually want to read from (and not the logical size)
 	{
-		if(inTableToMerge[i].mType != eXrefEntryUndefined)
+		// MuhammaraJS: previous tables merge newest first, so keep what a newer one set
+		if(inTableToMerge[i].mType != eXrefEntryUndefined && mXrefTable[i].mType == eXrefEntryUndefined)
 			mXrefTable[i] =	inTableToMerge[i];
 	}
 
@@ -1804,6 +1842,14 @@ EStatusCode PDFParser::ReadXrefStreamSegment(XrefEntryInputVector& inXrefTable,
 	{
 		long long entryType;
 
+		// MuhammaraJS: sections may repeat, so bound the entries all xref streams read, not only the table size
+		if(++mXrefStreamEntriesRead > 16 * MAX_XREF_SIZE)
+		{
+			TRACE_LOG("PDFParser::ReadXrefStreamSegment, xref streams list too many entries");
+			status = PDFHummus::eFailure;
+			break;
+		}
+
 		// make sure we have enough room
 		status = ExtendXrefToSize(inXrefTable, objectToRead+1);
 		if(status != PDFHummus::eSuccess)
@@ -1942,16 +1988,33 @@ PDFObject* PDFParser::ParseExistingInDirectStreamObject(ObjectIDType inObjectId)
 
 		if(it == mObjectStreamsCache.end())
 		{
+			// MuhammaraJS: the cached headers stay for the parser's lifetime, and /N bounds them per object stream only.
+			// Every object has one xref entry, but an incremental update may list objects again in a new object stream
+			// while the old one still holds others, so allow the headers twice the table, and 1048576 objects more for
+			// files that write a new object stream on every save
+			if(mObjectStreamsCacheEntries + objectsCount > 2 * (unsigned long long)actualXrefSize + 1048576)
+			{
+				TRACE_LOG1("PDFParser::ParseExistingInDirectStreamObject, object streams list too many objects for the xref size %lu", actualXrefSize);
+				status = PDFHummus::eFailure;
+				break;
+			}
 			objectStreamHeader = new ObjectStreamHeaderEntry[objectsCount];
 			status = ParseObjectStreamHeader(objectStreamHeader,objectsCount);
 			if(status != PDFHummus::eSuccess)
 			{
 				delete[] objectStreamHeader;
-				break;
+				objectStreamHeader = NULL; // MuhammaraJS: cached, so its other objects fail without parsing it again
 			}
+			else
+				mObjectStreamsCacheEntries += objectsCount;
 			it = mObjectStreamsCache.insert(ObjectIDTypeToObjectStreamHeaderEntryMap::value_type(objectStreamID,objectStreamHeader)).first;
 		}
 		objectStreamHeader = it->second;
+		if(!objectStreamHeader)
+		{
+			status = PDFHummus::eFailure;
+			break;
+		}
 
 		// verify that i got the right object ID
 		if(objectsCount <= mXrefTable[inObjectId].mRivision || objectStreamHeader[mXrefTable[inObjectId].mRivision].mObjectNumber != inObjectId)
@@ -2097,6 +2160,13 @@ IByteReader* PDFParser::CreateInputStreamReader(PDFStreamInput* inStream)
 		if(filterObject->GetType() == PDFObject::ePDFObjectArray)
 		{
 			PDFArray* filterObjectArray = (PDFArray*)filterObject.GetPtr();
+			// MuhammaraJS: every decoder of a chain allocates its own buffers, so bound the chain; real streams use one to three filters
+			if(filterObjectArray->GetLength() > 8)
+			{
+				TRACE_LOG("PDFParser::CreateInputStreamReader, more than 8 filters. failing");
+				status = PDFHummus::eFailure;
+				break;
+			}
 			PDFObjectCastPtr<PDFArray> decodeParams(QueryDictionaryObject(streamDictionary.GetPtr(),"DecodeParms"));
 			for(unsigned long i=0; i < filterObjectArray->GetLength() && eSuccess == status;++i)
 			{
