@@ -34,8 +34,12 @@ WASM_EXPORT unsigned char* muhammara_wasm_recrypt(
 
 unsigned char* muhammara_wasm_recipe_end_pdf(WasmRecipe* recipe,
                                              unsigned int* outputLength) {
-  if (recipe == nullptr || outputLength == nullptr || recipe->page != nullptr ||
-      recipe->finished || recipe->writer.EndPDFForStream() != PDFHummus::eSuccess) {
+  if (outputLength == nullptr) {
+    return nullptr;
+  }
+  *outputLength = 0;
+  if (recipe == nullptr || recipe->page != nullptr || recipe->finished ||
+      recipe->writer.EndPDFForStream() != PDFHummus::eSuccess) {
     return nullptr;
   }
   recipe->finished = true;

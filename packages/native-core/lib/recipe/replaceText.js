@@ -260,7 +260,7 @@ function replaceContentStream(recipe, pageIndex, objectId, content) {
   var replacementStream = objectsContext.startUnfilteredPDFStream();
 
   replacementStream.getWriteStream().write(Buffer.from(content, "latin1"));
-  objectsContext.endPDFStream(replacementStream).endIndirectObject();
+  objectsContext.endPDFStream(replacementStream);
   recipe.writer.replaceObject(pageIndex, objectId, replacementObjectId);
 }
 
@@ -298,7 +298,7 @@ function rewriteStream(recipe, copyingContext, objectId, content) {
 
   var stream = objectsContext.startUnfilteredPDFStream(dictionary);
   stream.getWriteStream().write(Buffer.from(content, "latin1"));
-  objectsContext.endPDFStream(stream).endIndirectObject();
+  objectsContext.endPDFStream(stream);
 }
 
 /**

@@ -196,6 +196,10 @@ private:
 	LongBufferSizeType mLastReadPositionFromEnd;
 	bool mEncounteredFileStart;
 	ObjectIDTypeToObjectStreamHeaderEntryMap mObjectStreamsCache;
+	// MuhammaraJS: objects listed by the cached object stream headers
+	unsigned long long mObjectStreamsCacheEntries;
+	// MuhammaraJS: entries read from xref streams
+	unsigned long long mXrefStreamEntriesRead;
 	LongFilePositionTypeSet mParsedXrefs;
 
 	double mPDFLevel;

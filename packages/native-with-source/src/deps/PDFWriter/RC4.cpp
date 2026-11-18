@@ -61,7 +61,8 @@ void RC4::Init(const Byte* inKey, LongBufferSizeType inLength)
 
 	mJ = 0;
 
-	for (mI = 0; mI<256; ++mI)
+	// MuhammaraJS: an empty key has nothing to schedule; skip it instead of dividing by zero
+	for (mI = 0; inLength > 0 && mI<256; ++mI)
 	{
 		mJ = (mJ + mBuffer[mI] + inKey[mI % inLength]) % 256;
 		Swap(mI, mJ);

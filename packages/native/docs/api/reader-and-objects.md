@@ -69,3 +69,9 @@ raw parser internals for specialized low-level processing. They are not stable
 general-purpose reading workflows; use the page and object methods above unless
 you need to build a PDF parser integration. The byte readers they return
 deliver each `read(amount)` as a `Buffer`.
+
+Byte readers returned by `startReadingFromStream()` and
+`startReadingFromStreamForPlainCopying()` hold the stream's decoders and their
+buffers. Call their idempotent `dispose()` method as soon as reading finishes.
+Disposing one of these byte readers does not end its parent PDF reader; a byte
+reader that is not disposed keeps its decoders until it is garbage-collected.

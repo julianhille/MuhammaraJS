@@ -37,7 +37,11 @@ PDFPageInput::PDFPageInput(PDFParser* inParser,PDFObject* inPageObject):mPageObj
 void PDFPageInput::AssertPageObjectValid()
 {
     if(!mPageObject)
+    {
         TRACE_LOG("PDFPageInput::AssertPageObjectValid, null page object or not a dictionary");
+        // MuhammaraJS: ParsePage() returns NULL for a missing page, so stop before reading it
+        return;
+    }
     
     PDFObjectCastPtr<PDFName> typeObject = mPageObject->QueryDirectObject("Type");
     if(!typeObject || typeObject->GetValue() != "Page")

@@ -322,6 +322,73 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   packages are unaffected.
   [#1057](https://github.com/julianhille/MuhammaraJS/issues/1057)
 
+## [7.2.4] - 2026-11-18
+
+### Added
+
+- Add `dispose()` to the byte readers of `startReadingFromStream()` and
+  `startReadingFromStreamForPlainCopying()`, as on Wasm, to release a stream's
+  decoders without waiting for garbage collection
+  [GHSA-rw3m-455p-xvhr](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-rw3m-455p-xvhr)
+
+### Fixed
+
+- Fix a security vulnerability
+  [GHSA-6qj6-hc67-3vfp](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-6qj6-hc67-3vfp)
+- Fix a security vulnerability
+  [GHSA-wj5h-wf8p-8vhv](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-wj5h-wf8p-8vhv)
+- Fix a security vulnerability
+  [GHSA-fvpv-4wx7-85f6](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-fvpv-4wx7-85f6)
+- Fix a security vulnerability
+  [GHSA-7rr8-wph2-845v](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-7rr8-wph2-845v)
+- Fix a security vulnerability
+  [GHSA-mvmf-5vvf-74m7](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-mvmf-5vvf-74m7)
+- Fix a security vulnerability
+  [GHSA-32r6-f4hm-ccc4](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-32r6-f4hm-ccc4)
+- Fix a security vulnerability
+  [GHSA-fm69-f3cr-v22g](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-fm69-f3cr-v22g)
+- Fix a security vulnerability
+  [GHSA-r4mx-qx34-mrx3](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-r4mx-qx34-mrx3)
+- Fix a security vulnerability
+  [GHSA-7pgh-4m9g-9wrj](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-7pgh-4m9g-9wrj)
+- Fix a security vulnerability
+  [GHSA-rw6g-24h2-52ch](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-rw6g-24h2-52ch)
+- Fix a security vulnerability
+  [GHSA-7gx7-f7mg-m8w6](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-7gx7-f7mg-m8w6)
+- Fix a security vulnerability
+  [GHSA-rw3m-455p-xvhr](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-rw3m-455p-xvhr):
+  predictor rows over 1 MiB read as empty, and a stream with more than eight
+  filters fails to read
+- Throw a `RangeError` from a byte reader's `read(amount)` when `amount` is not
+  an integer from 0 to 2^31 - 1, as on Wasm, instead of overflowing the read
+  buffer for 2 GiB or more and reading a negative amount as about 4 GiB.
+- Return an empty `Buffer` from a byte reader's `read(0)`, as on Wasm, instead
+  of crashing the process on an `LZWDecode` stream.
+- Fix a security vulnerability
+  [GHSA-6rw3-h5pc-hc2x](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-6rw3-h5pc-hc2x)
+- Fix a security vulnerability
+  [GHSA-3p2c-cw9w-9746](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-3p2c-cw9w-9746)
+- Fix a security vulnerability
+  [GHSA-7q35-5h53-wm34](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-7q35-5h53-wm34)
+- Fix a security vulnerability
+  [GHSA-h459-gv45-xfgv](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-h459-gv45-xfgv):
+  progressive or multi-scan JPEGs whose coefficients need more than 256 MiB
+  read as empty, and are copied empty when streams are not compressed
+- Fix a security vulnerability
+  [GHSA-pvfx-h82v-pxjj](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-pvfx-h82v-pxjj):
+  a PDF with an object number over 8,388,607, or whose `/Prev`
+  cross-reference sections or cross-reference stream entries add up to more
+  than 16 tables of that size, fails to open, and an object fails to parse
+  once the object streams read list more objects than twice the
+  cross-reference table size plus 1,048,576, or when its object stream header
+  did not parse before
+- Fix a security vulnerability
+  [GHSA-qv8r-jpjv-7hx2](https://github.com/julianhille/MuhammaraJS/security/advisories/GHSA-qv8r-jpjv-7hx2):
+  an object that can only be parsed after more than 31 other objects, each
+  needed by the one before, fails to parse, a page tree more than 1024 levels
+  deep fails to open, and copying pages that reference a long chain of
+  objects no longer overflows the stack
+
 ## [7.2.3] - 2026-10-27
 
 ### Fixed
@@ -2163,7 +2230,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.3...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.4...HEAD
+[7.2.4]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.3...native-v7.2.4
 [7.2.3]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.2...native-v7.2.3
 [7.2.2]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.1...native-v7.2.2
 [7.2.1]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.0...native-v7.2.1

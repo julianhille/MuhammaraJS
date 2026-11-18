@@ -46,6 +46,14 @@ low-level RGB `color`, which native does not.
 String writers and `PDFWStreamForBuffer.write()` accept an array of byte
 values on both ends; Wasm throws a `TypeError` for an item that is not an
 integer from 0 to 255, where native coerces it to a byte.
+`getImageDimensions()` throws `Unable to read image dimensions` for every image
+it cannot read; native returns `{ width: 0, height: 0 }` for one, except for a
+PDF that opens but whose requested page is missing or cannot be read, where it
+throws like Wasm. Measure a password-protected PDF after decrypting it with
+`recrypt(bytes, { password })`.
+For a page that is null or missing from `/Kids`, native `getPageObjectID()`
+returns 0 and `parsePageDictionary()` throws; Wasm throws a `RangeError` from
+both.
 
 `Recipe.thirdPartyLicenses()` exists only in Wasm. It reads the notices embedded in
 `muhammara-wasm.wasm`, which bundlers copy without the package's other files.
@@ -126,11 +134,16 @@ be registered from bytes. Integer Recipe version enums (`10` through `17` and
 `20`) and byte/Blob registration APIs are browser byte-first extensions, not
 Node Recipe parity behavior.
 
-Wasm-only `writer.dispose()`, `PDFByteReader.dispose()`, `Recipe.dispose()`, and
-`Recipe.disposeAssets()` release Emscripten heap allocations that JavaScript
-garbage collection cannot reclaim. Native objects use normal native lifetime
-management, so they have no corresponding methods. Disposing a PDF byte reader
-does not end its parent PDF reader.
+Wasm-only `writer.dispose()`, `Recipe.dispose()`, and `Recipe.disposeAssets()`
+release Emscripten heap allocations that JavaScript garbage collection cannot
+reclaim. Native objects use normal native lifetime management, so they have no
+corresponding methods. The stream byte readers of `startReadingFromStream()` and
+`startReadingFromStreamForPlainCopying()` have `dispose()` on both ends, those
+of `getParserStream()` and `getSourceDocumentStream()` on Wasm only, and
+disposing one does not end its parent PDF reader. Ending the parent releases
+the Wasm byte readers, and their `dispose()` then does nothing; a native byte
+reader keeps its decoders until it is disposed or garbage-collected, and its
+`dispose()` throws `PDF reader has ended` once the parent ended.
 
 Stateful low-level writer methods reject use after cleanup on both ends with
 `Error("PDF writer has ended")`. Native `end()` is idempotent and returns the
