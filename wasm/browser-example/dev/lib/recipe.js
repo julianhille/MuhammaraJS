@@ -981,7 +981,8 @@ export function createRecipeFactory({
          * when modifying a source PDF fails.
          * @param {Recipe} recipe - Recipe to finish.
          * @returns {Uint8Array} The PDF bytes.
-         * @throws {Error} If a page is open while pages are deleted, or writing fails.
+         * @throws {Error} If a page is open while pages are deleted, the source
+         *   needs a password to open, or writing fails.
          */
         endPDF: (recipe) => {
           if (recipe._endError) throw recipe._endError;
@@ -997,23 +998,26 @@ export function createRecipeFactory({
           endActivePage(recipe);
           if (recipe._sourceMode) {
             if (!recipe._endedBytes) {
-              var deletingPages = Boolean(recipe._deletedPages?.size);
-              var deletionState = deletingPages
-                ? {
-                    pages: recipe._pages,
-                    metadata: recipe.metadata,
-                    metadataValues: { ...recipe.metadata },
-                    activePageNumber: recipe._activePageNumber,
-                    deletedPages: recipe._deletedPages,
-                  }
-                : null;
+              var deletionState = {
+                pages: recipe._pages,
+                metadata: recipe.metadata,
+                metadataValues: { ...recipe.metadata },
+                activePageNumber: recipe._activePageNumber,
+                deletedPages: recipe._deletedPages,
+              };
               try {
+                if (recipe._sourceNeedsPassword) {
+                  // As on native, a source that needs a password to open is
+                  // read-only.
+                  throw new Error(
+                    "Editing a password-protected source is unsupported; decrypt it with recrypt() first",
+                  );
+                }
                 recipe._deletePages();
                 recipe._writeCanonicalInfo();
                 recipe._writeFormFills();
                 recipe._endedBytes = recipe.writer.end();
               } catch (error) {
-                if (!deletingPages) throw error;
                 recipe._pages = deletionState.pages;
                 Object.keys(deletionState.metadata).forEach(
                   (key) => delete deletionState.metadata[key],
@@ -1025,11 +1029,13 @@ export function createRecipeFactory({
                 recipe.metadata = deletionState.metadata;
                 recipe._activePageNumber = deletionState.activePageNumber;
                 recipe._deletedPages = deletionState.deletedPages;
+                // As on native, a failed finalization retires the Recipe:
+                // later calls rethrow this error.
                 recipe._endError = error;
                 try {
                   recipe.writer.dispose();
                 } catch (_) {
-                  // Preserve the deletion error if modifier cleanup fails.
+                  // Preserve the original error if modifier cleanup fails.
                 }
                 throw error;
               }
