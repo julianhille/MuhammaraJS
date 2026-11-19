@@ -34,6 +34,7 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Added
 
+- Add `StructureFormat.TREE` for Recipe `structure()`, which returns the object tree of the source PDF as native writes it to its file, without finishing the Recipe, and throws when there is no source PDF [#1016](https://github.com/julianhille/MuhammaraJS/issues/1016)
 - Write PDF/A documents with the new `pdfa` Recipe option,
   `{ level, iccProfile, outputCondition }`: PDF/A-1b, 2b, 2u, 3b, 3u, 4, 4e
   and 4f (`Recipe.PdfA`), with the PDF version of the level, XMP metadata that

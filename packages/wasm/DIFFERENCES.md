@@ -64,7 +64,11 @@ function.
 Recipe value constants are static properties with the native names and members
 (`Recipe.TextWrap`, `Recipe.AnnotFlag`, and so on). Wasm has no `Recipe.Source`,
 because it has no `"new"` output-path sentinel, and adds `Recipe.StructureFormat`
-for its byte-returning `structure()`.
+for its byte-returning `structure()`. `StructureFormat.TREE` returns the text
+native writes to its file; the default and `JSON` outputs are Wasm-only
+summaries that finish the Recipe. `StructureFormat.TREE` throws for a source
+that needs its user password, where native writes the tree for a source opened
+with `password`.
 
 Wasm glyph text requires every glyph list item to be exactly one
 `[glyphId, unicodeCodePoint]` pair of non-negative integers; native also

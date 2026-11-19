@@ -18,6 +18,7 @@ var {
 } = require("../pdfa");
 var { attachment, writeAttachments } = require("../attachments");
 var { readStreamString } = require("../content-stream");
+var { structureTree } = require("../structure-tree");
 
 var PLAIN_METADATA =
   "Recipe cannot write the XMP of a PDF whose metadata is not encrypted";
@@ -505,113 +506,10 @@ exports.custom = function custom(key, value) {
  * @memberof Recipe#
  * @param {string} output - The output file path.
  * @returns {Recipe} The recipe instance.
- * @throws {Error} If the source reader was released by endPDF(), or the
- *   output file cannot be written.
+ * @throws {Error} If the Recipe has no source PDF, the source reader was
+ *   released by endPDF(), or the output file cannot be written.
  */
 exports.structure = function structure(output) {
-  // PDF file format http://lotabout.me/orgwiki/pdf.html
-  // const outputFileType = path.extname(output);
-  const outputFile = fs.openSync(output, "w");
-  const muhammara = this.muhammara;
-  const pdfReader = this._getReader();
-
-  const tabWidth = "  ";
-  const structures = [
-    "Info",
-    "Root", // catalog
-    "Size",
-    "Prev",
-    "ID",
-    // 'Encrypt',
-    // 'XRefStm'
-  ];
-
-  const write = (item) => {
-    const mIteratedObjectIDs = {};
-    let mTabLevel = 0;
-
-    const addTabs = () => {
-      let output = "";
-      for (let i = 0; i < mTabLevel; ++i) {
-        output += tabWidth;
-      }
-      return output;
-    };
-
-    const logToFile = (inString) => {
-      fs.writeSync(outputFile, addTabs() + inString + "\r\n");
-    };
-
-    const iterateObjectTypes = (inObject) => {
-      const type = inObject.getType();
-      const label = muhammara.getTypeLabel(type);
-      let output = "";
-      let objectID, jsArray, aDictionary, keys;
-
-      switch (type) {
-        case muhammara.ePDFObjectIndirectObjectReference:
-          ++mTabLevel;
-          objectID = inObject.toPDFIndirectObjectReference().getObjectID();
-          output += `Indirect object reference (${objectID}): `;
-          logToFile(output);
-          if (
-            !Object.prototype.hasOwnProperty.call(mIteratedObjectIDs, objectID)
-          ) {
-            mIteratedObjectIDs[objectID] = true;
-            iterateObjectTypes(pdfReader.parseNewObject(objectID));
-          }
-          for (var i = 0; i < mTabLevel; ++i) {
-            output += " ";
-          }
-          --mTabLevel;
-          return;
-        case muhammara.ePDFObjectArray:
-          jsArray = inObject.toPDFArray().toJSArray();
-          output += `- ${label} [${jsArray.length}]`;
-          logToFile(output);
-          ++mTabLevel;
-          jsArray.forEach((element) => {
-            iterateObjectTypes(element);
-          });
-          --mTabLevel;
-          break;
-        case muhammara.ePDFObjectDictionary:
-          aDictionary = inObject.toPDFDictionary().toJSObject();
-          keys = Object.getOwnPropertyNames(aDictionary).join(", ");
-          output += `- ${label} {${keys}}`;
-          logToFile(output);
-          ++mTabLevel;
-          Object.getOwnPropertyNames(aDictionary).forEach((element) => {
-            logToFile(element + " *");
-            iterateObjectTypes(aDictionary[element]);
-          });
-          --mTabLevel;
-          break;
-        case muhammara.ePDFObjectStream:
-          output += "Stream . iterating stream dictionary:";
-          logToFile(output);
-          iterateObjectTypes(inObject.toPDFStream().getDictionary());
-          break;
-        default:
-          output += `${tabWidth}${label}: ${inObject}`;
-          logToFile(output);
-      }
-    };
-
-    const itemTrailer = pdfReader.queryDictionaryObject(
-      pdfReader.getTrailer(),
-      item,
-    );
-    logToFile(item);
-    iterateObjectTypes(itemTrailer);
-  };
-
-  structures
-    .filter((item) => pdfReader.getTrailer().exists(item))
-    .forEach((item) => {
-      write(item);
-    });
-
-  fs.closeSync(outputFile);
+  fs.writeFileSync(output, structureTree(this._getReader(), this.muhammara));
   return this;
 };

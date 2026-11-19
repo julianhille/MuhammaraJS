@@ -138,6 +138,7 @@ export var PageLayout = Object.freeze({
 export var StructureFormat = Object.freeze({
   STRING: "string",
   JSON: "json",
+  TREE: "tree",
 });
 
 /** Recipe font style spellings; the one-letter forms are the registry keys. */

@@ -1279,6 +1279,11 @@ async function usesNamedValueSets() {
   var recipeBoxAlign: Recipe.TextBoxAlign = `${recipeClass.TextAlign.JUSTIFY} ${recipeClass.VerticalAlign.BOTTOM}`;
   var recipeStructure: Recipe.StructureFormat =
     recipeClass.StructureFormat.JSON;
+  var recipeTree: Recipe.StructureFormat = recipeClass.StructureFormat.TREE;
+  var treeText: string = recipeClass.prototype.structure(
+    recipeClass.StructureFormat.TREE,
+  );
+  void [recipeTree, treeText];
   void [
     recipeWrap,
     recipeRowNth,

@@ -343,9 +343,13 @@ class Recipe {
    * Get the source reader, which endPDF() releases.
    * @private
    * @returns {Object} The source PDF reader.
-   * @throws {Error} If the reader was already released by endPDF().
+   * @throws {Error} If the Recipe has no source PDF, or the reader was already
+   *   released by endPDF().
    */
   _getReader() {
+    if (this.isNewPDF) {
+      throw new Error("The Recipe has no source PDF to read");
+    }
     if (!this.pdfReader) {
       throw new Error(
         "The source PDF reader has been released by endPDF(). Read the source before ending the document.",

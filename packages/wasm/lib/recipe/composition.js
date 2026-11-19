@@ -406,17 +406,22 @@ export function createSplitPdf({
 export function createStructure() {
   /**
    * Reports basic structure for the finished PDF.
-   * Calling this method finishes the Recipe via `endPDF()`.
+   * Calling this method finishes the Recipe via `endPDF()`, except for
+   * `StructureFormat.TREE`, which returns the object tree of the source PDF's
+   * trailer, as native writes it to its output file, and keeps the Recipe open.
    *
    * @name structure
    * @function
    * @memberof Recipe#
    * @param {RecipeStructureFormat} [format="string"] Output format.
    * @returns {string|RecipeStructure} A text summary, or structured page,
-   * encryption, and indirect-object counts for JSON output.
-   * @throws {Error} If the Recipe cannot be finished.
+   * encryption, and indirect-object counts for JSON output, or the source
+   * tree text for `StructureFormat.TREE`.
+   * @throws {Error} If the Recipe cannot be finished, or for `TREE` it has no
+   * source PDF.
    */
   return function (format = StructureFormat.STRING) {
+    if (format === StructureFormat.TREE) return this._structureTree();
     var bytes = this.endPDF();
     var text = new TextDecoder().decode(bytes);
     var objects = (text.match(/\n\d+ \d+ obj\b/g) || []).length;
