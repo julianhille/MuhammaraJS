@@ -1,6 +1,8 @@
 // Byte-first port of the copying-context behavior in
 // tests/ModifyingExistingFileContent.js and tests/MergePDFPages.js.
 import assert from "node:assert/strict";
+import v8 from "node:v8";
+import vm from "node:vm";
 import { createMuhammaraWasm } from "../index.js";
 import { writeOutput } from "../testOutput.mjs";
 
@@ -51,6 +53,41 @@ describe("ModifyingExistingFileContent", function () {
     assert.throws(() => liveParser.getPagesCount(), /PDF writer has ended/);
     assert.throws(() => liveTrailer.getType(), /PDF writer has ended/);
     assert.throws(() => writer.getModifiedFileParser(), /PDF writer has ended/);
+  });
+
+  it("lets ended modified-file readers be collected while the modifier lives (#1070)", async function () {
+    v8.setFlagsFromString("--expose-gc");
+    var gc = vm.runInNewContext("gc");
+    v8.setFlagsFromString("--no-expose-gc");
+    var muhammara = await createMuhammaraWasm();
+    var sourceWriter = muhammara.createWriter();
+    sourceWriter.writePage(sourceWriter.createPage(0, 0, 200, 200));
+    var sourceBytes = sourceWriter.end();
+    var writer = muhammara.createWriterToModify(sourceBytes);
+    var copyings = [
+      writer.createPDFCopyingContextForModifiedFile(),
+      writer.createPDFCopyingContext(sourceBytes),
+    ];
+
+    var parser = writer.getModifiedFileParser();
+    var sources = copyings.map((copying) => copying.getSourceDocumentParser());
+    var refs = [parser].concat(sources).map((item) => new WeakRef(item));
+    parser.end().end();
+    sources.forEach((source) => source.end().end());
+    parser = sources = null;
+    // WeakRef targets stay alive until the current job ends, so yield first.
+    await new Promise((resolve) => setImmediate(resolve));
+    for (var round = 0; round < 3; ++round) gc();
+    assert.deepEqual(
+      refs.map((ref) => ref.deref()),
+      [undefined, undefined, undefined],
+    );
+
+    // readers that were not ended themselves still end with the modifier
+    var live = writer.getModifiedFileParser();
+    assert.equal(live.getPagesCount(), 1);
+    writer.end();
+    assert.throws(() => live.getPagesCount(), /PDF writer has ended/);
   });
 
   it("copies its modified-file pages to a form and a new page", async function () {
