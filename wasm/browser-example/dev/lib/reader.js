@@ -37,6 +37,7 @@ export function createReaderFactory({
    * @param {number} copyingContext Borrowed native copying context for source streams.
    * @param {boolean} destroyReader Whether `end()` destroys `readerHandle`.
    * @param {string} [password] Password that opens encrypted PDF bytes.
+   * @param {Function} [onEnd] Called with the reader when its `end()` releases it.
    * @returns {object} A reader whose `end()` releases owned resources.
    * @throws {TypeError} If `bytes` is not a supported byte source.
    * @throws {Error} If the PDF cannot be parsed.
@@ -48,6 +49,7 @@ export function createReaderFactory({
     copyingContext,
     destroyReader = true,
     password,
+    onEnd,
   ) {
     var reader = readerHandle;
     var path;
@@ -1522,6 +1524,7 @@ export function createReaderFactory({
             removeFile(path);
             reader = 0;
             ended = true;
+            if (onEnd) onEnd(pdfReader);
           }
         }
         return this;
