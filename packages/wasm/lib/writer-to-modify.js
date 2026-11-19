@@ -139,7 +139,7 @@ export function createWriterToModifyFactory({
     // keeps its own copy in case the original is removed or replaced first.
     var storedImageCopies = new Map();
     var lifecycle = createChildLifecycle();
-    var modifiedReaders = [];
+    var modifiedReaders = new Set();
 
     /**
      * Releases the native modifier, its children, readers, and stored assets. Idempotent.
@@ -149,7 +149,7 @@ export function createWriterToModifyFactory({
       if (ended) return;
       lifecycle.disposeChildren();
       modifiedReaders.forEach((reader) => reader.end());
-      modifiedReaders.length = 0;
+      modifiedReaders.clear();
       if (modifier) module._muhammara_wasm_modifier_destroy(modifier);
       removeAssets(directImagePaths);
       removeFile(path);
@@ -3174,8 +3174,16 @@ export function createWriterToModifyFactory({
         var parser =
           module._muhammara_wasm_modifier_get_modified_file_parser(modifier);
         if (!parser) throw new Error("Unable to get modified file parser");
-        var reader = createReader(null, parser, requireOpen);
-        modifiedReaders.push(reader);
+        var reader = createReader(
+          null,
+          parser,
+          requireOpen,
+          undefined,
+          undefined,
+          undefined,
+          modifiedReaders.delete.bind(modifiedReaders),
+        );
+        modifiedReaders.add(reader);
         return reader;
       },
       /**
@@ -3596,7 +3604,7 @@ export function createWriterToModifyFactory({
           throw new Error("Unable to create PDF copying context");
         }
         var copyingEnded = false;
-        var sourceParsers = [];
+        var sourceParsers = new Set();
         /**
          * Ends the copying context, its parsers, and its stored source. Idempotent.
          * @returns {void}
@@ -3638,8 +3646,10 @@ export function createWriterToModifyFactory({
               requireCopying,
               copying,
               false,
+              undefined,
+              sourceParsers.delete.bind(sourceParsers),
             );
-            sourceParsers.push(parser);
+            sourceParsers.add(parser);
             return parser;
           },
           /**
@@ -3796,7 +3806,7 @@ export function createWriterToModifyFactory({
           end: function () {
             requireCopying();
             sourceParsers.forEach((parser) => parser._end());
-            sourceParsers.length = 0;
+            sourceParsers.clear();
             var result = module._muhammara_wasm_copying_context_end(copying);
             copyingEnded = true;
             cleanupCopying();
@@ -3840,7 +3850,7 @@ export function createWriterToModifyFactory({
           );
         }
         var copyingEnded = false;
-        var sourceParsers = [];
+        var sourceParsers = new Set();
         /**
          * Ends the copying context, its parsers, and its stored source. Idempotent.
          * @returns {void}
@@ -3881,8 +3891,10 @@ export function createWriterToModifyFactory({
               requireCopying,
               copying,
               false,
+              undefined,
+              sourceParsers.delete.bind(sourceParsers),
             );
-            sourceParsers.push(parser);
+            sourceParsers.add(parser);
             return parser;
           },
           /**
@@ -4047,7 +4059,7 @@ export function createWriterToModifyFactory({
           end: function () {
             requireCopying();
             sourceParsers.forEach((parser) => parser._end());
-            sourceParsers.length = 0;
+            sourceParsers.clear();
             var result = module._muhammara_wasm_copying_context_end(copying);
             copyingEnded = true;
             cleanupCopying();

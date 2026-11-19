@@ -91,6 +91,11 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ### Fixed
 
+- Release the JS object of a modifier reader or source parser when its
+  `end()` runs, instead of keeping it until the modifier ends, so loops over
+  `xmp()`, `formFields()`, `replaceText()` and `getSourceDocumentParser()` no
+  longer grow the heap
+  [#1070](https://github.com/julianhille/MuhammaraJS/issues/1070)
 - Throw `Encrypted PDF input is not supported in Wasm` from Recipe `overlay()`
   and `appendPage()`, and from `endPDF()` after `insertPage()`, for a
   registered PDF that needs a password, as `appendPDFPagesFromPDF()` and
