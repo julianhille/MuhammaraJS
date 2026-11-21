@@ -24,6 +24,9 @@ textual PDF structure, call `structure` on the Recipe instance:
 pdfDoc.structure("pdf-structure.txt").endPDF();
 ```
 
+`structure()` throws `The Recipe has no source PDF to read` for a new PDF, and
+after `endPDF()` has released the source reader.
+
 ## Read Form Fields
 
 `formFields()` lists the interactive form fields of the source document with

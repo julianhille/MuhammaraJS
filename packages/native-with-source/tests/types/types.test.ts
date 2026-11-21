@@ -1053,6 +1053,9 @@ const extractionOptions: muhammara.PDFTextExtractionOptions = {
 void [rawElements, decodedElements, maybeDecoded, extractionOptions];
 
 declare const legacyRecipe: muhammara.Recipe;
+// structure() writes the source object tree to a file and returns the Recipe.
+var structureRecipe: muhammara.Recipe = legacyRecipe.structure("tree.txt");
+void structureRecipe;
 // 6.x endPDF() callbacks still compile.
 var legacyLength: number = legacyRecipe.endPDF(
   (buffer: Buffer) => buffer.length,

@@ -653,7 +653,8 @@ export interface RecipeStructure {
   encrypted: boolean;
   objects: number;
 }
-export type RecipeStructureFormat = "string" | "json" | { json?: boolean };
+export type RecipeStructureFormat =
+  "string" | "json" | "tree" | { json?: boolean };
 export interface RemoveTextOptions {
   /** Also remove text from the Form XObjects the page paints, including nested forms. Defaults to `false`. */
   forms?: boolean;
@@ -1047,6 +1048,12 @@ export interface Recipe {
   ): this;
   split(prefix?: string): RecipeSplitResult[];
   structure(format: "json" | { json: true }): RecipeStructure;
+  /**
+   * `"tree"` returns the object tree of the source PDF's trailer as native
+   * writes it to its file, without finishing the Recipe; throws when there is
+   * no source PDF.
+   */
+  structure(format: "tree"): string;
   structure(format?: "string" | { json?: false }): string;
   structure(format?: RecipeStructureFormat): string | RecipeStructure;
   permission(flags?: RecipePermission): number;
@@ -1261,7 +1268,7 @@ export declare namespace Recipe {
   type FormAppearances = "generate" | "viewer";
   type ChromaCommand = "!load";
   /** Wasm-only: the `Recipe.StructureFormat` values. */
-  type StructureFormat = "string" | "json";
+  type StructureFormat = "string" | "json" | "tree";
   // Option and helper types under their native names.
   type RecipeOptions = import("./index.js").RecipeOptions;
   type RecipeMargins = import("./index.js").RecipeMargins;
@@ -1636,6 +1643,7 @@ export interface RecipeConstructor {
   readonly StructureFormat: {
     readonly STRING: "string";
     readonly JSON: "json";
+    readonly TREE: "tree";
   };
   new (options?: RecipeOptions): Recipe;
   new (source: ByteSource, options?: RecipeOptions): Recipe;

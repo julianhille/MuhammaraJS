@@ -1,4 +1,5 @@
 import { constants } from "../constants.js";
+import { structureTree } from "../structure-tree.js";
 import { infoOptionName, standardInfoKeys } from "../recipe-info.js";
 import { buildXmpPacket, dateToXmp, pdfDateToXmp } from "../xmp.js";
 import {
@@ -339,6 +340,20 @@ export function createInfoMethods({
     },
 
     /**
+     * Opens a reader on the source PDF; the caller ends it.
+     *
+     * @private
+     * @returns {object} The modifier's parser while it is open, so that the
+     * source is not parsed twice; its own reader after endPDF(), so that the
+     * source stays readable then, as on native.
+     */
+    _openSourceReader: function () {
+      return this._endedBytes || this._endError
+        ? createReader(this._sourceBytes)
+        : this.writer.getModifiedFileParser();
+    },
+
+    /**
      * Reads the XMP metadata packet of the source PDF.
      *
      * @name xmp
@@ -351,13 +366,7 @@ export function createInfoMethods({
      */
     xmp: function () {
       if (!this._sourceMode || this._sourceNeedsPassword) return undefined;
-      // the modifier's parser while it is open, so that the source is not
-      // parsed twice; its own reader after endPDF(), so that the packet stays
-      // readable then, as on native
-      var reader =
-        this._endedBytes || this._endError
-          ? createReader(this._sourceBytes)
-          : this.writer.getModifiedFileParser();
+      var reader = this._openSourceReader();
       try {
         var root = reader.queryDictionaryObject(reader.getTrailer(), "Root");
         var metadata = root && reader.queryDictionaryObject(root, "Metadata");
@@ -372,6 +381,37 @@ export function createInfoMethods({
           packet += decoder.decode(input.read(4096), { stream: true });
         }
         return packet + decoder.decode();
+      } finally {
+        reader.end();
+      }
+    },
+
+    /**
+     * Describes the object tree of the source PDF's trailer, as native
+     * `structure()` writes it. Does not finish the Recipe.
+     *
+     * @private
+     * @returns {string} One `\r\n` terminated line per object.
+     * @throws {Error} If the Recipe has no source PDF, or endPDF() already
+     * released the reader, as on native, or the source needs a password.
+     */
+    _structureTree: function () {
+      if (!this._sourceMode) {
+        throw new Error("The Recipe has no source PDF to read");
+      }
+      if (this._endedBytes || this._endError) {
+        throw new Error(
+          "The source PDF reader has been released by endPDF(). Read the source before ending the document.",
+        );
+      }
+      if (this._sourceNeedsPassword) {
+        throw new Error(
+          "The structure of a password-protected source is unsupported; decrypt it with recrypt() first",
+        );
+      }
+      var reader = this._openSourceReader();
+      try {
+        return structureTree(reader, constants);
       } finally {
         reader.end();
       }

@@ -33,7 +33,8 @@ guides](recipe/index.md) for examples that follow these boundaries.
 
 `split()` returns named byte arrays rather than writing an output directory, and
 `structure("json")` returns an in-memory summary rather than writing a
-diagnostic file.
+diagnostic file. `structure(StructureFormat.TREE)` returns the text native
+writes to its file.
 
 The Recipe HTML subset is DOM-free and Worker-safe. It supports URL links
 through `<a href>` and visual nested lists through `ul`, `ol`, and `li`, but

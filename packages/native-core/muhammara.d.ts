@@ -5498,8 +5498,8 @@ declare namespace muhammara {
      * Write the PDF object structure to a file.
      * @param output - The output file path.
      * @returns The recipe instance.
-     * @throws {Error} If the source reader was released by endPDF(), or the
-     *   output file cannot be written.
+     * @throws {Error} If the Recipe has no source PDF, the source reader was
+     *   released by endPDF(), or the output file cannot be written.
      */
     structure(output: string): Recipe;
     /**

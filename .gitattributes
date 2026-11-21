@@ -13,3 +13,6 @@ packages/native-with-source/src/deps/** -text
 # images are detected correctly and need no entry.
 *.pdf binary
 *.PDF binary
+
+# Golden Recipe structure() output: its lines end in CRLF on purpose.
+packages/native-with-source/tests/TestMaterials/recipe/info-mixed-structure.txt -text

@@ -1,0 +1,50 @@
+Info
+- Dictionary {Author, CreationDate, Creator, Producer, Ref, Title, creator, modDate, title, trapped}
+  Author *
+    LiteralString: Ann
+  CreationDate *
+    LiteralString: D:20200102030405Z
+  Creator *
+    LiteralString: OldTool
+  Producer *
+    LiteralString: OldProducer
+  Ref *
+    Indirect object reference (5): 
+      LiteralString: Indirect title
+  Title *
+    Indirect object reference (5): 
+  creator *
+    LiteralString: MyApp
+  modDate *
+    LiteralString: m
+  title *
+    LiteralString: lower
+  trapped *
+    LiteralString: x
+Root
+- Dictionary {Pages, Type}
+  Pages *
+    Indirect object reference (2): 
+    - Dictionary {Count, Kids, Type}
+      Count *
+        Integer: 1
+      Kids *
+      - Array [1]
+          Indirect object reference (3): 
+          - Dictionary {MediaBox, Parent, Type}
+            MediaBox *
+            - Array [4]
+                Integer: 0
+                Integer: 0
+                Integer: 100
+                Integer: 100
+            Parent *
+              Indirect object reference (2): 
+            Type *
+              Name: Page
+      Type *
+        Name: Pages
+  Type *
+    Name: Catalog
+Size
+  Integer: 6

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createMuhammaraWasm } from "../../index.js";
-import { getRecipe } from "./recipe.mjs";
+import { getRecipe, recipeFixture } from "./recipe.mjs";
 import { writeOutput } from "../testOutput.mjs";
 
 describe("Recipe byte metadata and composition", function () {
@@ -166,10 +166,10 @@ describe("Recipe byte metadata and composition", function () {
       ),
     );
     assert.equal(parts.length, 3);
-    assert.deepEqual(recipe.structure("json"), {
+    assert.deepEqual(recipe.structure(Recipe.StructureFormat.JSON), {
       pages: 3,
       encrypted: false,
-      objects: recipe.structure("json").objects,
+      objects: recipe.structure(Recipe.StructureFormat.JSON).objects,
     });
   });
 
@@ -184,6 +184,73 @@ describe("Recipe byte metadata and composition", function () {
       ),
     );
     assert.match(new Recipe(source).structure(), /^Root$/m);
+  });
+
+  it("returns the native structure tree for StructureFormat.TREE", async function () {
+    var Recipe = await getRecipe();
+    var golden = await readFile(
+      new URL(
+        "../../../native-with-source/tests/TestMaterials/recipe/info-mixed-structure.txt",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    var recipe = new Recipe(recipeFixture("info-mixed"));
+    assert.equal(recipe.structure(Recipe.StructureFormat.TREE), golden);
+    assert.match(recipe.structure(), /^Info$/m);
+    assert.deepEqual(
+      Object.keys(recipe.structure(Recipe.StructureFormat.JSON)).sort(),
+      ["encrypted", "objects", "pages"],
+    );
+  });
+
+  it("throws a no source PDF error for StructureFormat.TREE on a new Recipe", async function () {
+    var Recipe = await getRecipe();
+    assert.throws(
+      () =>
+        new Recipe()
+          .createPage(100, 100)
+          .endPage()
+          .structure(Recipe.StructureFormat.TREE),
+      /^Error: The Recipe has no source PDF to read$/,
+    );
+    var ended = new Recipe(recipeFixture("info-mixed"));
+    ended.endPDF();
+    assert.throws(
+      () => ended.structure(Recipe.StructureFormat.TREE),
+      /released by endPDF\(\)\. Read the source/,
+    );
+  });
+
+  it("describes streams in StructureFormat.TREE and rejects a password source", async function () {
+    var Recipe = await getRecipe();
+    var tree = new Recipe(
+      new Uint8Array(
+        await readFile(
+          new URL(
+            "../../../native-with-source/tests/TestMaterials/XObjectContent.PDF",
+            import.meta.url,
+          ),
+        ),
+      ),
+    ).structure(Recipe.StructureFormat.TREE);
+    assert.match(tree, /Stream \. iterating stream dictionary:/);
+    var protectedRecipe = new Recipe(
+      new Uint8Array(
+        await readFile(
+          new URL(
+            "../../../native-with-source/tests/TestMaterials/ProtectedAES256.pdf",
+            import.meta.url,
+          ),
+        ),
+      ),
+      { password: "user" },
+    );
+    assert.throws(
+      () => protectedRecipe.structure(Recipe.StructureFormat.TREE),
+      /structure of a password-protected source is unsupported/,
+    );
+    protectedRecipe.dispose();
   });
 
   it("exposes permission bits and queues encryption", async function () {

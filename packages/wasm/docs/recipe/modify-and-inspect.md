@@ -74,6 +74,13 @@ output Info dictionary rather than the parsed source values. `pageInfo()` and
 diagnostic file. Calling `structure()` finalizes the Recipe through `endPDF()`,
 so perform all page and document operations first.
 
+`structure(StructureFormat.TREE)` instead returns the object tree of the source
+PDF's trailer (`Info`, `Root`, `Size`, `Prev`, `ID` and what they reference) as
+the text native writes to its output file, and leaves the Recipe open. It
+throws `The Recipe has no source PDF to read` for a new PDF, the
+`released by endPDF()` error after `endPDF()`, and an error for a source that
+needs its user password (decrypt it with `recrypt()` first).
+
 ```js
 import { createRecipe } from "@muhammara/wasm";
 

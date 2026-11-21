@@ -95,6 +95,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Throw "The Recipe has no source PDF to read" from Recipe `structure()` for a new PDF instead of claiming the reader was released by `endPDF()` [#1016](https://github.com/julianhille/MuhammaraJS/issues/1016)
 - A dictionary's `writeKey()` and `write*Value()` methods throw
   `Dictionary context is no longer active` after the dictionary was passed to
   `ObjectsContext.endDictionary()`, `startPDFStream()` or

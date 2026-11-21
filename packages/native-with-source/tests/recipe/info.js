@@ -115,4 +115,46 @@ describe("Modify", () => {
     assert.notMatch(structure, /^Info\r$/m);
     assert.match(structure, /^Root\r$/m);
   });
+  it("writes the golden structure tree of a shared fixture", () => {
+    const dir = path.join(__dirname, "../TestMaterials/recipe");
+    const output = path.join(__dirname, "../output/structure-info-mixed.txt");
+    new Recipe(
+      path.join(dir, "info-mixed.pdf"),
+      path.join(__dirname, "../output/structure-info-mixed.pdf"),
+    )
+      .structure(output)
+      .endPDF();
+    assert.equal(
+      fs.readFileSync(output, "utf8"),
+      fs.readFileSync(path.join(dir, "info-mixed-structure.txt"), "utf8"),
+    );
+  });
+  it("describes stream dictionaries and rejects structure() after endPDF()", () => {
+    const output = path.join(__dirname, "../output/structure-stream.txt");
+    const recipe = new Recipe(
+      path.join(__dirname, "../TestMaterials/XObjectContent.PDF"),
+      path.join(__dirname, "../output/structure-stream.pdf"),
+    );
+    recipe.structure(output);
+    assert.match(
+      fs.readFileSync(output, "utf8"),
+      /Stream \. iterating stream dictionary:/,
+    );
+    recipe.endPDF();
+    assert.throws(
+      () => recipe.structure(output),
+      /released by endPDF\(\)\. Read the source/,
+    );
+  });
+  it("throws a no source PDF error when structure() is called on a new Recipe", () => {
+    const output = path.join(__dirname, "../output/structure-new.txt");
+    assert.throws(
+      () =>
+        new Recipe("new", path.join(__dirname, "../output/structure-new.pdf"))
+          .createPage(100, 100)
+          .endPage()
+          .structure(output),
+      /^The Recipe has no source PDF to read$/,
+    );
+  });
 });
