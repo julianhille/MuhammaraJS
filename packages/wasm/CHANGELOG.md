@@ -4,6 +4,8 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-21
+
 ### Breaking Changes
 
 - Recipe `info()` without arguments reports the custom keys of a source PDF
@@ -917,7 +919,8 @@ function or function signature mismatch` and later calls read freed
   runtime use, and Emscripten output is cached per build configuration [#568](https://github.com/julianhille/MuhammaraJS/issues/568)
   [#684](https://github.com/julianhille/MuhammaraJS/issues/684) [#690](https://github.com/julianhille/MuhammaraJS/issues/690) [#696](https://github.com/julianhille/MuhammaraJS/issues/696)
 
-[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.4...HEAD
+[Unreleased]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.3.0...HEAD
+[1.3.0]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.4...wasm-v1.3.0
 [1.2.4]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.3...wasm-v1.2.4
 [1.2.3]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.2...wasm-v1.2.3
 [1.2.2]: https://github.com/julianhille/MuhammaraJS/compare/wasm-v1.2.1...wasm-v1.2.2

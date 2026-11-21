@@ -13,9 +13,14 @@ bytes (`Uint8Array`, `ArrayBuffer`, `Blob`, `File`).
 npm install @muhammara/wasm
 ```
 
-[Run the browser example for version 1.2.4](https://julianhille.github.io/MuhammaraJS/wasm/browser-example/1.2.4/index.html),
+[Run the browser example for version 1.3.0](https://julianhille.github.io/MuhammaraJS/wasm/browser-example/1.3.0/index.html),
 or pick another deployed version from the
 [GitHub Pages root](https://julianhille.github.io/MuhammaraJS/).
+
+`createMuhammaraWasm()` and `createRecipe()` load `bidi-js` automatically for
+right-to-left text. Pass `bidi: false` to opt out and call `loadBidi()` later.
+A page without a bundler needs an import map for `"bidi-js"`; see
+[Browser setup](docs/browser-setup.md).
 
 ## How The Packages Fit Together
 

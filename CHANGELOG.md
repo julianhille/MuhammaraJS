@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [7.3.0] - 2026-11-21
+
 ### Breaking Changes
 
 - Recipe `info()` without arguments reports the custom keys of a source PDF
@@ -2236,7 +2238,8 @@ with the following changes.
 
 - Initial release
 
-[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.4...HEAD
+[unreleased]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.3.0...HEAD
+[7.3.0]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.4...native-v7.3.0
 [7.2.4]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.3...native-v7.2.4
 [7.2.3]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.2...native-v7.2.3
 [7.2.2]: https://github.com/julianhille/MuhammaraJS/compare/native-v7.2.1...native-v7.2.2
