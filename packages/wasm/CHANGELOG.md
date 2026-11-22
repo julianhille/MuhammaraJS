@@ -4,6 +4,10 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix the position of `link()`, `comment()` and `annot()` annotations on rotated pages whose MediaBox does not start at 0,0 [#1079](https://github.com/julianhille/MuhammaraJS/issues/1079)
+
 ## [1.3.0] - 2026-11-21
 
 ### Breaking Changes

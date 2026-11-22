@@ -97,37 +97,20 @@ exports._calibrateCoordinateForAnnots = function _calibrateCoordinateForAnnots(
   const { width, height, rotate, mediaBox } = pageMetadata(this, pageNumber);
   const startX = mediaBox[0];
   const startY = mediaBox[1];
-  let rotateOffsetX = 0,
-    rotateOffsetY = 0;
+  // The point relative to the media box origin. The width and height are the
+  // ones of the page as shown, so a 270 degree page needs neither.
+  const u = tx - startX;
+  const v = ty - startY;
   switch (rotate) {
     case 90:
-      rotateOffsetX = height - startX;
-      rotateOffsetY = startY;
-      break;
+      return { nx: startX + height - v, ny: startY + u };
     case 180:
-      rotateOffsetX = width;
-      rotateOffsetY = height;
-      break;
+      return { nx: startX + width - u, ny: startY + height - v };
     case 270:
-      rotateOffsetX = startX;
-      rotateOffsetY = width - startY;
-      break;
+      return { nx: startX + v, ny: startY + width - u };
     default:
+      return { nx: tx, ny: ty };
   }
-  // return { nx: tx, ny: ty };
-  const { nx, ny } = rotateCoord(
-    0,
-    0,
-    tx,
-    ty,
-    360 - rotate,
-    rotateOffsetX,
-    rotateOffsetY,
-  );
-  return {
-    nx,
-    ny,
-  };
 };
 
 /**
@@ -156,25 +139,3 @@ exports._reverseCoordinate = function _reverseCoordinate(
     oy,
   };
 };
-
-/**
- * Rotate a point around a center and translate it.
- * @private
- * @param {number} cx - The center x.
- * @param {number} cy - The center y.
- * @param {number} x - The point x.
- * @param {number} y - The point y.
- * @param {number} angle - The rotation in degrees, clockwise in PDF space.
- * @param {number} [offsetX=0] - Added to the rotated x.
- * @param {number} [offsetY=0] - Added to the rotated y.
- * @returns {{nx: number, ny: number}} The rotated point.
- */
-function rotateCoord(cx, cy, x, y, angle, offsetX = 0, offsetY = 0) {
-  const radians = (Math.PI / 180) * angle,
-    cos = Math.cos(radians),
-    sin = Math.sin(radians),
-    nx = cos * (x - cx) + sin * (y - cy) + cx + offsetX,
-    ny = cos * (y - cy) - sin * (x - cx) + cy + offsetY;
-
-  return { nx, ny };
-}
