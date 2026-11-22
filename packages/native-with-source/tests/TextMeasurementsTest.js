@@ -64,6 +64,67 @@ describe("TextMeasurementsTest", function () {
     }
   });
 
+  it("measures the same after many interleaved measurements", function () {
+    var assert = require("assert");
+    var pdfWriter = require("@muhammara/native-with-source").createWriter(
+      __dirname + "/output/TextMeasurementsInterleaved.pdf",
+    );
+    var names = ["arial.ttf", "Couri.ttf"];
+    var fonts = names.map(function (name) {
+      return pdfWriter.getFontForFile(
+        __dirname + "/TestMaterials/fonts/" + name,
+      );
+    });
+    var ascii = "";
+    for (var code = 32; code < 127; code++) {
+      ascii += String.fromCharCode(code);
+    }
+    var texts = [
+      "Hi gy",
+      "Quick brown fox",
+      "WMwm",
+      ascii + "\u00e9\u00fc\u00f1",
+    ];
+    var sizes = [8, 12.5, 40];
+
+    try {
+      // Reference: one fresh writer and font per measurement, so the font's
+      // buffer is empty and no seek happens before it.
+      var expected = {};
+      names.forEach(function (name, fontIndex) {
+        texts.forEach(function (text) {
+          sizes.forEach(function (size) {
+            var fresh = require("@muhammara/native-with-source").createWriter(
+              __dirname + "/output/TextMeasurementsFresh.pdf",
+            );
+            try {
+              expected[fontIndex + "|" + text + "|" + size] = fresh
+                .getFontForFile(__dirname + "/TestMaterials/fonts/" + name)
+                .calculateTextDimensions(text, size);
+            } finally {
+              fresh._abort();
+            }
+          });
+        });
+      });
+      for (var round = 0; round < 3; round++) {
+        fonts.forEach(function (font, fontIndex) {
+          texts.forEach(function (text) {
+            sizes.forEach(function (size) {
+              assert.deepStrictEqual(
+                font.calculateTextDimensions(text, size),
+                expected[fontIndex + "|" + text + "|" + size],
+              );
+            });
+          });
+        });
+        texts.reverse();
+      }
+    } finally {
+      pdfWriter._abort();
+    }
+  });
+
   it("should complete without error", function () {
     var assert = require("assert");
     var pdfWriter = require("@muhammara/native-with-source").createWriter(

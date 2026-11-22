@@ -77,7 +77,9 @@ LongBufferSizeType InputBufferedStream::Read(Byte* inBuffer,LongBufferSizeType i
 			// read what's currently in the buffer into the output buffer
 			memcpy(inBuffer,mCurrentBufferIndex,mLastAvailableIndex - mCurrentBufferIndex);
 			bytesRead = mLastAvailableIndex - mCurrentBufferIndex;
-			mCurrentBufferIndex = mLastAvailableIndex;
+			// MuhammaraJS: empty the buffer, as reading on moves the source
+			// stream past it, and SetPosition() relies on it ending there
+			mLastAvailableIndex = mCurrentBufferIndex = mBuffer;
 			
 			// if still need to read more than mBufferSize, read all but modulo of buffer size directly to the output buffer
 			// [so that can later read into buffer, and copy from there to the output buffer
@@ -134,13 +136,30 @@ void InputBufferedStream::Skip(LongBufferSizeType inSkipSize)
 	else
 	{
 		inSkipSize -= (LongBufferSizeType)(mLastAvailableIndex - mCurrentBufferIndex);
-		mCurrentBufferIndex = mLastAvailableIndex;
+		// MuhammaraJS: empty the buffer, as it no longer ends at the source
+		// stream's position, which SetPosition() relies on
+		mLastAvailableIndex = mCurrentBufferIndex = mBuffer;
 		mSourceStream->Skip(inSkipSize);
 	}
 }
 
 void InputBufferedStream::SetPosition(LongFilePositionType inOffsetFromStart)
 {
+	// MuhammaraJS: the buffer holds the bytes right before the source stream's
+	// position, so a target inside it moves within the buffer instead of
+	// dropping it and reading it again. FreeType reads a font through this
+	// stream and seeks for every glyph, which re-read the buffer from disk
+	// each time.
+	if(mLastAvailableIndex != mBuffer)
+	{
+		LongFilePositionType bufferEnd = mSourceStream->GetCurrentPosition();
+		LongFilePositionType bufferStart = bufferEnd - (mLastAvailableIndex - mBuffer);
+		if(inOffsetFromStart >= bufferStart && inOffsetFromStart <= bufferEnd)
+		{
+			mCurrentBufferIndex = mBuffer + (inOffsetFromStart - bufferStart);
+			return;
+		}
+	}
 	mLastAvailableIndex = mCurrentBufferIndex = mBuffer;
 	mSourceStream->SetPosition(inOffsetFromStart);
 }

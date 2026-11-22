@@ -91,9 +91,10 @@ rm -rf /build/emscripten-licenses
 mkdir -p /build/emscripten-licenses
 (cd "$emscripten" && cp --parents emscripten-version.txt LICENSE system/lib/libc/musl/COPYRIGHT system/lib/libcxx/LICENSE.TXT system/lib/libcxxabi/LICENSE.TXT system/lib/compiler-rt/LICENSE.TXT system/lib/dlmalloc.c /build/emscripten-licenses/)
 if [ "$MUHAMMARA_WASM_BUILD_TESTS" = ON ]; then
-  cmake --build /build --target objects-context-cleanup-test pdf-page-merging-helper-cleanup-test --parallel
+  cmake --build /build --target objects-context-cleanup-test pdf-page-merging-helper-cleanup-test input-buffered-stream-test --parallel
   node /build/objects-context-cleanup-test.js
   node /build/pdf-page-merging-helper-cleanup-test.js
+  node /build/input-buffered-stream-test.js
 fi
 if command -v ccache >/dev/null 2>&1; then ccache --show-stats; fi'
 

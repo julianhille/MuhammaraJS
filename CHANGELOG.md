@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Speed up text measurement and layout: seeks inside the font's 256 KiB read
+  buffer no longer re-read the font file from disk
+  [#1076](https://github.com/julianhille/MuhammaraJS/issues/1076)
+
 ## [7.3.0] - 2026-11-21
 
 ### Breaking Changes
