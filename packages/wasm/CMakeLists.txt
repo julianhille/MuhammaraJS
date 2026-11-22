@@ -84,12 +84,20 @@ if(MUHAMMARA_BUILD_CPP_TESTS)
     ../native-with-source/tests/cpp/PDFPageMergingHelperCleanupTest.cpp
   )
   target_link_libraries(pdf-page-merging-helper-cleanup-test PRIVATE PDFHummus::PDFWriter)
+  add_executable(input-buffered-stream-test
+    ../native-with-source/tests/cpp/InputBufferedStreamTest.cpp
+  )
+  target_link_libraries(input-buffered-stream-test PRIVATE PDFHummus::PDFWriter)
   if(EMSCRIPTEN)
     target_link_options(objects-context-cleanup-test PRIVATE
       "-sENVIRONMENT=node"
       "-sEXIT_RUNTIME=1"
     )
     target_link_options(pdf-page-merging-helper-cleanup-test PRIVATE
+      "-sENVIRONMENT=node"
+      "-sEXIT_RUNTIME=1"
+    )
+    target_link_options(input-buffered-stream-test PRIVATE
       "-sENVIRONMENT=node"
       "-sEXIT_RUNTIME=1"
     )

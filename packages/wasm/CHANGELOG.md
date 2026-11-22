@@ -4,6 +4,12 @@ All notable changes to `@muhammara/wasm` are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Speed up text measurement and layout: seeks inside the font's 256 KiB read
+  buffer no longer re-read the font file from disk
+  [#1076](https://github.com/julianhille/MuhammaraJS/issues/1076)
+
 ## [1.3.0] - 2026-11-21
 
 ### Breaking Changes
