@@ -1414,8 +1414,32 @@ describe("Recipe annotation parity", function () {
     // The 40-point height runs down the visual page, +x in PDF space.
     assert.deepEqual(
       numbers(annotations[0].dictionary.Rect),
-      [90, 140, 130, 170],
+      [130, 130, 170, 160],
     );
+  });
+
+  it("anchors annot() on a rotated page with a shifted MediaBox", function () {
+    var expected = { 180: [230, 80, 260, 120], 270: [210, 340, 250, 370] };
+    [180, 270].forEach((rotation) => {
+      var source = new Recipe()
+        .createPage(300, 400)
+        .setPageBox(muhammara.ePDFPageBoxMediaBox, 10, 20, 310, 420)
+        .rotate(rotation)
+        .endPage()
+        .endPDF();
+      var annotations = finish(
+        new Recipe(source)
+          .editPage(1)
+          .annot(50, 60, Recipe.AnnotSubtype.SQUARE, {
+            width: 30,
+            height: 40,
+          }),
+      );
+      assert.deepEqual(
+        numbers(annotations[0].dictionary.Rect),
+        expected[rotation],
+      );
+    });
   });
 
   it("anchors comment() with and without a size on a rotated page", function () {
@@ -1436,8 +1460,8 @@ describe("Recipe annotation parity", function () {
         return numbers(annotation.dictionary.Rect);
       }),
       [
-        [90, 140, 130, 170],
-        [90, 140, 90, 140],
+        [130, 130, 170, 160],
+        [130, 130, 130, 130],
       ],
     );
   });

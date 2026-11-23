@@ -1145,5 +1145,23 @@ new muhammara.Recipe("new", "out.pdf")
   .attach("notes.txt", "notes.txt");
 // @ts-expect-error relationship takes a Recipe.AFRelationship value.
 new muhammara.Recipe("new", "out.pdf").attach("a", "a", { relationship: "X" });
+const bookmarks: muhammara.Recipe.BookmarkItem[] = [
+  { title: "Child", pageNumber: 2, open: true, children: [] },
+];
+new muhammara.Recipe("new", "out.pdf")
+  .bookmark("Chapter", 1)
+  .bookmark("Part", 1, {
+    open: true,
+    x: 10,
+    y: 20,
+    zoom: 1.5,
+    children: bookmarks,
+  });
+// @ts-expect-error the title is a string.
+new muhammara.Recipe("new", "out.pdf").bookmark(1, 1);
+// @ts-expect-error the page number is a number.
+new muhammara.Recipe("new", "out.pdf").bookmark("a", "1");
+// @ts-expect-error fit is no bookmark option.
+new muhammara.Recipe("new", "out.pdf").bookmark("a", 1, { fit: true });
 // @ts-expect-error pdfa needs an ICC profile.
 new muhammara.Recipe("new", "out.pdf", { pdfa: { level: "1B" } });

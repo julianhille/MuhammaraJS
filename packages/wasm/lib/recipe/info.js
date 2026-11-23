@@ -9,6 +9,8 @@ import {
   writeOutputIntents,
 } from "../pdfa.js";
 import { attachment, writeAttachments } from "../attachments.js";
+import { pageRecord } from "./page-record.js";
+import { outlineNode, readExistingOutline, writeOutline } from "../outline.js";
 
 var trappedValues = {
   True: constants.EInfoTrappedTrue,
@@ -176,6 +178,104 @@ export function createInfoMethods({
       this._attachments = this._attachments || new Map();
       this._attachments.set(name, entry);
       return this;
+    },
+
+    /**
+     * Adds a bookmark, an entry of the outline a viewer shows beside the
+     * pages, that opens a page. Bookmarks nest through `options.children`.
+     * The page may be created after the call.
+     *
+     * @name bookmark
+     * @function
+     * @memberof Recipe#
+     * @param {string} title - The title; any Unicode text.
+     * @param {number} pageNumber - The one-based number of the page it opens,
+     * counted in the finished document, after deletePage(), insertPage() and
+     * appendPage(); editPage() counts the source.
+     * @param {RecipeBookmarkOptions} [options] - Whether its children show
+     * open (default closed), where the page opens (`x` and `y`, in Recipe
+     * coordinates, together), the `zoom` (1 for 100%) and the `children`, each
+     * with a `title`, `pageNumber` and the options of a bookmark. The page
+     * opens fitted to the window without `x`, `y` and `zoom`.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If the title is empty, contains NUL, U+FFFE or
+     *   U+FFFF, or is not a string, the options are no object, an option is
+     *   unknown or invalid, `x`, `y` or `zoom` exceeds 2147483647, or only one
+     *   of `x` and `y` is given.
+     * @throws {RangeError} If the title has more than 16382 UTF-16 code units, the
+     * page number is no positive integer, or the bookmarks nest deeper than 64
+     * levels. endPDF() throws it too, for a page the finished document does
+     * not have; no PDF is returned then.
+     * @throws {Error} After endPDF(). endPDF() throws it too when the
+     * /Outlines of the source PDF is not an indirect dictionary, or its outline
+     * has a /First but no /Last.
+     */
+    bookmark: function (title, pageNumber, options) {
+      if (this._endedBytes || this._endError) {
+        throw new Error("PDF writer has ended");
+      }
+      var node = outlineNode(title, pageNumber, options);
+      (this._bookmarks ||= []).push(node);
+      return this;
+    },
+
+    /**
+     * Writes the bookmarks of this Recipe as the document outline, with a
+     * modifier over the finished document, so that page numbers are those of
+     * the finished document.
+     *
+     * @name _writeBookmarks
+     * @function
+     * @memberof Recipe#
+     * @private
+     * @param {Object} writer - A modifier over the finished document.
+     * @returns {Uint8Array} The document with its outline.
+     * @throws {RangeError} If a bookmark opens a page the document does not
+     * have; no PDF is returned then.
+     */
+    _writeBookmarks: function (writer) {
+      var context = writer.createPDFCopyingContextForModifiedFile();
+      try {
+        var reader = context.getSourceDocumentParser();
+        var existing = readExistingOutline(context, constants);
+        // the helpers of this Recipe, on the geometry of the finished page
+        var host = Object.create(this);
+        var records = new Map();
+        host.pageInfo = (n) => {
+          if (!records.has(n)) {
+            var info = reader.getPageInfo(n - 1);
+            records.set(n, pageRecord(n, info.mediaBox, info.rotate));
+          }
+          return records.get(n);
+        };
+        var id = writeOutline(
+          writer.getObjectsContext(),
+          this._bookmarks,
+          reader.getPagesCount(),
+          (node) => {
+            var id = reader.getPageObjectID(node.pageNumber - 1);
+            if (node.x === undefined) return { id };
+            var { nx, ny } = host._calibrateCoordinateForAnnots(
+              node.x,
+              node.y,
+              0,
+              0,
+              node.pageNumber,
+            );
+            return { id, left: nx, top: ny };
+          },
+          valueTypes,
+          existing,
+        );
+        if (!existing) writer._setCatalogEntry("Outlines", id);
+      } finally {
+        context.end();
+      }
+      // the date the writer stamps on an edit; PDF/A-4 has no Info dictionary
+      if (this._pdfa?.withoutInfo) {
+        writer.getDocumentContext().getInfoDictionary().setModDate(null);
+      }
+      return writer.end();
     },
 
     /**

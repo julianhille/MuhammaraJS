@@ -88,17 +88,21 @@ export var coordinateMethods = {
       pageNumber || this._activePageNumber || this._pages.length,
     );
     var point = this._calibrateCoordinate(x, y, offsetX, offsetY, pageNumber);
+    // Work relative to the media box origin, then add it back. The width and
+    // height are the ones of the page as shown.
+    var u = point.nx - page.offsetX;
+    var v = point.ny - page.offsetY;
     var nx = point.nx;
     var ny = point.ny;
     if (page.rotate === 90) {
-      nx = page.height - page.offsetX - point.ny;
-      ny = page.offsetY + point.nx;
+      nx = page.offsetX + page.height - v;
+      ny = page.offsetY + u;
     } else if (page.rotate === 180) {
-      nx = page.width - point.nx;
-      ny = page.height - point.ny;
+      nx = page.offsetX + page.width - u;
+      ny = page.offsetY + page.height - v;
     } else if (page.rotate === 270) {
-      nx = page.offsetX + point.ny;
-      ny = page.width - page.offsetY - point.nx;
+      nx = page.offsetX + v;
+      ny = page.offsetY + page.width - u;
     }
     return { nx, ny };
   },

@@ -144,6 +144,22 @@ recipe.setPageBox(pageBox, 10, 20, 585, 822);
 recipe.setPageBox(muhammara.ePDFPageBoxMediaBox, 0, 0, 595, 842);
 recipe.rotate(90).endPage();
 var margins: Required<muhammara.Recipe.RecipeMargins> = recipe.margins();
+var bookmarks: muhammara.Recipe.BookmarkItem[] = [
+  { title: "Child", pageNumber: 2, open: true, children: [] },
+];
+recipe.bookmark("Chapter", 1).bookmark("Part", 1, {
+  open: true,
+  x: 10,
+  y: 20,
+  zoom: 1.5,
+  children: bookmarks,
+});
+// @ts-expect-error the title is a string.
+recipe.bookmark(1, 1);
+// @ts-expect-error the page number is a number.
+recipe.bookmark("a", "1");
+// @ts-expect-error fit is no bookmark option.
+recipe.bookmark("a", 1, { fit: true });
 var title: string = recipe.getPageInfo().title;
 var textWidth: number = recipe.textDimensions("text").width;
 recipe.textDimensions("text", { size: 12 }).width;

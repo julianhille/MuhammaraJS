@@ -1054,6 +1054,7 @@ export function createRecipeFactory({
          * @returns {Recipe} A new Recipe.
          */
         createRecipe: (options) => new Recipe(options),
+        createWriterToModify,
         recrypt,
       }),
       /**

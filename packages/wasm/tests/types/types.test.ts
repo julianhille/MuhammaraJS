@@ -12,6 +12,7 @@ import {
   EEncoding as EEncodings,
 } from "../../index.js";
 import type {
+  RecipeBookmarkItem,
   RecipeTextOptions,
   DeletePageOptions,
   ThirdPartyLicensesSource,
@@ -491,6 +492,22 @@ async function usesLowLevelSurface() {
     .attach("notes.txt", new ArrayBuffer(0));
   // @ts-expect-error relationship takes a Recipe.AFRelationship value.
   new Recipe().attach("a", new Uint8Array(), { relationship: "X" });
+  const bookmarks: RecipeBookmarkItem[] = [
+    { title: "Child", pageNumber: 2, open: true, children: [] },
+  ];
+  new Recipe().bookmark("Chapter", 1).bookmark("Part", 1, {
+    open: true,
+    x: 10,
+    y: 20,
+    zoom: 1.5,
+    children: bookmarks,
+  });
+  // @ts-expect-error the title is a string.
+  new Recipe().bookmark(1, 1);
+  // @ts-expect-error the page number is a number.
+  new Recipe().bookmark("a", "1");
+  // @ts-expect-error fit is no bookmark option.
+  new Recipe().bookmark("a", 1, { fit: true });
   // @ts-expect-error pdfa needs an ICC profile.
   new Recipe({ pdfa: { level: "1B" } });
   recipe

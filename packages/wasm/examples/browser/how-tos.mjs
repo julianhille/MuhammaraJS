@@ -158,9 +158,16 @@ export var HOW_TO_EXAMPLES = [
       "Fill the text, checkbox, radio, and choice fields of your fillable PDF, or of a built-in sample form, and download the filled form.",
     assets: ["pdf"],
   },
+  {
+    id: "add-bookmarks",
+    label: "Bookmarks",
+    title: "Add PDF bookmarks",
+    description:
+      "Build a nested outline with recipe.bookmark() and read it back next to the preview.",
+    assets: [],
+    expectedPages: 3,
+  },
 ];
-
-var SAMPLE_BOOKMARKS = ["Service agreement", "Pricing appendix"];
 
 var MAX_MATCHES = 500;
 // Share of the font size above and below the baseline that a highlight covers.
@@ -939,7 +946,6 @@ async function deletePagesExample() {
  * @returns {Promise<Uint8Array<ArrayBuffer>>} The sample PDF bytes.
  */
 async function samplePdf() {
-  var muhammara = await createMuhammaraWasm();
   var Recipe = await createRecipe();
   var recipe = new Recipe({ compress: false });
   var infoRecipe;
@@ -961,9 +967,10 @@ async function samplePdf() {
       .createPage(595, 842)
       .text("Pricing appendix", 72, 80, heading)
       .text("Draft pricing, valid for 30 days.", 72, 124, body)
-      .endPage();
-    var outlined = addBookmarks(muhammara, recipe.endPDF(), SAMPLE_BOOKMARKS);
-    infoRecipe = new Recipe(outlined, { compress: false });
+      .endPage()
+      .bookmark("Service agreement", 1)
+      .bookmark("Pricing appendix", 2);
+    infoRecipe = new Recipe(recipe.endPDF(), { compress: false });
     return infoRecipe
       .info({
         title: "Service agreement",
@@ -977,95 +984,6 @@ async function samplePdf() {
     infoRecipe?.dispose();
     recipe.dispose();
     Recipe.disposeAssets();
-    muhammara.disposeAssets();
-  }
-}
-
-/**
- * Adds one bookmark per page through the low-level modifier. The catalog is
- * rewritten with an `Outlines` entry; the sample's catalog holds only `Type`
- * and `Pages`, so no other catalog entry is lost.
- * @param {Awaited<ReturnType<typeof createMuhammaraWasm>>} muhammara - Loaded Wasm API.
- * @param {Uint8Array<ArrayBuffer>} bytes - Source PDF bytes.
- * @param {string[]} titles - Bookmark titles, one per page in page order.
- * @returns {Uint8Array<ArrayBuffer>} The PDF with bookmarks.
- * @throws {Error} If modifying fails; the modifier is disposed first.
- */
-function addBookmarks(muhammara, bytes, titles) {
-  var writer = muhammara.createWriterToModify(bytes, { compress: false });
-  try {
-    var parser = writer.getModifiedFileParser();
-    var trailer = parser.getTrailer();
-    var catalogId = trailer
-      .queryObject("Root")
-      .toPDFIndirectObjectReference()
-      .getObjectID();
-    var pagesId = parser
-      .queryDictionaryObject(trailer, "Root")
-      .toPDFDictionary()
-      .queryObject("Pages")
-      .toPDFIndirectObjectReference()
-      .getObjectID();
-    var objects = writer.getObjectsContext();
-    var outlinesId = objects.allocateNewObjectID();
-    var itemIds = titles.map(() => objects.allocateNewObjectID());
-
-    objects.startModifiedIndirectObject(catalogId);
-    objects
-      .endDictionary(
-        objects
-          .startDictionary()
-          .writeKey("Type")
-          .writeNameValue("Catalog")
-          .writeKey("Pages")
-          .writeObjectReferenceValue(pagesId)
-          .writeKey("Outlines")
-          .writeObjectReferenceValue(outlinesId),
-      )
-      .endIndirectObject();
-
-    objects.startNewIndirectObject(outlinesId);
-    objects
-      .endDictionary(
-        objects
-          .startDictionary()
-          .writeKey("Type")
-          .writeNameValue("Outlines")
-          .writeKey("First")
-          .writeObjectReferenceValue(itemIds[0])
-          .writeKey("Last")
-          .writeObjectReferenceValue(itemIds[itemIds.length - 1])
-          .writeKey("Count")
-          .writeNumberValue(titles.length),
-      )
-      .endIndirectObject();
-
-    titles.forEach((title, index) => {
-      objects.startNewIndirectObject(itemIds[index]);
-      var item = objects
-        .startDictionary()
-        .writeKey("Title")
-        .writeLiteralStringValue(title)
-        .writeKey("Parent")
-        .writeObjectReferenceValue(outlinesId);
-      if (index > 0)
-        item.writeKey("Prev").writeObjectReferenceValue(itemIds[index - 1]);
-      if (index < titles.length - 1)
-        item.writeKey("Next").writeObjectReferenceValue(itemIds[index + 1]);
-      // A direct destination: [page /Fit].
-      item.writeKey("Dest");
-      objects
-        .startArray()
-        .writeIndirectObjectReference(parser.getPageObjectID(index))
-        .writeName("Fit")
-        .endArray()
-        .endLine();
-      objects.endDictionary(item).endIndirectObject();
-    });
-    return writer.end();
-  } catch (error) {
-    writer.dispose();
-    throw error;
   }
 }
 
@@ -1611,6 +1529,51 @@ function renderReport(recipe, origin, inspected) {
 }
 
 /**
+ * Builds the browser example that adds a nested outline with `bookmark()`.
+ * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The PDF and its parsed bookmarks.
+ */
+async function addBookmarksExample() {
+  var Recipe = await createRecipe();
+  var recipe = new Recipe({ compress: false });
+  try {
+    ["Introduction", "Details", "Prices \u2014 \u20ac"].forEach((text) =>
+      recipe.createPage(595, 842).text(text, 72, 80, { size: 26 }).endPage(),
+    );
+    var bytes = recipe
+      .bookmark("Introduction", 1)
+      .bookmark("Details", 2, {
+        open: true,
+        children: [
+          { title: "Positioned", pageNumber: 2, x: 72, y: 144, zoom: 1.5 },
+          {
+            title: "Closed group",
+            pageNumber: 3,
+            children: [{ title: "Prices \u2014 \u20ac", pageNumber: 3 }],
+            open: false,
+          },
+        ],
+      })
+      .endPDF();
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(bytes);
+    try {
+      var bookmarks = readBookmarks(reader);
+    } finally {
+      reader.end();
+      muhammara.disposeAssets();
+    }
+    return {
+      bytes,
+      filename: "muhammara-bookmarks.pdf",
+      summary: await summarize(bytes, { howTo: "Add bookmarks", bookmarks }),
+    };
+  } finally {
+    recipe.dispose();
+    Recipe.disposeAssets();
+  }
+}
+
+/**
  * Builds the browser example that inspects a PDF and renders a report.
  * @param {import("./lifecycle.mjs").ExampleAssets} assets - Optional byte assets.
  * @returns {Promise<import("./lifecycle.mjs").ExampleResult>} The report PDF and the inspected values.
@@ -1838,6 +1801,7 @@ var runners = {
   "inspect-pdf": inspectPdfExample,
   acroform: acroFormExample,
   "fill-form": fillFormExample,
+  "add-bookmarks": addBookmarksExample,
 };
 
 /**

@@ -255,7 +255,7 @@ export async function runValidation() {
     /0 1 -1 0 190 20 cm/.test(rotatedOutput) &&
       /60 160 m\s+80 140 l/.test(rotatedOutput) &&
       // annot() takes the top-left corner; the height runs along +x here.
-      /\/Rect \[ 90 140 130 170 \]/.test(rotatedOutput),
+      /\/Rect \[ 130 130 170 160 \]/.test(rotatedOutput),
     "browser and Worker rotated Recipe output",
   );
   assertions += 6;

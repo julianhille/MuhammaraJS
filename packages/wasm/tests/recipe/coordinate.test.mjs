@@ -56,7 +56,7 @@ describe("Recipe coordinates", function () {
     assert.match(output, /60 160 m\s+80 140 l/);
     // annot() takes the top-left corner: the 40-point height runs down the
     // visual page, which is +x on a page rotated by 90 degrees.
-    assert.match(output, /\/Rect \[ 90 140 130 170 \]/);
+    assert.match(output, /\/Rect \[ 130 130 170 160 \]/);
   });
 
   // Port of tests/recipe/rotation.js, extended with the byte-level

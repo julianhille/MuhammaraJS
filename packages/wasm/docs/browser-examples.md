@@ -42,6 +42,10 @@ build the package, run
 - [Inspect PDF Objects](how-to/inspect-pdf-objects.md) and
   [Read PDF Bookmarks](how-to/read-bookmarks.md) read an uploaded PDF or the
   built-in sample into a one-page report.
+- [Add PDF Bookmarks](how-to/add-bookmarks.md) builds a nested outline with
+  `bookmark()` and lists the parsed outline next to the preview. Every tab also
+  offers an Open in new tab link for the previewed PDF; the link stays valid
+  until the next run.
 - [Read Form Fields](how-to/read-form-fields.md) lists the AcroForm fields of
   an uploaded PDF, or of a built-in sample form, in the AcroForm tab.
 - [Fill Form Fields](how-to/fill-form-fields.md) fills the fields of an

@@ -201,6 +201,15 @@
         >
           Fill form
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          tabindex="-1"
+          data-example="add-bookmarks"
+        >
+          Bookmarks
+        </button>
       </div>
     </nav>
     <main>
@@ -314,7 +323,19 @@
         <progress id="progress" max="100" value="0"></progress>
         <p id="status" role="status">Ready. No bytes leave this page.</p>
         <a id="download" class="download" hidden>Download PDF</a>
+        <a
+          id="open-preview"
+          class="download"
+          target="_blank"
+          rel="noopener"
+          hidden
+          >Open in new tab</a
+        >
         <iframe id="preview" title="Generated PDF preview"></iframe>
+        <section id="outline-view" hidden>
+          <h3>Outline</h3>
+          <ol id="outline"></ol>
+        </section>
         <details>
           <summary>Structured run report</summary>
           <pre id="output">

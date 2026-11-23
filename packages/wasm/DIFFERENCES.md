@@ -155,3 +155,7 @@ writer; Wasm `end()` returns bytes once and rejects subsequent calls. Use Wasm
 `dispose()` for idempotent cleanup. Native `shutdown()` retires the writer and
 requires `createWriterToContinue()` to resume; filesystem continuation is not
 available in Wasm.
+
+A Recipe bookmark that opens a page the finished document does not have makes
+`endPDF()` throw a `RangeError` on both ends. Native has written the complete
+output file, without an outline, by then; Wasm is byte-first and returns no PDF.
