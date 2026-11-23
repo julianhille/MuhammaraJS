@@ -205,6 +205,24 @@ export interface RecipeAttachOptions {
   /** The modification date. Defaults to now. */
   modDate?: Date;
 }
+export interface RecipeBookmarkOptions {
+  /** Whether its children show open. Defaults to false, closed. */
+  open?: boolean;
+  /** Where the page opens, from its left edge, in Recipe coordinates. Needs `y`. */
+  x?: number;
+  /** Where the page opens, from its top edge. Needs `x`. */
+  y?: number;
+  /** The zoom, 1 for 100%. Without `x`, `y` and `zoom` the page opens fitted to the window. */
+  zoom?: number;
+  /** The bookmarks below this one. */
+  children?: RecipeBookmarkItem[];
+}
+export interface RecipeBookmarkItem extends RecipeBookmarkOptions {
+  /** The title; any Unicode text. */
+  title: string;
+  /** The one-based number of the page it opens. */
+  pageNumber: number;
+}
 export interface RecipePdfAOptions {
   /** The PDF/A level. */
   level: Recipe.PdfA;
@@ -1033,6 +1051,27 @@ export interface Recipe {
     name: string,
     file: Uint8Array | ArrayBuffer,
     options?: RecipeAttachOptions,
+  ): this;
+  /**
+   * Add a bookmark, an entry of the outline a viewer shows beside the pages,
+   * that opens a page. Bookmarks nest through `options.children`. The page
+   * may be created after the call.
+   * @param title - The title; any Unicode text.
+   * @param pageNumber - The one-based number of the page it opens, counted as
+   *   in `editPage()`.
+   * @throws {TypeError} If the title is empty, contains NUL or is not a string,
+   *   the options are no object, an option is unknown or invalid, `x`, `y` or
+   *   `zoom` exceeds 2147483647, or only one of `x` and `y` is given.
+   * @throws {RangeError} If the page number is no positive integer, or the
+   *   bookmarks nest deeper than 64 levels. `endPDF()` throws it too, for a
+   *   page the document does not have.
+   * @throws {Error} After endPDF(), for a source PDF that has an outline, and
+   *   with insertPage(), appendPage() or deletePage().
+   */
+  bookmark(
+    title: string,
+    pageNumber: number,
+    options?: RecipeBookmarkOptions,
   ): this;
   /**
    * Set a custom information entry; arrays are joined with a comma and space.

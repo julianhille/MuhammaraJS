@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Add Recipe `bookmark()` for PDF bookmarks (the document outline) with nesting, open or closed state, position and zoom, and Unicode titles [#985](https://github.com/julianhille/MuhammaraJS/issues/985)
+
 ### Fixed
 
 - Fix the position of `link()`, `comment()` and `annot()` annotations on rotated pages whose MediaBox does not start at 0,0 [#1079](https://github.com/julianhille/MuhammaraJS/issues/1079)

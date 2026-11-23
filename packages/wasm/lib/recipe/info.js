@@ -9,6 +9,7 @@ import {
   writeOutputIntents,
 } from "../pdfa.js";
 import { attachment, writeAttachments } from "../attachments.js";
+import { outlineNode, writeOutline } from "../outline.js";
 
 var trappedValues = {
   True: constants.EInfoTrappedTrue,
@@ -179,6 +180,103 @@ export function createInfoMethods({
     },
 
     /**
+     * Adds a bookmark, an entry of the outline a viewer shows beside the
+     * pages, that opens a page. Bookmarks nest through `options.children`.
+     * The page may be created after the call.
+     *
+     * @name bookmark
+     * @function
+     * @memberof Recipe#
+     * @param {string} title - The title; any Unicode text.
+     * @param {number} pageNumber - The one-based number of the page it opens,
+     * counted as in editPage().
+     * @param {RecipeBookmarkOptions} [options] - Whether its children show
+     * open (default closed), where the page opens (`x` and `y`, in Recipe
+     * coordinates, together), the `zoom` (1 for 100%) and the `children`, each
+     * with a `title`, `pageNumber` and the options of a bookmark. The page
+     * opens fitted to the window without `x`, `y` and `zoom`.
+     * @returns {Recipe} The Recipe instance.
+     * @throws {TypeError} If the title is empty, contains NUL or is not a string,
+     * the options are no object, an option is unknown or invalid, `x`, `y` or
+     * `zoom` exceeds 2147483647, or only one of `x` and
+     * `y` is given.
+     * @throws {RangeError} If the page number is no positive integer, or the
+     * bookmarks nest deeper than 64 levels. endPDF() throws it too, for a page
+     * the document does not have.
+     * @throws {Error} After endPDF(), for a source PDF that has an outline,
+     * and with insertPage(), appendPage() or deletePage().
+     */
+    bookmark: function (title, pageNumber, options) {
+      if (this._endedBytes || this._endError) {
+        throw new Error("PDF writer has ended");
+      }
+      if (this._insertions || this._pagesAppended || this._deletedPages?.size) {
+        throw new Error(
+          "bookmark() cannot be combined with insertPage(), appendPage() or deletePage()",
+        );
+      }
+      var node = outlineNode(title, pageNumber, options);
+      if (this._sourceMode) {
+        var reader = this._openSourceReader();
+        try {
+          var root = reader.queryDictionaryObject(reader.getTrailer(), "Root");
+          if (root.toPDFDictionary().exists("Outlines")) {
+            throw new Error(
+              "bookmark() cannot add to a source PDF that already has an outline",
+            );
+          }
+        } finally {
+          reader.end();
+        }
+      }
+      (this._bookmarks ||= []).push(node);
+      return this;
+    },
+
+    /**
+     * Writes the bookmarks of this Recipe as the document outline.
+     *
+     * @name _writeBookmarks
+     * @function
+     * @memberof Recipe#
+     * @private
+     * @returns {void}
+     * @throws {RangeError} If a bookmark opens a page the document does not
+     * have.
+     */
+    _writeBookmarks: function () {
+      var reader = this._sourceMode
+        ? this.writer.getModifiedFileParser()
+        : null;
+      try {
+        var id = writeOutline(
+          this._objectsContext(),
+          this._bookmarks,
+          this._pages.length,
+          (node) => {
+            // pages made by this Recipe have no entry in the source
+            var id =
+              this._pageIDs.get(node.pageNumber) ??
+              reader.getPageObjectID(node.pageNumber - 1);
+            if (node.x === undefined) return { id };
+            var { nx, ny } = this._calibrateCoordinateForAnnots(
+              node.x,
+              node.y,
+              0,
+              0,
+              node.pageNumber,
+            );
+            return { id, left: nx, top: ny };
+          },
+          valueTypes,
+        );
+        this._setCatalogReference("Outlines", id);
+      } finally {
+        reader?.end();
+      }
+    },
+
+    /**
      * Writes canonical creation and modification information, and the XMP
      * packet, the PDF/A output intent and the attached files.
      *
@@ -194,6 +292,7 @@ export function createInfoMethods({
         ? this.writer.getDocumentContext().getInfoDictionary()
         : null;
       var now = new Date();
+      if (this._bookmarks) this._writeBookmarks();
       if (this.options.xmp || this._pdfa) this._writeXmp(now);
       if (this._pdfa) {
         this._setCatalogReference(

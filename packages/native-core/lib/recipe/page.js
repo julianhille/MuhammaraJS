@@ -762,7 +762,10 @@ exports.endPage = function endPage() {
       this.page.endContext();
     this.page.writePage();
   } else {
-    this.writer.writePage(this.page);
+    this.pageIds_.set(
+      this.pageNumber,
+      this.writer.writePageAndReturnID(this.page),
+    );
   }
   this.page = null;
   this.pageContext = null;
@@ -977,6 +980,9 @@ exports.deletePage = function deletePage(pageNumbers, options) {
   }
   if (this.pagesCreated) {
     throw new Error("deletePage cannot be combined with createPage");
+  }
+  if (this.bookmarks_) {
+    throw new Error("deletePage cannot be combined with bookmark");
   }
   if (
     options !== undefined &&

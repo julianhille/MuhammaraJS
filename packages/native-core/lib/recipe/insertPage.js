@@ -27,6 +27,9 @@ exports.insertPage = function insertPage(
   if (this.pdfa_ || this.attachments_) {
     throw new Error("insertPage() cannot be combined with pdfa or attach()");
   }
+  if (this.bookmarks_) {
+    throw new Error("insertPage cannot be combined with bookmark");
+  }
   // the inserted pages' new PDF would lose the form
   if (this._formFills?.size)
     throw new Error("insertPage() cannot be combined with fillForm()");

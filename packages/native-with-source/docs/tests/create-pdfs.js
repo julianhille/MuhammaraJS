@@ -4,6 +4,8 @@ var os = require("os");
 var path = require("path");
 var muhammara = require("@muhammara/native-with-source");
 require.cache[require.resolve("@muhammara/native")] = { exports: muhammara };
+var addBookmarks = require("../../../native/docs/examples/add-bookmarks");
+var readBookmarks = require("../../../native/docs/examples/read-bookmarks");
 var deviceColors = require("../../../native/docs/examples/draw-device-colors");
 var placePdfPageAsImage = require("../../../native/docs/examples/place-pdf-page-as-image");
 var rightToLeftText = require("../../../native/docs/examples/write-right-to-left-text");
@@ -18,6 +20,19 @@ describe("Documentation examples", function () {
 
   afterEach(function () {
     fs.rmSync(outputDirectory, { recursive: true, force: true });
+  });
+
+  it("adds bookmarks", function () {
+    var outputPath = path.join(outputDirectory, "bookmarks.pdf");
+    addBookmarks(outputPath);
+    assert.deepEqual(readBookmarks(outputPath), [
+      { title: "Introduction", page: 1, children: [] },
+      {
+        title: "Details",
+        page: 2,
+        children: [{ title: "Positioned", page: 2, children: [] }],
+      },
+    ]);
   });
 
   it("draws in gray and CMYK", function () {

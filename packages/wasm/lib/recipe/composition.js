@@ -58,6 +58,9 @@ export function createCompositionMethods({
       if (this._deletedPages?.size) {
         throw new Error("appendPage cannot be combined with deletePage");
       }
+      if (this._bookmarks) {
+        throw new Error("appendPage cannot be combined with bookmark");
+      }
       var path = pdfs.get(name);
       if (!path) throw unknownAsset("Unknown PDF", name);
       var source = inspectSource(inspectPdf, name);
@@ -126,6 +129,7 @@ export function createCompositionMethods({
             );
           });
         }
+        this._pagesAppended = true;
         return this;
       });
     },
@@ -242,6 +246,9 @@ export function createCompositionMethods({
         throw new Error(
           "insertPage() cannot be combined with pdfa or attach()",
         );
+      }
+      if (this._bookmarks) {
+        throw new Error("insertPage cannot be combined with bookmark");
       }
       if (this._formFills?.size)
         throw new Error("insertPage() cannot be combined with fillForm()");

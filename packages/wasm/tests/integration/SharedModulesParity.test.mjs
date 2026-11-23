@@ -47,6 +47,7 @@ describe("SharedModulesParity", function () {
     "content-stream.js",
     "font-text.js",
     "glyph-list.js",
+    "outline.js",
     "pdfa.js",
     "text-direction.js",
     "xmp.js",

@@ -778,7 +778,10 @@ export function createPageMethods(
         )
           this.writer.pausePageContentContext(this._pageContext);
         this._flushAnnotations();
-        this.writer.writePage(this._page);
+        this._pageIDs.set(
+          this._activePageNumber,
+          this.writer.writePageAndReturnID(this._page),
+        );
         this._pageContext = null;
         this._page = null;
         this._pageHeight = 0;
@@ -793,7 +796,20 @@ export function createPageMethods(
       )
         call("_muhammara_wasm_recipe_pause_page", this._recipe);
       this._flushAnnotations();
-      call("_muhammara_wasm_recipe_end_page", this._recipe);
+      var idPointer = module._malloc(4);
+      try {
+        call(
+          "_muhammara_wasm_recipe_end_page_and_return_id",
+          this._recipe,
+          idPointer,
+        );
+        this._pageIDs.set(
+          this._activePageNumber,
+          module.HEAPU32[idPointer >>> 2],
+        );
+      } finally {
+        module._free(idPointer);
+      }
       this._pageHeight = 0;
       this._pageWidth = 0;
       this._contextState = PAGE_CONTEXT_STATE.IDLE;
@@ -1075,6 +1091,9 @@ export function createPageMethods(
       }
       if (this._pagesCreated) {
         throw new Error("deletePage cannot be combined with createPage");
+      }
+      if (this._bookmarks) {
+        throw new Error("deletePage cannot be combined with bookmark");
       }
       if (
         options !== undefined &&

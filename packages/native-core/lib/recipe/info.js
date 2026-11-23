@@ -17,6 +17,7 @@ var {
   writeOutputIntents,
 } = require("../pdfa");
 var { attachment, writeAttachments } = require("../attachments");
+var { outlineNode, writeOutline } = require("../outline");
 var { readStreamString } = require("../content-stream");
 var { structureTree } = require("../structure-tree");
 
@@ -357,6 +358,11 @@ exports._writeInfo = function _writeInfo() {
   if (this.options.xmp || this.pdfa_) {
     writeXmp(this.writer, infoDictionary, xmpDates, this.pdfa_);
   }
+  if (this.bookmarks_) {
+    // once: the annotation pass appends to the file that has them
+    this.outlineId_ = this.outlineId_ || writeBookmarks(this);
+    setCatalogEntry(this.writer, "Outlines", this.outlineId_);
+  }
   const attachments = this.attachments_ ? [...this.attachments_.values()] : [];
   requirePdfaAttachment(this.pdfa_, attachments.length);
   if (attachments.length) {
@@ -420,6 +426,38 @@ function writeXmp(writer, info, dates, pdfa) {
   stream.getWriteStream().write(Array.from(Buffer.from(packet, "utf8")));
   objects.endPDFStream(stream);
   setCatalogEntry(writer, "Metadata", id);
+}
+
+/**
+ * Write the bookmarks of a Recipe as the document outline.
+ * @private
+ * @param {Object} recipe - The Recipe.
+ * @returns {number} The object ID of the outline root.
+ * @throws {RangeError} If a bookmark opens a page the document does not have.
+ */
+function writeBookmarks(recipe) {
+  const { pageCount, pages } = recipe.metadata;
+  return writeOutline(
+    recipe.writer.getObjectsContext(),
+    recipe.bookmarks_,
+    pageCount ?? pages,
+    (node) => {
+      // pages made by this Recipe have no entry in the source
+      const id =
+        recipe.pageIds_.get(node.pageNumber) ??
+        recipe.pdfReader.getPageObjectID(node.pageNumber - 1);
+      if (node.x === undefined) return { id };
+      const { nx, ny } = recipe._calibrateCoordinateForAnnots(
+        node.x,
+        node.y,
+        0,
+        0,
+        node.pageNumber,
+      );
+      return { id, left: nx, top: ny };
+    },
+    recipe.muhammara,
+  );
 }
 
 /**
@@ -511,5 +549,56 @@ exports.custom = function custom(key, value) {
  */
 exports.structure = function structure(output) {
   fs.writeFileSync(output, structureTree(this._getReader(), this.muhammara));
+  return this;
+};
+
+/**
+ * @name bookmark
+ * @desc Add a bookmark, an entry of the outline a viewer shows beside the
+ *   pages, that opens a page. Bookmarks nest through `options.children`.
+ *   The page may be created after the call.
+ * @memberof Recipe#
+ * @function
+ * @param {string} title - The title; any Unicode text.
+ * @param {number} pageNumber - The one-based number of the page it opens,
+ *   counted as in editPage().
+ * @param {Object} [options] - The options.
+ * @param {boolean} [options.open=false] - Whether its children show open.
+ * @param {number} [options.x] - Where the page opens: the distance from the
+ *   left edge, in Recipe coordinates. Needs `y`.
+ * @param {number} [options.y] - The distance from the top edge.
+ * @param {number} [options.zoom] - The zoom, 1 for 100%. The page opens
+ *   fitted to the window without `x`, `y` and `zoom`.
+ * @param {Object[]} [options.children] - The bookmarks below this one; each
+ *   has a `title` and `pageNumber` and the options of a bookmark.
+ * @returns {Recipe} The recipe instance.
+ * @throws {TypeError} If the title is empty, contains NUL or is not a string,
+ *   the options are no object, an option is unknown or invalid, `x`, `y` or
+ *   `zoom` exceeds 2147483647, or only one of `x` and `y` is given.
+ * @throws {RangeError} If the page number is no positive integer, or the
+ *   bookmarks nest deeper than 64 levels. endPDF() throws it too, for a page
+ *   the document does not have.
+ * @throws {Error} After endPDF(), for a source PDF that has an outline, and
+ *   with insertPage(), appendPage() or deletePage().
+ */
+exports.bookmark = function bookmark(title, pageNumber, options) {
+  if (this.ended) throw new Error("PDF writer has ended");
+  if (this.needToInsertPages || this.pagesAppended || this.deletedPages?.size) {
+    throw new Error(
+      "bookmark() cannot be combined with insertPage(), appendPage() or deletePage()",
+    );
+  }
+  const node = outlineNode(title, pageNumber, options);
+  if (!this.isNewPDF) {
+    const reader = this._getReader();
+    const root = reader.queryDictionaryObject(reader.getTrailer(), "Root");
+    if (root.toPDFDictionary().exists("Outlines")) {
+      throw new Error(
+        "bookmark() cannot add to a source PDF that already has an outline",
+      );
+    }
+  }
+  this.bookmarks_ = this.bookmarks_ || [];
+  this.bookmarks_.push(node);
   return this;
 };

@@ -75,6 +75,7 @@ describe("Recipe prototype", function () {
       "arc",
       "arrow",
       "attach",
+      "bookmark",
       "chroma",
       "circle",
       "comment",

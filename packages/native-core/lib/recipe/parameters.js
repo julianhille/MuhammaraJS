@@ -92,6 +92,8 @@ exports._setParameters = function _setParameters() {
   this._margin = Object.assign({}, this.default.pageMargin);
   this.contextState = PAGE_CONTEXT_STATE.IDLE;
   this.modifiedSourcePages = new Set();
+  // the object IDs of the pages this Recipe wrote, by page number
+  this.pageIds_ = new Map();
 
   // Object.assign(this, options);
 };

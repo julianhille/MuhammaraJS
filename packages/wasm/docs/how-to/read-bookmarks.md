@@ -80,3 +80,5 @@ untrusted upload cannot loop forever.
 
 This uses the low-level reader rather than Recipe. See [Inspect PDF
 Objects](inspect-pdf-objects.md) for dictionary and indirect-object traversal.
+
+To write bookmarks with Recipe, see [Add PDF Bookmarks](add-bookmarks.md).

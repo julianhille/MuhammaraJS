@@ -21,6 +21,9 @@ exports.appendPage = function appendPage(pdfSrc, pages = []) {
   if (this.deletedPages?.size) {
     throw new Error("appendPage cannot be combined with deletePage");
   }
+  if (this.bookmarks_) {
+    throw new Error("appendPage cannot be combined with bookmark");
+  }
   if (!Array.isArray(pages)) pages = [pages];
   // Using stream so it can be closed to release reader resource (Issue #61)
   const instream = new muhammara.PDFRStreamForFile(pdfSrc);

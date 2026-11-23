@@ -3598,6 +3598,26 @@ declare namespace muhammara {
       modDate?: Date;
     }
 
+    interface BookmarkOptions {
+      /** Whether its children show open. Defaults to false, closed. */
+      open?: boolean;
+      /** Where the page opens, from its left edge, in Recipe coordinates. Needs `y`. */
+      x?: number;
+      /** Where the page opens, from its top edge. Needs `x`. */
+      y?: number;
+      /** The zoom, 1 for 100%. Without `x`, `y` and `zoom` the page opens fitted to the window. */
+      zoom?: number;
+      /** The bookmarks below this one. */
+      children?: BookmarkItem[];
+    }
+
+    interface BookmarkItem extends BookmarkOptions {
+      /** The title; any Unicode text. */
+      title: string;
+      /** The one-based number of the page it opens. */
+      pageNumber: number;
+    }
+
     interface PdfAOptions {
       /** The PDF/A level. */
       level: Recipe.PdfA;
@@ -4594,6 +4614,27 @@ declare namespace muhammara {
       name: string,
       file: Uint8Array | string,
       options?: Recipe.AttachOptions,
+    ): Recipe;
+    /**
+     * Add a bookmark, an entry of the outline a viewer shows beside the pages,
+     * that opens a page. Bookmarks nest through `options.children`. The page
+     * may be created after the call.
+     * @param title - The title; any Unicode text.
+     * @param pageNumber - The one-based number of the page it opens, counted as
+     *   in `editPage()`.
+     * @throws {TypeError} If the title is empty, contains NUL or is not a string,
+     *   the options are no object, an option is unknown or invalid, `x`, `y` or
+     *   `zoom` exceeds 2147483647, or only one of `x` and `y` is given.
+     * @throws {RangeError} If the page number is no positive integer, or the
+     *   bookmarks nest deeper than 64 levels. `endPDF()` throws it too, for a
+     *   page the document does not have.
+     * @throws {Error} After endPDF(), for a source PDF that has an outline,
+     *   and with insertPage(), appendPage() or deletePage().
+     */
+    bookmark(
+      title: string,
+      pageNumber: number,
+      options?: Recipe.BookmarkOptions,
     ): Recipe;
     /**
      * List the interactive form (AcroForm) fields of the source document,
