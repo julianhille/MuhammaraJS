@@ -47,7 +47,9 @@ outline.
 Titles are any Unicode text and are written as PDF text strings.
 
 Each of `x`, `y` and `zoom` is limited to 2147483647, and a title cannot
-contain NUL.
+contain NUL, U+FFFE or U+FFFF or have more than 16382 UTF-16 code units (the PDF limit of
+32767 bytes for a string, written as UTF-16BE). A character outside the Basic
+Multilingual Plane, such as an emoji, counts as 2 units.
 
 A bookmark starts closed; `open: true` shows its children when the viewer opens
 the outline. Nesting is limited to 64 levels.

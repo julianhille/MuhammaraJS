@@ -198,13 +198,14 @@ export function createInfoMethods({
      * with a `title`, `pageNumber` and the options of a bookmark. The page
      * opens fitted to the window without `x`, `y` and `zoom`.
      * @returns {Recipe} The Recipe instance.
-     * @throws {TypeError} If the title is empty, contains NUL or is not a string,
-     * the options are no object, an option is unknown or invalid, `x`, `y` or
-     * `zoom` exceeds 2147483647, or only one of `x` and
-     * `y` is given.
-     * @throws {RangeError} If the page number is no positive integer, or the
-     * bookmarks nest deeper than 64 levels. endPDF() throws it too, for a page
-     * the finished document does not have; no PDF is returned then.
+     * @throws {TypeError} If the title is empty, contains NUL, U+FFFE or
+     *   U+FFFF, or is not a string, the options are no object, an option is
+     *   unknown or invalid, `x`, `y` or `zoom` exceeds 2147483647, or only one
+     *   of `x` and `y` is given.
+     * @throws {RangeError} If the title has more than 16382 UTF-16 code units, the
+     * page number is no positive integer, or the bookmarks nest deeper than 64
+     * levels. endPDF() throws it too, for a page the finished document does
+     * not have; no PDF is returned then.
      * @throws {Error} After endPDF(). endPDF() throws it too when the
      * /Outlines of the source PDF is not an indirect dictionary, or its outline
      * has a /First but no /Last.

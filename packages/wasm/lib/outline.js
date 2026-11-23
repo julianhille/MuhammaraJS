@@ -5,6 +5,10 @@
 var MAX_DEPTH = 64;
 // the largest number a PDF integer holds, so all viewers and both ends agree
 var MAX_NUMBER = 2147483647;
+// A PDF string holds at most 32767 bytes (ISO 32000-1, Annex C). A title is
+// written as UTF-16BE, a 2 byte BOM plus 2 bytes per UTF-16 code unit, so it
+// has at most (32767 - 2) / 2 = 16382 code units, counted as `title.length`.
+var MAX_TITLE_LENGTH = 16382;
 var OPTION_KEYS = ["open", "x", "y", "zoom", "children"];
 
 /**
@@ -23,19 +27,28 @@ function isObject(value) {
  * @param {number} [depth=1] - The nesting level of this bookmark.
  * @returns {{title: string, pageNumber: number, open: boolean, x: (number|undefined), y: (number|undefined), zoom: (number|undefined), children: Object[]}}
  *   The bookmark to write.
- * @throws {TypeError} If the title is empty, contains NUL or is not a string,
- *   the options are no object, an option is unknown or has the wrong type,
- *   `x`, `y` or `zoom` exceeds 2147483647, only one of `x` and `y` is given,
- *   or a child is no object.
- * @throws {RangeError} If the page number is no positive integer, or the
- *   bookmarks nest deeper than 64 levels.
+ * @throws {TypeError} If the title is empty, contains NUL, U+FFFE or U+FFFF, or
+ *   is not a string, the options are no object, an option is unknown or has the
+ *   wrong type, `x`, `y` or `zoom` exceeds 2147483647, only one of `x` and `y`
+ *   is given, or a child is no object.
+ * @throws {RangeError} If the title has more than 16382 UTF-16 code units, the
+ *   page number is no positive integer, or the bookmarks nest deeper than 64
+ *   levels.
  */
 function outlineNode(title, pageNumber, options, depth = 1) {
   if (typeof title !== "string" || title === "") {
     throw new TypeError("A bookmark needs a title");
   }
-  if (title.includes("\0")) {
-    throw new TypeError("A bookmark title cannot contain NUL");
+  // PDF text strings cannot keep a NUL, and the library loses U+FFFE and U+FFFF
+  if (/[\0\uFFFE\uFFFF]/.test(title)) {
+    throw new TypeError(
+      "A bookmark title cannot contain NUL, U+FFFE or U+FFFF",
+    );
+  }
+  if (title.length > MAX_TITLE_LENGTH) {
+    throw new RangeError(
+      `A bookmark title can have at most ${MAX_TITLE_LENGTH} UTF-16 code units`,
+    );
   }
   if (!Number.isInteger(pageNumber) || pageNumber < 1) {
     throw new RangeError("pageNumber must identify an existing page");
@@ -353,4 +366,4 @@ function writeOutline(
   return ids.get(root);
 }
 
-export { outlineNode, readExistingOutline, writeOutline };
+export { MAX_TITLE_LENGTH, outlineNode, readExistingOutline, writeOutline };

@@ -1018,7 +1018,47 @@ describe("Recipe bookmark", function () {
     recipe.createPage().endPage();
     assert.throws(
       () => recipe.bookmark("a\0b", 1),
-      new TypeError("A bookmark title cannot contain NUL"),
+      new TypeError("A bookmark title cannot contain NUL, U+FFFE or U+FFFF"),
+    );
+  });
+
+  it("rejects U+FFFE and U+FFFF in a title", function () {
+    ["\uFFFEx", "x\uFFFE", "\uFFFFx", "x\uFFFF"].forEach((title) => {
+      var recipe = new Recipe(Buffer.from("new"));
+      assert.throws(
+        () => recipe.bookmark(title, 1),
+        new TypeError("A bookmark title cannot contain NUL, U+FFFE or U+FFFF"),
+      );
+    });
+  });
+
+  it("limits the length of a title", function () {
+    var limit = 16382;
+    var recipe = new Recipe(Buffer.from("new"));
+    recipe.createPage().endPage();
+    recipe.bookmark("a".repeat(limit), 1);
+    var message = `A bookmark title can have at most ${limit} UTF-16 code units`;
+    assert.throws(
+      () => recipe.bookmark("a".repeat(limit + 1), 1),
+      new RangeError(message),
+    );
+    // a surrogate pair counts as 2 units
+    recipe.bookmark("\u{1F600}".repeat(limit / 2), 1);
+    assert.throws(
+      () => recipe.bookmark("\u{1F600}".repeat(limit / 2 + 1), 1),
+      new RangeError(message),
+    );
+    assert.throws(
+      () => recipe.bookmark("a".repeat(50 * 1024 * 1024), 1),
+      new RangeError(message),
+    );
+    // a child is checked too, and nothing of the failed call is added
+    assert.throws(
+      () =>
+        recipe.bookmark("ok", 1, {
+          children: [{ title: "b".repeat(limit + 1), pageNumber: 1 }],
+        }),
+      new RangeError(message),
     );
   });
 
