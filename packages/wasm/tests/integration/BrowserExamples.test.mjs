@@ -79,6 +79,7 @@ describe("Browser how-to examples", function () {
         "inspect-pdf",
         "acroform",
         "fill-form",
+        "add-bookmarks",
       ],
     );
   });
@@ -133,6 +134,11 @@ describe("Browser how-to examples", function () {
       assert.match(page, new RegExp(`data-example="${example.id}"`));
     }
     assert.match(page, /id="version-picker"/);
+    assert.match(
+      page,
+      /id="open-preview"[^>]*target="_blank"[^>]*rel="noopener"/,
+    );
+    assert.match(page, /id="outline"/);
   });
 
   for (const example of HOW_TO_EXAMPLES) {
@@ -383,6 +389,35 @@ describe("Browser how-to examples", function () {
       var text = reader.extractPageText(0).map((item) => item.content);
       assert.ok(text.includes("PDF inspection report"));
       assert.ok(text.includes("Pricing appendix"));
+    } finally {
+      reader.end();
+      muhammara.disposeAssets();
+    }
+  });
+
+  it("builds the add-bookmarks example", async function () {
+    var result = await runHowToExample("add-bookmarks");
+    assert.deepEqual(result.summary.bookmarks, [
+      { title: "Introduction", page: 1, children: [] },
+      {
+        title: "Details",
+        page: 2,
+        children: [
+          { title: "Positioned", page: 2, children: [] },
+          {
+            title: "Closed group",
+            page: 3,
+            children: [
+              { title: "Prices \u2014 \u20ac", page: 3, children: [] },
+            ],
+          },
+        ],
+      },
+    ]);
+    var muhammara = await createMuhammaraWasm();
+    var reader = muhammara.createReader(result.bytes);
+    try {
+      assert.equal(reader.getPagesCount(), 3);
     } finally {
       reader.end();
       muhammara.disposeAssets();

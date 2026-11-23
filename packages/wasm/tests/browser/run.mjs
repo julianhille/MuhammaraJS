@@ -163,12 +163,14 @@ try {
       "inspect-pdf",
       "acroform",
       "fill-form",
+      "add-bookmarks",
     ];
     if (tabIds.join(",") !== expectedTabIds.join(",")) {
       throw new Error(`Unexpected example tabs: ${tabIds.join(", ")}`);
     }
     var preview = document.querySelector("#preview");
     var download = document.querySelector("#download");
+    var openPreview = document.querySelector("#open-preview");
     var runButton = document.querySelector("#run");
     /** Runs one browser example in the selected execution mode and returns its bytes. */
     var runExample = async (id, mode) => {
@@ -204,6 +206,13 @@ try {
         throw new Error(`${id} ${mode} preview did not receive a new blob URL`);
       if (download.hidden || !download.href.startsWith("blob:"))
         throw new Error(`${id} ${mode} PDF download was not shown`);
+      if (
+        openPreview.hidden ||
+        openPreview.href !== preview.src ||
+        openPreview.target !== "_blank" ||
+        openPreview.rel !== "noopener"
+      )
+        throw new Error(`${id} ${mode} new-tab link was not shown`);
       return Array.from(
         new Uint8Array(await (await fetch(preview.src)).arrayBuffer()),
       );
@@ -230,6 +239,15 @@ try {
     await runExample("rtl-text", "page");
     await runExample("rtl-text", "worker");
     await runExample("inspect-pdf", "worker");
+    for (var bookmarkMode of ["page", "worker"]) {
+      await runExample("add-bookmarks", bookmarkMode);
+      // Five bookmarks, rendered as list items; the view is shown.
+      if (
+        document.querySelectorAll("#outline li").length !== 5 ||
+        document.querySelector("#outline-view").hidden
+      )
+        throw new Error(`add-bookmarks ${bookmarkMode} outline was not shown`);
+    }
     // The benchmark ignores the mode switch: it runs on the page and in a Worker.
     document.querySelector('input[name="runs"]').value = "2";
     await runExample("benchmark", "page");

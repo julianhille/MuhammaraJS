@@ -9,6 +9,9 @@ var progressBar = document.querySelector("#progress");
 var output = document.querySelector("#output");
 var preview = document.querySelector("#preview");
 var download = document.querySelector("#download");
+var openPreview = document.querySelector("#open-preview");
+var outlineView = document.querySelector("#outline-view");
+var outline = document.querySelector("#outline");
 var outputChoice = document.querySelector("#output-choice");
 var outputChoiceLabel = document.querySelector("#output-choice-label");
 var tabs = Array.from(document.querySelectorAll('[role="tab"]'));
@@ -130,6 +133,35 @@ function summary(value) {
 }
 
 /**
+ * Renders bookmark trees into a nested list; titles are set as text only.
+ * @param {{title: string, page: number|null, children: object[]}[]} items - Bookmark trees.
+ * @param {HTMLElement} list - The `<ol>` that receives one `<li>` per item.
+ * @returns {void}
+ */
+function renderOutline(items, list) {
+  items.forEach((item) => {
+    var entry = document.createElement("li");
+    entry.textContent = `${item.title} (page ${item.page ?? "?"})`;
+    if (item.children.length) {
+      var children = document.createElement("ol");
+      renderOutline(item.children, children);
+      entry.append(children);
+    }
+    list.append(entry);
+  });
+}
+
+/**
+ * Hides the download link, the new-tab link and the outline.
+ * @returns {void}
+ */
+function hideResult() {
+  download.hidden = true;
+  openPreview.hidden = true;
+  outlineView.hidden = true;
+}
+
+/**
  * Previews the selected output PDF and offers it for download.
  * @returns {void}
  */
@@ -151,6 +183,14 @@ function showResult() {
   download.download = name;
   download.textContent = `Download ${name} (${selected.bytes.length.toLocaleString()} bytes)`;
   download.hidden = false;
+  // The same object URL; a tab that already loaded it keeps its document
+  // when the next run revokes the URL.
+  openPreview.href = url;
+  openPreview.hidden = false;
+  var bookmarks = selected.summary?.bookmarks;
+  outline.replaceChildren();
+  if (bookmarks) renderOutline(bookmarks, outline);
+  outlineView.hidden = !bookmarks;
 }
 
 /**
@@ -276,7 +316,7 @@ function selectExample(selectedId, focus = false) {
       ? "Run complete workflow"
       : `Run ${selected.label}`;
   outputChoiceLabel.hidden = selectedId !== "complete";
-  download.hidden = true;
+  hideResult();
   urls.revoke();
   result = undefined;
   report(`Ready to run: ${selected.title}.`);
@@ -310,7 +350,7 @@ form.addEventListener("submit", async (event) => {
   runButton.disabled = true;
   tabs.forEach((tab) => (tab.disabled = true));
   cancelButton.disabled = false;
-  download.hidden = true;
+  hideResult();
   urls.revoke();
   result = undefined;
   try {

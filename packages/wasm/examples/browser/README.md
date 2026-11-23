@@ -10,8 +10,8 @@ parses both final outputs, and exposes preview and download controls.
 The tabs keep that complete laboratory intact and add focused, runnable how-to
 examples for annotations, URL links, HTML lists, page boxes, rotated-page
 coordinates, grayscale form XObjects, image transformations, tables,
-right-to-left text, watermarks, text search, PDF inspection, and reading and
-filling AcroForm fields. Each focused
+right-to-left text, watermarks, text search, PDF inspection, reading and
+filling AcroForm fields, and PDF bookmarks. Each focused
 example generates and parses its own previewable PDF; image transformations
 require an image upload, and right-to-left text a font with Hebrew glyphs.
 The Watermark, Find text, and Inspect PDF tabs read an uploaded PDF, or a
