@@ -1066,7 +1066,9 @@ export interface Recipe {
    * @throws {RangeError} If the page number is no positive integer, or the
    *   bookmarks nest deeper than 64 levels. `endPDF()` throws it too, for a
    *   page the finished document does not have; no PDF is returned then.
-   * @throws {Error} After endPDF(), and for a source PDF that has an outline.
+   * @throws {Error} After endPDF(). `endPDF()` throws it too when the `/Outlines` of
+   *   the source PDF is no indirect dictionary, or its outline has a `/First` but
+   *   no `/Last`.
    */
   bookmark(
     title: string,

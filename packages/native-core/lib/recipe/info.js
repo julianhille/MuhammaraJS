@@ -17,7 +17,7 @@ var {
   writeOutputIntents,
 } = require("../pdfa");
 var { attachment, writeAttachments } = require("../attachments");
-var { outlineNode, writeOutline } = require("../outline");
+var { outlineNode, readExistingOutline, writeOutline } = require("../outline");
 var { readStreamString } = require("../content-stream");
 var { structureTree } = require("../structure-tree");
 
@@ -447,6 +447,7 @@ exports._writeBookmarks = function _writeBookmarks() {
   const context = this.writer.createPDFCopyingContextForModifiedFile();
   try {
     const parser = context.getSourceDocumentParser();
+    const existing = readExistingOutline(context, this.muhammara);
     const rootId = writeOutline(
       this.writer.getObjectsContext(),
       this.bookmarks_,
@@ -464,8 +465,9 @@ exports._writeBookmarks = function _writeBookmarks() {
         return { id, left: nx, top: ny };
       },
       this.muhammara,
+      existing,
     );
-    setCatalogEntry(this.writer, "Outlines", rootId);
+    if (!existing) setCatalogEntry(this.writer, "Outlines", rootId);
   } finally {
     context.end();
   }
@@ -602,20 +604,13 @@ exports.structure = function structure(output) {
  *   bookmarks nest deeper than 64 levels. endPDF() throws it too, for a page
  *   the finished document does not have; the output is complete but has no
  *   outline then.
- * @throws {Error} After endPDF(), and for a source PDF that has an outline.
+ * @throws {Error} After endPDF(). endPDF() throws it too when the /Outlines of
+ *   the source PDF is not an indirect dictionary, or its outline has a
+ *   /First but no /Last.
  */
 exports.bookmark = function bookmark(title, pageNumber, options) {
   if (this.ended) throw new Error("PDF writer has ended");
   const node = outlineNode(title, pageNumber, options);
-  if (!this.isNewPDF) {
-    const reader = this._getReader();
-    const root = reader.queryDictionaryObject(reader.getTrailer(), "Root");
-    if (root.toPDFDictionary().exists("Outlines")) {
-      throw new Error(
-        "bookmark() cannot add to a source PDF that already has an outline",
-      );
-    }
-  }
   this.bookmarks_ = this.bookmarks_ || [];
   this.bookmarks_.push(node);
   return this;

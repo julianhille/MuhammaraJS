@@ -28,12 +28,16 @@ function create(pages, bookmark, name) {
  * Reads the outline of a PDF as a plain tree and checks that the links of the
  * items agree with the tree: /Parent, /Prev, /Next, /First and /Last.
  * @param {Buffer} bytes The PDF.
+ * @param {string} [password] The user password of an encrypted PDF.
  * @returns {{count: number, children: Object[]}|null} The root with its
  *   items, each with title, count, dest ({page, kind, args}) and children, or
  *   null for a PDF without outline.
  */
-function readOutline(bytes) {
-  var reader = muhammara.createReader(new muhammara.PDFRStreamForBuffer(bytes));
+function readOutline(bytes, password) {
+  var reader = muhammara.createReader(
+    new muhammara.PDFRStreamForBuffer(bytes),
+    password === undefined ? {} : { password },
+  );
   try {
     var pageIds = Array.from({ length: reader.getPagesCount() }, (_, index) =>
       reader.getPageObjectID(index),
@@ -56,11 +60,11 @@ function readOutline(bytes) {
         assert.equal(idOf(item, "Parent"), parentId);
         assert.equal(idOf(item, "Prev"), previous);
         var children = items(id);
-        var dest = item.Dest.toPDFArray().toJSArray();
+        var dest = item.Dest?.toPDFArray().toJSArray();
         result.push({
           title: item.Title.toText(),
           count: item.Count?.value,
-          dest: {
+          dest: dest && {
             page:
               pageIds.indexOf(
                 dest[0].toPDFIndirectObjectReference().getObjectID(),
@@ -101,6 +105,156 @@ function item(title, page, children = [], count, dest) {
     dest: dest || { page, kind: "Fit", args: [] },
     children,
   };
+}
+
+/**
+ * Writes the outline root of a PDF again, in a revision of its own.
+ * @param {Buffer} bytes The PDF, with an outline.
+ * @param {function(Object, {first: number, last: number}): void} write
+ *   Writes the entries of the root after its /Type; gets the object IDs of
+ *   the first and the last item, the root itself and a spare object ID
+ *   that `extra` writes.
+ * @param {function(Object, number): void} [extra] Writes the spare object;
+ *   gets the objects context and its ID.
+ * @returns {Buffer} The PDF with the new root.
+ */
+function editRoot(bytes, write, extra) {
+  var reader = muhammara.createReader(new muhammara.PDFRStreamForBuffer(bytes));
+  var rootId, ids;
+  try {
+    var catalog = reader.queryDictionaryObject(reader.getTrailer(), "Root");
+    rootId = catalog
+      .toPDFDictionary()
+      .toJSObject()
+      .Outlines.toPDFIndirectObjectReference()
+      .getObjectID();
+    var root = reader.parseNewObject(rootId).toPDFDictionary().toJSObject();
+    ids = {
+      first: root.First.toPDFIndirectObjectReference().getObjectID(),
+      last: root.Last.toPDFIndirectObjectReference().getObjectID(),
+      root: rootId,
+    };
+  } finally {
+    reader.end();
+  }
+  var output = new muhammara.PDFWStreamForBuffer();
+  var writer = muhammara.createWriterToModify(
+    new muhammara.PDFRStreamForBuffer(bytes),
+    output,
+  );
+  var objects = writer.getObjectsContext();
+  if (extra) {
+    ids.extra = objects.allocateNewObjectID();
+    extra(objects, ids.extra);
+  }
+  objects.startModifiedIndirectObject(rootId);
+  var dictionary = objects.startDictionary();
+  dictionary.writeKey("Type");
+  dictionary.writeNameValue("Outlines");
+  write(dictionary, ids);
+  objects.endDictionary(dictionary);
+  objects.endIndirectObject();
+  writer.end();
+  return output.buffer;
+}
+
+/**
+ * Replaces the value of /Outlines in the catalog by one of the same length.
+ * @param {Buffer} bytes The PDF, with an outline.
+ * @param {string} value The new value.
+ * @returns {Buffer} The PDF.
+ */
+function replaceOutlines(bytes, value) {
+  return Buffer.from(
+    bytes
+      .toString("latin1")
+      .replace(/\/Outlines \d+ 0 R/, (reference) =>
+        ("/Outlines " + value).padEnd(reference.length),
+      ),
+    "latin1",
+  );
+}
+
+// three levels, with open and closed items
+var OLD_OUTLINE = [
+  item("A", 1, [item("A1", 1), item("A2", 2, [item("A2a", 2)], -1)], 2),
+  item("B", 3, [item("B1", 3)], -1),
+  item("C", 4),
+];
+
+/**
+ * @returns {Buffer} A PDF of four pages with the outline OLD_OUTLINE.
+ */
+function createOutlined() {
+  return create(4, (recipe) =>
+    recipe
+      .bookmark("A", 1, {
+        open: true,
+        children: [
+          { title: "A1", pageNumber: 1 },
+          {
+            title: "A2",
+            pageNumber: 2,
+            children: [{ title: "A2a", pageNumber: 2 }],
+          },
+        ],
+      })
+      .bookmark("B", 3, { children: [{ title: "B1", pageNumber: 3 }] })
+      .bookmark("C", 4),
+  );
+}
+
+/**
+ * Creates a PDF 1.5 of one page whose outline, a root and one item "Old",
+ * is stored in an object stream.
+ * @returns {Buffer} The PDF.
+ */
+function createObjectStreamPdf() {
+  var parts = [Buffer.from("%PDF-1.5\n")];
+  var size = () => parts.reduce((total, part) => total + part.length, 0);
+  var offsets = [];
+  var add = (id, body) => {
+    offsets[id] = size();
+    parts.push(Buffer.from(`${id} 0 obj\n${body}\nendobj\n`, "latin1"));
+  };
+  add(1, "<< /Type /Catalog /Pages 2 0 R /Outlines 4 0 R >>");
+  add(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+  add(3, "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 300] >>");
+  var root = "<< /Type /Outlines /First 5 0 R /Last 5 0 R /Count 1 >>";
+  var last = "<< /Title (Old) /Parent 4 0 R /Dest [3 0 R /Fit] >>";
+  var header = `4 0 5 ${root.length + 1} `;
+  var data = `${header}${root} ${last}`;
+  add(
+    6,
+    `<< /Type /ObjStm /N 2 /First ${header.length} /Length ${data.length} >>\nstream\n${data}\nendstream`,
+  );
+  var xrefAt = size();
+  // the cross-reference stream: type, offset or stream, index or generation
+  var entry = (type, a, b) => {
+    var bytes = Buffer.alloc(7);
+    bytes[0] = type;
+    bytes.writeUInt32BE(a, 1);
+    bytes.writeUInt16BE(b, 5);
+    return bytes;
+  };
+  var xref = Buffer.concat([
+    entry(0, 0, 65535),
+    entry(1, offsets[1], 0),
+    entry(1, offsets[2], 0),
+    entry(1, offsets[3], 0),
+    entry(2, 6, 0),
+    entry(2, 6, 1),
+    entry(1, offsets[6], 0),
+    entry(1, xrefAt, 0),
+  ]);
+  parts.push(
+    Buffer.from(
+      `7 0 obj\n<< /Type /XRef /Size 8 /W [1 4 2] /Root 1 0 R /Length ${xref.length} >>\nstream\n`,
+    ),
+    xref,
+    Buffer.from(`\nendstream\nendobj\nstartxref\n${xrefAt}\n%%EOF\n`),
+  );
+  return Buffer.concat(parts);
 }
 
 describe("Recipe bookmark", function () {
@@ -318,23 +472,345 @@ describe("Recipe bookmark", function () {
     ]);
   });
 
-  it("rejects a source PDF that has an outline", function () {
+  it("appends to the outline of a source PDF", function () {
+    var old = createOutlined();
+    assert.deepEqual(readOutline(old), { count: 5, children: OLD_OUTLINE });
+    var bytes = new Recipe(old)
+      .bookmark("D", 1)
+      .bookmark("E", 2, {
+        open: true,
+        children: [{ title: "E1", pageNumber: 3 }],
+      })
+      .endPDF((output) => output);
+    writeOutput("bookmark-append", bytes);
+    // the old items stay as they are, the root counts all visible items
+    assert.deepEqual(readOutline(bytes), {
+      count: 8,
+      children: [
+        ...OLD_OUTLINE,
+        item("D", 1),
+        item("E", 2, [item("E1", 3)], 1),
+      ],
+    });
+  });
+
+  it("appends to the outline of a source PDF on disk", function () {
+    var output = path.join(__dirname, "../output/bookmark-append-path.pdf");
+    fs.mkdirSync(path.dirname(output), { recursive: true });
+    fs.writeFileSync(output + ".src.pdf", createOutlined());
+    new Recipe(output + ".src.pdf", output).bookmark("D", 1).endPDF();
+    assert.deepEqual(readOutline(fs.readFileSync(output)), {
+      count: 6,
+      children: [...OLD_OUTLINE, item("D", 1)],
+    });
+  });
+
+  it("appends to an empty outline", function () {
+    var empty = editRoot(createOutlined(), () => {});
+    assert.deepEqual(readOutline(empty), { count: undefined, children: [] });
+    var bytes = new Recipe(empty)
+      .bookmark("D", 1)
+      .bookmark("E", 2)
+      .endPDF((output) => output);
+    assert.deepEqual(readOutline(bytes), {
+      count: 2,
+      children: [item("D", 1), item("E", 2)],
+    });
+  });
+
+  it("appends to an outline whose root has extra keys and no /Count", function () {
+    var old = editRoot(createOutlined(), (dictionary, { first, last }) => {
+      dictionary.writeKey("First");
+      dictionary.writeObjectReferenceValue(first);
+      dictionary.writeKey("Last");
+      dictionary.writeObjectReferenceValue(last);
+      dictionary.writeKey("Extra");
+      dictionary.writeNameValue("Kept");
+    });
+    var bytes = new Recipe(old).bookmark("D", 1).endPDF((output) => output);
+    // the root in the first revision and the one the pass wrote
+    assert.equal(bytes.toString("latin1").split("/Extra /Kept").length, 3);
+    assert.deepEqual(readOutline(bytes), {
+      count: 1,
+      children: [...OLD_OUTLINE, item("D", 1)],
+    });
+  });
+
+  it("reads the /Count of the root by its magnitude", function () {
+    var old = editRoot(createOutlined(), (dictionary, { first, last }) => {
+      dictionary.writeKey("First");
+      dictionary.writeObjectReferenceValue(first);
+      dictionary.writeKey("Last");
+      dictionary.writeObjectReferenceValue(last);
+      dictionary.writeKey("Count");
+      dictionary.writeNumberValue(-5);
+    });
+    var bytes = new Recipe(old).bookmark("D", 1).endPDF((output) => output);
+    assert.equal(readOutline(bytes).count, 6);
+  });
+
+  it("rejects an outline that is not an indirect dictionary", function () {
     var message =
-      "bookmark() cannot add to a source PDF that already has an outline";
-    var withOutline = create(1, (recipe) => recipe.bookmark("One", 1));
+      "bookmark() cannot add to the outline of this PDF: its /Outlines is not an indirect dictionary";
+    ["<<>>"].forEach((value) => {
+      var recipe = new Recipe(replaceOutlines(createOutlined(), value));
+      recipe.bookmark("D", 1);
+      assert.throws(
+        () => recipe.endPDF((output) => output),
+        new Error(message),
+      );
+    });
+  });
+
+  it("rejects an outline without /Last", function () {
+    var old = editRoot(createOutlined(), (dictionary, { first }) => {
+      dictionary.writeKey("First");
+      dictionary.writeObjectReferenceValue(first);
+    });
+    var recipe = new Recipe(old).bookmark("D", 1);
     assert.throws(
-      () => new Recipe(withOutline).bookmark("Two", 1),
-      new Error(message),
+      () => recipe.endPDF((output) => output),
+      new Error(
+        "bookmark() cannot add to the outline of this PDF: its outline has no /Last",
+      ),
     );
-    // an outline root with no items is still an outline
-    var empty = Buffer.from(
-      withOutline.toString("latin1").replace("/First ", "/Fxrst "),
-      "latin1",
+  });
+
+  /**
+   * @param {Recipe} recipe The Recipe to end.
+   * @returns {Buffer} The PDF.
+   */
+  function endBytes(recipe) {
+    return recipe.endPDF((output) => output);
+  }
+
+  /**
+   * Appends a bookmark to a PDF whose outline root has a given /Last.
+   * @param {function(Object, Object): void} last Writes the value of /Last.
+   * @param {function(Object, number): void} [extra] Writes the spare object.
+   * @returns {Recipe} The Recipe, with the bookmark and not ended.
+   */
+  function withLast(last, extra) {
+    var old = editRoot(
+      createOutlined(),
+      (dictionary, ids) => {
+        dictionary.writeKey("First");
+        dictionary.writeObjectReferenceValue(ids.first);
+        dictionary.writeKey("Last");
+        last(dictionary, ids);
+      },
+      extra,
+    );
+    return new Recipe(old).bookmark("D", 1);
+  }
+
+  it("reports an outline whose last item is not a dictionary", function () {
+    var message =
+      "bookmark() cannot add to the outline of this PDF: its outline has no /Last";
+    [
+      (dictionary) => dictionary.writeNumberValue(5),
+      (dictionary, ids) => dictionary.writeObjectReferenceValue(ids.extra),
+      (dictionary) => dictionary.writeObjectReferenceValue(99999),
+    ].forEach((last, index) => {
+      var recipe = withLast(last, (objects, id) => {
+        objects.startNewIndirectObject(id);
+        objects.startArray().endArray();
+        objects.endIndirectObject();
+      });
+      assert.throws(() => endBytes(recipe), new Error(message), String(index));
+    });
+  });
+
+  it("reports an outline whose last item is its root", function () {
+    var recipe = withLast((dictionary, ids) =>
+      dictionary.writeObjectReferenceValue(ids.root),
     );
     assert.throws(
-      () => new Recipe(empty).bookmark("Two", 1),
-      new Error(message),
+      () => endBytes(recipe),
+      new Error(
+        "bookmark() cannot add to the outline of this PDF: its outline has no /Last",
+      ),
     );
+  });
+
+  it("reports an /Outlines that points at nothing", function () {
+    var recipe = new Recipe(replaceOutlines(createOutlined(), "99 0 R"));
+    recipe.bookmark("D", 1);
+    assert.throws(
+      () => endBytes(recipe),
+      new Error(
+        "bookmark() cannot add to the outline of this PDF: its /Outlines is not an indirect dictionary",
+      ),
+    );
+  });
+
+  it("treats a null /Outlines as no outline", function () {
+    var bytes = endBytes(
+      new Recipe(replaceOutlines(createOutlined(), "null")).bookmark("D", 1),
+    );
+    assert.deepEqual(readOutline(bytes), {
+      count: 1,
+      children: [item("D", 1)],
+    });
+  });
+
+  it("reads a real and an indirect /Count of the old outline", function () {
+    [
+      [(dictionary) => dictionary.writeNumberValue(2.5), 3],
+      [(dictionary, ids) => dictionary.writeObjectReferenceValue(ids.extra), 8],
+    ].forEach(([count, expected]) => {
+      var old = editRoot(
+        createOutlined(),
+        (dictionary, ids) => {
+          dictionary.writeKey("First");
+          dictionary.writeObjectReferenceValue(ids.first);
+          dictionary.writeKey("Last");
+          dictionary.writeObjectReferenceValue(ids.last);
+          dictionary.writeKey("Count");
+          count(dictionary, ids);
+        },
+        (objects, id) => {
+          objects.startNewIndirectObject(id);
+          objects.writeNumber(7);
+          objects.endIndirectObject();
+        },
+      );
+      var bytes = endBytes(new Recipe(old).bookmark("D", 1));
+      assert.equal(readOutline(bytes).count, expected);
+    });
+  });
+
+  it("keeps the root /Count within 2147483647", function () {
+    var old = editRoot(createOutlined(), (dictionary, ids) => {
+      dictionary.writeKey("First");
+      dictionary.writeObjectReferenceValue(ids.first);
+      dictionary.writeKey("Last");
+      dictionary.writeObjectReferenceValue(ids.last);
+      dictionary.writeKey("Count");
+      dictionary.writeNumberValue(2147483647);
+    });
+    var bytes = endBytes(new Recipe(old).bookmark("D", 1));
+    assert.equal(readOutline(bytes).count, 2147483647);
+  });
+
+  it("appends after deletePage pruned the old outline", function () {
+    var bytes = new Recipe(createOutlined())
+      .deletePage(2, { pruneReferences: true })
+      .bookmark("D", 3)
+      .endPDF((output) => output);
+    var outline = readOutline(bytes);
+    // the pruned destination of A2 and A2a stays pruned, the new one is
+    // the third page of the finished document
+    assert.deepEqual(
+      outline.children.map((entry) => entry.title),
+      ["A", "B", "C", "D"],
+    );
+    assert.deepEqual(outline.children[3], item("D", 3));
+    assert.equal(outline.children[0].children[1].dest, undefined);
+    assert.equal(outline.count, 6);
+  });
+
+  it("appends to the outline of a source with edited and created pages", function () {
+    var bytes = new Recipe(createOutlined())
+      .editPage(2)
+      .text("edited", 20, 20)
+      .comment("note", 20, 40)
+      .endPage()
+      .createPage(100, 100)
+      .endPage()
+      .bookmark("Edited", 2)
+      .bookmark("Created", 5)
+      .endPDF((output) => output);
+    assert.deepEqual(readOutline(bytes), {
+      count: 7,
+      children: [...OLD_OUTLINE, item("Edited", 2), item("Created", 5)],
+    });
+  });
+
+  it("appends to a 2,000-item outline", function () {
+    var old = create(1, (recipe) => {
+      for (var index = 0; index < 2000; index++) recipe.bookmark("b", 1);
+    });
+    var bytes = new Recipe(old).bookmark("last", 1).endPDF((output) => output);
+    var outline = readOutline(bytes);
+    assert.equal(outline.count, 2001);
+    assert.equal(outline.children.length, 2001);
+    assert.equal(outline.children[2000].title, "last");
+  });
+
+  it("appends to an outline stored in an object stream", function () {
+    var bytes = new Recipe(createObjectStreamPdf())
+      .bookmark("New", 1)
+      .endPDF((output) => output);
+    assert.deepEqual(readOutline(bytes), {
+      count: 2,
+      children: [item("Old", 1), item("New", 1)],
+    });
+  });
+
+  it("appends to the outline of an encrypted source", function () {
+    // a source with a user password is unsupported, one with an empty one is not
+    var options = { userPassword: "", ownerPassword: "owner" };
+    var recipe = new Recipe(Buffer.from("new"), undefined, options);
+    var old = recipe
+      .createPage(200, 300)
+      .endPage()
+      .bookmark("Old", 1)
+      .bookmark("Old closed", 1, {
+        children: [{ title: "Kid", pageNumber: 1 }],
+      })
+      .endPDF((output) => output);
+    var bytes = new Recipe(old, undefined, options)
+      .bookmark("New", 1)
+      .endPDF((output) => output);
+    assert.equal(bytes.includes("Old closed"), false);
+    assert.deepEqual(readOutline(bytes, ""), {
+      count: 3,
+      children: [
+        item("Old", 1),
+        item("Old closed", 1, [item("Kid", 1)], -1),
+        item("New", 1),
+      ],
+    });
+  });
+
+  it("appends to the outline of a PDF/A source", function () {
+    var old = new Recipe(Buffer.from("new"), undefined, {
+      pdfa: {
+        level: Recipe.PdfA.A3B,
+        iccProfile: path.join(
+          __dirname,
+          "../TestMaterials/icc/sRGB-v2-micro.icc",
+        ),
+      },
+    })
+      .createPage()
+      .text("x", 72, 72)
+      .endPage()
+      .bookmark("Old", 1)
+      .endPDF((output) => output);
+    var bytes = new Recipe(old).bookmark("New", 1).endPDF((output) => output);
+    assert.deepEqual(readOutline(bytes), {
+      count: 2,
+      children: [item("Old", 1), item("New", 1)],
+    });
+    // the XMP packet is still the only one
+    assert.equal(bytes.toString("latin1").split("<xmp:ModifyDate>").length, 2);
+  });
+
+  it("replaces the outline an insertPage rebuild dropped", function () {
+    var inserted = path.join(__dirname, "../TestMaterials/recipe/test.pdf");
+    var output = path.join(__dirname, "../output/bookmark-insert-outlined.pdf");
+    fs.mkdirSync(path.dirname(output), { recursive: true });
+    fs.writeFileSync(output + ".src.pdf", createOutlined());
+    new Recipe(output + ".src.pdf", output)
+      .insertPage(1, inserted, 1)
+      .bookmark("Fresh", 2)
+      .endPDF();
+    assert.deepEqual(readOutline(fs.readFileSync(output)), {
+      count: 1,
+      children: [item("Fresh", 2)],
+    });
   });
 
   it("bookmarks the pages of the finished document after deletePage", function () {

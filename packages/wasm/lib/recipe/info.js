@@ -10,7 +10,7 @@ import {
 } from "../pdfa.js";
 import { attachment, writeAttachments } from "../attachments.js";
 import { pageRecord } from "./page-record.js";
-import { outlineNode, writeOutline } from "../outline.js";
+import { outlineNode, readExistingOutline, writeOutline } from "../outline.js";
 
 var trappedValues = {
   True: constants.EInfoTrappedTrue,
@@ -205,26 +205,15 @@ export function createInfoMethods({
      * @throws {RangeError} If the page number is no positive integer, or the
      * bookmarks nest deeper than 64 levels. endPDF() throws it too, for a page
      * the finished document does not have; no PDF is returned then.
-     * @throws {Error} After endPDF(), and for a source PDF that has an outline.
+     * @throws {Error} After endPDF(). endPDF() throws it too when the
+     * /Outlines of the source PDF is not an indirect dictionary, or its outline
+     * has a /First but no /Last.
      */
     bookmark: function (title, pageNumber, options) {
       if (this._endedBytes || this._endError) {
         throw new Error("PDF writer has ended");
       }
       var node = outlineNode(title, pageNumber, options);
-      if (this._sourceMode) {
-        var reader = this._openSourceReader();
-        try {
-          var root = reader.queryDictionaryObject(reader.getTrailer(), "Root");
-          if (root.toPDFDictionary().exists("Outlines")) {
-            throw new Error(
-              "bookmark() cannot add to a source PDF that already has an outline",
-            );
-          }
-        } finally {
-          reader.end();
-        }
-      }
       (this._bookmarks ||= []).push(node);
       return this;
     },
@@ -247,6 +236,7 @@ export function createInfoMethods({
       var context = writer.createPDFCopyingContextForModifiedFile();
       try {
         var reader = context.getSourceDocumentParser();
+        var existing = readExistingOutline(context, constants);
         // the helpers of this Recipe, on the geometry of the finished page
         var host = Object.create(this);
         var records = new Map();
@@ -274,10 +264,11 @@ export function createInfoMethods({
             return { id, left: nx, top: ny };
           },
           valueTypes,
+          existing,
         );
-        writer._setCatalogEntry("Outlines", id);
+        if (!existing) writer._setCatalogEntry("Outlines", id);
       } finally {
-        reader?.end();
+        context.end();
       }
       // the date the writer stamps on an edit; PDF/A-4 has no Info dictionary
       if (this._pdfa?.withoutInfo) {

@@ -51,10 +51,12 @@ contain NUL.
 A bookmark starts closed; `open: true` shows its children when the viewer opens
 the outline. Nesting is limited to 64 levels.
 
-`bookmark()` rejects what it cannot place:
-
-- A source PDF that already has an outline, even an empty one. Recipe does not
-  append to an existing outline.
+A source PDF that already has an outline keeps it: the new bookmarks follow its
+last top-level bookmark, and the existing ones are untouched. The old outline
+is never walked, so the new root `/Count` is only as exact as the old one (an
+all-closed old outline may have none). `endPDF()` throws
+an `Error` for an outline it cannot append to: a `/Outlines` entry that is no
+indirect dictionary, or an outline whose root has a `/First` but no `/Last`.
 
 The outline is not styled, and `bookmark()` does not change the page mode: a
 viewer shows the outline when the user opens it. To read an outline back, see

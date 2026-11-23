@@ -100,6 +100,88 @@ function outlineNode(title, pageNumber, options, depth = 1) {
 }
 
 /**
+ * Parse an object that must be a dictionary.
+ * @param {Object} parser - The parser of the document.
+ * @param {Object} types - The `ePDFObject*` constants of the library.
+ * @param {(number|undefined)} id - The object ID.
+ * @returns {(Object|undefined)} The dictionary object; undefined when the
+ *   object is missing or no dictionary.
+ */
+function dictionaryAt(parser, types, id) {
+  try {
+    var value = parser.parseNewObject(id);
+  } catch (_) {
+    return undefined;
+  }
+  return value?.getType() === types.ePDFObjectDictionary ? value : undefined;
+}
+
+/**
+ * Read the outline a document already has, to append bookmarks to it. Only
+ * its root and its last item are read, however long the outline is.
+ * @param {Object} context - The copying context of the modified file; its
+ *   parser reads the outline and it copies the entries that stay.
+ * @param {Object} types - The `ePDFObject*` constants of the library.
+ * @returns {(Object|undefined)} `rootId`, the `rootValues` and `lastValues`
+ *   of the two dictionaries, the `first` and `lastId` entries of the root
+ *   (none when it is empty), the `count` (the magnitude of its /Count) and
+ *   the `copy` function; undefined when the document has no outline.
+ * @throws {Error} If /Outlines is no indirect dictionary, or the root has a
+ *   /First but no /Last.
+ */
+function readExistingOutline(context, types) {
+  var parser = context.getSourceDocumentParser();
+  var catalog = parser
+    .queryDictionaryObject(parser.getTrailer(), "Root")
+    .toPDFDictionary();
+  var reference = catalog.exists("Outlines")
+    ? catalog.queryObject("Outlines")
+    : undefined;
+  // a null /Outlines is no outline
+  if (!reference || reference.getType() === types.ePDFObjectNull) {
+    return undefined;
+  }
+  var isReference = (value) =>
+    value?.getType() === types.ePDFObjectIndirectObjectReference;
+  var rootId = isReference(reference)
+    ? reference.toPDFIndirectObjectReference().getObjectID()
+    : undefined;
+  var root = dictionaryAt(parser, types, rootId);
+  if (!root) {
+    throw new Error(
+      "bookmark() cannot add to the outline of this PDF: its /Outlines is not an indirect dictionary",
+    );
+  }
+  var rootValues = root.toPDFDictionary().toJSObject();
+  var { First: first, Last: last } = rootValues;
+  var lastId = isReference(last)
+    ? last.toPDFIndirectObjectReference().getObjectID()
+    : undefined;
+  // the last item is a dictionary of its own, not the root
+  var lastDictionary =
+    lastId === rootId ? undefined : dictionaryAt(parser, types, lastId);
+  if (first && !lastDictionary) {
+    throw new Error(
+      "bookmark() cannot add to the outline of this PDF: its outline has no /Last",
+    );
+  }
+  var count = parser.queryDictionaryObject(root.toPDFDictionary(), "Count");
+  return {
+    rootId,
+    rootValues,
+    first,
+    lastId,
+    lastValues: first && lastDictionary.toPDFDictionary().toJSObject(),
+    count: Math.abs(
+      [types.ePDFObjectInteger, types.ePDFObjectReal].includes(count?.getType())
+        ? Math.trunc(count.toNumber())
+        : 0,
+    ),
+    copy: (value) => context.copyDirectObjectAsIs(value),
+  };
+}
+
+/**
  * Write the outline: its root and one item per bookmark, linked as the
  * outline tree wants them.
  * @param {Object} objects - The objects context of the writer.
@@ -109,12 +191,22 @@ function outlineNode(title, pageNumber, options, depth = 1) {
  *   - Gives the object ID of the page a bookmark opens, and the position on
  *   it when the bookmark has one.
  * @param {{PDFTextString: Function}} types - The value types of the library.
+ * @param {Object} [existing] - The outline of the document, see
+ *   `readExistingOutline()`. The bookmarks are appended to it; only its root
+ *   and its last item are rewritten.
  * @returns {number} The object ID of the outline root.
  * @throws {RangeError} If a bookmark opens a page the document does not have;
  *   then nothing is written.
  */
-function writeOutline(objects, nodes, pageCount, locate, { PDFTextString }) {
-  var root = { children: nodes, open: true };
+function writeOutline(
+  objects,
+  nodes,
+  pageCount,
+  locate,
+  { PDFTextString },
+  existing,
+) {
+  var root = { children: nodes, open: true, id: existing?.rootId };
   var ids = new Map();
   // the number of items below a node a viewer shows when it is open
   var counts = new Map();
@@ -128,7 +220,7 @@ function writeOutline(objects, nodes, pageCount, locate, { PDFTextString }) {
         `bookmark targets page ${node.pageNumber}, but the document has ${pageCount} pages`,
       );
     }
-    ids.set(node, objects.allocateNewObjectID());
+    ids.set(node, node.id ?? objects.allocateNewObjectID());
     var visible = 0;
     node.children.forEach((child) => {
       prepare(child);
@@ -137,24 +229,48 @@ function writeOutline(objects, nodes, pageCount, locate, { PDFTextString }) {
     counts.set(node, visible);
   };
   /**
+   * Writes a dictionary of the document again, with the entries it has but
+   * the skipped ones, and then the entries `extra` writes.
+   * @param {number} id - The object ID of the dictionary.
+   * @param {Object} values - Its entries.
+   * @param {string[]} skip - The keys not to copy.
+   * @param {function(Object): void} extra - Writes the entries that replace them.
+   * @returns {void}
+   */
+  var rewrite = (id, values, skip, extra) => {
+    objects.startModifiedIndirectObject(id);
+    var dictionary = objects.startDictionary();
+    Object.keys(values)
+      .filter((key) => !skip.includes(key))
+      .forEach((key) => {
+        dictionary.writeKey(key);
+        existing.copy(values[key]);
+      });
+    extra(dictionary);
+    objects.endDictionary(dictionary);
+    objects.endIndirectObject();
+  };
+  /**
+   * @param {Object} dictionary - The dictionary written.
+   * @param {string} key - A key of the dictionary.
+   * @param {(Object|number)} target - The node it refers to, or its ID.
+   * @returns {void}
+   */
+  var reference = (dictionary, key, target) => {
+    dictionary.writeKey(key);
+    dictionary.writeObjectReferenceValue(ids.get(target) ?? target);
+  };
+  /**
    * Writes a node, then the nodes below it.
    * @param {Object} node - A bookmark or the root.
    * @param {Object} [parent] - The node it is below; none for the root.
-   * @param {Object[]} [siblings] - The nodes below the parent.
+   * @param {Object[]} [siblings] - The nodes below the parent, and the ID of
+   *   the last item of an existing outline before them.
    * @param {number} [index] - Its place among them.
    * @returns {void}
    */
   var write = (node, parent, siblings, index) => {
     var { children } = node;
-    /**
-     * @param {string} key - A key of the dictionary.
-     * @param {Object} target - The node it refers to.
-     * @returns {void}
-     */
-    var reference = (key, target) => {
-      dictionary.writeKey(key);
-      dictionary.writeObjectReferenceValue(ids.get(target));
-    };
     objects.startNewIndirectObject(ids.get(node));
     var dictionary = objects.startDictionary();
     if (parent) {
@@ -162,16 +278,18 @@ function writeOutline(objects, nodes, pageCount, locate, { PDFTextString }) {
       dictionary.writeLiteralStringValue(
         new PDFTextString(node.title).toBytesArray(),
       );
-      reference("Parent", parent);
-      if (index > 0) reference("Prev", siblings[index - 1]);
-      if (index < siblings.length - 1) reference("Next", siblings[index + 1]);
+      reference(dictionary, "Parent", parent);
+      if (index > 0) reference(dictionary, "Prev", siblings[index - 1]);
+      if (index < siblings.length - 1) {
+        reference(dictionary, "Next", siblings[index + 1]);
+      }
     } else {
       dictionary.writeKey("Type");
       dictionary.writeNameValue("Outlines");
     }
     if (children.length) {
-      reference("First", children[0]);
-      reference("Last", children[children.length - 1]);
+      reference(dictionary, "First", children[0]);
+      reference(dictionary, "Last", children[children.length - 1]);
       dictionary.writeKey("Count");
       dictionary.writeNumberValue(
         node.open ? counts.get(node) : -counts.get(node),
@@ -202,8 +320,37 @@ function writeOutline(objects, nodes, pageCount, locate, { PDFTextString }) {
     );
   };
   prepare(root);
-  write(root);
+  if (existing) {
+    // the root and the last item are written again; the new items follow it
+    var { rootValues, first, lastId, lastValues, count } = existing;
+    rewrite(
+      existing.rootId,
+      rootValues,
+      ["First", "Last", "Count"],
+      (dictionary) => {
+        dictionary.writeKey("First");
+        if (first) existing.copy(first);
+        else dictionary.writeObjectReferenceValue(ids.get(nodes[0]));
+        reference(dictionary, "Last", nodes[nodes.length - 1]);
+        dictionary.writeKey("Count");
+        dictionary.writeNumberValue(
+          Math.min(count + counts.get(root), MAX_NUMBER),
+        );
+      },
+    );
+    if (first) {
+      rewrite(lastId, lastValues, ["Next"], (dictionary) =>
+        reference(dictionary, "Next", nodes[0]),
+      );
+    }
+    var siblings = first ? [lastId, ...nodes] : nodes;
+    nodes.forEach((node, index) =>
+      write(node, root, siblings, index + siblings.length - nodes.length),
+    );
+  } else {
+    write(root);
+  }
   return ids.get(root);
 }
 
-module.exports = { outlineNode, writeOutline };
+module.exports = { outlineNode, readExistingOutline, writeOutline };
