@@ -53,9 +53,6 @@ one-based pages from the original source when `endPDF()` finalizes the Recipe.
 At least one page must remain. Deletion cannot be combined with `createPage()`,
 `appendPage()`, or `insertPage()` in the same Recipe.
 
-Page deletion cannot be combined with `bookmark()` either; see
-[Add PDF Bookmarks](../how-to/add-bookmarks.md).
-
 Deletion preserves retained page objects and adjusts page labels, but it is an
 incremental update rather than secure erasure of the removed content. A page
 that outlines, links, form widgets, tagged-PDF structure or the open action

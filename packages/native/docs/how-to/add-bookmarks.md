@@ -34,20 +34,19 @@ PDF and bookmark it in a second Recipe), and text and shapes drawn on a rotated
 page with a non-zero MediaBox origin do not follow that origin, so they can
 sit offset from a bookmark placed at the same coordinates.
 
-Page numbers are one-based and count the output document, as in `editPage()`.
-A bookmark may target a page created after the call, and `endPDF()` throws a
-`RangeError` for a page the document does not have, before it writes anything.
+Page numbers are one-based and count the finished document: the pages left
+after `deletePage()`, with the pages of `insertPage()` and `appendPage()` where
+they land. `editPage()`, `deletePage()` and `insertPage()` count the source, so
+after `deletePage(2)` the old page 3 is page 2 for `bookmark()`. A bookmark may
+target a page created after the call, and `endPDF()` throws a `RangeError` for a
+page the finished document does not have, before it writes an outline; the
+output is then complete, without outline. `insertPage()` drops the outline of a
+source PDF, as it rebuilds the document, and the bookmarks are then its only
+outline.
 Titles are any Unicode text and are written as PDF text strings.
 
 Each of `x`, `y` and `zoom` is limited to 2147483647, and a title cannot
 contain NUL.
-
-Bookmarks and `deletePage()` do not combine in one Recipe, in either order.
-To delete pages and bookmark the rest, end the first Recipe after the
-deletions, open its result in a second Recipe and call `bookmark()` there.
-Page numbering is the same problem for `insertPage()` and `appendPage()`.
-If `endPDF()` throws a `RangeError` for a missing page after the output file
-was opened, the output file may be incomplete.
 
 A bookmark starts closed; `open: true` shows its children when the viewer opens
 the outline. Nesting is limited to 64 levels.
@@ -56,8 +55,6 @@ the outline. Nesting is limited to 64 levels.
 
 - A source PDF that already has an outline, even an empty one. Recipe does not
   append to an existing outline.
-- `insertPage()`, `appendPage()` and `deletePage()`, which change the page
-  numbering the bookmarks refer to, in either order.
 
 The outline is not styled, and `bookmark()` does not change the page mode: a
 viewer shows the outline when the user opens it. To read an outline back, see

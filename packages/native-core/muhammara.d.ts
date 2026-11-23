@@ -4620,16 +4620,17 @@ declare namespace muhammara {
      * that opens a page. Bookmarks nest through `options.children`. The page
      * may be created after the call.
      * @param title - The title; any Unicode text.
-     * @param pageNumber - The one-based number of the page it opens, counted as
-     *   in `editPage()`.
+     * @param pageNumber - The one-based number of the page it opens, counted in
+     *   the finished document, after `deletePage()`, `insertPage()` and
+     *   `appendPage()`; `editPage()` counts the source.
      * @throws {TypeError} If the title is empty, contains NUL or is not a string,
      *   the options are no object, an option is unknown or invalid, `x`, `y` or
      *   `zoom` exceeds 2147483647, or only one of `x` and `y` is given.
      * @throws {RangeError} If the page number is no positive integer, or the
      *   bookmarks nest deeper than 64 levels. `endPDF()` throws it too, for a
-     *   page the document does not have.
-     * @throws {Error} After endPDF(), for a source PDF that has an outline,
-     *   and with insertPage(), appendPage() or deletePage().
+     *   page the finished document does not have; the output is complete but
+     *   has no outline then.
+     * @throws {Error} After endPDF(), and for a source PDF that has an outline.
      */
     bookmark(
       title: string,

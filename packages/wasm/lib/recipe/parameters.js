@@ -104,6 +104,4 @@ export function initializeRecipe(recipe, options) {
   recipe._modifiedSourcePages = new Set();
   recipe._pagesCreated = false;
   recipe._pagesAppended = false;
-  // the object IDs of the pages this Recipe wrote, by page number
-  recipe._pageIDs = new Map();
 }

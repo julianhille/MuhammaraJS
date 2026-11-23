@@ -358,11 +358,6 @@ exports._writeInfo = function _writeInfo() {
   if (this.options.xmp || this.pdfa_) {
     writeXmp(this.writer, infoDictionary, xmpDates, this.pdfa_);
   }
-  if (this.bookmarks_) {
-    // once: the annotation pass appends to the file that has them
-    this.outlineId_ = this.outlineId_ || writeBookmarks(this);
-    setCatalogEntry(this.writer, "Outlines", this.outlineId_);
-  }
   const attachments = this.attachments_ ? [...this.attachments_.values()] : [];
   requirePdfaAttachment(this.pdfa_, attachments.length);
   if (attachments.length) {
@@ -429,35 +424,62 @@ function writeXmp(writer, info, dates, pdfa) {
 }
 
 /**
- * Write the bookmarks of a Recipe as the document outline.
+ * Write the bookmarks of a Recipe as the document outline, in a pass over the
+ * finished output, so that page numbers are those of the finished document.
  * @private
- * @param {Object} recipe - The Recipe.
- * @returns {number} The object ID of the outline root.
- * @throws {RangeError} If a bookmark opens a page the document does not have.
+ * @returns {void}
+ * @throws {RangeError} If a bookmark opens a page the document does not have;
+ *   the output is complete and has no outline then.
  */
-function writeBookmarks(recipe) {
-  const { pageCount, pages } = recipe.metadata;
-  return writeOutline(
-    recipe.writer.getObjectsContext(),
-    recipe.bookmarks_,
-    pageCount ?? pages,
-    (node) => {
-      // pages made by this Recipe have no entry in the source
-      const id =
-        recipe.pageIds_.get(node.pageNumber) ??
-        recipe.pdfReader.getPageObjectID(node.pageNumber - 1);
-      if (node.x === undefined) return { id };
-      const { nx, ny } = recipe._calibrateCoordinateForAnnots(
-        node.x,
-        node.y,
-        0,
-        0,
-        node.pageNumber,
-      );
-      return { id, left: nx, top: ny };
-    },
-    recipe.muhammara,
-  );
+exports._writeBookmarks = function _writeBookmarks() {
+  // the page geometry of a position is read from the finished output, which
+  // read() has to do before the writer is reopened on that path
+  if (hasPosition(this.bookmarks_)) {
+    this.metadata = this.read(
+      this.isBufferSrc ? this.outStream.buffer || Buffer.alloc(0) : this.output,
+    );
+  }
+  this._reopenWriter();
+  // the date the writer stamps on an edit; PDF/A-4 has no Info dictionary
+  if (this.pdfa_?.withoutInfo) {
+    this.writer.getDocumentContext().getInfoDictionary().setModDate(null);
+  }
+  const context = this.writer.createPDFCopyingContextForModifiedFile();
+  try {
+    const parser = context.getSourceDocumentParser();
+    const rootId = writeOutline(
+      this.writer.getObjectsContext(),
+      this.bookmarks_,
+      parser.getPagesCount(),
+      (node) => {
+        const id = parser.getPageObjectID(node.pageNumber - 1);
+        if (node.x === undefined) return { id };
+        const { nx, ny } = this._calibrateCoordinateForAnnots(
+          node.x,
+          node.y,
+          0,
+          0,
+          node.pageNumber,
+        );
+        return { id, left: nx, top: ny };
+      },
+      this.muhammara,
+    );
+    setCatalogEntry(this.writer, "Outlines", rootId);
+  } finally {
+    context.end();
+  }
+  this.writer.end();
+};
+
+/**
+ * Whether a bookmark in a list, or in its children, has a position.
+ * @private
+ * @param {Object[]} nodes - The bookmarks.
+ * @returns {boolean} True if one has an x and a y.
+ */
+function hasPosition(nodes) {
+  return nodes.some((n) => n.x !== undefined || hasPosition(n.children));
 }
 
 /**
@@ -561,7 +583,8 @@ exports.structure = function structure(output) {
  * @function
  * @param {string} title - The title; any Unicode text.
  * @param {number} pageNumber - The one-based number of the page it opens,
- *   counted as in editPage().
+ *   counted in the finished document, after deletePage(), insertPage() and
+ *   appendPage(); editPage() counts the source.
  * @param {Object} [options] - The options.
  * @param {boolean} [options.open=false] - Whether its children show open.
  * @param {number} [options.x] - Where the page opens: the distance from the
@@ -577,17 +600,12 @@ exports.structure = function structure(output) {
  *   `zoom` exceeds 2147483647, or only one of `x` and `y` is given.
  * @throws {RangeError} If the page number is no positive integer, or the
  *   bookmarks nest deeper than 64 levels. endPDF() throws it too, for a page
- *   the document does not have.
- * @throws {Error} After endPDF(), for a source PDF that has an outline, and
- *   with insertPage(), appendPage() or deletePage().
+ *   the finished document does not have; the output is complete but has no
+ *   outline then.
+ * @throws {Error} After endPDF(), and for a source PDF that has an outline.
  */
 exports.bookmark = function bookmark(title, pageNumber, options) {
   if (this.ended) throw new Error("PDF writer has ended");
-  if (this.needToInsertPages || this.pagesAppended || this.deletedPages?.size) {
-    throw new Error(
-      "bookmark() cannot be combined with insertPage(), appendPage() or deletePage()",
-    );
-  }
   const node = outlineNode(title, pageNumber, options);
   if (!this.isNewPDF) {
     const reader = this._getReader();

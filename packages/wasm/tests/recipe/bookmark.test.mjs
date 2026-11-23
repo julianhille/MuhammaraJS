@@ -321,34 +321,129 @@ describe("Recipe bookmark", function () {
     );
   });
 
-  it("does not combine with deletePage, insertPage or appendPage", function () {
-    var other = "other";
-    var source = create(3);
-    var combined =
-      "bookmark() cannot be combined with insertPage(), appendPage() or deletePage()";
-    var recipe = new Recipe(source).bookmark("One", 1);
-    assert.throws(
-      () => recipe.deletePage(3),
-      new Error("deletePage cannot be combined with bookmark"),
-    );
-    assert.throws(
-      () => recipe.insertPage(1, other, 1),
-      new Error("insertPage cannot be combined with bookmark"),
-    );
-    assert.throws(
-      () => recipe.appendPage(other),
-      new Error("appendPage cannot be combined with bookmark"),
-    );
-    recipe.endPDF();
-
+  it("bookmarks the pages of the finished document after deletePage", function () {
+    // the finished document is the old pages 1, 3 and 4
+    var expected = [
+      item("Old three", 2, [], undefined, {
+        page: 2,
+        kind: "XYZ",
+        args: [10, 280, null],
+      }),
+      item("Old four", 3),
+    ];
     [
-      (recipe) => recipe.deletePage(3),
-      (recipe) => recipe.insertPage(1, other, 1),
-      (recipe) => recipe.appendPage(other),
-    ].forEach((combine) => {
-      var recipe = combine(new Recipe(source));
-      assert.throws(() => recipe.bookmark("One", 1), new Error(combined));
+      (recipe) =>
+        recipe
+          .deletePage(2)
+          .bookmark("Old three", 2, { x: 10, y: 20 })
+          .bookmark("Old four", 3),
+      (recipe) =>
+        recipe
+          .bookmark("Old three", 2, { x: 10, y: 20 })
+          .bookmark("Old four", 3)
+          .deletePage(2),
+    ].forEach((build) => {
+      var bytes = build(new Recipe(create(4))).endPDF();
+      assert.deepEqual(readOutline(bytes).children, expected);
     });
+  });
+
+  it("rejects a page the finished document does not have, and still writes a valid PDF", function () {
+    var recipe = new Recipe(create(3));
+    recipe.deletePage(2).bookmark("Gone", 3);
+    var message = "bookmark targets page 3, but the document has 2 pages";
+    assert.throws(() => recipe.endPDF(), new RangeError(message));
+    // the Recipe is not retired: the next call fails the same way
+    assert.throws(() => recipe.endPDF(), new RangeError(message));
+    // without the bookmark the same document is complete and has no outline
+    var bytes = new Recipe(create(3)).deletePage(2).endPDF();
+    assert.equal(muhammara.createReader(bytes).getPagesCount(), 2);
+    assert.equal(readOutline(bytes), null);
+  });
+
+  it("bookmarks pages added by appendPage", function () {
+    var expected = {
+      count: 1,
+      children: [item("Appended", 5, [item("Second", 6)], -1)],
+    };
+    var bookmark = (recipe) =>
+      recipe.bookmark("Appended", 5, {
+        children: [{ title: "Second", pageNumber: 6 }],
+      });
+    [
+      (recipe) => bookmark(recipe.appendPage("other", [1, 2])),
+      (recipe) => bookmark(recipe).appendPage("other", [1, 2]),
+    ].forEach((build) => {
+      assert.deepEqual(
+        readOutline(build(new Recipe(create(4))).endPDF()),
+        expected,
+      );
+    });
+    // in a new document
+    var recipe = new Recipe();
+    for (var page = 0; page < 4; page++) recipe.createPage().endPage();
+    assert.deepEqual(
+      readOutline(bookmark(recipe.appendPage("other", [1, 2])).endPDF()),
+      expected,
+    );
+  });
+
+  it("bookmarks pages inserted by insertPage", function () {
+    var bytes = new Recipe(create(3))
+      .insertPage(1, "other", 1)
+      .bookmark("Inserted", 2, { x: 10, y: 20 })
+      .bookmark("After it", 3)
+      .bookmark("Last", 4)
+      .endPDF();
+    writeOutput("bookmark-insert", bytes);
+    // the inserted page is 612 by 792 points
+    assert.deepEqual(readOutline(bytes).children, [
+      item("Inserted", 2, [], undefined, {
+        page: 2,
+        kind: "XYZ",
+        args: [10, 772, null],
+      }),
+      item("After it", 3),
+      item("Last", 4),
+    ]);
+  });
+
+  it("places a destination on a rotated page with a shifted MediaBox inserted by insertPage", function () {
+    Recipe.registerPdf(
+      "rotated-shifted",
+      new Recipe()
+        .createPage(300, 400)
+        .setPageBox(muhammara.ePDFPageBoxMediaBox, 10, 20, 310, 420)
+        .rotate(90)
+        .endPage()
+        .endPDF(),
+    );
+    var bytes = new Recipe(create(1))
+      .insertPage(1, "rotated-shifted", 1)
+      .bookmark("Rotated", 2, { x: 50, y: 60 })
+      .endPDF();
+    // as the page rotated by 90 on its own in "places a destination on
+    // rotated pages with a shifted MediaBox"
+    assert.deepEqual(readOutline(bytes).children, [
+      item("Rotated", 2, [], undefined, {
+        page: 2,
+        kind: "XYZ",
+        args: [70, 70, null],
+      }),
+    ]);
+  });
+
+  it("returns the same bytes for a second endPDF()", function () {
+    var recipe = new Recipe(create(3))
+      .insertPage(1, "other", 1)
+      .bookmark("One", 1);
+    assert.equal(recipe.endPDF(), recipe.endPDF());
+  });
+
+  it("writes no outline pass without bookmarks", function () {
+    var recipe = new Recipe(create(2)).insertPage(1, "other", 1);
+    assert.equal(readOutline(recipe.endPDF()), null);
+    assert.equal(recipe._outlinedBytes, undefined);
   });
 
   it("validates its arguments and queues nothing on failure", function () {
@@ -495,6 +590,35 @@ describe("Recipe bookmark", function () {
       .attach("a", new TextEncoder().encode("x"))
       .bookmark("One", 1);
     assert.deepEqual(readOutline(recipe.endPDF()).children, [item("One", 1)]);
+  });
+
+  it("keeps the outline pass out of the metadata of PDF/A files", function () {
+    var iccProfile = readFileSync(
+      new URL(
+        "../../../native-with-source/tests/TestMaterials/icc/sRGB-v2-micro.icc",
+        import.meta.url,
+      ),
+    );
+    [Recipe.PdfA.A3B, Recipe.PdfA.A4].forEach((level) => {
+      var recipe = new Recipe({ pdfa: { level, iccProfile } });
+      recipe.createPage().text("x", 72, 72).endPage().bookmark("One", 1);
+      var bytes = recipe.endPDF();
+      assert.deepEqual(readOutline(bytes).children, [item("One", 1)]);
+      var text = Buffer.from(bytes).toString("latin1");
+      // one XMP packet, with the date the Info dictionary of the pass over
+      // the finished file still has, if the level has an Info dictionary
+      var xmp = [...text.matchAll(/<xmp:ModifyDate>([^<]*)</g)].map(
+        (match) => match[1],
+      );
+      assert.equal(xmp.length, 1);
+      var infos = [...text.matchAll(/\/ModDate ?\(D:(\d{14})/g)].map(
+        (match) => match[1],
+      );
+      assert.equal(infos.length, level === Recipe.PdfA.A4 ? 0 : 2);
+      infos.forEach((date) =>
+        assert.equal(xmp[0].replace(/\D/g, "").slice(0, 14), date),
+      );
+    });
   });
 
   it("writes thousands of bookmarks", function () {

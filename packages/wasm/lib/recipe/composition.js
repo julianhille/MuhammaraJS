@@ -58,9 +58,6 @@ export function createCompositionMethods({
       if (this._deletedPages?.size) {
         throw new Error("appendPage cannot be combined with deletePage");
       }
-      if (this._bookmarks) {
-        throw new Error("appendPage cannot be combined with bookmark");
-      }
       var path = pdfs.get(name);
       if (!path) throw unknownAsset("Unknown PDF", name);
       var source = inspectSource(inspectPdf, name);
@@ -129,7 +126,6 @@ export function createCompositionMethods({
             );
           });
         }
-        this._pagesAppended = true;
         return this;
       });
     },
@@ -247,9 +243,6 @@ export function createCompositionMethods({
           "insertPage() cannot be combined with pdfa or attach()",
         );
       }
-      if (this._bookmarks) {
-        throw new Error("insertPage cannot be combined with bookmark");
-      }
       if (this._formFills?.size)
         throw new Error("insertPage() cannot be combined with fillForm()");
       if (!Number.isInteger(afterPageNumber) || afterPageNumber < 0)
@@ -283,6 +276,7 @@ export function createEndPDF({
   unregisterPdf,
   inspectPdf,
   createRecipe,
+  createWriterToModify,
   recrypt,
 }) {
   /**
@@ -290,8 +284,9 @@ export function createEndPDF({
    * An active page is finished first, so a forgotten {@link Recipe#endPage}
    * does not cost that page. If writing the document then fails, the Recipe
    * is retired and later calls rethrow the original error. Deferred page
-   * insertions rebuild the written document and configured encryption is
-   * applied. Repeated calls return cached finished bytes.
+   * insertions rebuild the written document, bookmarks are written in a pass
+   * over the finished document and configured encryption is applied. Repeated
+   * calls return cached finished bytes.
    *
    * @name endPDF
    * @function
@@ -309,45 +304,52 @@ export function createEndPDF({
       throw new TypeError("endPDF callback must be a function");
     }
     var bytes = endPDF(this);
-    if (!this._insertions || this._rebuiltBytes) {
-      bytes = this._rebuiltBytes || bytes;
-      if (this.encryption_ && Object.keys(this.encryption_).length) {
-        if (!this._encryptedBytes)
-          this._encryptedBytes = recrypt(bytes, this.encryption_);
-        bytes = this._encryptedBytes;
+    if (this._insertions && !this._rebuiltBytes) {
+      var sourceName = `insert-${state.nextPdf++}`;
+      registerPdf(sourceName, bytes);
+      try {
+        var rebuilt = createRecipe({
+          version: this.options.version,
+          compress: this.options.compress,
+        });
+        var pages = inspectPdf(sourceName).pages;
+        for (var page = 0; page <= pages; page += 1) {
+          var inserts = this._insertions.get(page) || [];
+          inserts.forEach(({ name, sourcePageNumber }) =>
+            rebuilt.appendPage(name, sourcePageNumber),
+          );
+          if (page < pages) rebuilt.appendPage(sourceName, page + 1);
+        }
+        this._rebuiltBytes = rebuilt.endPDF();
+      } finally {
+        unregisterPdf(sourceName);
       }
-      if (callback) callback(bytes);
-      return bytes;
-    }
-    var sourceName = `insert-${state.nextPdf++}`;
-    registerPdf(sourceName, bytes);
-    try {
-      var rebuilt = createRecipe({
-        version: this.options.version,
-        compress: this.options.compress,
-      });
-      var pages = inspectPdf(sourceName).pages;
-      for (var page = 0; page <= pages; page += 1) {
-        var inserts = this._insertions.get(page) || [];
-        inserts.forEach(({ name, sourcePageNumber }) =>
-          rebuilt.appendPage(name, sourcePageNumber),
+      this._outputPages =
+        pages +
+        Array.from(this._insertions.values()).reduce(
+          (count, inserts) => count + inserts.length,
+          0,
         );
-        if (page < pages) rebuilt.appendPage(sourceName, page + 1);
+    }
+    bytes = this._rebuiltBytes || bytes;
+    if (this._bookmarks && !this._outlinedBytes) {
+      // a pass over the finished document, so that bookmarks count its pages
+      var writer = createWriterToModify(bytes, {
+        compress: this.options.compress !== false,
+      });
+      try {
+        this._outlinedBytes = this._writeBookmarks(writer);
+      } catch (error) {
+        writer.dispose();
+        throw error;
       }
-      this._rebuiltBytes = rebuilt.endPDF();
-    } finally {
-      unregisterPdf(sourceName);
     }
-    this._outputPages =
-      pages +
-      Array.from(this._insertions.values()).reduce(
-        (count, inserts) => count + inserts.length,
-        0,
-      );
+    bytes = this._outlinedBytes || bytes;
     if (this.encryption_ && Object.keys(this.encryption_).length) {
-      this._encryptedBytes = recrypt(this._rebuiltBytes, this.encryption_);
+      if (!this._encryptedBytes)
+        this._encryptedBytes = recrypt(bytes, this.encryption_);
+      bytes = this._encryptedBytes;
     }
-    bytes = this._encryptedBytes || this._rebuiltBytes;
     if (callback) callback(bytes);
     return bytes;
   };

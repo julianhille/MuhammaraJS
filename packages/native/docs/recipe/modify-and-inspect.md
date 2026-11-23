@@ -56,9 +56,6 @@ bytes may remain unreachable in the file; do not use it to erase sensitive
 data. Page deletion cannot be combined with `createPage()`, `appendPage()`, or
 `insertPage()` in the same Recipe.
 
-Page deletion cannot be combined with `bookmark()` either; see
-[Add PDF Bookmarks](../how-to/add-bookmarks.md).
-
 A page that outlines, links, form widgets, tagged-PDF structure or the open
 action still reference is refused unless you pass
 `deletePage(pageNumbers, { pruneReferences: true })`, which removes those

@@ -9,6 +9,7 @@ import {
   writeOutputIntents,
 } from "../pdfa.js";
 import { attachment, writeAttachments } from "../attachments.js";
+import { pageRecord } from "./page-record.js";
 import { outlineNode, writeOutline } from "../outline.js";
 
 var trappedValues = {
@@ -189,7 +190,8 @@ export function createInfoMethods({
      * @memberof Recipe#
      * @param {string} title - The title; any Unicode text.
      * @param {number} pageNumber - The one-based number of the page it opens,
-     * counted as in editPage().
+     * counted in the finished document, after deletePage(), insertPage() and
+     * appendPage(); editPage() counts the source.
      * @param {RecipeBookmarkOptions} [options] - Whether its children show
      * open (default closed), where the page opens (`x` and `y`, in Recipe
      * coordinates, together), the `zoom` (1 for 100%) and the `children`, each
@@ -202,18 +204,12 @@ export function createInfoMethods({
      * `y` is given.
      * @throws {RangeError} If the page number is no positive integer, or the
      * bookmarks nest deeper than 64 levels. endPDF() throws it too, for a page
-     * the document does not have.
-     * @throws {Error} After endPDF(), for a source PDF that has an outline,
-     * and with insertPage(), appendPage() or deletePage().
+     * the finished document does not have; no PDF is returned then.
+     * @throws {Error} After endPDF(), and for a source PDF that has an outline.
      */
     bookmark: function (title, pageNumber, options) {
       if (this._endedBytes || this._endError) {
         throw new Error("PDF writer has ended");
-      }
-      if (this._insertions || this._pagesAppended || this._deletedPages?.size) {
-        throw new Error(
-          "bookmark() cannot be combined with insertPage(), appendPage() or deletePage()",
-        );
       }
       var node = outlineNode(title, pageNumber, options);
       if (this._sourceMode) {
@@ -234,32 +230,41 @@ export function createInfoMethods({
     },
 
     /**
-     * Writes the bookmarks of this Recipe as the document outline.
+     * Writes the bookmarks of this Recipe as the document outline, with a
+     * modifier over the finished document, so that page numbers are those of
+     * the finished document.
      *
      * @name _writeBookmarks
      * @function
      * @memberof Recipe#
      * @private
-     * @returns {void}
+     * @param {Object} writer - A modifier over the finished document.
+     * @returns {Uint8Array} The document with its outline.
      * @throws {RangeError} If a bookmark opens a page the document does not
-     * have.
+     * have; no PDF is returned then.
      */
-    _writeBookmarks: function () {
-      var reader = this._sourceMode
-        ? this.writer.getModifiedFileParser()
-        : null;
+    _writeBookmarks: function (writer) {
+      var context = writer.createPDFCopyingContextForModifiedFile();
       try {
+        var reader = context.getSourceDocumentParser();
+        // the helpers of this Recipe, on the geometry of the finished page
+        var host = Object.create(this);
+        var records = new Map();
+        host.pageInfo = (n) => {
+          if (!records.has(n)) {
+            var info = reader.getPageInfo(n - 1);
+            records.set(n, pageRecord(n, info.mediaBox, info.rotate));
+          }
+          return records.get(n);
+        };
         var id = writeOutline(
-          this._objectsContext(),
+          writer.getObjectsContext(),
           this._bookmarks,
-          this._pages.length,
+          reader.getPagesCount(),
           (node) => {
-            // pages made by this Recipe have no entry in the source
-            var id =
-              this._pageIDs.get(node.pageNumber) ??
-              reader.getPageObjectID(node.pageNumber - 1);
+            var id = reader.getPageObjectID(node.pageNumber - 1);
             if (node.x === undefined) return { id };
-            var { nx, ny } = this._calibrateCoordinateForAnnots(
+            var { nx, ny } = host._calibrateCoordinateForAnnots(
               node.x,
               node.y,
               0,
@@ -270,10 +275,15 @@ export function createInfoMethods({
           },
           valueTypes,
         );
-        this._setCatalogReference("Outlines", id);
+        writer._setCatalogEntry("Outlines", id);
       } finally {
         reader?.end();
       }
+      // the date the writer stamps on an edit; PDF/A-4 has no Info dictionary
+      if (this._pdfa?.withoutInfo) {
+        writer.getDocumentContext().getInfoDictionary().setModDate(null);
+      }
+      return writer.end();
     },
 
     /**
@@ -292,7 +302,6 @@ export function createInfoMethods({
         ? this.writer.getDocumentContext().getInfoDictionary()
         : null;
       var now = new Date();
-      if (this._bookmarks) this._writeBookmarks();
       if (this.options.xmp || this._pdfa) this._writeXmp(now);
       if (this._pdfa) {
         this._setCatalogReference(

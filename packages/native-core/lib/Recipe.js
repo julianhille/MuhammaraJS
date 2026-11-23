@@ -412,31 +412,7 @@ class Recipe {
         (this.annotations && this.annotations.length > 0) ||
         (this.annotationsToWrite && this.annotationsToWrite.length > 0)
       ) {
-        if (this.isBufferSrc) {
-          const oldStream = this.outStream;
-          this.outStream = new PDFWStreamForBuffer();
-
-          this.writer = this.muhammara.createWriterToModify(
-            new this.muhammara.PDFRStreamForBuffer(
-              oldStream.buffer || Buffer.alloc(0),
-            ),
-            this.outStream,
-            Object.assign({}, this.encryptOptions, {
-              log: this.logFile,
-            }),
-          );
-        } else {
-          // the first pass ends with %%EOF, and the objects the second
-          // appends to the file must start on their own line (PDF/A)
-          fs.appendFileSync(this.output, "\r\n");
-          this.writer = this.muhammara.createWriterToModify(
-            this.output,
-            Object.assign({}, this.encryptOptions, {
-              modifiedFilePath: this.output,
-              log: this.logFile,
-            }),
-          );
-        }
+        this._reopenWriter();
 
         this._writeAnnotations();
         this._writeInfo();
@@ -458,6 +434,9 @@ class Recipe {
           this._insertPages();
         }
       }
+      // after the last step that changes the pages, so the numbers are the
+      // finished document's
+      if (this.bookmarks_) this._writeBookmarks();
       if (this.needToEncrypt) {
         this._encrypt();
       }
@@ -504,6 +483,41 @@ class Recipe {
         return callback();
       }
     }
+  }
+
+  /**
+   * Reopen the finished output for an incremental update, as a modifier that
+   * appends to it.
+   * @private
+   * @returns {Object} The writer, also set as `this.writer`.
+   */
+  _reopenWriter() {
+    if (this.isBufferSrc) {
+      const oldStream = this.outStream;
+      this.outStream = new PDFWStreamForBuffer();
+
+      this.writer = this.muhammara.createWriterToModify(
+        new this.muhammara.PDFRStreamForBuffer(
+          oldStream.buffer || Buffer.alloc(0),
+        ),
+        this.outStream,
+        Object.assign({}, this.encryptOptions, {
+          log: this.logFile,
+        }),
+      );
+    } else {
+      // the first pass ends with %%EOF, and the objects the second
+      // appends to the file must start on their own line (PDF/A)
+      fs.appendFileSync(this.output, "\r\n");
+      this.writer = this.muhammara.createWriterToModify(
+        this.output,
+        Object.assign({}, this.encryptOptions, {
+          modifiedFilePath: this.output,
+          log: this.logFile,
+        }),
+      );
+    }
+    return this.writer;
   }
 
   /**

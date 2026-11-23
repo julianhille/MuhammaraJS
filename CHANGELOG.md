@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Add Recipe `bookmark()` for PDF bookmarks (the document outline) with nesting, open or closed state, position and zoom, and Unicode titles [#985](https://github.com/julianhille/MuhammaraJS/issues/985)
+- Add Recipe `bookmark()` for PDF bookmarks (the document outline) with nesting, open or closed state, position and zoom, and Unicode titles; bookmarks work with `deletePage()`, `insertPage()` and `appendPage()` and number the pages of the finished document [#985](https://github.com/julianhille/MuhammaraJS/issues/985)
 
 ### Fixed
 
